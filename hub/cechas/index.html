@@ -91,6 +91,11 @@ input.grow{flex:1}
 input.q{width:70px;text-align:right;font-variant-numeric:tabular-nums}
 .note{font-size:13px;color:var(--muted)}
 textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:6px 8px;width:100%;min-height:110px;resize:vertical}
+.card summary{cursor:pointer;list-style:none;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card summary::-webkit-details-marker{display:none}
+.card summary::after{content:'+';font-family:var(--display);font-weight:700;font-size:24px;line-height:1;color:var(--muted)}
+.card[open]>summary::after{content:'–'}
+details.card:not([open]){gap:0}
 .pcol{flex:1;min-width:0;display:flex;flex-direction:column}
 .badge{background:var(--mark);color:var(--mark-ink);border-radius:4px;padding:0 6px;font-size:12px;font-weight:600;white-space:nowrap}
 .chk{display:flex;flex-wrap:wrap;gap:4px 14px}
@@ -138,7 +143,11 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 @keyframes gantry{from{transform:translateX(-135px)}to{transform:translateX(105px)}}
 @keyframes laser{from{transform:translateY(-32px)}to{transform:translateY(32px)}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media (prefers-reduced-motion: reduce){.run .mv,.run .beacon{animation:none}}
+.wk{animation:wk 3.6s ease-in-out infinite;transform-box:fill-box;transform-origin:center}
+.wk .ar{animation:ar 1.3s ease-in-out infinite alternate}.wk .ar2{animation-delay:-.65s}
+@keyframes wk{0%,100%{transform:translate(0,0) rotate(0)}25%{transform:translate(2.5px,-2px) rotate(-7deg)}50%{transform:translate(-1.5px,1px) rotate(3deg)}75%{transform:translate(2px,1.5px) rotate(8deg)}}
+@keyframes ar{from{transform:translateY(1px)}to{transform:translateY(-6px)}}
+@media (prefers-reduced-motion: reduce){.run .mv,.run .beacon,.wk,.wk .ar{animation:none}}
 
 /* TV mode: nothing to operate, just read */
 body.tv .edit-only,body.tv #btnEdit,body.tv .sync{display:none}
@@ -372,6 +381,8 @@ const TYPES={
    draw(){return R(-150,-8,300,16,'var(--panel)','stroke="var(--wall)" stroke-width="5"')}},
  door:{kind:'gate',oh:210,name:{lt:'Durys',en:'Door'},sub:{lt:'Įėjimas žmonėms',en:'Entrance for people'},w:110,h:44,
    draw(){return R(-47,-17,94,34,'var(--floor)')+R(-55,-20,9,40,'var(--wall)')+R(46,-20,9,40,'var(--wall)')+LN(-46,0,-46,-90,'var(--wall)',5)+'<path d="M-46 -90A90 90 0 0 1 44 0" fill="none" stroke="var(--muted)" stroke-width="3" stroke-dasharray="8 8"/>'}},
+ window:{kind:'gate',oh:235,sill:95,name:{lt:'Langas',en:'Window'},sub:{lt:'Langas sienoje',en:'Window in a wall'},w:160,h:30,
+   draw(){return R(-80,-9,160,18,'#bfe3f5','stroke="var(--wall)" stroke-width="4"')+LN(-80,0,80,0,'#7fb4d6',3)+LN(0,-9,0,9,'var(--wall)',3)}},
  gate:{kind:'gate',oh:320,name:{lt:'Vartai',en:'Gate'},sub:{lt:'Įėjimas / išėjimas',en:'Entry / exit'},w:300,h:44,
    draw(){return R(-144,-17,288,34,'var(--floor)')+LN(-140,0,140,0,'var(--mark)',6).replace('stroke-linecap','stroke-dasharray="22 14" stroke-linecap')+
      R(-152,-22,12,44,'var(--wall)')+R(140,-22,12,44,'var(--wall)')+
@@ -513,8 +524,9 @@ function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>S
 const anyRun=()=>Object.entries(LAY().items).some(e=>e[1]&&TYPES[e[1].t]&&TYPES[e[1].t].kind==='machine'&&shown(e[0])==='run');
 /* how many upright sheets to draw in a board rack: the real count once stock is entered, a typical ten before that */
 const rackN=id=>{const r=ST().stock[id];return r&&Array.isArray(r.rows)&&r.rows.length?Math.min(18,stockTotal(id)):10};
-/* a machine or desk shows its name only while something is happening there (or while editing, or when selected) */
-function showLbl(id,T){if(editing||selItem===id)return true;if(T.kind==='machine')return shown(id)!=='idle'||peopleAtRaw(id).length>0;if(T.kind==='desk')return peopleAtRaw(id).length>0;return true}
+/* Names are kept off the plan: a machine or desk shows its name only while something is happening there, a marked zone always;
+   racks, furniture, gates, doors and windows never. Everything is named while editing, and the selected item always is. */
+function showLbl(id,T){if(editing||selItem===id)return true;if(T.kind==='machine')return shown(id)!=='idle'||peopleAtRaw(id).length>0;if(T.kind==='desk')return peopleAtRaw(id).length>0;return T.kind==='zone'}
 const stockTotal=id=>{const s=ST().stock[id];return s&&Array.isArray(s.rows)?s.rows.reduce((a,r)=>a+(+r.q||0),0):0};
 function hallPts(){const h=LAY().hall;if(Array.isArray(h.pts)&&h.pts.length>=3)return h.pts.map(p=>({x:+p.x||0,y:+p.y||0}));const W=+h.w||2400,H=+h.h||1350;return[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]}
 function hallBox(P){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of P){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x);d=Math.max(d,p.y)}return{x0:a,y0:b,x1:c,y1:d}}
@@ -531,6 +543,7 @@ const instOf=pid=>{const d=today();for(const i of Object.values(ST().inst))if(i&
 const md=v=>String(v||'').slice(5);
 function addProject(n){n=String(n||'').trim();if(!n||ST().projects.includes(n)||SF.orders.some(o=>o.label===n))return null;return ST().projects.concat([n]).slice(-300)}
 let instForm=null, drawWall=null;
+const openSec={};
 function wallEnd(a,q){const dx=q.x-a.x,dy=q.y-a.y;if(Math.abs(dy)<Math.abs(dx)*.12)return{x:q.x,y:a.y};if(Math.abs(dx)<Math.abs(dy)*.12)return{x:a.x,y:q.y};return q}
 function stopWall(){if(!drawWall)return;drawWall=null;document.body.classList.remove('drawing');renderMap();renderRail()}
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
@@ -567,7 +580,7 @@ function itemSVG(id,it){
   if(ppl.length){
     s+='<g transform="rotate('+rot+')" filter="url(#sh)">';
     ppl.forEach((e,i)=>{const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],face=Math.atan2(-ax,ay)*180/Math.PI;
-      s+='<g class="fig'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><ellipse class="bd" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g>'});
+      s+='<g class="fig'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><g class="wk" style="animation-delay:-'+(i*1.3+(e[0].charCodeAt(e[0].length-1)%7)*.4)+'s"><ellipse class="bd ar" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd ar ar2" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g></g>'});
     s+='</g>';
   }
   /* the name tag sits right beside the person, on the side away from the station */
@@ -670,6 +683,7 @@ function renderRail(){
     s+='<div class="row"><button class="btn" type="button" data-act="off">'+esc(t('toOff'))+'</button><button class="btn" type="button" data-act="cancel">'+esc(t('cancel'))+'</button></div></section>';
   }
   if(selItem&&LAY().items[selItem])s+='<div class="edit-only">'+inspector(selItem)+'</div>';
+  const iA=s.length;let iB=0,iC=0,iD=0,iE=0,iF=0;
   s+='<section class="card"><h2>'+esc(t('workers'))+'</h2>';
   if(!ppl.length)s+='<div class="sub">'+esc(t('noWorkers'))+'</div>';
   else{
@@ -690,6 +704,7 @@ function renderRail(){
   else s+='<div class="note edit-only">'+esc(t('hint'))+'</div>';
   s+='</section>';
 
+  iB=s.length;
   /* installations: who is away at a customer, and when */
   const il=instList(),td=today();
   s+='<section class="card"><h2>'+esc(t('inst'))+'</h2>';
@@ -714,22 +729,30 @@ function renderRail(){
   }else s+='<button class="btn edit-only" type="button" data-act="instnew">'+esc(t('instAdd'))+'</button>';
   s+='</section>';
 
+  iC=s.length;
   if(editing){
     s+='<section class="card"><h2>'+esc(t('breaks'))+'</h2><div class="note">'+esc(t('brkHint'))+'</div>';
     breakList().forEach((b,i)=>{s+='<div class="row"><input type="time" id="in-bf'+i+'" data-chg="bf" data-i="'+i+'" value="'+esc(b.f)+'" aria-label="'+esc(t('from'))+'"><input type="time" id="in-bt'+i+'" data-chg="bt" data-i="'+i+'" value="'+esc(b.t)+'" aria-label="'+esc(t('to'))+'"><input class="grow" type="text" id="in-bn'+i+'" data-chg="bn" data-i="'+i+'" maxlength="30" value="'+esc(b.n||'')+'" aria-label="'+esc(t('name'))+'"><button class="x" type="button" data-act="brkdel" data-i="'+i+'" aria-label="'+esc(t('del'))+'">✕</button></div>'});
     s+='<button class="btn" type="button" data-act="brkadd">'+esc(t('brkAdd'))+'</button></section>';
+    iD=s.length;
     s+='<section class="card"><h2>'+esc(t('projects'))+'</h2><div class="row"><span class="sub grow">'+(SF.at?SF.orders.length+' '+esc(t('sfN'))+' '+esc(hhmm(SF.at)):esc(SF.err?t('sfErr'):t('sfNone')))+'</span><button class="btn" type="button" data-act="sfref">'+esc(t('refresh'))+'</button></div><div class="note">'+esc(t('projHint'))+'</div><textarea id="in-projs" data-chg="projs" aria-label="'+esc(t('projects'))+'">'+esc(ST().projects.join('\n'))+'</textarea></section>';
+    iE=s.length;
     const P=hallPts();
     s+='<section class="card"><h2>'+esc(t('hall'))+'</h2><div class="note">'+esc(t('wallsHint'))+'</div>';
     s+='<div class="row"><button class="btn" type="button" data-act="prect">'+esc(t('rect'))+'</button><button class="btn" type="button" data-act="pl">'+esc(t('lshape'))+'</button></div><div class="wl">';
     P.forEach((p,i)=>{const q=P[(i+1)%P.length],len=Math.hypot(q.x-p.x,q.y-p.y),last=i===P.length-1;
       s+='<label for="in-wl'+i+'">'+esc(t('wall'))+' '+(i+1)+(last?' ('+esc(t('closing'))+')':'')+'</label><input class="q" style="width:80px" type="number" id="in-wl'+i+'" data-chg="wl" data-i="'+i+'" min="0.1" step="0.05" value="'+(Math.round(len)/100)+'"'+(last?' disabled':'')+'><button class="x" type="button" data-act="vdel" data-i="'+i+'" aria-label="'+esc(t('del'))+'"'+(P.length<=3?' disabled':'')+'>✕</button>'});
     s+='</div></section>';
+    iF=s.length;
     s+='<section class="card"><h2>'+esc(t('layout'))+'</h2><div class="note">'+esc(t('layoutHint'))+'</div>';
     s+='<div class="row"><button class="btn" type="button" data-act="drawwall" aria-pressed="'+(!!drawWall)+'">'+esc(drawWall?t('drawStop'):t('drawWall'))+'</button></div>'+(drawWall?'<div class="note">'+esc(t('drawHint'))+'</div>':'');
     s+='<div class="row"><select id="in-addt" class="grow" aria-label="'+esc(t('addItem'))+'">';
-    for(const k of ['wall','gate','door','desk','rack','partrack','toolrack','wip','wiptall','oproom','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
+    for(const k of ['wall','gate','door','window','desk','rack','partrack','toolrack','wip','wiptall','oproom','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
     s+='</select><button class="btn" type="button" data-act="additem">'+esc(t('add'))+'</button></div></section>';
+    /* While editing, the tools you reach for come first: the selected item, then adding and drawing.
+       Workers, installations, breaks, projects and the hall outline fold away below until opened. */
+    const fold=(seg,k)=>seg.replace('<section class="card"><h2>','<details class="card" data-sec="'+k+'"'+(openSec[k]?' open':'')+'><summary><h2>').replace('</h2>','</h2></summary>').replace(/<\/section>$/,'</details>');
+    s=s.slice(0,iA)+s.slice(iF)+fold(s.slice(iA,iB),'w')+fold(s.slice(iB,iC),'i')+fold(s.slice(iC,iD),'b')+fold(s.slice(iD,iE),'p')+fold(s.slice(iE,iF),'h');
   }
   $('#rail').innerHTML=s;
 }
@@ -781,8 +804,9 @@ const MODELS={
  wip:()=>{const m=[];for(let i=0;i<3;i++){const x=-90+i*60;m.push(B(x,-30,x+2,30,10,76,'#ecebe4'),B(x+58,-30,x+60,30,10,76,'#ecebe4'),B(x,-30,x+60,-28,10,76,'#ecebe4'),B(x,-30,x+60,30,10,2,'#ecebe4'),B(x,-30,x+60,-20,84,2,'#ecebe4'),B(x,20,x+60,30,84,2,'#ecebe4'),B(x+2,-28,x+58,26,46,2,'#ecebe4'),B(x+4,-24,x+10,-18,0,10,'#3a3f44'),B(x+50,-24,x+56,-18,0,10,'#3a3f44'),B(x+4,20,x+10,26,0,10,'#3a3f44'),B(x+50,20,x+56,26,0,10,'#3a3f44'))}return m},
  wiptall:()=>{const m=[B(-50,-30,-48,30,8,212,'#ecebe4'),B(48,-30,50,30,8,212,'#ecebe4'),B(-50,-30,50,-28,8,212,'#ecebe4'),B(-50,-30,50,30,8,2,'#ecebe4'),B(-50,-30,50,30,218,2,'#ecebe4'),B(-1,-28,1,28,10,208,'#ecebe4'),B(-50,-26,50,26,0,8,'#3a3f44')];for(const y of [60,110,160])m.push(B(-48,-28,-1,26,y,2,'#ecebe4'));m.push(B(1,-26,48,-22,190,3,'#9aa1a7'));return m},
  wall:(id,it,W,D)=>{const a=(+it.r||0)*Math.PI/180,A={x:it.x-Math.cos(a)*W/2,y:it.y-Math.sin(a)*W/2},Bp={x:it.x+Math.cos(a)*W/2,y:it.y+Math.sin(a)*W/2},m=[];let u=0;
-   for(const o of openingsOn(A,Bp)){if(o.u0>u)m.push(B(u-W/2,-D/2,o.u0-W/2,D/2,0,WALLH,'var(--panel)'));if(o.h<WALLH)m.push(B(o.u0-W/2,-D/2,o.u1-W/2,D/2,o.h,WALLH-o.h,'var(--panel)'));u=Math.max(u,o.u1)}
+   for(const o of openingsOn(A,Bp)){if(o.u0>u)m.push(B(u-W/2,-D/2,o.u0-W/2,D/2,0,WALLH,'var(--panel)'));if(o.sill>0)m.push(B(o.u0-W/2,-D/2,o.u1-W/2,D/2,0,o.sill,'var(--panel)'));if(o.h<WALLH)m.push(B(o.u0-W/2,-D/2,o.u1-W/2,D/2,o.h,WALLH-o.h,'var(--panel)'));u=Math.max(u,o.u1)}
    if(W-u>1)m.push(B(u-W/2,-D/2,W/2,D/2,0,WALLH,'var(--panel)'));return m},
+ window:()=>[B(-69,-3,69,3,95,140,'#a9d8f0',null,.3),B(-71,-6,71,6,91,5,'#f1f2f3'),B(-71,-6,71,6,234,5,'#f1f2f3'),B(-71,-6,-67,6,95,140,'#f1f2f3'),B(67,-6,71,6,95,140,'#f1f2f3'),B(-2,-5,2,5,95,140,'#f1f2f3')],
  door:()=>[B(-55,-12,-46,12,0,214,'#3a3f44'),B(46,-12,55,12,0,214,'#3a3f44'),B(-55,-12,55,12,210,8,'#3a3f44'),B(-46,-92,-42,0,0,206,'#8fa0ab'),B(-41,-50,-38,-42,100,4,'#23282c')],
  gate:()=>[B(-152,-24,-140,24,0,320,'#3a3f44'),B(140,-24,152,24,0,320,'#3a3f44'),B(-152,-24,152,24,320,20,'var(--mark)'),B(-140,-14,140,14,170,150,'#8fa0ab'),B(-140,-16,140,16,214,5,'#6f7f8a'),B(-140,-16,140,16,264,5,'#6f7f8a')],
  toolrack:()=>{const m=[B(-100,-32,100,-28,0,200,'#59626a')];for(const x of [-100,-34,30,94])m.push(B(x,-28,x+6,32,0,200,'#59626a'));
@@ -832,7 +856,7 @@ function init3D(){
     scene.add(new THREE.HemisphereLight(0xffffff,0x8d928c,.1));
     const sun=new THREE.DirectionalLight(0xfff3e2,.92);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0005;sun.shadow.normalBias=1.5;scene.add(sun);scene.add(sun.target);
     const fill=new THREE.DirectionalLight(0xdce8ff,.22);fill.position.set(900,1200,-1500);scene.add(fill);scene.add(root);
-    T3={el,renderer,scene,camera,root,sun,fill,movers:[],pulsers:[],cam:{th:0,ph:.86,d:3000,tx:1200,tz:700,key:''},ray:new THREE.Raycaster()};
+    T3={el,renderer,scene,camera,root,sun,fill,workers:[],movers:[],pulsers:[],cam:{th:0,ph:.86,d:3000,tx:1200,tz:700,key:''},ray:new THREE.Raycaster()};
     const fit=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};
     T3.fit=fit;if(window.ResizeObserver)new ResizeObserver(fit).observe(el);else window.addEventListener('resize',fit);
     events3D(renderer.domElement);
@@ -843,6 +867,10 @@ function init3D(){
       const tt=(performance.now()-t0)/1000,still=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if(!still){
         for(const m of T3.movers){const o=m.kind==='slide'?45*Math.sin(tt*1.4):m.kind==='gantry'?-15+120*Math.sin(tt*.9):((tt*55)%330)-170;m.mesh.position.x=m.bx+o}
+        for(const w of T3.workers){const a=tt+w.ph;
+          w.fig.position.x=3.5*Math.sin(a*.55);w.fig.position.z=2*Math.sin(a*.37+1);
+          w.up.rotation.y=.16*Math.sin(a*.7);w.up.rotation.x=.05+.04*Math.sin(a*1.1);
+          w.arms[0].rotation.x=-.85+.32*Math.sin(a*2.3);w.arms[1].rotation.x=-.85+.32*Math.sin(a*2.3+2.4)}
         for(const p of T3.pulsers){const k=90*(1+.28*Math.sin(tt*4.5));p.scale.set(k,k,1)}
         if(document.body.classList.contains('tv')&&!T3.ptrs.size)T3.cam.th+=.0007;
       }
@@ -885,7 +913,7 @@ function cyl3(b){
 function build3D(){
   if(!T3)return;
   const {root,scene}=T3,P=hallPts(),bb=hallBox(P);
-  clear3(root);T3.movers=[];T3.pulsers=[];
+  clear3(root);T3.movers=[];T3.pulsers=[];T3.workers=[];
   scene.background=new THREE.Color(cv('--bg'));
   const key=[bb.x0,bb.y0,bb.x1,bb.y1].join(',');
   if(T3.cam.key!==key){T3.cam.key=key;T3.cam.tx=(bb.x0+bb.x1)/2;T3.cam.tz=(bb.y0+bb.y1)/2;T3.cam.d=Math.max(bb.x1-bb.x0,(bb.y1-bb.y0)*1.6)*1.5}
@@ -913,10 +941,10 @@ function build3D(){
     const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,base=-Math.atan2(uy,ux),ang=base+(area<0?Math.PI:0);
     const plane=(u0,u1,y0,y1,c)=>{if(u1-u0<.5||y1-y0<.5)return;const w=new THREE.Mesh(new THREE.PlaneGeometry(u1-u0,y1-y0),new THREE.MeshStandardMaterial({color:c,roughness:.92,metalness:0,envMapIntensity:.25}));
       w.position.set(p.x+ux*(u0+u1)/2,(y0+y1)/2,p.y+uy*(u0+u1)/2);w.rotation.y=ang;w.receiveShadow=true;root.add(w)};
-    const piece=(u0,u1,y0)=>{plane(u0,u1,y0,Math.max(y0,120),wallLo);plane(u0,u1,Math.max(y0,120),WALLH,wallUp);
+    const piece=(u0,u1,y0,y1)=>{plane(u0,u1,y0,Math.min(y1,Math.max(y0,120)),wallLo);plane(u0,u1,Math.max(y0,120),y1,wallUp);
       if(y0===0&&u1-u0>.5){const k=new THREE.Mesh(new THREE.BoxGeometry(u1-u0,9,14),new THREE.MeshStandardMaterial({color:kerb,roughness:.8}));k.position.set(p.x+ux*(u0+u1)/2,4.5,p.y+uy*(u0+u1)/2);k.rotation.y=base;root.add(k)}};
-    let u=0;for(const o of openingsOn(p,q)){if(o.u0>u)piece(u,o.u0,0);if(o.h<WALLH)piece(o.u0,o.u1,o.h);u=Math.max(u,o.u1)}
-    if(len-u>.5)piece(u,len,0)});
+    let u=0;for(const o of openingsOn(p,q)){if(o.u0>u)piece(u,o.u0,0,WALLH);if(o.sill>0)piece(o.u0,o.u1,0,o.sill);if(o.h<WALLH)piece(o.u0,o.u1,o.h,WALLH);u=Math.max(u,o.u1)}
+    if(len-u>.5)piece(u,len,0,WALLH)});
   const stc={pause:'#ffc857',run:'#4ade80',idle:'#b9c3cb',down:'#ff7b6b',busy:'#7fb2ff'},ink='#ffffff',muted='#b9c3cb',mark=cv('--mark');
   for(const [id,it] of Object.entries(LAY().items)){
     const T=it&&TYPES[it.t];if(!T||!MODELS[it.t])continue;
@@ -946,10 +974,13 @@ function build3D(){
       const pg=new THREE.Group();pg.userData.pid=e[0];{const o=standAt(it,T,Wd,Dp,e[1],i);pg.position.set(o[0],0,o[1]);pg.rotation.y=Math.atan2(-o[0],-o[1])}
       const c=new THREE.Color(selPerson===e[0]?mark:'#2f67b3');
       const sm=(c)=>new THREE.MeshStandardMaterial({color:(c&&c.isColor?c.clone():new THREE.Color(c)).convertSRGBToLinear(),roughness:.78,metalness:0,envMapIntensity:.3});
-      for(const lx of [-7,7]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(6,5.5,82,10),sm('#2b3340'));leg.position.set(lx,41,0);leg.castShadow=true;pg.add(leg)}
-      const body=new THREE.Mesh(new THREE.CylinderGeometry(15,13,58,14),sm(c));body.position.y=110;body.castShadow=true;pg.add(body);
-      for(const ax of [-19,19]){const arm=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4,54,8),sm(c));arm.position.set(ax,108,0);arm.castShadow=true;pg.add(arm)}
-      const head=new THREE.Mesh(new THREE.SphereGeometry(11.5,16,12),sm('#d9a97e'));head.position.y=152;head.castShadow=true;pg.add(head);
+      const fig=new THREE.Group(),up=new THREE.Group(),arms=[];pg.add(fig);fig.add(up);
+      for(const lx of [-7,7]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(6,5.5,82,10),sm('#2b3340'));leg.position.set(lx,41,0);leg.castShadow=true;fig.add(leg)}
+      const body=new THREE.Mesh(new THREE.CylinderGeometry(15,13,58,14),sm(c));body.position.y=110;body.castShadow=true;up.add(body);
+      for(const ax of [-19,19]){const pv=new THREE.Group();pv.position.set(ax,135,0);const arm=new THREE.Mesh(new THREE.CylinderGeometry(4.5,4,54,8),sm(c));arm.position.y=-27;arm.castShadow=true;pv.add(arm);const hand=new THREE.Mesh(new THREE.SphereGeometry(5,10,8),sm('#d9a97e'));hand.position.y=-56;pv.add(hand);up.add(pv);arms.push(pv)}
+      const head=new THREE.Mesh(new THREE.SphereGeometry(11.5,16,12),sm('#d9a97e'));head.position.y=152;head.castShadow=true;up.add(head);
+      arms[0].rotation.x=-.8;arms[1].rotation.x=-.8;
+      T3.workers.push({fig,up,arms,ph:i*1.7+(e[0].charCodeAt(e[0].length-1)%9)});
       const pc=selPerson===e[0]?cv('--mark-ink'):'#16201b',nl=[{t:String(e[1].n||'?'),c:pc,w:600}];if(e[1].pr)nl.push({t:String(e[1].pr).slice(0,26),c:pc,w:500});
       const nm=sprite(nl,selPerson===e[0]?mark:'rgba(255,255,255,.94)');nm.scale.multiplyScalar(.9);nm.position.y=e[1].pr?212:196;pg.add(nm);
       g.add(pg);
@@ -1034,7 +1065,7 @@ function openingsOn(a,b){
   for(const it of Object.values(LAY().items)){const T=it&&TYPES[it.t];if(!T||T.kind!=='gate')continue;
     const dx=it.x-a.x,dy=it.y-a.y,u=dx*ux+dy*uy,d=Math.abs(dy*ux-dx*uy);if(d>45||u<0||u>L)continue;
     const an=(+it.r||0)*Math.PI/180;if(Math.abs(Math.cos(an)*ux+Math.sin(an)*uy)<.9)continue;
-    const w=Math.max(30,(+it.w||T.w)-22);out.push({u0:Math.max(0,u-w/2),u1:Math.min(L,u+w/2),h:T.oh||320})}
+    const w=Math.max(30,(+it.w||T.w)-22);out.push({u0:Math.max(0,u-w/2),u1:Math.min(L,u+w/2),h:T.oh||320,sill:T.sill||0})}
   return out.sort((x,y)=>x.u0-y.u0);
 }
 function snapToWall(x,y){
@@ -1278,6 +1309,7 @@ $('#rail').addEventListener('submit',e=>{
   const again=$('#in-newp');if(again)again.focus();
 });
 $('#rail').addEventListener('focusout',()=>{setTimeout(()=>{const a=document.activeElement;if(railDirty&&!(a&&$('#rail').contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)))renderRail()},300)});
+$('#rail').addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.sec)openSec[d.dataset.sec]=d.open},true);
 $('#rail').addEventListener('input',e=>{const el=e.target;if(!instForm||!el.dataset)return;if(el.dataset.d)instForm[el.dataset.d]=el.value;else if(el.dataset.dw)instForm.w[el.dataset.dw]=el.checked});
 
 $('#btnAuth').addEventListener('click',()=>{boot()});
