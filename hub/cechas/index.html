@@ -216,7 +216,8 @@ body.tv .clock{font-size:4.6vh;order:-1}
 body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang{display:none}
 body.tv .tools{flex-wrap:nowrap;gap:1vh}
 body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
-body.tv main{display:grid;grid-template-columns:minmax(0,1fr) 30vw;gap:1.4vh}
+body.tv main{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
+body.tv .rail{display:none}
 body.tv .rail{font-size:2.6vh;gap:1.4vh}
 body.tv .pbtn{font-size:2.9vh}
 body.tv .where{font-size:2.3vh}
@@ -224,7 +225,7 @@ body.tv #brk{font-size:5vh}
 body.tv #ctl3{right:1.2vh;bottom:1.2vh;gap:.8vh}
 body.tv #ctl3 button{min-width:6.4vh;height:6.4vh;font-size:3vh;padding:0 1.2vh;border-radius:1vh}
 body.tv #ctl3 button[data-c=u],body.tv #ctl3 button[data-c=d],body.tv #ctl3 button[data-c=in],body.tv #ctl3 button[data-c=out]{display:none}
-#tvhint{position:absolute;left:1.2vh;top:1.2vh;z-index:2;font-size:2.2vh;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:.8vh;padding:.5vh 1.2vh;pointer-events:none;max-width:60%}
+#tvhint{position:absolute;left:1.2vh;bottom:1.2vh;z-index:2;font-size:2.2vh;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:.8vh;padding:.5vh 1.2vh;pointer-events:none;max-width:60%}
 body:not(.tv) #tvhint{display:none}
 body.tv #radio{top:1.2vh;bottom:1.2vh;max-height:none;right:max(1.6vh, env(safe-area-inset-right, 0px));width:min(40vw,640px);min-width:300px;font-size:2.8vh;padding:2vh;gap:1.4vh;border-radius:1.6vh}
 body.tv #radio .rh h2{font-size:3.6vh}
@@ -509,10 +510,14 @@ const LAY=()=>docs.layout.data, ST=()=>docs.state.data;
 let mode='loading', readOnly=false, stale=false;   // loading | db | local
 let selItem=null, selPerson=null, editing=false, pendDel=null, railDirty=false, drag=null, busy3=false, view=lsGet('cp.view')==='3d'?'3d':'2d', T3=null;
 
+function dayStart(){const d=new Date();d.setHours(0,0,0,0);return d.getTime()}
 function normalize(){
   {const l0=docs.layout.data;if(l0&&l0.items)for(const it of Object.values(l0.items))if(it&&it.t==='startech'&&+it.w===330&&+it.h===176){delete it.w;delete it.h}}
   const l=LAY(); if(!isObj(l.hall))l.hall=clone(DEF_LAYOUT.hall); if(!isObj(l.items))l.items={};
   const s=ST(); for(const k of ['st','people','stock','inst'])if(!isObj(s[k]))s[k]={};
+  /* New day, clean board: a place set before today no longer counts, so every morning nobody is at a station
+     until someone puts them there. Only this screen's copy changes; the next placing saves the new day. */
+  {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0))p.at=null}
   for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
   for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
@@ -1173,7 +1178,7 @@ function fitCam(){
   c.tx=(bb.x0+bb.x1)/2;c.tz=(bb.y0+bb.y1)/2;c.th=(bb.y1-bb.y0)>(bb.x1-bb.x0)*1.15?Math.PI/2:0;c.ph=.9;c.user=false;
   let lo=200,hi=60000;
   for(let i=0;i<24;i++){c.d=(lo+hi)/2;camUpd();cam.updateMatrixWorld();let ok=true;
-    for(const p of P){for(const y of [0,WALLH]){v.set(p.x,y,p.y).project(cam);if(Math.abs(v.x)>.95||v.y>.8||v.y<-.9||v.z>1){ok=false;break}}if(!ok)break}
+    for(const p of P){for(const y of [0,WALLH]){v.set(p.x,y,p.y).project(cam);if(Math.abs(v.x)>.95||v.y>(tvOn()?.66:.8)||v.y<-.9||v.z>1){ok=false;break}}if(!ok)break}
     if(ok)hi=c.d;else lo=c.d}
   c.d=hi;
 }
@@ -1368,7 +1373,7 @@ function stationOpts(cur){
     if(a.length)s+='<optgroup label="'+esc(t(lab))+'">'+a.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]===cur?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</optgroup>'}
   return s;
 }
-function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly)};if(at!==per.at)p.people[pid].ts=Date.now();selPerson=null;commit(docs.state,p)}
+function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly),ts:Date.now()};selPerson=null;commit(docs.state,p)}
 function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:Date.now(),ox:null,oy:null};selPerson=null;commit(docs.state,p)}
 /* which station a point on the floor belongs to: the one it is on, or the nearest one within about a metre */
 function stationAt(x,y){
@@ -1484,7 +1489,7 @@ function endDrag(e){
     if(cur&&st&&st.id!==cur&&st.d>0&&distTo(cur,q.x,q.y)<170){const l=localTo(cur,q.x,q.y);st={id:cur,lx:l[0],ly:l[1]}}
     if(!st&&per.at&&LAY().items[per.at]){const l=localTo(per.at,q.x,q.y);st={id:per.at,lx:l[0],ly:l[1]}}
     if(!st||!canWrite()){render();return}
-    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly)};if(st.id!==per.at)p.people[d.pp].ts=Date.now();
+    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly),ts:Date.now()};
     selPerson=null;commit(docs.state,p);return}
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
@@ -1712,7 +1717,8 @@ window.addEventListener('hashchange',()=>{const want=location.hash==='#tv';if(wa
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('tv'))wake()});
 
 let brkKey=null;
-function tick(){const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+let dayKey=dayStart();
+function tick(){if(dayStart()!==dayKey){dayKey=dayStart();normalize();railDirty=false;render();renderRail()}const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 setInterval(tick,10000);tick();
 if(location.hash==='#tv')document.body.classList.add('tv');
 normalize();applyView();render();boot();
