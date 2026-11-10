@@ -201,14 +201,14 @@ const L={
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
-  hint:'Paspausk darbuotoją, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
+  hint:'Tempk darbuotoją pele į vietą, kur jis stovi – prie bet kurių staklių ar stalo. Arba paspausk darbuotoją sąraše, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
-  hint:'Tap a worker, then a place on the plan. Tap a machine to change its status.',
+  hint:'Drag a worker with the mouse to the spot where they stand, at any machine or desk. Or tap a worker in the list, then a place on the plan. Tap a machine to change its status.',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
 };
 let lang=lsGet('cp.lang')==='en'?'en':'lt';
@@ -284,10 +284,10 @@ const TYPES={
  felder:{kind:'machine',name:'Felder K 940 S',sub:{lt:'Formatinės pjovimo staklės',en:'Sliding table saw'},w:330,h:372,
    draw:()=>saw({body:'#eceeef',ext:'#f6f7f7',fence:'#c9cdd0',accent:'#3a3f44',panel:'#c8102e',boom:true})},
  startech:{kind:'machine',name:'SCM Startech CN Plus',sub:{lt:'CNC gręžimo centras',en:'CNC drilling centre'},w:330,h:176,
-   draw(){let s=R(-160,-52,320,8,'#8d949a')+R(-160,-44,320,88,'#c9cdd1',S);
+   draw(){let s=R(-160,44,320,8,'#8d949a')+R(-160,-44,320,88,'#c9cdd1',S);
      for(let x=-150;x<=150;x+=20)s+=LN(x,-36,x,36,'#9aa1a7',4);
-     s+='<g class="mv mv-feed" style="animation-duration:5s">'+R(-55,-38,110,60,'#e8dcc2',S)+'</g>';
-     s+=R(-52,-88,104,176,'#f1f2f3',S+' rx="6"')+R(-42,-78,84,118,'#30363a','rx="4"')+R(-38,52,30,11,'#d0202e')+R(24,48,20,30,'#2e3438','rx="3"');
+     s+='<g class="mv mv-feed" style="animation-duration:5s">'+R(-55,-22,110,60,'#e8dcc2',S)+'</g>';
+     s+=R(-52,-88,104,176,'#f1f2f3',S+' rx="6"')+R(-42,-40,84,118,'#30363a','rx="4"')+R(8,-63,30,11,'#d0202e')+R(-44,-80,20,30,'#2e3438','rx="3"');
      return s}},
  olimpic:{kind:'machine',name:'SCM Olimpic K 360',sub:{lt:'Kraštų laminavimo staklės',en:'Edge bander'},w:420,h:190,
    draw(){let s='<circle cx="-150" cy="-62" r="30" fill="#d9dcdf" '+S+'/><circle cx="-150" cy="-62" r="8" fill="#3a3f44"/>'+LN(-128,-42,-110,-34,'#e8dcc2',5);
@@ -370,8 +370,10 @@ const TYPES={
      '<path d="M-40 -34L-52 -50H-28ZM40 34L28 50H52Z" fill="var(--mark)" stroke="var(--mline)" stroke-width="2"/>'}}
 };
 /* where the operator stands at each station (plan coordinates of the drawing, y down = front) */
-const OPS={oproom:[[-70,0],[40,10]],altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[100,74],[-100,74]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
+const OPS={oproom:[[-70,0],[40,10]],altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[-100,-74],[100,-74]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
 function opAt(ty,T,i){const A=OPS[ty]||[[-(T.w/2+30),0],[T.w/2+30,0]],a=A[i%A.length],k=Math.floor(i/A.length),L=Math.hypot(a[0],a[1])||1;return[a[0]+a[0]/L*k*46,a[1]+a[1]/L*k*46]}
+/* a worker dragged onto the plan keeps the exact spot (ox, oy: cm from the station's centre, in its own frame) */
+function standAt(it,T,W,H,p,i){if(p&&typeof p.ox==='number'&&typeof p.oy==='number')return[p.ox,p.oy];const o=opAt(it.t,T,i);return[o[0]*W/T.w,o[1]*H/T.h]}
 const tname=T=>typeof T.name==='string'?T.name:T.name[lang];
 
 /* ---------- data ---------- */
@@ -544,13 +546,13 @@ function itemSVG(id,it){
   }
   if(ppl.length){
     s+='<g transform="rotate('+rot+')" filter="url(#sh)">';
-    ppl.forEach((e,i)=>{const o=opAt(it.t,T,i),ax=o[0]*W/T.w,ay=o[1]*H/T.h,face=Math.atan2(-ax,ay)*180/Math.PI;
+    ppl.forEach((e,i)=>{const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],face=Math.atan2(-ax,ay)*180/Math.PI;
       s+='<g class="fig'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><ellipse class="bd" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g>'});
     s+='</g>';
   }
   /* the name tag sits right beside the person, on the side away from the station */
   ppl.forEach((e,i)=>{
-    const o=opAt(it.t,T,i),ax=o[0]*W/T.w,ay=o[1]*H/T.h,wx=ax*Math.cos(a)-ay*Math.sin(a),wy=ax*Math.sin(a)+ay*Math.cos(a);
+    const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],wx=ax*Math.cos(a)-ay*Math.sin(a),wy=ax*Math.sin(a)+ay*Math.cos(a);
     const nm=String(e[1].n||'?'),pr=String(e[1].pr||'').slice(0,26),hh=pr?68:42,w=Math.max(84,nm.length*16+36,pr.length*11.5+36);
     const side=Math.abs(wx)>=Math.abs(wy),px=side?wx+(wx<0?-1:1)*(36+w/2):wx,py=(side?wy:wy+(wy<0?-1:1)*(36+hh/2))-hh/2;
     s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'"><rect x="'+(px-w/2)+'" y="'+py+'" width="'+w+'" height="'+hh+'" rx="21"/><text x="'+px+'" y="'+(py+31)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" x="'+px+'" y="'+(py+57)+'">'+esc(pr)+'</text>':'')+'</g>';
@@ -728,8 +730,8 @@ function sawM(p){const o=32;const m=[
 const MODELS={
  altendorf:()=>sawM({body:'#c9cdd0',ext:'#dfe2e4',fence:'#eef0f1',accent:'#c8102e',panel:'#2e3438'}),
  felder:()=>sawM({body:'#eceeef',ext:'#f6f7f7',fence:'#c9cdd0',accent:'#3a3f44',panel:'#c8102e',boom:true}),
- startech:()=>[B(-52,-88,52,88,0,82,'#f1f2f3'),B(-160,-44,160,44,82,8,'#c9cdd1'),B(-160,-52,160,-44,82,14,'#8d949a'),
-   B(-52,-88,52,-52,90,42,'#f1f2f3'),B(-52,-88,52,88,132,74,'#f1f2f3'),B(-42,60,42,89,138,60,'#30363a'),B(-55,-38,55,22,90,2,'#e8dcc2','feed')],
+ startech:()=>[B(-52,-88,52,88,0,82,'#f1f2f3'),B(-160,-44,160,44,82,8,'#c9cdd1'),B(-160,44,160,52,82,14,'#8d949a'),
+   B(-52,52,52,88,90,42,'#f1f2f3'),B(-52,-88,52,88,132,74,'#f1f2f3'),B(-42,-89,42,-60,138,60,'#30363a'),B(-55,-22,55,38,90,2,'#e8dcc2','feed')],
  olimpic:()=>[B(-205,-35,205,27,0,140,'#f1f2f3'),B(-110,-31,180,-5,140,10,'#3d4a52'),B(-205,27,205,39,0,92,'#3a3f44'),
    B(-150,39,-143,89,80,8,'#9aa1a7'),B(0,39,7,89,80,8,'#9aa1a7'),B(150,39,157,89,80,8,'#9aa1a7'),B(-162,85,168,92,80,8,'#9aa1a7'),
    B(-153,-65,-147,-59,0,150,'#6b7278'),B(-180,-92,-120,-32,150,4,'#d9dcdf'),B(-205,46,-169,76,95,45,'#2e3438'),B(-45,36,45,82,92,2,'#e8dcc2','feed')],
@@ -863,7 +865,7 @@ function build3D(){
     const lines=[{t:itemName(id,it),c:ink}];if(stT)lines.push({t:stT.toUpperCase(),c:stK?stc[stK]:muted,w:600});
     if(T.kind!=='wall'&&T.kind!=='aux'){const lb=sprite(lines);lb.position.set(0,top+70,0);g.add(lb)}
     ppl.forEach((e,i)=>{
-      const pg=new THREE.Group();pg.userData.pid=e[0];{const o=opAt(it.t,T,i);pg.position.set(o[0]*Wd/T.w,0,o[1]*Dp/T.h);pg.rotation.y=Math.atan2(-o[0],-o[1])}
+      const pg=new THREE.Group();pg.userData.pid=e[0];{const o=standAt(it,T,Wd,Dp,e[1],i);pg.position.set(o[0],0,o[1]);pg.rotation.y=Math.atan2(-o[0],-o[1])}
       const c=new THREE.Color(selPerson===e[0]?mark:'#2f67b3');
       const sm=(c)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),roughness:.8});
       for(const lx of [-7,7]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(6,5.5,82,10),sm('#2b3340'));leg.position.set(lx,41,0);leg.castShadow=true;pg.add(leg)}
@@ -934,10 +936,24 @@ function applyView(){
 $('#btnView').addEventListener('click',()=>{view=view==='3d'?'2d':'3d';applyView();lsSet('cp.view',view);render()});
 
 /* ---------- actions ---------- */
-function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:Date.now()};selPerson=null;commit(docs.state,p)}
+function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:Date.now(),ox:null,oy:null};selPerson=null;commit(docs.state,p)}
+/* which station a point on the floor belongs to: the one it is on, or the nearest one within about a metre */
+function stationAt(x,y){
+  let best=null,bd=1e9;
+  for(const [id,it] of Object.entries(LAY().items)){
+    const T=it&&TYPES[it.t];if(!T||T.kind==='wall'||T.kind==='gate'||T.kind==='aux')continue;
+    const W=+it.w||T.w,H=+it.h||T.h,a=(+it.r||0)*Math.PI/180,dx=x-it.x,dy=y-it.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a);
+    const d=Math.hypot(Math.max(0,Math.abs(lx)-W/2),Math.max(0,Math.abs(ly)-H/2))+(T.kind==='zone'?40:0);
+    if(d<=110&&d<bd){bd=d;best={id,lx,ly}}
+  }
+  return best;
+}
+function localTo(id,x,y){const it=LAY().items[id],a=(+it.r||0)*Math.PI/180,dx=x-it.x,dy=y-it.y;return[dx*Math.cos(a)+dy*Math.sin(a),-dx*Math.sin(a)+dy*Math.cos(a)]}
 function svgPt(e){const svg=$('#map'),p=svg.createSVGPoint();p.x=e.clientX;p.y=e.clientY;return p.matrixTransform(svg.getScreenCTM().inverse())}
 
 $('#map').addEventListener('pointerdown',e=>{
+  const fg=!drawWall&&e.target.closest('.fig,.pill');
+  if(fg&&fg.dataset.pid){drag={pp:fg.dataset.pid,sx:e.clientX,sy:e.clientY,moved:false,pid:e.pointerId};try{$('#map').setPointerCapture(e.pointerId)}catch(_){}return}
   if(!editing)return;
   if(drawWall){
     const p=svgPt(e),q={x:Math.round(p.x/10)*10,y:Math.round(p.y/10)*10};
@@ -975,6 +991,11 @@ $('#map').addEventListener('pointermove',e=>{
     if(tx){tx.setAttribute('x',(a.x+b.x)/2);tx.setAttribute('y',(a.y+b.y)/2-22);tx.textContent=fmtM(Math.hypot(b.x-a.x,b.y-a.y))+' m'}
     return}
   if(!drag||e.pointerId!==drag.pid)return;
+  if(drag.pp){
+    if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
+    drag.moved=true;const q=svgPt(e);let gh=document.getElementById('ghost');
+    if(!gh){gh=document.createElementNS('http://www.w3.org/2000/svg','g');gh.id='ghost';gh.setAttribute('class','fig sel');gh.style.pointerEvents='none';gh.innerHTML='<ellipse class="bd" cx="0" cy="0" rx="29" ry="16"/><circle class="hd" cx="0" cy="-2" r="13"/><circle class="hr" cx="0" cy="0" r="9"/>';$('#map').appendChild(gh)}
+    gh.setAttribute('transform','translate('+q.x+','+q.y+')');return}
   const p=svgPt(e);
   if(drag.P){const x=Math.round(p.x/10)*10,y=Math.round(p.y/10)*10,c=drag.P[drag.v];
     if(c.x!==x||c.y!==y){c.x=x;c.y=y;drag.moved=true;renderMap()}return}
@@ -999,6 +1020,15 @@ $('#map').addEventListener('pointermove',e=>{
 function endDrag(e){
   if(!drag||e.pointerId!==drag.pid)return;
   const d=drag;drag=null;
+  if(d.pp){
+    suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+    const per=ST().people[d.pp];
+    if(!d.moved||!per){pendDel=null;selPerson=selPerson===d.pp?null:d.pp;render();return}
+    const q=svgPt(e);let st=stationAt(q.x,q.y);
+    if(!st&&per.at&&LAY().items[per.at]){const l=localTo(per.at,q.x,q.y);st={id:per.at,lx:l[0],ly:l[1]}}
+    if(!st||!canWrite()){render();return}
+    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly)};if(st.id!==per.at)p.people[d.pp].ts=Date.now();
+    selPerson=null;commit(docs.state,p);return}
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
     if(d.dr){
