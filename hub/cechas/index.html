@@ -755,11 +755,14 @@ function renderMap(){
    current. Favourites are shared through the plan, so a list set up on the office PC shows on the TV.
    What plays, and how loud, belongs to each screen. */
 const RB_HOSTS=['de1.api.radio-browser.info','de2.api.radio-browser.info','fi1.api.radio-browser.info','nl1.api.radio-browser.info'];
-const DEF_FAV=['LRT Radijas','LRT Opus','LRT Klasika','M-1','Lietus','ZIP FM','Power Hit Radio','Radiocentras','Relax FM','Rock FM'];
+/* Stations the directory misses or lists badly, taken from the station's own site. alt = second stream to try */
+const RADIO_FIX=[{n:'Gold FM',u:'https://stream.goldfm.lt/goldfm.mp3',alt:'https://stream.goldfm.lt/goldfm.aac',c:'MP3',b:128}];
+const DEF_FAV=['Gold FM','LRT Radijas','LRT Opus','LRT Klasika','M-1','Lietus','ZIP FM','Power Hit Radio','Radiocentras','Relax FM','Rock FM'];
 const AU=new Audio();AU.preload='none';
 const RS={open:false,lt:null,res:null,q:'',busy:false,err:'',cur:null,playing:false};
 try{RS.cur=JSON.parse(lsGet('cp.radio')||'null')}catch(e){}
 {const v=parseFloat(lsGet('cp.vol'));AU.volume=isFinite(v)?Math.max(0,Math.min(1,v)):.7}
+function rbList2(q,a){const ql=q.trim().toLowerCase();return RADIO_FIX.filter(x=>x.n.toLowerCase().includes(ql)).concat(rbList(a).filter(x=>!RADIO_FIX.some(f=>f.n.toLowerCase()===x.n.toLowerCase())))}
 async function rb(path){
   for(const h of RB_HOSTS){try{const r=await fetch('https://'+h+'/json/'+path);if(r.ok)return await r.json()}catch(e){}}
   throw new Error('rb');
@@ -770,11 +773,11 @@ function rbList(a){const seen={},out=[];
     out.push({n:n.slice(0,60),u,c:String(x.codec||'').toUpperCase(),b:+x.bitrate||0})}
   return out}
 async function loadLt(){if(RS.lt||RS.busy)return;RS.busy=true;RS.err='';renderRadio();
-  try{RS.lt=rbList(await rb('stations/search?countrycode=LT&hidebroken=true&order=clickcount&reverse=true&limit=120'))}catch(e){RS.err=t('rNet')}
+  try{const fx=RADIO_FIX.map(x=>x.n.toLowerCase());RS.lt=RADIO_FIX.concat(rbList(await rb('stations/search?countrycode=LT&hidebroken=true&order=clickcount&reverse=true&limit=120')).filter(x=>!fx.some(n=>x.n.toLowerCase().startsWith(n))))}catch(e){RS.lt=RADIO_FIX.slice();RS.err=t('rNet')}
   RS.busy=false;renderRadio()}
 let rqT=null;
 function searchRadio(q){RS.q=q;clearTimeout(rqT);if(q.trim().length<2){RS.res=null;renderRadio();return}
-  rqT=setTimeout(async()=>{try{const r=rbList(await rb('stations/search?name='+encodeURIComponent(q.trim())+'&hidebroken=true&order=clickcount&reverse=true&limit=40'));if(RS.q===q){RS.res=r;renderRadio()}}catch(e){RS.err=t('rNet');renderRadio()}},350)}
+  rqT=setTimeout(async()=>{try{const r=rbList2(q,await rb('stations/search?name='+encodeURIComponent(q.trim())+'&hidebroken=true&order=clickcount&reverse=true&limit=40').catch(()=>[]));if(RS.q===q){RS.res=r;renderRadio()}}catch(e){RS.err=t('rNet');renderRadio()}},350)}
 function favList(){
   const f=ST().radio;if(Array.isArray(f))return f.filter(x=>x&&x.u&&x.n);
   if(!RS.lt)return[];const out=[];
@@ -784,11 +787,11 @@ const isFav=st=>favList().some(x=>x.u===st.u);
 function toggleFav(st){if(!canWrite())return;const f=favList().slice();const i=f.findIndex(x=>x.u===st.u);if(i>=0)f.splice(i,1);else f.push({n:st.n,u:st.u});commit(docs.state,{radio:f.slice(0,40)});renderRadio()}
 function playSt(st){
   RS.cur={n:st.n,u:st.u};lsSet('cp.radio',JSON.stringify(RS.cur));
-  AU.src=st.u;AU.play().catch(()=>{RS.playing=false;toast(t('rFail'));renderRadio()});renderRadio()}
+  AU.src=st.u;AU.play().catch(e=>{if(e&&e.name==='NotSupportedError'&&RADIO_FIX.some(x=>x.u===st.u))return;RS.playing=false;toast(t('rFail'));renderRadio()});renderRadio()}
 function togglePlay(){if(!RS.cur)return;if(RS.playing||!AU.paused){AU.pause();AU.removeAttribute('src');AU.load();RS.playing=false;renderRadio()}else playSt(RS.cur)}
 AU.addEventListener('playing',()=>{RS.playing=true;renderRadio()});
 AU.addEventListener('pause',()=>{RS.playing=false;renderRadio()});
-AU.addEventListener('error',()=>{if(AU.getAttribute('src')){RS.playing=false;toast(t('rFail'));renderRadio()}});
+AU.addEventListener('error',()=>{const fx=RADIO_FIX.find(x=>x.u===AU.getAttribute('src'));if(fx&&fx.alt){AU.src=fx.alt;AU.play().catch(()=>{});return}if(AU.getAttribute('src')){RS.playing=false;toast(t('rFail'));renderRadio()}});
 function rRow(st){const on=RS.cur&&RS.cur.u===st.u,f=isFav(st);
   return'<div class="rrow"><button type="button" class="rgo'+(on?' on':'')+'" data-r="go" data-u="'+esc(st.u)+'" data-n="'+esc(st.n)+'">'+(on&&RS.playing?'♪ ':'')+esc(st.n)+(st.c||st.b?'<small>'+esc([st.c,st.b?st.b+' kbps':''].filter(Boolean).join(' · '))+'</small>':'')+'</button>'+
     '<button type="button" class="rstar'+(f?' on':'')+'" data-r="star" data-u="'+esc(st.u)+'" data-n="'+esc(st.n)+'" aria-label="'+esc(t('rStar'))+'" aria-pressed="'+f+'">'+(f?'★':'☆')+'</button></div>'}
