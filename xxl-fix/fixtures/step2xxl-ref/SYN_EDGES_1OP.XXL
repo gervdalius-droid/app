@@ -1,0 +1,18 @@
+H DX=600 DY=350 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SYN_EDGES_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=9 Y=40 Z=-30 D=8 N="P" F=3 R=1#
+ XBO X=9 Y=310 Z=-30 D=8 N="P" F=3 R=1#
+ XBO X=300 Y=9 Z=-27 D=8 N="P" F=5 R=1#
+ XBO X=300 Y=175 Z=-13 D=15 N="P" F=1 R=1#
+ XBO X=9 Y=40 Z=-32 D=5 N="P" F=2 R=1#
+ XBO X=9 Y=310 Z=-32 D=5 N="P" F=2 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

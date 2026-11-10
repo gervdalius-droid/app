@@ -1,0 +1,22 @@
+H DX=700 DY=400 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SYN_TWOFACE2_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=150 Y=350 Z=-13 D=35 N="P" F=1 R=1#
+ XBO X=550 Y=350 Z=-13 D=35 N="P" F=1 R=1#
+; ------ DEIMANTAS 16MM  - NAUJA - 
+; ***** LED_PROFILE_DRAG_ON_EDGE
+ XG0 X=720 Y=207.75 Z=10 T=96 C=0 V=2000 D=24 F=1
+ XL2P X=720 Y=207.75 Z=0 V=2000
+ XL2P X=690 Y=207.75 Z=-8 V=2000
+ XL2P X=720 Y=207.75 Z=-8 V=4000
+ XL2P X=-20 Y=207.75 Z=-8 V=4000
+ XL2P X=-20 Y=207.75 Z=10 V=4000
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

@@ -54,6 +54,26 @@ jokio Python. Atidaryti dvigubu spustelėjimu naršyklėje.
 python3 serve.py            # tik jei norisi per http://localhost:8748/
 ```
 
+## STEP → programa (be SolidWorks makro)
+
+Mygtukas **`⬆ STEP → programa`** (arba tiesiog vilkite `.STEP` į langą) atidaro STEP importą.
+Įkelkite vienos ar kelių detalių STEP failus (ExportOnePanel arba SolidWorks → Išsaugoti kaip →
+STEP AP214). XXL Fix pats perskaito geometriją ir **lygiai taip pat kaip step2xxl v2.12**
+atpažįsta skyles (iš viršaus, kiaurines, galuose, ilgosiose briaunose, žymes, varžtus į
+ekscentriką), griovelius / LED kanalus ir kiaurinius kontūrus, nusprendžia, kiek programų
+reikia (1OP, apversta 2OP, pasukta 90°), ir parodo viską brėžinyje.
+
+- Dešinėje — kas rasta, programa po programos; kiekvieną grupę galima išjungti varnele.
+- Raudonai — ko staklės padaryti negali (nėra grąžto, kišenė platesnė už frezą, Ø5 ilgojoje
+  briaunoje ant ilgesnės nei 900 mm plokštės…).
+- **`✓ Patvirtinti ir atsisiųsti`** / **`Įrašyti į stakles`** — programos pavadintos kaip failas
+  (`<DB_PART>_1OP.XXL`). Kelis failus galima patvirtinti vienu mygtuku.
+
+Programos tikrintos su step2xxl.py: 21 tikra detalė ir 10 bandomųjų — identiški failai iki
+paskutinio simbolio. Du dalykai, kuriuos XXL Fix daro **daugiau** už step2xxl: kiaurinė
+išpjova plokštės viduje (step2xxl ją praleidžia ir rašo „no machining“) ir kiaurymė,
+didesnė už grąžtus (pvz. Ø60 kabeliui) — frezuojama ratu.
+
 ## Nauja detalė (programa be SolidWorks)
 
 Mygtukas **`＋ Nauja detalė`** viršuje dešinėje atidaro detalės kūrimo langą — dirbtuvėse

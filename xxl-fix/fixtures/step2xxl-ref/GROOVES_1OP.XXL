@@ -1,0 +1,26 @@
+H DX=800 DY=400 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : GROOVES_1OP
+;** Date codage : step2xxl
+; ------ DEIMANTAS 16MM  - NAUJA - 
+; ***** LED_PROFILE_DRAG_ON_EDGE
+ XG0 X=820 Y=307.75 Z=10 T=96 C=0 V=2000 D=24 F=1
+ XL2P X=820 Y=307.75 Z=0 V=2000
+ XL2P X=790 Y=307.75 Z=-16 V=2000
+ XL2P X=820 Y=307.75 Z=-16 V=4000
+ XL2P X=-20 Y=307.75 Z=-16 V=4000
+ XL2P X=-20 Y=307.75 Z=10 V=4000
+; ***** LED_PROFILE_DRAG_ON_EDGE
+ XG0 X=492.25 Y=108.25 Z=10 T=96 C=0 V=2000 D=24 F=1
+ XL2P X=492.25 Y=108.25 Z=0 V=2000
+ XL2P X=462.25 Y=108.25 Z=-6 V=2000
+ XL2P X=492.25 Y=108.25 Z=-6 V=4000
+ XL2P X=307.75 Y=108.25 Z=-6 V=4000
+ XL2P X=307.75 Y=108.25 Z=10 V=4000
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

@@ -389,6 +389,44 @@ header .grow{flex:1}
   .pb-bar{flex-wrap:wrap}
   .pb-bar .nm input{width:160px}
 }
+
+/* ================= STEP import (STEP → programos) ================= */
+#siOpen{align-self:center;padding:8px 16px;font-size:13.5px;margin-right:8px}
+#si{position:fixed;inset:0;z-index:41;background:var(--bg);display:grid;
+    grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr);min-height:0}
+#si[hidden]{display:none!important}
+#si.hot .pb-stage{outline:3px dashed var(--acc);outline-offset:-8px}
+#si .pb-main{grid-template-columns:262px minmax(0,1fr) 348px}
+.si-sub{font-size:12px;color:var(--tx2)}
+.si-row{grid-template-columns:minmax(0,1fr) auto}
+.si-row .nm{min-width:0}
+.si-row .nm .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.si-st{font-size:11.5px;font-weight:650;white-space:nowrap;color:var(--tx2)}
+.si-st.ok{color:var(--ok)} .si-st.bad{color:var(--bad)} .si-st.warn{color:#9a6200}
+.si-tabs{gap:0!important}
+.si-tabs button{background:rgba(248,250,252,.95);color:var(--tx2);border:1px solid var(--line);border-radius:0;padding:6px 12px;font-family:var(--mono);font-weight:700;font-size:13px}
+.si-tabs button:first-child{border-radius:8px 0 0 8px}
+.si-tabs button:last-child{border-radius:0 8px 8px 0}
+.si-tabs button:only-child{border-radius:8px}
+.si-tabs button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.si-tabs small{font-weight:500;opacity:.8;margin-left:4px}
+.si-prog{border:1px solid var(--line);border-radius:10px;margin:0 0 10px;background:#fff;overflow:hidden}
+.si-prog.on{border-color:var(--acc);box-shadow:0 0 0 2px rgba(31,111,235,.15)}
+.si-ph{display:flex;gap:8px;align-items:flex-start;padding:7px 10px;background:var(--panel2);font-size:12px;color:var(--tx2);line-height:1.4;cursor:pointer}
+.si-ph .op{font-family:var(--mono);font-weight:800;font-size:12.5px;color:#fff;background:var(--acc);border-radius:6px;padding:1px 7px;flex:none}
+.si-ph .op.k-flip{background:#7b1fa2} .si-ph .op.k-rot{background:#b26a00}
+.si-item{display:grid;grid-template-columns:18px 10px 1fr;gap:8px;align-items:center;padding:6px 10px;border-top:1px solid #edf1f5;font-size:12.8px;cursor:pointer;line-height:1.3}
+.si-item:hover{background:#f4effa}
+.si-item input{width:16px;height:16px;accent-color:var(--acc);margin:0;cursor:pointer}
+.si-item .sw{width:10px;height:10px;border-radius:50%}
+.si-item small{display:block;color:var(--tx2);font-size:11.3px}
+.si-item.no{grid-template-columns:18px 10px 1fr;cursor:default;background:#fdf3f3;color:#8f1d1d}
+.si-item.no::before{content:"✕";font-weight:800;color:var(--bad);text-align:center}
+.si-item.no .sw{grid-column:2}
+.si-empty{opacity:.55}
+#si .pb-svg .si-hit{cursor:default}
+@media(max-width:1100px){ #si .pb-main{grid-template-columns:230px minmax(0,1fr) 320px} .si-sub{display:none} }
+@media(max-width:900px){ #si{overflow:auto;display:block} #si .pb-main{display:flex;flex-direction:column} }
 </style>
 </head>
 <body>
@@ -399,14 +437,15 @@ header .grow{flex:1}
     <div class="sub">SCM Startech CN Plus &middot; SWOOD CAM išvesties pasukimas 90&deg; &middot; <i>rotate programs so the long side runs along X</i></div>
   </div>
   <span class="grow"></span>
+  <button id="siOpen" title="Įkelti detalės STEP failą — skylės ir frezavimai atpažįstami automatiškai (step2xxl)">⬆ STEP → programa</button>
   <button id="pbOpen" title="Sukurti detalę ir jos programas rankomis">＋ Nauja detalė</button>
 </header>
 
 <main>
   <div id="drop">
-    <b>Vilkite .XXL failus čia</b>
-    arba spustelėkite, kad pasirinktumėte
-    <input type="file" id="file" multiple accept=".xxl,.XXL" hidden>
+    <b>Vilkite .XXL arba .STEP failus čia</b>
+    arba spustelėkite, kad pasirinktumėte &middot; STEP failai atidaromi kaip naujos programos
+    <input type="file" id="file" multiple accept=".xxl,.XXL,.step,.stp,.STEP,.STP" hidden>
   </div>
 
   <div class="drawer" id="drawer">
@@ -511,6 +550,46 @@ header .grow{flex:1}
       <div class="row">
         <button class="ghost" id="pbSend">→ Įrašyti į stakles</button>
       </div>
+    </div>
+  </div>
+</div>
+
+<div id="si" hidden>
+  <div class="pb-bar">
+    <h2>STEP → CNC programos</h2>
+    <span class="si-sub">atpažįsta skyles, griovelius ir išpjovas pagal step2xxl taisykles</span>
+    <span class="grow"></span>
+    <button id="siAdd">+ Pridėti STEP</button>
+    <input type="file" id="siFile" multiple accept=".step,.stp,.STEP,.STP" hidden>
+    <button class="ghost" id="siClose">Uždaryti ✕</button>
+  </div>
+  <div class="pb-main">
+    <aside class="pb-col pb-left">
+      <div class="pb-sec" style="border-bottom:0;padding-bottom:6px">
+        <h3><span class="n">1</span> Failai <span class="cnt" id="siCount"></span></h3>
+        <button class="ghost" id="siAll" hidden style="width:100%;margin-top:2px"></button>
+      </div>
+      <div class="pb-ops" id="siList"></div>
+    </aside>
+    <div class="pb-stage" id="siStage">
+      <svg class="pb-svg" id="siSvg"></svg>
+      <div class="ov si-tabs" id="siTabs"></div>
+      <div class="pb-legend">
+        <span><i style="background:#1f6feb"></i>iš viršaus</span>
+        <span><i style="background:#d98200;border-radius:2px"></i>briaunoje</span>
+        <span><i style="background:#9fd3b6;border-radius:2px"></i>frezuojama</span>
+        <span><i style="background:#c62828"></i>neprogramuojama</span>
+        <span><i style="background:#aab4c0"></i>išjungta</span>
+      </div>
+    </div>
+    <aside class="pb-col pb-right" id="siRight"></aside>
+  </div>
+  <div class="pb-foot">
+    <div class="pb-progs" id="siProgs"></div>
+    <div class="pb-acts">
+      <div class="st" id="siStatus"></div>
+      <div class="row"><button id="siDl">✓ Patvirtinti ir atsisiųsti</button></div>
+      <div class="row"><button class="ghost" id="siSend">✓ Patvirtinti ir įrašyti į stakles</button></div>
     </div>
   </div>
 </div>
@@ -1558,6 +1637,9 @@ $("#drawerToggle").addEventListener("click", function () {
 
 function load(fl) {
   var arr = Array.prototype.slice.call(fl);
+  var steps = arr.filter(function (f) { return /\.(step|stp)$/i.test(f.name); });
+  if (steps.length && window.SI) SI.add(steps);
+  arr = arr.filter(function (f) { return !/\.(step|stp)$/i.test(f.name); });
   var pend = arr.length;
   if (!pend) return;
   arr.forEach(function (f) {
@@ -4525,6 +4607,1384 @@ var PB = (function () {
   return { open: open, close: close, get: function () { return part; },
            set: function (p) { part = p; selId = null; commit(); render(); }, built: function () { return built; },
            select: function (id) { selId = id; render(); } };
+})();
+</script>
+<script id="s2x-core">
+/* ============================================================================
+   S2X — step2xxl in the browser.
+
+   A faithful JavaScript port of step2xxl.py v2.12 (the program the engineer
+   runs from SolidWorks): read a STEP export of ONE panel, recognise the bores,
+   grooves and through contours from the B-rep, and write the same .XXL
+   programs (1OP / 2OP / rotated) with the same rules and the same numbers.
+   The OpenCascade calls step2xxl uses are replaced by exact analytic
+   geometry on the planes, cylinders, lines and circles a SWOOD panel is
+   made of. Tested line-for-line against step2xxl.py's own output.
+============================================================================ */
+var S2X = (function () {
+  "use strict";
+
+  var CFG = {
+    safe_z: 10, through_bore_extra: 6.559, rout_skin: 2, ramp_length: 30, lead_in: 5, air_limit: 20,
+    rout_tool: { T: 96, dia: 15.5, D: 24, name: "DEIMANTAS 16MM  - NAUJA - " },
+    feed_cut: 4000, feed_plunge: 2000, overrun: 5, groove_overrun: 20,
+    face_left: 3, face_right: 2, face_front: 4, face_back: 5,
+    header: 'H DX={DX} DY={DY} DZ={DZ} BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0',
+    mark_depth: 2,
+    drills_top: [5, 8, 15, 35], through_drills: [5, 8], drills_x_ends: [5, 8], drills_y_edges: [8],
+    horizontal_max_depth: 35, cam_bolt_depth: 31.906, min_groove_length: 40,
+    small_hole_as_mark: { max_d: 4, D: 5, Z: 2 }, max_width_y: 900
+  };
+  var EPS = 1e-3, PI = Math.PI;
+
+  /* ---------------------------------------------------------------- numbers (Python-compatible) */
+  function pyround(v, nd) {                 // Python round(): half-to-even on the decimal value
+    var m = Math.pow(10, nd), x = v * m, r = Math.round(x);
+    if (Math.abs(x - Math.trunc(x)) === 0.5 && r % 2 !== 0) r -= 1;
+    return r / m;
+  }
+  function num(v) {
+    v = pyround(v, 6);
+    if (Math.abs(v - Math.round(v)) < 1e-9) { var i = Math.round(v); return String(i === 0 ? 0 : i); }
+    return v.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
+  }
+  function r3(v) { return pyround(v, 3); }
+  function inList(D, list) { return list.indexOf(pyround(D, 2)) >= 0; }
+
+  /* ---------------------------------------------------------------- STEP Part 21 reader */
+  function parseStep(text) {
+    var ents = Object.create(null);
+    var s = text, n = s.length;
+    var di = s.indexOf("DATA;");
+    var i = di < 0 ? 0 : di + 5;
+    function skipWs() {
+      while (i < n) {
+        var c = s.charCodeAt(i);
+        if (c === 32 || c === 9 || c === 10 || c === 13) { i++; continue; }
+        if (c === 47 && s.charCodeAt(i + 1) === 42) { var e = s.indexOf("*/", i + 2); i = e < 0 ? n : e + 2; continue; }
+        break;
+      }
+    }
+    function readList() {                   // at '('
+      i++; var out = [];
+      skipWs();
+      if (s[i] === ")") { i++; return out; }
+      for (;;) {
+        skipWs(); out.push(readVal()); skipWs();
+        if (s[i] === ",") { i++; continue; }
+        if (s[i] === ")") { i++; return out; }
+        throw new Error("STEP: unexpected '" + s[i] + "' at " + i);
+      }
+    }
+    function readVal() {
+      skipWs();
+      var c = s[i];
+      if (c === "(") return readList();
+      if (c === "'") {
+        var j = i + 1, str = "";
+        for (;;) {
+          var k = s.indexOf("'", j);
+          if (k < 0) throw new Error("STEP: open string");
+          str += s.slice(j, k);
+          if (s[k + 1] === "'") { str += "'"; j = k + 2; continue; }
+          i = k + 1; break;
+        }
+        return { str: str };
+      }
+      if (c === "#") { var m = /^#(\d+)/.exec(s.slice(i, i + 20)); i += m[0].length; return { ref: +m[1] }; }
+      if (c === ".") { var e2 = s.indexOf(".", i + 1); var en = s.slice(i + 1, e2); i = e2 + 1; return { en: en }; }
+      if (c === "$") { i++; return null; }
+      if (c === "*") { i++; return { star: 1 }; }
+      if (/[A-Z_]/.test(c)) {               // typed parameter, e.g. LENGTH_MEASURE(1.)
+        var m2 = /^[A-Z_][A-Z0-9_]*/.exec(s.slice(i, i + 80)); i += m2[0].length; skipWs();
+        var args = s[i] === "(" ? readList() : [];
+        return { type: m2[0], args: args };
+      }
+      var m3 = /^[+\-]?(\d+\.?\d*(E[+\-]?\d+)?|\.\d+(E[+\-]?\d+)?)/i.exec(s.slice(i, i + 40));
+      if (!m3) throw new Error("STEP: cannot read value at " + i);
+      i += m3[0].length; return parseFloat(m3[0]);
+    }
+    for (;;) {
+      skipWs();
+      if (i >= n || s.slice(i, i + 7) === "ENDSEC;") break;
+      if (s[i] !== "#") { var nx = s.indexOf(";", i); if (nx < 0) break; i = nx + 1; continue; }
+      var m = /^#(\d+)\s*=\s*/.exec(s.slice(i, i + 40));
+      if (!m) throw new Error("STEP: bad entity at " + i);
+      var id = +m[1]; i += m[0].length;
+      if (s[i] === "(") {                   // complex entity: ( A(...) B(...) )
+        i++; var parts = {};
+        for (;;) {
+          skipWs();
+          if (s[i] === ")") { i++; break; }
+          var mm = /^[A-Z_][A-Z0-9_]*/.exec(s.slice(i, i + 80)); i += mm[0].length; skipWs();
+          parts[mm[0]] = s[i] === "(" ? readList() : [];
+        }
+        ents[id] = { type: "(complex)", parts: parts };
+      } else {
+        var mt = /^[A-Z_][A-Z0-9_]*/.exec(s.slice(i, i + 80)); i += mt[0].length; skipWs();
+        ents[id] = { type: mt[0], args: readList() };
+      }
+      skipWs(); if (s[i] === ";") i++;
+    }
+    return ents;
+  }
+
+  /* ---------------------------------------------------------------- vectors */
+  function sub(a, b) { return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]; }
+  function add(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+  function mul(a, k) { return [a[0] * k, a[1] * k, a[2] * k]; }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function norm(a) { var l = Math.hypot(a[0], a[1], a[2]); return l ? [a[0] / l, a[1] / l, a[2] / l] : [0, 0, 1]; }
+
+  /* ---------------------------------------------------------------- B-rep from the entities */
+  function model(ents, text) {
+    var scale = 1;
+    if (/SI_UNIT\s*\(\s*\.MILLI\.\s*,\s*\.METRE\.\s*\)/.test(text)) scale = 1;
+    else if (/CONVERSION_BASED_UNIT\s*\(\s*'INCH'/i.test(text)) scale = 25.4;
+    else if (/SI_UNIT\s*\(\s*\$\s*,\s*\.METRE\.\s*\)/.test(text)) scale = 1000;
+    function E(r) { var e = r && ents[r.ref]; if (!e) throw new Error("STEP: missing #" + (r && r.ref)); return e; }
+    var pc = {}, dc = {};
+    function pt(r) { if (pc[r.ref]) return pc[r.ref]; var e = E(r); var c = e.args[1]; return (pc[r.ref] = [c[0] * scale, c[1] * scale, (c[2] || 0) * scale]); }
+    function dir(r) { if (dc[r.ref]) return dc[r.ref]; var e = E(r); var c = e.args[1]; return (dc[r.ref] = norm([c[0], c[1], c[2] || 0])); }
+    function ax2(r) {
+      var e = E(r), a = e.args;
+      var o = pt(a[1]), z = a[2] ? dir(a[2]) : [0, 0, 1], x = a[3] ? dir(a[3]) : null;
+      if (!x || Math.abs(dot(x, z)) > 1 - 1e-9) x = Math.abs(z[0]) < 0.9 ? norm(cross([1, 0, 0], z)) : norm(cross([0, 1, 0], z));
+      x = norm(sub(x, mul(z, dot(x, z))));
+      return { o: o, z: z, x: x, y: cross(z, x) };
+    }
+    function curve(r) {
+      var e = E(r);
+      if (e.type === "SURFACE_CURVE" || e.type === "SEAM_CURVE" || e.type === "INTERSECTION_CURVE") return curve(e.args[1]);
+      if (e.type === "LINE") return { t: "L" };
+      if (e.type === "CIRCLE") return { t: "C", ax: ax2(e.args[1]), r: e.args[2] * scale };
+      return { t: "O" };                    // B-spline, ellipse, ...: treated as a chord, like step2xxl
+    }
+    var ec = {};
+    function edge(r) {
+      if (ec[r.ref]) return ec[r.ref];
+      var e = E(r), a = e.args;             // EDGE_CURVE(name, v1, v2, curve, same_sense)
+      var p0 = pt(E(a[1]).args[1]), p1 = pt(E(a[2]).args[1]);
+      var c = curve(a[3]), same = !(a[4] && a[4].en === "F");
+      var ed = { p0: p0, p1: p1, c: c, same: same, id: r.ref };
+      if (c.t === "C") {
+        var ax = c.ax;
+        var ang = function (p) { var v = sub(p, ax.o); return Math.atan2(dot(v, ax.y), dot(v, ax.x)); };
+        var a0 = ang(p0), a1 = ang(p1), full = Math.hypot(p0[0] - p1[0], p0[1] - p1[1], p0[2] - p1[2]) < 1e-7;
+        // the edge runs from p0 to p1 counter-clockwise about the circle axis when same_sense, else clockwise
+        var s0 = same ? a0 : a1, s1 = same ? a1 : a0;      // ccw range [s0, s0+ext]
+        var ext = full ? 2 * PI : ((s1 - s0) % (2 * PI) + 2 * PI) % (2 * PI);
+        if (!full && ext < 1e-12) ext = 2 * PI;
+        ed.ccwStart = s0; ed.ext = ext; ed.full = full;
+      }
+      ed.bb = edgeBox(ed);
+      return (ec[r.ref] = ed);
+    }
+    function circlePt(c, t) { var ax = c.ax; return add(ax.o, add(mul(ax.x, c.r * Math.cos(t)), mul(ax.y, c.r * Math.sin(t)))); }
+    function edgeBox(ed) {
+      var b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+      function put(p) { for (var k = 0; k < 3; k++) { if (p[k] < b[k]) b[k] = p[k]; if (p[k] > b[k + 3]) b[k + 3] = p[k]; } }
+      put(ed.p0); put(ed.p1);
+      if (ed.c.t === "C") {
+        var ax = ed.c.ax;
+        for (var k = 0; k < 3; k++) {
+          var t0 = Math.atan2(ax.y[k], ax.x[k]);
+          [t0, t0 + PI].forEach(function (t) {
+            var d = ((t - ed.ccwStart) % (2 * PI) + 2 * PI) % (2 * PI);
+            if (d <= ed.ext + 1e-12) put(circlePt(ed.c, t));
+          });
+        }
+      }
+      return b;
+    }
+    ed_mid = function (ed) {               // midpoint of the edge along its curve (from p0 to p1)
+      if (ed.c.t !== "C") return mul(add(ed.p0, ed.p1), 0.5);
+      var t = ed.ccwStart + ed.ext / 2;
+      return circlePt(ed.c, t);
+    };
+    function surface(r) {
+      var e = E(r);
+      if (e.type === "PLANE") return { t: "P", ax: ax2(e.args[1]) };
+      if (e.type === "CYLINDRICAL_SURFACE") return { t: "Y", ax: ax2(e.args[1]), r: e.args[2] * scale };
+      return { t: "O" };
+    }
+    var solids = [];
+    Object.keys(ents).forEach(function (k) { if (ents[k].type === "MANIFOLD_SOLID_BREP") solids.push(+k); });
+    var faces = [];
+    solids.forEach(function (sid) {
+      var shell = E(ents[sid].args[1]);
+      shell.args[1].forEach(function (fr) {
+        var fe = E(fr);
+        if (fe.type !== "ADVANCED_FACE" && fe.type !== "FACE_SURFACE") return;
+        var surf = surface(fe.args[2]), same = !(fe.args[3] && fe.args[3].en === "F");
+        var loops = fe.args[1].map(function (br) {
+          var b = E(br), loop = E(b.args[1]);
+          var outer = b.type === "FACE_OUTER_BOUND";
+          var oes = loop.type === "EDGE_LOOP" ? loop.args[1] : [];
+          var segs = oes.map(function (oer) {
+            var oe = E(oer);                // ORIENTED_EDGE(name, *, *, edge, orientation)
+            var ed = edge(oe.args[3]);
+            return { ed: ed, fwd: !(oe.args[4] && oe.args[4].en === "F") };
+          });
+          return { outer: outer, segs: segs };
+        });
+        var bb = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+        loops.forEach(function (lp) { lp.segs.forEach(function (sg) { for (var k = 0; k < 3; k++) { if (sg.ed.bb[k] < bb[k]) bb[k] = sg.ed.bb[k]; if (sg.ed.bb[k + 3] > bb[k + 3]) bb[k + 3] = sg.ed.bb[k + 3]; } }); });
+        faces.push({ surf: surf, same: same, loops: loops, bb: bb, id: fr.ref });
+      });
+    });
+    return { faces: faces, solids: solids.length, scale: scale };
+  }
+  var ed_mid = null;
+
+  /* ---------------------------------------------------------------- frame (model -> machine) */
+  function Frame(dims, flip, rot, flip2, rot2) {
+    var f = this;
+    f.mx = dims[0]; f.my = dims[1]; f.mz = dims[2]; f.flip = flip; f.rot = rot; f.flip2 = !!flip2; f.rot2 = !!rot2;
+    f.DZ = f.mz;
+    if (rot) { f.DX = f.my; f.DY = f.mx; } else { f.DX = f.mx; f.DY = f.my; }
+    f.DX1 = f.DX;
+    if (f.rot2) { var t = f.DX; f.DX = f.DY; f.DY = t; }
+    f.up = (flip ? -1 : 1) * (f.flip2 ? -1 : 1);
+    f.top_model_z = f.up > 0 ? f.mz : 0;
+    f.bot_model_z = f.up > 0 ? 0 : f.mz;
+  }
+  Frame.prototype.p = function (x, y, z) {
+    var f = this, t;
+    if (f.flip) { x = f.mx - x; z = f.mz - z; }
+    if (f.rot) { t = x; x = y; y = f.mx - t; }
+    if (f.flip2) { y = (f.rot2 ? f.DX : f.DY) - y; z = f.DZ - z; }
+    if (f.rot2) { t = x; x = y; y = f.DX1 - t; }
+    return [x, y, z];
+  };
+  Frame.prototype.v = function (x, y, z) {
+    var f = this, t;
+    if (f.flip) { x = -x; z = -z; }
+    if (f.rot) { t = x; x = y; y = -t; }
+    if (f.flip2) { y = -y; z = -z; }
+    if (f.rot2) { t = x; x = y; y = -t; }
+    return [x, y, z];
+  };
+
+  /* ---------------------------------------------------------------- analyse */
+  function cylSpan(face) {                 // angular extent of a cylindrical face (OCC U range)
+    var ax = face.surf.ax, best = 0, any = false;
+    face.loops.forEach(function (lp) {
+      lp.segs.forEach(function (sg) {
+        var c = sg.ed.c;
+        if (c.t !== "C") return;
+        if (Math.abs(Math.abs(dot(c.ax.z, ax.z)) - 1) > 1e-6) return;
+        var d = sub(c.ax.o, ax.o), off = sub(d, mul(ax.z, dot(d, ax.z)));
+        if (Math.hypot(off[0], off[1], off[2]) > 1e-4) return;
+        any = true; if (sg.ed.ext > best) best = sg.ed.ext;
+      });
+    });
+    if (any) return best;
+    // no coaxial circle on the boundary: angular coverage of the boundary points
+    var angs = [];
+    face.loops.forEach(function (lp) { lp.segs.forEach(function (sg) {
+      [sg.ed.p0, sg.ed.p1, ed_mid(sg.ed)].forEach(function (p) {
+        var v = sub(p, ax.o); angs.push(Math.atan2(dot(v, ax.y), dot(v, ax.x)));
+      });
+    }); });
+    angs.sort(function (a, b) { return a - b; });
+    var gap = 0;
+    for (var i = 0; i < angs.length; i++) gap = Math.max(gap, (i + 1 < angs.length ? angs[i + 1] : angs[0] + 2 * PI) - angs[i]);
+    return 2 * PI - gap;
+  }
+
+  function analyse(M) {
+    var b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+    M.faces.forEach(function (f) { for (var k = 0; k < 3; k++) { if (f.bb[k] < b[k]) b[k] = f.bb[k]; if (f.bb[k + 3] > b[k + 3]) b[k + 3] = f.bb[k + 3]; } });
+    var x0 = b[0], y0 = b[1], z0 = b[2];
+    var dims = [b[3] - b[0], b[4] - b[1], b[5] - b[2]];
+    if (!(dims[2] < dims[0] && dims[2] < dims[1]))
+      throw new Error("THICKNESS");
+    function rel(bb) { return [bb[0] - x0, bb[1] - y0, bb[2] - z0, bb[3] - x0, bb[4] - y0, bb[5] - z0]; }
+    var cyls = [], planes = [];
+    M.faces.forEach(function (f) {
+      if (f.surf.t === "Y") {
+        var ax = f.surf.ax;
+        cyls.push({ r: f.surf.r, axis: ax.z, loc: [ax.o[0] - x0, ax.o[1] - y0, ax.o[2] - z0], bb: rel(f.bb), span: cylSpan(f), face: f });
+      } else if (f.surf.t === "P") {
+        var nz = f.surf.ax.z; if (!f.same) nz = mul(nz, -1);
+        planes.push({ n: nz, bb: rel(f.bb), face: f });
+      }
+    });
+    var top = 0, bot = 0;
+    cyls.forEach(function (c) {
+      if (Math.abs(Math.abs(c.axis[2]) - 1) < EPS && c.span > 1) {
+        var zlo = c.bb[2], zhi = c.bb[5];
+        if (zhi > dims[2] - EPS && zlo > EPS) top++;
+        if (zlo < EPS && zhi < dims[2] - EPS) bot++;
+      }
+    });
+    planes.forEach(function (p) {
+      if (Math.abs(Math.abs(p.n[2]) - 1) < EPS && EPS < p.bb[2] && p.bb[2] < dims[2] - EPS) { if (p.n[2] > 0) top++; else bot++; }
+    });
+    var flip = bot > top, rot = dims[1] > dims[0];
+    return { fr: new Frame(dims, flip, rot), cyls: cyls, planes: planes, origin: [x0, y0, z0], top: top, bot: bot, dims: dims };
+  }
+
+  function allCircular(face) {
+    return face.loops.every(function (lp) { return lp.segs.every(function (sg) { return sg.ed.c.t === "C"; }); });
+  }
+
+  function machinedCount(fr, cyls, planes) {
+    var n = 0;
+    cyls.forEach(function (c) {
+      if (Math.abs(Math.abs(c.axis[2]) - 1) < EPS && c.span > 1) {
+        var zlo = c.bb[2], zhi = c.bb[5];
+        if (fr.up > 0 && zhi > fr.mz - EPS && zlo > EPS) n++;
+        if (fr.up < 0 && zlo < EPS && zhi < fr.mz - EPS) n++;
+      }
+    });
+    planes.forEach(function (p) {
+      if (Math.abs(p.n[2] - fr.up) < EPS && EPS < p.bb[2] && p.bb[2] < fr.mz - EPS && !allCircular(p.face)) n++;
+    });
+    return n;
+  }
+
+  /* ---------------------------------------------------------------- bores */
+  function recogniseBores(fr, cyls, cfg) {
+    var groups = [], gmap = Object.create(null);
+    cyls.forEach(function (c) {
+      var ax = fr.v(c.axis[0], c.axis[1], c.axis[2]).map(Math.abs);
+      var mx = Math.max(ax[0], ax[1], ax[2]);
+      if (mx < 1 - EPS) return;                                   // tilted cylinder
+      var d = ax.indexOf(mx);
+      var loc = fr.p(c.loc[0], c.loc[1], c.loc[2]);
+      var kp = loc.map(r3); kp[d] = 0;
+      var a = fr.p(c.bb[0], c.bb[1], c.bb[2])[d], b = fr.p(c.bb[3], c.bb[4], c.bb[5])[d];
+      var key = [d, r3(c.r), kp.join(","), r3(Math.min(a, b)), r3(Math.max(a, b))].join("|");
+      if (!gmap[key]) { gmap[key] = { d: d, r: r3(c.r), pos: kp, fs: [] }; groups.push(gmap[key]); }
+      gmap[key].fs.push(c);
+    });
+    var bores = [];
+    groups.forEach(function (g) {
+      var spans = g.fs.reduce(function (s, f) { return s + f.span; }, 0);
+      if (spans < 2 * PI - 1e-2) return;
+      var d = g.d, lo = Infinity, hi = -Infinity;
+      g.fs.forEach(function (f) {
+        var a = fr.p(f.bb[0], f.bb[1], f.bb[2])[d], b = fr.p(f.bb[3], f.bb[4], f.bb[5])[d];
+        lo = Math.min(lo, a, b); hi = Math.max(hi, a, b);
+      });
+      var ext = [fr.DX, fr.DY, fr.DZ][d], x = g.pos[0], y = g.pos[1], z = g.pos[2], dia = 2 * g.r;
+      if (d === 2) {
+        if (lo < EPS && hi > ext - EPS) bores.push({ F: 1, X: x, Y: y, Z: -(fr.DZ + cfg.through_bore_extra), D: dia, N: "L", sortx: x, through: true });
+        else if (hi > ext - EPS) { var depth = ext - lo; bores.push({ F: 1, X: x, Y: y, Z: -depth, D: dia, N: depth <= cfg.mark_depth + EPS ? "L" : "P", sortx: x }); }
+        else bores.push({ F: 1, X: x, Y: y, Z: -(hi - lo), D: dia, N: "P", sortx: x, other_side: true });
+      } else if (d === 0) {
+        if (lo < EPS) bores.push({ F: cfg.face_left, X: z, Y: y, Z: -hi, D: dia, N: "P", sortx: hi });
+        else if (hi > ext - EPS) bores.push({ F: cfg.face_right, X: z, Y: y, Z: -(ext - lo), D: dia, N: "P", sortx: lo });
+      } else {
+        if (lo < EPS) bores.push({ F: cfg.face_front, X: x, Y: z, Z: -hi, D: dia, N: "P", sortx: x, unverified: true });
+        else if (hi > ext - EPS) bores.push({ F: cfg.face_back, X: x, Y: z, Z: -(ext - lo), D: dia, N: "P", sortx: x, unverified: true });
+      }
+    });
+    var verts = bores.filter(function (b) { return b.F === 1 && !b.other_side; });
+    bores.forEach(function (b) {
+      if (b.F === 1) return;
+      var depth = -b.Z;
+      verts.forEach(function (v) {
+        var rv = v.D / 2, d;
+        if ((b.F === cfg.face_left || b.F === cfg.face_right) && Math.abs(v.Y - b.Y) < 0.5) d = b.F === cfg.face_left ? v.X : fr.DX - v.X;
+        else if ((b.F === cfg.face_front || b.F === cfg.face_back) && Math.abs(v.X - b.X) < 0.5) d = b.F === cfg.face_front ? v.Y : fr.DY - v.Y;
+        else return;
+        if (d - rv - 0.5 < depth && depth < d + rv + 0.5 && rv > b.D / 2) {
+          b.Z = -cfg.cam_bolt_depth; b.cam = true;
+          if (b.F === cfg.face_right) b.sortx = fr.DX - d; else if (b.F === cfg.face_left) b.sortx = d;
+        }
+      });
+    });
+    function key(b) {
+      var g = b.F === cfg.face_left ? -1 : b.F === cfg.face_right ? fr.DX + 1 : b.X;
+      return [r3(g), r3(b.Y), r3(b.X)];
+    }
+    var keyed = bores.map(function (b, i) { return { b: b, k: key(b), i: i }; });
+    keyed.sort(function (p, q) { for (var j = 0; j < 3; j++) if (p.k[j] !== q.k[j]) return p.k[j] - q.k[j]; return p.i - q.i; });
+    return keyed.map(function (e) { return e.b; });
+  }
+
+  /* ---------------------------------------------------------------- wires in machine XY */
+  // segments of one loop, in loop order: ["L", a, b] / ["A", a, b, centre, ccw]
+  function loopSegs(lp, fr, origin) {
+    function M(P) { var q = fr.p(P[0] - origin[0], P[1] - origin[1], P[2] - origin[2]); return [q[0], q[1]]; }
+    return lp.segs.map(function (sg) {
+      var ed = sg.ed;
+      var a = M(ed.p0), b = M(ed.p1);
+      if (!sg.fwd) { var t = a; a = b; b = t; }
+      if (ed.c.t === "C") {
+        var ctr = M(ed.c.ax.o), mid = M(ed_mid(ed));
+        var cr = (b[0] - a[0]) * (mid[1] - a[1]) - (b[1] - a[1]) * (mid[0] - a[0]);
+        return ["A", a, b, ctr, cr < 0];
+      }
+      return ["L", a, b];
+    });
+  }
+  function outerLoop(face) {
+    var o = face.loops.filter(function (l) { return l.outer; });
+    if (o.length === 1) return o[0];
+    var best = null, ba = -1;
+    face.loops.forEach(function (l) {
+      var b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
+      l.segs.forEach(function (sg) { for (var k = 0; k < 3; k++) { b[k] = Math.min(b[k], sg.ed.bb[k]); b[k + 3] = Math.max(b[k + 3], sg.ed.bb[k + 3]); } });
+      var a = (b[3] - b[0]) * (b[4] - b[1]) + (b[4] - b[1]) * (b[5] - b[2]) + (b[3] - b[0]) * (b[5] - b[2]);
+      if (a > ba) { ba = a; best = l; }
+    });
+    return best;
+  }
+  function onBox(p, DX, DY, tol) { tol = tol === undefined ? EPS : tol; return p[0] < tol || p[0] > DX - tol || p[1] < tol || p[1] > DY - tol; }
+  function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+  function groovePass(x0, y0, x1, y1, alongX, width, depth, fr, cfg, rt) {
+    var toolD = 2 * rt, ov = cfg.groove_overrun, c, loOpen, hiOpen, lo, hi, pts;
+    if (alongX) {
+      c = width < toolD ? (y0 + y1) / 2 : (y0 < fr.DY - y1 ? y1 - rt : y0 + rt);
+      loOpen = x0 <= EPS; hiOpen = x1 >= fr.DX - EPS;
+      lo = loOpen ? x0 - ov : x0 + rt; hi = hiOpen ? x1 + ov : x1 - rt;
+      pts = (loOpen && !hiOpen) ? [[lo, c], [hi, c]] : [[hi, c], [lo, c]];
+    } else {
+      c = width < toolD ? (x0 + x1) / 2 : (x0 < fr.DX - x1 ? x1 - rt : x0 + rt);
+      loOpen = y0 <= EPS; hiOpen = y1 >= fr.DY - EPS;
+      lo = loOpen ? y0 - ov : y0 + rt; hi = hiOpen ? y1 + ov : y1 - rt;
+      pts = (loOpen && !hiOpen) ? [[c, lo], [c, hi]] : [[c, hi], [c, lo]];
+    }
+    return { kind: "groove", depth: depth, pts: pts, along_x: alongX, name: "LED_PROFILE_DRAG_ON_EDGE", strip: [x0, y0, x1, y1] };
+  }
+
+  function floorStrips(face, fr, origin, maxW) {
+    var segs;
+    try { segs = loopSegs(outerLoop(face), fr, origin); } catch (e) { return null; }
+    if (!segs.length || segs.some(function (sg) { return sg[0] !== "L"; })) return null;
+    var poly = segs.map(function (sg) { return sg[1]; });
+    for (var q = 0; q < segs.length; q++) {
+      var sg = segs[q];
+      if (Math.abs(sg[1][0] - sg[2][0]) > 1e-3 && Math.abs(sg[1][1] - sg[2][1]) > 1e-3) return null;
+    }
+    function inside(px, py) {
+      var c = false, n = poly.length;
+      for (var i = 0; i < n; i++) {
+        var A = poly[i], B = poly[(i + 1) % n];
+        if ((A[1] > py) !== (B[1] > py) && px < A[0] + (py - A[1]) * (B[0] - A[0]) / (B[1] - A[1])) c = !c;
+      }
+      return c;
+    }
+    function uniq(vs) { var out = []; vs.slice().sort(function (a, b) { return a - b; }).forEach(function (v) { if (!out.length || v - out[out.length - 1] > 1e-3) out.push(v); }); return out; }
+    var xs = uniq(poly.map(function (p) { return p[0]; })), ys = uniq(poly.map(function (p) { return p[1]; }));
+    var nx = xs.length - 1, ny = ys.length - 1, cell = [];
+    for (var i = 0; i < nx; i++) { cell.push([]); for (var j = 0; j < ny; j++) cell[i].push(inside((xs[i] + xs[i + 1]) / 2, (ys[j] + ys[j + 1]) / 2)); }
+    var cands = [];
+    function cellsOf(i0, i1, j0, j1) { var s = []; for (var a = i0; a <= i1; a++) for (var b = j0; b <= j1; b++) s.push(a + ":" + b); return s; }
+    for (var j0 = 0; j0 < ny; j0++) for (var j1 = j0; j1 < ny; j1++) {
+      if (ys[j1 + 1] - ys[j0] > maxW + 1e-6) break;
+      var ii = 0;
+      while (ii < nx) {
+        var ok = true; for (var jj = j0; jj <= j1; jj++) if (!cell[ii][jj]) ok = false;
+        if (ok) {
+          var k = ii;
+          for (;;) { if (k + 1 >= nx) break; var ok2 = true; for (jj = j0; jj <= j1; jj++) if (!cell[k + 1][jj]) ok2 = false; if (!ok2) break; k++; }
+          cands.push({ len: xs[k + 1] - xs[ii], cells: cellsOf(ii, k, j0, j1), rect: [xs[ii], ys[j0], xs[k + 1], ys[j1 + 1]] });
+          ii = k + 1;
+        } else ii++;
+      }
+    }
+    for (var i0 = 0; i0 < nx; i0++) for (var i1 = i0; i1 < nx; i1++) {
+      if (xs[i1 + 1] - xs[i0] > maxW + 1e-6) break;
+      var jj2 = 0;
+      while (jj2 < ny) {
+        var okb = true; for (var a1 = i0; a1 <= i1; a1++) if (!cell[a1][jj2]) okb = false;
+        if (okb) {
+          var kk = jj2;
+          for (;;) { if (kk + 1 >= ny) break; var ok3 = true; for (a1 = i0; a1 <= i1; a1++) if (!cell[a1][kk + 1]) ok3 = false; if (!ok3) break; kk++; }
+          cands.push({ len: ys[kk + 1] - ys[jj2], cells: cellsOf(i0, i1, jj2, kk), rect: [xs[i0], ys[jj2], xs[i1 + 1], ys[kk + 1]] });
+          jj2 = kk + 1;
+        } else jj2++;
+      }
+    }
+    var need = Object.create(null), needN = 0;
+    for (i = 0; i < nx; i++) for (j = 0; j < ny; j++) if (cell[i][j]) { need[i + ":" + j] = 1; needN++; }
+    cands = cands.map(function (c, idx) { c.idx = idx; return c; });
+    cands.sort(function (p, q2) { return (q2.len - p.len) || (q2.cells.length - p.cells.length) || (p.idx - q2.idx); });
+    var chosen = [];
+    for (var ci = 0; ci < cands.length && needN; ci++) {
+      var c2 = cands[ci], hit = c2.cells.some(function (cc) { return need[cc]; });
+      if (hit) { chosen.push(c2.rect); c2.cells.forEach(function (cc) { if (need[cc]) { delete need[cc]; needN--; } }); }
+    }
+    return needN ? null : chosen;
+  }
+
+  /* ---------------------------------------------------------------- offset of a face outline (BRepOffsetAPI_MakeOffset, arc joins) */
+  function segDirStart(s) {
+    if (s[0] === "L") return norm2([s[2][0] - s[1][0], s[2][1] - s[1][1]]);
+    var r = [s[1][0] - s[3][0], s[1][1] - s[3][1]];
+    return norm2(s[4] ? [-r[1], r[0]] : [r[1], -r[0]]);
+  }
+  function segDirEnd(s) {
+    if (s[0] === "L") return norm2([s[2][0] - s[1][0], s[2][1] - s[1][1]]);
+    var r = [s[2][0] - s[3][0], s[2][1] - s[3][1]];
+    return norm2(s[4] ? [-r[1], r[0]] : [r[1], -r[0]]);
+  }
+  function norm2(v) { var l = Math.hypot(v[0], v[1]); return l ? [v[0] / l, v[1] / l] : [0, 0]; }
+  function signedArea(segs) {
+    var A = 0;
+    segs.forEach(function (s) {
+      A += s[1][0] * s[2][1] - s[2][0] * s[1][1];
+      if (s[0] === "A") {                    // add the circular segment area
+        var r = dist(s[1], s[3]);
+        var a0 = Math.atan2(s[1][1] - s[3][1], s[1][0] - s[3][0]), a1 = Math.atan2(s[2][1] - s[3][1], s[2][0] - s[3][0]);
+        var d = a1 - a0;
+        if (s[4]) { while (d <= 1e-12) d += 2 * PI; } else { while (d >= -1e-12) d -= 2 * PI; }
+        A += r * r * (d - Math.sin(d));
+      }
+    });
+    return A / 2;
+  }
+  function revSeg(s) { return s[0] === "L" ? ["L", s[2], s[1]] : ["A", s[2], s[1], s[3], !s[4]]; }
+  function intersectOff(s1, s2, near) {   // intersection of the carriers of two offset segments, nearest to `near`
+    var cands = [];
+    function lineLine(a, b, c, d) {
+      var r = [b[0] - a[0], b[1] - a[1]], q = [d[0] - c[0], d[1] - c[1]], den = r[0] * q[1] - r[1] * q[0];
+      if (Math.abs(den) < 1e-12) return;
+      var t = ((c[0] - a[0]) * q[1] - (c[1] - a[1]) * q[0]) / den;
+      cands.push([a[0] + r[0] * t, a[1] + r[1] * t]);
+    }
+    function lineCirc(a, b, c, R) {
+      var d = norm2([b[0] - a[0], b[1] - a[1]]), f = [a[0] - c[0], a[1] - c[1]];
+      var B = f[0] * d[0] + f[1] * d[1], C = f[0] * f[0] + f[1] * f[1] - R * R, disc = B * B - C;
+      if (disc < -1e-9) return; disc = Math.sqrt(Math.max(0, disc));
+      [-B - disc, -B + disc].forEach(function (t) { cands.push([a[0] + d[0] * t, a[1] + d[1] * t]); });
+    }
+    function circCirc(c1, r1, c2, r2) {
+      var d = dist(c1, c2); if (d < 1e-12 || d > r1 + r2 + 1e-9 || d < Math.abs(r1 - r2) - 1e-9) return;
+      var a = (r1 * r1 - r2 * r2 + d * d) / (2 * d), h = Math.sqrt(Math.max(0, r1 * r1 - a * a));
+      var m = [c1[0] + a * (c2[0] - c1[0]) / d, c1[1] + a * (c2[1] - c1[1]) / d];
+      cands.push([m[0] + h * (c2[1] - c1[1]) / d, m[1] - h * (c2[0] - c1[0]) / d]);
+      cands.push([m[0] - h * (c2[1] - c1[1]) / d, m[1] + h * (c2[0] - c1[0]) / d]);
+    }
+    if (s1[0] === "L" && s2[0] === "L") lineLine(s1[1], s1[2], s2[1], s2[2]);
+    else if (s1[0] === "L") lineCirc(s1[1], s1[2], s2[3], dist(s2[1], s2[3]));
+    else if (s2[0] === "L") lineCirc(s2[1], s2[2], s1[3], dist(s1[1], s1[3]));
+    else circCirc(s1[3], dist(s1[1], s1[3]), s2[3], dist(s2[1], s2[3]));
+    var best = null, bd = Infinity;
+    cands.forEach(function (p) { var dd = dist(p, near); if (dd < bd) { bd = dd; best = p; } });
+    return best;
+  }
+  // offset one closed loop by d to the outside of the material; returns segments (loop order)
+  function offsetLoop(segs, isOuter, d) {
+    var area = signedArea(segs);
+    // outer loops counter-clockwise, holes clockwise: material is then on the left of travel
+    if ((isOuter && area < 0) || (!isOuter && area > 0)) segs = segs.slice().reverse().map(revSeg);
+    var off = [];
+    segs.forEach(function (s) {
+      if (s[0] === "L") {
+        var u = norm2([s[2][0] - s[1][0], s[2][1] - s[1][1]]), nr = [u[1], -u[0]];
+        off.push({ s: ["L", [s[1][0] + nr[0] * d, s[1][1] + nr[1] * d], [s[2][0] + nr[0] * d, s[2][1] + nr[1] * d]], v0: s[1], v1: s[2], src: s });
+      } else {
+        var R = dist(s[1], s[3]), R2 = s[4] ? R + d : R - d;
+        if (R2 <= 1e-6) { off.push({ s: null, v0: s[1], v1: s[2], src: s }); return; }
+        var f = R2 / R, c = s[3];
+        off.push({ s: ["A", [c[0] + (s[1][0] - c[0]) * f, c[1] + (s[1][1] - c[1]) * f], [c[0] + (s[2][0] - c[0]) * f, c[1] + (s[2][1] - c[1]) * f], c, s[4]], v0: s[1], v1: s[2], src: s });
+      }
+    });
+    off = off.filter(function (o) { return o.s; });
+    if (!off.length) return [];
+    var n = off.length, out = [];
+    // joins
+    var starts = off.map(function (o) { return o.s[1]; }), ends = off.map(function (o) { return o.s[2]; });
+    var joins = [];
+    for (var i = 0; i < n; i++) {
+      var A = off[i], B = off[(i + 1) % n], V = A.v1;
+      var t1 = segDirEnd(A.src), t2 = segDirStart(B.src), cr = t1[0] * t2[1] - t1[1] * t2[0], dt = t1[0] * t2[0] + t1[1] * t2[1];
+      if (dist(A.s[2], B.s[1]) < 1e-7) { joins.push(null); continue; }
+      if (cr > 1e-9 || (Math.abs(cr) <= 1e-9 && dt < 0)) {           // convex corner (material on the left, turning left): an arc round the vertex
+        joins.push(["A", A.s[2], B.s[1], V, false]);
+      } else {                                                         // concave: trim both to their intersection
+        var p = intersectOff(A.s, B.s, V);
+        if (p) { ends[i] = p; starts[(i + 1) % n] = p; }
+        joins.push(null);
+      }
+    }
+    for (i = 0; i < n; i++) {
+      var s0 = off[i].s, seg = s0[0] === "L" ? ["L", starts[i], ends[i]] : ["A", starts[i], ends[i], s0[3], s0[4]];
+      if (dist(seg[1], seg[2]) > 1e-9) out.push(seg);
+      if (joins[i]) out.push(joins[i]);
+    }
+    return out;
+  }
+  function offsetFace(face, fr, origin, d) {
+    var out = [], outer = outerLoop(face);
+    face.loops.forEach(function (lp) {
+      var segs = loopSegs(lp, fr, origin);
+      out = out.concat(offsetLoop(segs, lp === outer, d));
+    });
+    return out;
+  }
+
+  function recogniseRouting(fr, planes, origin, cfg, warn) {
+    var ops = [], tool = cfg.rout_tool, rt = tool.dia / 2, zaxis = fr.up;
+    planes.forEach(function (p) {
+      if (Math.abs(p.n[2] - zaxis) > EPS) return;
+      var b0 = fr.p(p.bb[0], p.bb[1], p.bb[2]), b1 = fr.p(p.bb[3], p.bb[4], p.bb[5]);
+      var z = b0[2];
+      if (!(EPS < z && z < fr.DZ - EPS)) return;
+      var x0 = Math.min(b0[0], b1[0]), x1 = Math.max(b0[0], b1[0]), y0 = Math.min(b0[1], b1[1]), y1 = Math.max(b0[1], b1[1]);
+      if (allCircular(p.face)) return;
+      if (Math.max(x1 - x0, y1 - y0) < cfg.min_groove_length) return;
+      var depth = fr.DZ - z;
+      var strips = floorStrips(p.face, fr, origin, tool.dia + 1) || [[x0, y0, x1, y1]];
+      strips.forEach(function (st) {
+        var w = st[3] - st[1], l = st[2] - st[0], alongX = l >= w, width = alongX ? w : l;
+        if (width > tool.dia + 1) { ops.push({ kind: "pocket_unsupported", bb: st, depth: depth }); return; }
+        ops.push(groovePass(st[0], st[1], st[2], st[3], alongX, width, depth, fr, cfg, rt));
+      });
+    });
+    function biggest(sign, zval) {
+      var best = null, ba = -1;
+      planes.forEach(function (p) {
+        if (Math.abs(p.n[2] - sign) < EPS && Math.abs(p.bb[2] - zval) < EPS) {
+          var a = (p.bb[3] - p.bb[0]) * (p.bb[4] - p.bb[1]);
+          if (best === null || a > ba) { ba = a; best = p; }
+        }
+      });
+      return best;
+    }
+    var top = biggest(zaxis, fr.top_model_z), bot = biggest(-zaxis, fr.bot_model_z);
+    if (fr.flip2) top = null;
+    function key(sg) {
+      var a = [r3(sg[1][0]), r3(sg[1][1])], b = [r3(sg[2][0]), r3(sg[2][1])];
+      var s = (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) ? [a, b] : [b, a];
+      return sg[0] + "|" + s.join("|");
+    }
+    if (top && bot) {
+      var X0 = -rt, X1 = fr.DX + rt, Y0 = -rt, Y1 = fr.DY + rt;
+      var onOuter = function (p) { return Math.abs(p[0] - X0) < EPS || Math.abs(p[0] - X1) < EPS || Math.abs(p[1] - Y0) < EPS || Math.abs(p[1] - Y1) < EPS; };
+      var tsegs = offsetFace(top.face, fr, origin, rt), bkeys = Object.create(null);
+      offsetFace(bot.face, fr, origin, rt).forEach(function (sg) { bkeys[key(sg)] = 1; });
+      var keep = [];
+      tsegs.forEach(function (sg) {
+        if (!bkeys[key(sg)]) return;
+        if (sg[0] === "L" && onOuter(sg[1]) && onOuter(sg[2]) && (Math.abs(sg[1][0] - sg[2][0]) < EPS || Math.abs(sg[1][1] - sg[2][1]) < EPS)) return;
+        if (sg[0] === "A" && Math.abs(dist(sg[1], sg[3]) - rt) < 1e-2 && onBox(sg[3], fr.DX, fr.DY)) return;
+        keep.push(sg);
+      });
+      var chains = [];
+      while (keep.length) {
+        var ch = [keep.shift()], grown = true;
+        while (grown) {
+          grown = false;
+          for (var k = 0; k < keep.length; k++) {
+            var sg2 = keep[k];
+            if (dist(sg2[1], ch[ch.length - 1][2]) < 1e-3) { ch.push(sg2); keep.splice(k, 1); grown = true; k--; }
+            else if (dist(sg2[2], ch[0][1]) < 1e-3) { ch.unshift(sg2); keep.splice(k, 1); grown = true; k--; }
+          }
+        }
+        ch = ch.slice().reverse().map(function (sg) { return sg[0] === "L" ? ["L", sg[2], sg[1]] : ["A", sg[2], sg[1], sg[3], !sg[4]]; });
+        chains.push(ch);
+      }
+      chains.forEach(function (c) {
+        var inner = c.every(function (sg) { return sg[1][0] > 0 && sg[1][0] < fr.DX && sg[1][1] > 0 && sg[1][1] < fr.DY; }) && dist(c[0][1], c[c.length - 1][2]) < 1e-3;
+        if (inner) warn("xf_inner", "Vidinė kiaurinė išpjova frezuojama — step2xxl jos nemato (rašo „no machining“), patikrinkite", "info");
+        ops.push({ kind: "contour", segs: c, name: tool.name, inner: inner });
+        warn("contour", "Kiaurinis kontūras frezuojamas iki Z=-" + num(fr.DZ - cfg.rout_skin) + " (paliekama " + num(cfg.rout_skin) + " mm, " + c.length + " atkarp.)", "info");
+      });
+    }
+    return ops;
+  }
+
+  /* ---------------------------------------------------------------- writer (identical to step2xxl.write_xxl) */
+  function writeXXL(name, fr, bores, ops, cfg, warn, op, rot, note) {
+    var L = [];
+    L.push(cfg.header.replace("{DX}", num(fr.DX)).replace("{DY}", num(fr.DY)).replace("{DZ}", num(fr.DZ)));
+    L.push("; Machine Type:  ZapPZmN", ";Ensemble : ", ";Piece : ", ";Ref : ", ";Fichier : " + name + "_" + op + "OP", ";** Date codage : step2xxl");
+    if (note) L.push("; " + op + "OP: " + note);
+    else if (rot) L.push("; " + op + "OP: same face up as 1OP, panel ROTATED 90 deg COUNTER-CLOCKWISE (seen from above): the former front edge (Y=0) is now the left end (X=0), long side along Y");
+    else if (op === 2) L.push("; 2OP: panel turned over about the X axis after 1OP (long edge stays in place, Y is mirrored)");
+    var drawn = { bores: [], routes: [] };
+    if (bores.length) {
+      L.push("; ------ BP_SCM_DRILLING_BLOCK");
+      bores.forEach(function (b) {
+        if (b.other_side || b.skip || b.routed) return;
+        b.line = L.length;
+        L.push(" XBO X=" + num(b.X) + " Y=" + num(b.Y) + " Z=" + num(b.Z) + " D=" + num(b.D) + ' N="' + b.N + '" F=' + b.F + " R=1#");
+        drawn.bores.push(b);
+      });
+    }
+    var tool = cfg.rout_tool, V = cfg.feed_cut, Vp = cfg.feed_plunge, cur = null;
+    function XG0(x, y, z) { L.push(" XG0 X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " T=" + tool.T + " C=0 V=" + Vp + " D=" + tool.D + " F=1"); cur.push({ t: "G0", x: x, y: y, z: z }); }
+    function XL(x, y, z, v) { L.push(" XL2P X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " V=" + v); cur.push({ t: "L", x: x, y: y, z: z }); }
+    function XA(x, y, z, cx, cy, ccw, v) { L.push(" XA2P X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " I=" + num(cx) + " J=" + num(cy) + " G=" + (ccw ? 3 : 2) + " V=" + v); cur.push({ t: "A", x: x, y: y, z: z, i: cx, j: cy, g: ccw ? 3 : 2 }); }
+    if (ops.some(function (o) { return o.kind !== "pocket_unsupported"; })) L.push("; ------ " + tool.name);
+    var rt = tool.dia / 2, zmax = -(fr.DZ - cfg.rout_skin), ramp = cfg.ramp_length, air = cfg.air_limit;
+    var lead = Math.min(cfg.lead_in + rt, air);
+    function along(a, b, d) { var l = dist(a, b); return [a[0] + (b[0] - a[0]) / l * d, a[1] + (b[1] - a[1]) / l * d]; }
+    function clampbox(p) { return [Math.min(Math.max(p[0], -air), fr.DX + air), Math.min(Math.max(p[1], -air), fr.DY + air)]; }
+    function extend(a, b, d) {
+      var l = dist(a, b), ux = (a[0] - b[0]) / l, uy = (a[1] - b[1]) / l, t = d;
+      if (ux > 1e-9) t = Math.min(t, (fr.DX + air - a[0]) / ux);
+      if (ux < -1e-9) t = Math.min(t, (-air - a[0]) / ux);
+      if (uy > 1e-9) t = Math.min(t, (fr.DY + air - a[1]) / uy);
+      if (uy < -1e-9) t = Math.min(t, (-air - a[1]) / uy);
+      t = Math.max(0, t); return [a[0] + ux * t, a[1] + uy * t];
+    }
+    function entry(start, nxt, z) {
+      var d = Math.min(ramp, dist(start, nxt)), p = along(start, nxt, d);
+      XG0(start[0], start[1], cfg.safe_z); XL(start[0], start[1], 0, Vp);
+      XL(p[0], p[1], z, Vp); XL(start[0], start[1], z, V);
+    }
+    ops.forEach(function (o) {
+      if (o.kind === "groove") {
+        L.push("; ***** " + o.name);
+        cur = []; drawn.routes.push({ name: o.name, kind: "groove", moves: cur, op: o, l0: L.length - 1 });
+        var z = -o.depth;
+        if (z < zmax) { warn("groove_cap", "Griovelio gylis " + num(o.depth) + " sumažintas iki " + num(-zmax) + " (paliekama " + num(cfg.rout_skin) + " mm)"); z = zmax; }
+        var e = clampbox(o.pts[0]), st = clampbox(o.pts[1]);
+        entry(e, st, z);
+        XL(st[0], st[1], z, V);
+        XL(st[0], st[1], cfg.safe_z, V);
+      } else if (o.kind === "contour") {
+        L.push("; ***** " + o.name);
+        cur = []; drawn.routes.push({ name: o.name, kind: o.inner ? "inner" : "contour", moves: cur, op: o, l0: L.length - 1 });
+        var z2 = zmax, segs = o.segs.slice();
+        if (segs[0][0] === "L" && onBox(segs[0][1], fr.DX, fr.DY, 1e-2)) segs[0] = ["L", extend(segs[0][1], segs[0][2], lead), segs[0][2]];
+        var lst = segs.length - 1;
+        if (segs[lst][0] === "L" && onBox(segs[lst][2], fr.DX, fr.DY, 1e-2)) segs[lst] = ["L", segs[lst][1], extend(segs[lst][2], segs[lst][1], cfg.lead_in)];
+        var start = segs[0][1];
+        entry(start, segs[0][2], z2);
+        segs.forEach(function (sg) {
+          if (sg[0] === "L") XL(sg[2][0], sg[2][1], z2, V);
+          else XA(sg[2][0], sg[2][1], z2, sg[3][0], sg[3][1], sg[4], V);
+        });
+        var end = segs[segs.length - 1][2];
+        XL(end[0], end[1], cfg.safe_z, V);
+      } else if (o.kind === "circle") {
+        L.push("; ***** " + o.name);
+        cur = []; drawn.routes.push({ name: o.name, kind: "circle", moves: cur, op: o, l0: L.length - 1 });
+        var zc = zmax, cx = o.c[0], cy = o.c[1], r = o.r;
+        var pts = [[cx, cy + r], [cx - r, cy], [cx, cy - r], [cx + r, cy]];
+        entry([cx + r, cy], pts[0], zc);
+        pts.forEach(function (q) { XA(q[0], q[1], zc, cx, cy, true, V); });
+        XL(cx + r, cy, cfg.safe_z, V);
+      } else if (o.kind === "pocket_unsupported") {
+        warn("pocket", "Kišenė " + (o.bb[2] - o.bb[0]).toFixed(1) + "×" + (o.bb[3] - o.bb[1]).toFixed(1) + " mm, gylis " + o.depth.toFixed(1) + " — platesnė už frezą, NEPROGRAMUOJAMA");
+      }
+    });
+    // where each route's lines end (for leaving a route out after review)
+    drawn.routes.forEach(function (r, k) { r.l1 = k + 1 < drawn.routes.length ? drawn.routes[k + 1].l0 : L.length; });
+    L.push(";**********************************************************", ".END", ";**********************************************************", ";FINEPROG");
+    return { text: L.join("\r\n") + "\r\n", drawn: drawn, lines: L };
+  }
+
+  /* ---------------------------------------------------------------- process (identical decisions to step2xxl.process) */
+  function process(text, name, cfg) {
+    cfg = cfg || CFG;
+    var res = { name: name, programs: [], warnings: [], status: "ok", message: "" };
+    function W(list) { return function (code, msg, level) { list.push({ code: code, msg: msg, level: level || "warn" }); }; }
+    var ents;
+    try { ents = parseStep(text); } catch (e) { res.status = "error"; res.message = "Nepavyko perskaityti STEP failo (" + e.message + ")."; return res; }
+    var M = model(ents, text);
+    if (!M.solids) { res.status = "error"; res.message = "Faile nerasta kieto kūno — eksportuokite detalę kaip STEP (AP214)."; return res; }
+    if (M.solids > 1) { res.status = "error"; res.message = "Faile " + M.solids + " kūnai — tai ne viena plokštė. Eksportuokite vieną detalę (ExportOnePanel)."; return res; }
+    var A;
+    try { A = analyse(M); }
+    catch (e) {
+      res.status = "error";
+      res.message = e.message === "THICKNESS" ? "Plokštės storis turi būti išilgai modelio Z ašies (SWOOD detalė) — šis failas neatpažintas kaip plokštė." : "Nepavyko išanalizuoti geometrijos: " + e.message;
+      return res;
+    }
+    var fr = A.fr, cyls = A.cyls, planes = A.planes, origin = A.origin;
+    res.dims = { DX: fr.DX, DY: fr.DY, DZ: fr.DZ }; res.flip = fr.flip; res.rot = fr.rot;
+    if (fr.DZ > 60) { res.status = "error"; res.message = "Storis " + num(fr.DZ) + " mm — tai ne plokštė (gal visas gaminys?). Eksportuokite vieną detalę."; return res; }
+    var warnings = [], w = W(warnings);
+    var bores = recogniseBores(fr, cyls, cfg);
+    var otherSide = bores.filter(function (b) { return b.other_side; });
+    bores.forEach(function (b) {
+      if (b.other_side) return;
+      var D = pyround(b.D, 2), avail;
+      if (b.F === 1) avail = cfg.drills_top;
+      else if (b.F === cfg.face_left || b.F === cfg.face_right) avail = cfg.drills_x_ends;
+      else {
+        if (inList(D, cfg.drills_y_edges)) {
+          b.ykeep = true;
+          if (-b.Z > cfg.horizontal_max_depth + EPS) w("edge_deep", "Briaunos skylė Ø" + num(D) + " ties X=" + num(b.X) + " F=" + b.F + " gylis " + num(-b.Z) + " — briaunų grąžtai siekia " + num(cfg.horizontal_max_depth));
+          return;
+        }
+        b.skip = true; b.rotate = true; return;
+      }
+      var sm = cfg.small_hole_as_mark;
+      if (avail.indexOf(D) < 0 && b.F === 1 && sm && D <= sm.max_d && !b.through) { b.D = sm.D; b.Z = -sm.Z; b.N = "L"; b.mark_sub = true; }
+      else if (avail.indexOf(D) < 0) { b.skip = true; w("nodrill", "Skylė Ø" + num(D) + " (X=" + num(b.X) + " Y=" + num(b.Y) + " F=" + b.F + "): tokio grąžto tai pusei nėra — NEPROGRAMUOJAMA", "err"); }
+      else if (b.through && cfg.through_drills.indexOf(D) < 0) w("through", "Kiaurinė skylė Ø" + num(D) + " (X=" + num(b.X) + " Y=" + num(b.Y) + "): kiaurinio tokio grąžto nėra");
+      else if (b.F !== 1 && -b.Z > cfg.horizontal_max_depth + EPS) w("edge_deep", "Briaunos skylė Ø" + num(D) + " ties Y=" + num(b.Y) + " F=" + b.F + " gylis " + num(-b.Z) + " — briaunų grąžtai siekia " + num(cfg.horizontal_max_depth));
+    });
+    // XXL Fix addition: a through round hole too big for any drill is routed as a circle (step2xxl skips it)
+    var rtR = cfg.rout_tool.dia / 2, circles = [];
+    bores.forEach(function (b) {
+      if (b.F === 1 && b.through && b.skip && b.D / 2 - rtR >= 2) {
+        b.skip = false; b.routed = true;
+        warnings.forEach(function (x) { if (x.code === "nodrill" && x.msg.indexOf("Ø" + num(pyround(b.D, 2)) + " (X=" + num(b.X) + " Y=" + num(b.Y)) >= 0) x.drop = true; });
+        circles.push({ kind: "circle", c: [b.X, b.Y], r: b.D / 2 - rtR, D: b.D, name: cfg.rout_tool.name, xf: true });
+        w("xf_circle", "Kiaurymė Ø" + num(b.D) + " (X=" + num(b.X) + " Y=" + num(b.Y) + ") frezuojama apskritimu — step2xxl jos neprogramuoja", "info");
+      }
+    });
+    for (var wi = warnings.length - 1; wi >= 0; wi--) if (warnings[wi].drop) warnings.splice(wi, 1);
+    var subs = bores.filter(function (b) { return b.mark_sub; });
+    if (subs.length) w("marks", subs.length + " maž. skylės (bėgelių žymės) be tinkamo grąžto — gręžiamos kaip Ø" + num(cfg.small_hole_as_mark.D) + " žymės " + num(cfg.small_hole_as_mark.Z) + " mm gylio", "info");
+    var cams = bores.filter(function (b) { return b.cam; });
+    if (cams.length) w("cam", cams.length + " varžto skylės į ekscentriką gręžiamos iki Z=" + cams.map(function (b) { return num(-b.Z); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort().join(", ") + " (SWOOD CAM gylis)", "info");
+    var needRot = bores.some(function (b) { return b.rotate; });
+    var yk = bores.filter(function (b) { return b.ykeep; }).length;
+    if (yk) w("ykeep", yk + " skylės ilgosiose briaunose gręžiamos vietoje (F=" + cfg.face_front + "/F=" + cfg.face_back + ") — pirmą kartą patikrinkite Maestro peržiūroje");
+    var ops = recogniseRouting(fr, planes, origin, cfg, w).concat(circles);
+    var tilted = cyls.filter(function (c) { var a = fr.v(c.axis[0], c.axis[1], c.axis[2]).map(Math.abs); return Math.max(a[0], a[1], a[2]) < 1 - EPS; }).length;
+    if (tilted) w("tilted", tilted + " pasvirų cilindrinių paviršių (įstrižos skylės) — neprogramuojama", "err");
+    var other = M.faces.filter(function (f) { return f.surf.t === "O"; }).length;
+    if (other) w("surface", other + " paviršių nėra nei plokštuma, nei cilindras (pvz. kreivas kontūras) — neprogramuojama, patikrinkite", "warn");
+    var nRout = ops.filter(function (o) { return o.kind !== "pocket_unsupported"; }).length;
+    var n1 = bores.length - otherSide.length - bores.filter(function (b) { return b.skip || b.routed; }).length + nRout;
+    var fr2 = new Frame([fr.mx, fr.my, fr.mz], fr.flip, fr.rot, true);
+    var need2 = machinedCount(fr2, cyls, planes) > 0;
+    res.found = { bores: bores, ops: ops };
+    if (n1 === 0 && !need2 && !needRot) {
+      res.warnings = warnings;
+      if (bores.length || ops.length) { res.status = "unprogrammed"; res.message = "Rasta " + bores.length + " skylių / " + ops.length + " frezavimų, bet nė vieno negalima užprogramuoti."; }
+      else { res.status = "plain"; res.message = "Apdirbimo nėra — tuščia plokštė, programa nereikalinga."; }
+      return res;
+    }
+    var rotOnly = (n1 === 0 && needRot);
+    if (rotOnly && fr.DX > cfg.max_width_y + EPS) {
+      warnings.push({ code: "rot_wide", level: "err", msg: "Skylės ilgosiose briaunose reikalauja pasukti plokštę 90°, bet DX=" + num(fr.DX) + " viršija " + num(cfg.max_width_y) + " mm staklių plotį — NEPROGRAMUOJAMA" });
+      if (!need2) { res.status = "unprogrammed"; res.message = warnings[warnings.length - 1].msg; res.warnings = warnings; return res; }
+      rotOnly = needRot = false;
+    }
+    var nextop;
+    if (rotOnly) nextop = 1;
+    else if (fr.DX < 200 - EPS || fr.DY < 80 - EPS) w("small", "Plokštė " + num(fr.DX) + "×" + num(fr.DY) + " mažesnė už staklių minimumą (200×80)");
+    if (fr.DX > 3050 + EPS || fr.DY > cfg.max_width_y + EPS) w("big", "Plokštė " + num(fr.DX) + "×" + num(fr.DY) + " viršija staklių maksimumą (3050×" + num(cfg.max_width_y) + ")", "err");
+    function program(op, kind, frm, bs, os, list, rotFlag, note, how) {
+      var out = writeXXL(name, frm, bs, os, cfg, W(list), op, rotFlag, note);
+      res.programs.push({ op: op, kind: kind, file: name + "_" + op + "OP.XXL", name: name + "_" + op + "OP", text: out.text, lines: out.lines,
+                          DX: frm.DX, DY: frm.DY, DZ: frm.DZ, bores: out.drawn.bores, routes: out.drawn.routes,
+                          skipped: bs.filter(function (b) { return b.skip && !b.rotate; }), pockets: os.filter(function (o) { return o.kind === "pocket_unsupported"; }),
+                          warnings: list, how: how });
+    }
+    if (!rotOnly) {
+      program(1, "main", fr, bores, ops, warnings, false, null, "main");
+      nextop = need2 ? 3 : 2;
+    }
+    if (needRot) {
+      if (fr.DX > cfg.max_width_y + EPS) {
+        warnings.push({ code: "rot_wide", level: "err", msg: "Skylės ilgosiose briaunose reikalauja pasukti plokštę 90°, bet DX=" + num(fr.DX) + " viršija " + num(cfg.max_width_y) + " mm staklių plotį — NEPROGRAMUOJAMOS" });
+      } else {
+        var frR = new Frame([fr.mx, fr.my, fr.mz], fr.flip, fr.rot, false, true);
+        var boresR = recogniseBores(frR, cyls, cfg).filter(function (b) { return (b.F === cfg.face_left || b.F === cfg.face_right) && !inList(b.D, cfg.drills_y_edges); });
+        var wR = [], wr = W(wR);
+        if (frR.DX < 200 - EPS) wr("small", "Pasukta plokštė išilgai X tik " + num(frR.DX) + " mm (minimumas 200) — patikrinkite, ar prilaikys");
+        boresR.forEach(function (b) {
+          var D = pyround(b.D, 2);
+          if (cfg.drills_x_ends.indexOf(D) < 0) { b.skip = true; wr("nodrill", "Pasukta: skylė Ø" + num(D) + " ties Y=" + num(b.Y) + " F=" + b.F + " — tokio grąžto nėra, NEPROGRAMUOJAMA", "err"); }
+          else if (-b.Z > cfg.horizontal_max_depth + EPS) wr("edge_deep", "Pasukta: briaunos skylė Ø" + num(D) + " ties Y=" + num(b.Y) + " gylis " + num(-b.Z) + " — grąžtai siekia " + num(cfg.horizontal_max_depth));
+        });
+        var noteR = nextop === 1 ? "place the panel SIDEWAYS: same face up, long side along Y (rotated 90 deg counter-clockwise from the usual position) - its long edges are drilled by the left/right spindles" : null;
+        program(nextop, "rot", frR, boresR, [], wR, true, noteR, nextop === 1 ? "sideways" : "rot");
+      }
+    }
+    if (need2) {
+      var w2 = [];
+      var bores2 = recogniseBores(fr2, cyls, cfg).filter(function (b) { return b.F === 1 && !b.through && !b.other_side; });
+      bores2.forEach(function (b) {
+        if (cfg.drills_top.indexOf(pyround(b.D, 2)) < 0) { b.skip = true; w2.push({ code: "nodrill", level: "err", msg: "Skylė Ø" + num(b.D) + " (X=" + num(b.X) + " Y=" + num(b.Y) + "): tokio grąžto nėra — NEPROGRAMUOJAMA" }); }
+      });
+      var ops2 = recogniseRouting(fr2, planes, origin, cfg, W(w2)).filter(function (o) { return o.kind === "groove" || o.kind === "pocket_unsupported"; });
+      var note2 = rotOnly ? "panel back in the usual position (long side along X), turned over about its long edge" : null;
+      program(2, "flip", fr2, bores2, ops2, w2, false, note2, rotOnly ? "flipBack" : "flip");
+    }
+    res.programs.sort(function (a, b) { return a.op - b.op; });
+    var lostRot = needRot ? false : bores.some(function (b) { return b.rotate; }) && warnings.some(function (x) { return x.code === "rot_wide"; });
+    res.programs.forEach(function (pg) {
+      if (pg.kind === "main") pg.skipped = bores.filter(function (b) { return (b.skip && !b.rotate && !b.routed) || (b.rotate && (lostRot || (needRot && fr.DX > cfg.max_width_y + EPS))); });
+    });
+    res.warnings = warnings;
+    return res;
+  }
+
+  /* a document the XXL Fix 3D viewer understands (its face 2 = X=0 end, 3 = X=DX end) */
+  function viewDoc(pg) {
+    function c6(v) { return v === undefined ? v : +num(v); }
+    var VF = {}; VF[CFG.face_left] = 2; VF[CFG.face_right] = 3; VF[CFG.face_front] = 4; VF[CFG.face_back] = 5;
+    var holes = pg.bores.map(function (b, k) {
+      var h = { face: b.F === 1 ? 1 : VF[b.F], fF: b.F, z: c6(b.Z), d: c6(b.D), op: k, line: k };
+      if (b.F === 1) { h.x = b.X; h.y = b.Y; }
+      else if (b.F === CFG.face_left) { h.x = 0; h.y = b.Y; h.t = b.X; }
+      else if (b.F === CFG.face_right) { h.x = pg.DX; h.y = b.Y; h.t = b.X; }
+      else if (b.F === CFG.face_front) { h.x = b.X; h.y = 0; h.t = b.Y; }
+      else { h.x = b.X; h.y = pg.DY; h.t = b.Y; }
+      h.x = c6(h.x); h.y = c6(h.y); h.t = c6(h.t);
+      return h;
+    });
+    var paths = pg.routes.map(function (rt, k) {
+      return { op: holes.length + k, line: holes.length + k, d: CFG.rout_tool.dia, tool: String(CFG.rout_tool.T), name: rt.name,
+               pts: rt.moves.map(function (m) { return m.t === "A" ? [c6(m.x), c6(m.y), c6(m.z), 0, c6(m.i), c6(m.j), m.g] : [c6(m.x), c6(m.y), c6(m.z), m.t === "G0" ? 1 : 0]; }) };
+    });
+    return { DX: c6(pg.DX), DY: c6(pg.DY), DZ: c6(pg.DZ), holes: holes, paths: paths, zfast: null, warnings: [], errors: [], faceUse: {}, lines: [] };
+  }
+
+  /* the program text without the bores / routes the reviewer switched off */
+  function textWithout(pg, offB, offR) {
+    var drop = {}, nB = 0, nR = 0;
+    pg.bores.forEach(function (b, k) { if (offB[k]) drop[b.line] = 1; else nB++; });
+    pg.routes.forEach(function (r, k) { if (offR[k]) { for (var l = r.l0; l < r.l1; l++) drop[l] = 1; } else nR++; });
+    if (!Object.keys(drop).length) return pg.text;
+    var out = pg.lines.filter(function (l, i) {
+      if (drop[i]) return false;
+      if (!nB && l === "; ------ BP_SCM_DRILLING_BLOCK") return false;
+      if (!nR && l === "; ------ " + CFG.rout_tool.name) return false;
+      return true;
+    });
+    return { text: out.join("\r\n") + "\r\n", empty: !nB && !nR };
+  }
+
+  return { CFG: CFG, num: num, parseStep: parseStep, process: process, viewDoc: viewDoc, textWithout: textWithout };
+})();
+</script>
+<script id="si-ui">
+/* ============================================================================
+   STEP import — "STEP → programos".
+   Drop one or more STEP files of panels (ExportOnePanel / SolidWorks
+   Save As STEP). Each is read by S2X (step2xxl in the browser), and the
+   screen shows what was found, program by program, on a drawing of the panel
+   as it will lie on the machine. Every item can be switched off; nothing is
+   written until the reviewer approves.
+============================================================================ */
+var SI = (function () {
+  "use strict";
+  var items = [], cur = -1, el = {}, hl = null;
+  var C = { top: "#1f6feb", edge: "#d98200", rout: "#147a45", routFill: "#9fd3b6", off: "#aab4c0", bad: "#c62828", sel: "#7b1fa2",
+            panel: "#fbfcfe", line: "#3f4956", bg: "#e8edf3", grid: "#e6ebf1" };
+  var F = S2X.CFG;
+  function $(id) { return document.getElementById(id); }
+  function escH(s) { return String(s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  function n(v) { return S2X.num(Math.round(v * 1000) / 1000); }
+  function plural(k, one, few, many) {
+    var a = k % 10, b = k % 100;
+    return k + " " + (a === 1 && b !== 11 ? one : a >= 2 && a <= 9 && (b < 11 || b > 19) ? few : many);
+  }
+  function toast(msg, bad) {
+    var t = document.createElement("div");
+    t.className = "pb-toast" + (bad ? " bad" : ""); t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, bad ? 5500 : 3500);
+  }
+
+  /* ---------------------------------------------------------------- words */
+  var SIDE = {}; SIDE[1] = "Iš viršaus"; SIDE[F.face_left] = "Kairiajame gale"; SIDE[F.face_right] = "Dešiniajame gale";
+  SIDE[F.face_front] = "Priekinėje briaunoje"; SIDE[F.face_back] = "Galinėje briaunoje";
+  var HOW = {
+    main: "Plokštė guli kaip brėžinyje — 0 taškas priekis-kairė.",
+    flip: "Po 1OP apverskite per ilgąją briauną: priekis ↔ galas, kairė lieka kairėje.",
+    rot: "Ta pati pusė viršuje, pasukite 90° prieš laikrodžio rodyklę — priekis tampa kairiuoju galu.",
+    sideways: "Dėkite plokštę ŠONU: ta pati pusė viršuje, ilgoji pusė išilgai Y (pasukta 90° prieš laikrodžio rodyklę).",
+    flipBack: "Grąžinkite įprastai (ilgoji pusė išilgai X) ir apverskite per ilgąją briauną."
+  };
+  var PICTO = {
+    main: '<svg viewBox="0 0 44 26"><rect x="3" y="4" width="38" height="18" rx="1" fill="#fff" stroke="#3f4956" stroke-width="1.4"/><circle cx="3" cy="22" r="2.6" fill="#1f6feb"/></svg>',
+    flip: '<svg viewBox="0 0 44 26"><rect x="3" y="4" width="38" height="18" rx="1" fill="#f1e6f8" stroke="#7b1fa2" stroke-width="1.4"/><circle cx="3" cy="4" r="2.6" fill="#1f6feb"/><path d="M36 9v8m-3-3 3 3 3-3" stroke="#7b1fa2" stroke-width="1.4" fill="none"/></svg>',
+    rot: '<svg viewBox="0 0 44 26"><rect x="14" y="1" width="16" height="24" rx="1" fill="#fff3df" stroke="#b26a00" stroke-width="1.4"/><circle cx="14" cy="1" r="2.4" fill="#1f6feb"/><path d="M39 17a8 8 0 0 0-5-11m0 0 4 0m-4 0 1 4" stroke="#b26a00" stroke-width="1.4" fill="none"/></svg>'
+  };
+  PICTO.sideways = PICTO.rot; PICTO.flipBack = PICTO.flip;
+
+  function boreGroups(pg) {          // [{key, label, side, idx:[...] }]
+    var g = [], m = {};
+    pg.bores.forEach(function (b, k) {
+      var depth = -b.Z, thr = b.F === 1 && b.N === "L" && depth > pg.DZ;
+      var what = "Ø" + n(b.D) + (thr ? " kiaurai" : b.mark_sub ? " žymė " + n(depth) + " mm" : " gylis " + n(depth)) + (b.cam ? " (varžtas į ekscentriką)" : "");
+      var key = b.F + "|" + what;
+      if (!m[key]) { m[key] = { key: key, side: SIDE[b.F] || ("F=" + b.F), what: what, idx: [] }; g.push(m[key]); }
+      m[key].idx.push(k);
+    });
+    return g;
+  }
+  function routeLabel(r) {
+    if (r.kind === "groove") {
+      var p = r.op.pts, len = Math.hypot(p[1][0] - p[0][0], p[1][1] - p[0][1]);
+      return "Griovelis / LED kanalas, gylis " + n(r.op.depth) + " (frezos kelias " + n(len) + " mm)";
+    }
+    if (r.kind === "circle") return "Kiaurymė Ø" + n(r.op.D) + " (frezuojama ratu)";
+    if (r.kind === "inner") return "Vidinė kiaurinė išpjova";
+    return "Kiaurinis kontūras / išpjova (" + plural(r.op.segs.length, "atkarpa", "atkarpos", "atkarpų") + ")";
+  }
+
+  /* ---------------------------------------------------------------- files */
+  function add(files) {
+    var arr = Array.prototype.slice.call(files).filter(function (f) { return /\.(step|stp)$/i.test(f.name); });
+    if (!arr.length) return;
+    open();
+    var first = items.length;
+    arr.forEach(function (f) {
+      var it = { file: f.name, name: f.name.replace(/\.(step|stp)$/i, ""), res: null, busy: true, pi: 0, off: {}, done: null };
+      items.push(it);
+      var r = new FileReader();
+      r.onload = function () {
+        setTimeout(function () {
+          try { it.res = S2X.process(r.result, it.name); }
+          catch (e) { it.res = { status: "error", message: "Nepavyko apdoroti: " + e.message, programs: [], warnings: [] }; }
+          it.busy = false;
+          var lo = document.getElementById("ledOff");
+          if (lo && lo.checked) it.res.programs.forEach(function (pg, p) {   // "always skip LED routing" setting of XXL Fix
+            pg.routes.forEach(function (rt, k) { if (rt.kind === "groove") offOf(it, p).r[k] = 1; });
+          });
+          render();
+        }, 10);
+      };
+      r.readAsText(f, "latin1");
+    });
+    cur = first; render();
+  }
+  function offOf(it, p) { return it.off[p] || (it.off[p] = { b: {}, r: {} }); }
+  function finalOf(it, p) {
+    var pg = it.res.programs[p], o = offOf(it, p);
+    var t = S2X.textWithout(pg, o.b, o.r);
+    return typeof t === "string" ? { text: t, empty: false } : t;
+  }
+  function errorsOf(it) {
+    var res = it.res, list = [];
+    if (!res) return list;
+    (res.warnings || []).forEach(function (w) { if (w.level === "err") list.push(w.msg); });
+    res.programs.forEach(function (pg) { (pg.warnings === res.warnings ? [] : pg.warnings || []).forEach(function (w) { if (w.level === "err") list.push(pg.op + "OP: " + w.msg); }); });
+    return list;
+  }
+  function status(it) {
+    if (it.busy) return { c: "", t: "skaitoma…" };
+    var r = it.res;
+    if (r.status === "error") return { c: "bad", t: "✗ klaida" };
+    if (r.status === "plain") return { c: "", t: "— be apdirbimo" };
+    if (r.status === "unprogrammed") return { c: "bad", t: "✗ neprogramuojama" };
+    if (it.done) return { c: "ok", t: "✓ patvirtinta" };
+    var e = errorsOf(it).length;
+    return e ? { c: "warn", t: "⚠ " + plural(r.programs.length, "programa", "programos", "programų") } : { c: "", t: plural(r.programs.length, "programa", "programos", "programų") };
+  }
+
+  /* ---------------------------------------------------------------- render */
+  function render() {
+    renderList(); renderMain();
+  }
+  function renderList() {
+    el.count.textContent = items.length ? items.length : "";
+    if (!items.length) {
+      el.list.innerHTML = '<div class="pb-empty">Vilkite STEP failus čia arba spauskite „+ Pridėti STEP“. Galima kelis iš karto.</div>';
+      el.all.hidden = true;
+      return;
+    }
+    el.list.innerHTML = items.map(function (it, i) {
+      var st = status(it), d = it.res && it.res.dims;
+      return '<div class="pb-op si-row' + (i === cur ? " sel" : "") + '" data-i="' + i + '" title="' + escH(it.file) + '">' +
+        '<div class="nm"><div class="t">' + escH(it.name) + '</div><div class="s">' +
+        (d ? n(d.DX) + "×" + n(d.DY) + "×" + n(d.DZ) : "&nbsp;") + '</div></div>' +
+        '<span class="si-st ' + st.c + '">' + st.t + '</span></div>';
+    }).join("");
+    var ready = items.filter(function (it) { return !it.busy && !it.done && it.res.status === "ok" && !errorsOf(it).length; }).length;
+    el.all.hidden = ready < 2;
+    el.all.textContent = "✓ Patvirtinti visas be įspėjimų (" + ready + ")";
+  }
+
+  function renderMain() {
+    var it = items[cur];
+    if (!it) {
+      el.right.innerHTML = '<div class="pb-hint"><b>STEP → CNC programos</b><ul>' +
+        '<li>Įkelkite vienos detalės STEP failą (SolidWorks: <b>ExportOnePanel</b> arba Failas → Išsaugoti kaip → STEP AP214).</li>' +
+        '<li>Programa atpažins skyles, griovelius ir išpjovas <b>pagal tas pačias taisykles kaip step2xxl</b>.</li>' +
+        '<li>Peržiūrėkite, ką rado — nereikalingą galima išjungti.</li>' +
+        '<li>Spauskite <b>Patvirtinti</b> — programos atsisiunčiamos arba įrašomos į stakles.</li></ul>' +
+        '<p style="margin-top:10px">Programos pavadinimas = failo pavadinimas (DB_PART), pvz. <code>GEL_Koridorius_128_1OP.XXL</code>.</p></div>';
+      el.svg.innerHTML = ""; el.tabs.innerHTML = ""; el.progs.innerHTML = '<div class="pb-prog none">Programos atsiras čia.</div>';
+      el.status.textContent = ""; el.dl.disabled = el.send.disabled = true;
+      return;
+    }
+    if (it.busy) { el.right.innerHTML = '<div class="pb-hint">Skaitoma <b>' + escH(it.file) + '</b>…</div>'; el.svg.innerHTML = ""; el.tabs.innerHTML = ""; return; }
+    var r = it.res;
+    if (it.pi >= r.programs.length) it.pi = 0;
+    renderTabs(it); renderSvg(); renderFound(it); renderFoot(it);
+  }
+
+  function renderTabs(it) {
+    el.tabs.innerHTML = it.res.programs.map(function (pg, p) {
+      return '<button type="button" class="' + (p === it.pi ? "on" : "") + '" data-p="' + p + '">' + pg.op + 'OP <small>' + n(pg.DX) + '×' + n(pg.DY) + '</small></button>';
+    }).join("");
+  }
+
+  function renderFound(it) {
+    var r = it.res, h = "";
+    var d = r.dims;
+    h += '<div class="pb-ph"><svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" style="color:#7b1fa2"><rect x="3" y="7" width="26" height="18" rx="1.5"/><circle cx="11" cy="16" r="3" fill="currentColor"/><path d="M19 13h7M19 19h7"/></svg>' +
+         '<div class="t">' + escH(it.name) + '<small>' + (d ? n(d.DX) + " × " + n(d.DY) + " × " + n(d.DZ) + " mm" : escH(it.file)) + '</small></div></div>';
+    h += '<div class="pb-props">';
+    if (r.status !== "ok") {
+      h += '<div class="pb-msg ' + (r.status === "plain" ? "info" : "err") + '">' + escH(r.message) + '</div>';
+      (r.warnings || []).forEach(function (w) { h += '<div class="pb-msg ' + w.level + '" style="margin-top:6px">' + escH(w.msg) + '</div>'; });
+      el.right.innerHTML = h + '</div>';
+      return;
+    }
+    r.programs.forEach(function (pg, p) {
+      var o = offOf(it, p);
+      h += '<div class="si-prog' + (p === it.pi ? " on" : "") + '" data-p="' + p + '"><div class="si-ph"><span class="op k-' + pg.kind + '">' + pg.op + 'OP</span>' +
+           '<span>' + HOW[pg.how] + '</span></div>';
+      boreGroups(pg).forEach(function (g) {
+        var on = g.idx.some(function (k) { return !o.b[k]; });
+        h += '<label class="si-item" data-p="' + p + '" data-b="' + g.idx.join(",") + '"><input type="checkbox"' + (on ? " checked" : "") + '>' +
+             '<span class="sw" style="background:' + (+g.key.split("|")[0] === 1 ? C.top : C.edge) + '"></span>' +
+             '<span><b>' + g.idx.length + '×</b> ' + escH(g.what) + '<small>' + escH(g.side) + '</small></span></label>';
+      });
+      pg.routes.forEach(function (rt, k) {
+        h += '<label class="si-item" data-p="' + p + '" data-r="' + k + '"><input type="checkbox"' + (o.r[k] ? "" : " checked") + '>' +
+             '<span class="sw" style="background:' + C.rout + '"></span><span>' + escH(routeLabel(rt)) + '<small>freza Ø' + n(F.rout_tool.dia) + ', paliekama ' + n(F.rout_skin) + ' mm</small></span></label>';
+      });
+      var sg = [], sm = {};
+      pg.skipped.forEach(function (b) {
+        var k = b.F + "|" + n(b.D);
+        if (!sm[k]) { sm[k] = { b: b, list: [] }; sg.push(sm[k]); }
+        sm[k].list.push(b.F === 1 || b.F === F.face_front || b.F === F.face_back ? "X=" + n(b.X) : "Y=" + n(b.Y));
+      });
+      sg.forEach(function (g) {
+        h += '<div class="si-item no"><span class="sw" style="background:' + C.bad + '"></span><span><b>' + g.list.length + '×</b> Ø' + n(g.b.D) + ' — <b>negręžiama</b>' +
+             '<small>' + escH(SIDE[g.b.F] || "") + ': ' + escH(g.list.join(", ")) + '</small></span></div>';
+      });
+      pg.pockets.forEach(function (q) {
+        h += '<div class="si-item no"><span class="sw" style="background:' + C.bad + '"></span><span>Kišenė ' + n(q.bb[2] - q.bb[0]) + '×' + n(q.bb[3] - q.bb[1]) + ' — <b>nefrezuojama</b><small>platesnė už frezą</small></span></div>';
+      });
+      if (pg.warnings !== r.warnings) (pg.warnings || []).forEach(function (w) { h += '<div class="pb-msg ' + w.level + '" style="margin:4px 0 0">' + escH(w.msg) + '</div>'; });
+      h += '</div>';
+    });
+    var ws = (r.warnings || []).slice().sort(function (a, b) { return { err: 0, warn: 1, info: 2 }[a.level] - { err: 0, warn: 1, info: 2 }[b.level]; });
+    if (ws.length) h += '<div class="pb-msgs">' + ws.map(function (w) { return '<div class="pb-msg ' + w.level + '">' + escH(w.msg) + '</div>'; }).join("") + '</div>';
+    h += '</div>';
+    el.right.innerHTML = h;
+  }
+
+  function renderFoot(it) {
+    var r = it.res, st = el.status;
+    var ok = r.status === "ok" && r.programs.length;
+    el.dl.disabled = el.send.disabled = !ok;
+    if (!ok) { el.progs.innerHTML = '<div class="pb-prog none">' + escH(r.message || "Programų nėra.") + '</div>'; st.className = "st bad"; st.textContent = r.status === "plain" ? "" : "✗ Programų nebus"; return; }
+    var errs = errorsOf(it).length;
+    if (it.done) { st.className = "st ok"; st.textContent = "✓ Patvirtinta (" + it.done + ")"; }
+    else if (errs) { st.className = "st bad"; st.textContent = "⚠ Dalis neprogramuojama — peržiūrėkite"; }
+    else { st.className = "st ok"; st.textContent = "Peržiūrėkite ir patvirtinkite"; }
+    el.progs.innerHTML = r.programs.map(function (pg, p) {
+      var fin = finalOf(it, p), o = offOf(it, p);
+      var nb = pg.bores.filter(function (b, k) { return !o.b[k]; }).length, nr = pg.routes.filter(function (x, k) { return !o.r[k]; }).length, c = [];
+      if (nb) c.push(plural(nb, "skylė", "skylės", "skylių"));
+      if (nr) c.push(plural(nr, "frezavimas", "frezavimai", "frezavimų"));
+      return '<div class="pb-prog k-' + (pg.kind === "rot" ? "rot" : pg.kind === "flip" ? "flip" : "main") + (fin.empty ? " si-empty" : "") + '"><div class="h"><span class="op">' + pg.op + 'OP</span>' +
+        '<span class="fn" title="' + escH(pg.file) + '">' + escH(pg.file) + '</span>' +
+        '<button type="button" class="ghost" data-p3d="' + p + '">3D</button><button type="button" class="ghost" data-pcode="' + p + '">Kodas</button></div>' +
+        '<div class="c">' + (fin.empty ? "<b>viskas išjungta — nebus įrašyta</b>" : c.join(" · ")) + ' · ' + n(pg.DX) + '×' + n(pg.DY) + '</div>' +
+        '<div class="i">' + PICTO[pg.how] + '<span>' + HOW[pg.how] + '</span></div></div>';
+    }).join("");
+  }
+
+  /* ---------------------------------------------------------------- drawing */
+  function renderSvg() {
+    var it = items[cur]; if (!it || it.busy || !it.res.programs.length) { el.svg.innerHTML = ""; return; }
+    var pg = it.res.programs[it.pi], o = offOf(it, it.pi);
+    var W = el.stage.clientWidth, H = el.stage.clientHeight;
+    if (!W || !H) return;
+    el.svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    var ml = 62, mr = 84, mt = 70, mb = 62;
+    var s = Math.min((W - ml - mr) / pg.DX, (H - mt - mb) / pg.DY);
+    var ox = ml + ((W - ml - mr) - pg.DX * s) / 2, oy = mt + ((H - mt - mb) - pg.DY * s) / 2 + pg.DY * s;
+    function X(x) { return +(ox + x * s).toFixed(2); }
+    function Y(y) { return +(oy - y * s).toFixed(2); }
+    function txt(x, y, t, op) {
+      op = op || {};
+      return '<text x="' + x + '" y="' + y + '" font-size="' + (op.fs || 11) + '" fill="' + (op.c || "#8b97a6") + '" text-anchor="middle"' +
+        (op.rot ? ' transform="rotate(' + op.rot + ' ' + x + ' ' + y + ')"' : '') + (op.b ? ' font-weight="700"' : '') +
+        ' stroke="' + C.bg + '" stroke-width="3.5" paint-order="stroke" dominant-baseline="middle">' + escH(t) + '</text>';
+    }
+    var out = [];
+    out.push('<rect x="' + X(0) + '" y="' + Y(pg.DY) + '" width="' + (pg.DX * s).toFixed(2) + '" height="' + (pg.DY * s).toFixed(2) + '" fill="' + C.panel + '"/>');
+    var gstep = s * 100 < 22 ? 500 : 100, g = [];
+    for (var gx = gstep; gx < pg.DX; gx += gstep) g.push('M' + X(gx) + ' ' + Y(0) + 'V' + Y(pg.DY));
+    for (var gy = gstep; gy < pg.DY; gy += gstep) g.push('M' + X(0) + ' ' + Y(gy) + 'H' + X(pg.DX));
+    if (g.length) out.push('<path d="' + g.join("") + '" stroke="' + C.grid + '" fill="none"/>');
+    out.push('<rect x="' + X(0) + '" y="' + Y(pg.DY) + '" width="' + (pg.DX * s).toFixed(2) + '" height="' + (pg.DY * s).toFixed(2) + '" fill="none" stroke="' + C.line + '" stroke-width="1.6"/>');
+    var top = Y(pg.DY), bot = Y(0), lef = X(0), rig = X(pg.DX);
+    out.push(txt((lef + rig) / 2, top - 30, "X  " + n(pg.DX) + " mm", { fs: 13, c: "#3f4956", b: 1 }) + txt(rig + 50, (top + bot) / 2, "Y  " + n(pg.DY) + " mm", { fs: 13, c: "#3f4956", b: 1, rot: -90 }) +
+             txt((lef + rig) / 2, bot + 18, "PRIEKIS") + txt((lef + rig) / 2, top - 12, "GALAS") +
+             txt(lef - 16, (top + bot) / 2, "KAIRĖ", { rot: -90 }) + txt(rig + 18, (top + bot) / 2, "DEŠINĖ", { rot: 90 }) +
+             '<circle cx="' + lef + '" cy="' + bot + '" r="4" fill="#1b2330"/>' + txt(lef - 11, bot + 13, "0", { fs: 12, c: "#1b2330", b: 1 }));
+    // routing
+    pg.routes.forEach(function (rt, k) {
+      var pts = [], prev = null, isOff = !!o.r[k], h = hl && hl.r === k;
+      rt.moves.forEach(function (m) {
+        if (m.t === "A" && prev) {
+          var r = Math.hypot(prev[0] - m.i, prev[1] - m.j), a0 = Math.atan2(prev[1] - m.j, prev[0] - m.i), a1 = Math.atan2(m.y - m.j, m.x - m.i), d = a1 - a0;
+          if (m.g === 3) { while (d <= 1e-9) d += 2 * Math.PI; } else { while (d >= -1e-9) d -= 2 * Math.PI; }
+          for (var q = 1; q <= 16; q++) pts.push([m.i + r * Math.cos(a0 + d * q / 16), m.j + r * Math.sin(a0 + d * q / 16)]);
+        } else pts.push([m.x, m.y]);
+        prev = [m.x, m.y];
+      });
+      var pl = pts.map(function (p) { return X(p[0]) + "," + Y(p[1]); }).join(" "), col = isOff ? C.off : h ? C.sel : C.rout;
+      out.push('<g class="si-hit" data-r="' + k + '"><polyline points="' + pl + '" fill="none" stroke="' + col + '" stroke-opacity="' + (isOff ? 0.15 : 0.22) + '" stroke-width="' + (F.rout_tool.dia * s).toFixed(1) + '" stroke-linejoin="round" stroke-linecap="round"/>' +
+               '<polyline points="' + pl + '" fill="none" stroke="' + col + '" stroke-width="' + (h ? 2.4 : 1.4) + '"' + (isOff ? ' stroke-dasharray="5 4"' : '') + '/>' +
+               '<circle cx="' + X(pts[0][0]) + '" cy="' + Y(pts[0][1]) + '" r="3.5" fill="' + col + '"/></g>');
+    });
+    pg.pockets.forEach(function (q) {
+      out.push('<rect x="' + X(q.bb[0]) + '" y="' + Y(q.bb[3]) + '" width="' + ((q.bb[2] - q.bb[0]) * s).toFixed(1) + '" height="' + ((q.bb[3] - q.bb[1]) * s).toFixed(1) + '" fill="rgba(198,40,40,.12)" stroke="' + C.bad + '" stroke-width="1.6" stroke-dasharray="5 3"/>');
+    });
+    // bores
+    function boreShape(b, col, extra) {
+      var rr = Math.max(b.D / 2 * s, 3), depth = -b.Z, hw = Math.max(b.D / 2, 1.5 / s), rc, ep;
+      if (b.F === 1) {
+        var thr = b.N === "L" && depth > pg.DZ;
+        return '<circle cx="' + X(b.X) + '" cy="' + Y(b.Y) + '" r="' + rr.toFixed(1) + '" fill="' + col + '"' + (b.D >= 15 ? ' fill-opacity=".8"' : '') + '/>' +
+               (thr ? '<circle cx="' + X(b.X) + '" cy="' + Y(b.Y) + '" r="' + Math.max(1.2, rr * 0.38).toFixed(1) + '" fill="#fff"/>' : '') + (extra || "") +
+               '<circle cx="' + X(b.X) + '" cy="' + Y(b.Y) + '" r="' + Math.max(rr, 9) + '" fill="transparent"/>';
+      }
+      if (b.F === F.face_left) { rc = [0, b.Y - hw, depth, b.Y + hw]; ep = [0, b.Y]; }
+      else if (b.F === F.face_right) { rc = [pg.DX - depth, b.Y - hw, pg.DX, b.Y + hw]; ep = [pg.DX, b.Y]; }
+      else if (b.F === F.face_front) { rc = [b.X - hw, 0, b.X + hw, depth]; ep = [b.X, 0]; }
+      else { rc = [b.X - hw, pg.DY - depth, b.X + hw, pg.DY]; ep = [b.X, pg.DY]; }
+      return '<rect x="' + X(rc[0]) + '" y="' + Y(rc[3]) + '" width="' + ((rc[2] - rc[0]) * s).toFixed(2) + '" height="' + ((rc[3] - rc[1]) * s).toFixed(2) +
+             '" fill="' + col + '" fill-opacity=".2" stroke="' + col + '" stroke-width="1.2" stroke-dasharray="4 2.5"/>' +
+             '<circle cx="' + X(ep[0]) + '" cy="' + Y(ep[1]) + '" r="' + Math.max(rr, 4).toFixed(1) + '" fill="' + col + '"/>' + (extra || "") +
+             '<circle cx="' + X(ep[0]) + '" cy="' + Y(ep[1]) + '" r="' + Math.max(rr, 10) + '" fill="transparent"/>';
+    }
+    pg.bores.forEach(function (b, k) {
+      var isOff = !!o.b[k], h = hl && hl.b && hl.b.indexOf(k) >= 0;
+      var col = isOff ? C.off : h ? C.sel : b.F === 1 ? C.top : C.edge;
+      out.push('<g class="si-hit" data-b="' + k + '">' + boreShape(b, col) + '</g>');
+    });
+    pg.skipped.forEach(function (b) {
+      var ring = b.F === 1 ? '<circle cx="' + X(b.X) + '" cy="' + Y(b.Y) + '" r="' + (Math.max(b.D / 2 * s, 3) + 6).toFixed(1) + '" fill="none" stroke="' + C.bad + '" stroke-width="2"/>' : "";
+      out.push(boreShape(b, C.bad, ring));
+    });
+    el.svg.innerHTML = out.join("");
+  }
+
+  /* ---------------------------------------------------------------- approve */
+  function approve(mode, list) {
+    list = list || [items[cur]];
+    list = list.filter(function (it) { return it && !it.busy && it.res.status === "ok"; });
+    if (!list.length) return;
+    if (list.length === 1) {
+      var errs = errorsOf(list[0]);
+      if (errs.length && !confirm("Šios vietos NEBUS apdirbtos:\n\n• " + errs.join("\n• ") + "\n\nVis tiek patvirtinti programas?")) return;
+    }
+    var progs = [];
+    list.forEach(function (it) {
+      it.res.programs.forEach(function (pg, p) {
+        var f = finalOf(it, p);
+        if (!f.empty) progs.push({ it: it, file: pg.file, text: f.text });
+      });
+    });
+    if (!progs.length) { toast("Viskas išjungta — nėra ką įrašyti.", true); return; }
+    function mark() {
+      list.forEach(function (it) { it.done = progs.filter(function (q) { return q.it === it; }).map(function (q) { return q.file.replace(/\.XXL$/, "").replace(it.name + "_", ""); }).join(", "); });
+      render();
+    }
+    if (mode === "dl") {
+      progs.forEach(function (q, i) {
+        setTimeout(function () {
+          var b = new Blob([q.text], { type: "text/plain;charset=utf-8" }), a = document.createElement("a");
+          a.href = URL.createObjectURL(b); a.download = q.file; document.body.appendChild(a); a.click();
+          setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 800);
+        }, i * 350);
+      });
+      toast("Atsisiunčiama: " + progs.map(function (q) { return q.file; }).join(", "));
+      mark(); return;
+    }
+    if (typeof OUT === "undefined" || !OUT.supported()) { toast("Tiesioginis įrašymas veikia tik Chrome arba Edge — naudokite „Atsisiųsti“.", true); return; }
+    OUT.state().then(function (st) {
+      if (st === "granted") return true;
+      if (st === "none") return OUT.pick();
+      return OUT.grant().then(function () { return OUT.state(); }).then(function (s2) { return s2 === "granted"; });
+    }).then(function (ok) {
+      if (window.outRefresh) try { window.outRefresh(); } catch (e) { /* fine */ }
+      if (!ok) { toast("Aplankas nepasirinktas — programos neįrašytos.", true); return; }
+      var done = [], fail = [];
+      (function next(i) {
+        if (i >= progs.length) {
+          if (fail.length) toast("Neįrašyta: " + fail.join(", "), true);
+          else { toast("Įrašyta į „" + OUT.name() + "“: " + done.join(", ")); mark(); }
+          return;
+        }
+        OUT.write(progs[i].file, progs[i].text).then(function (r) { (r.ok ? done : fail).push(progs[i].file + (r.over ? " (perrašyta)" : "")); next(i + 1); });
+      })(0);
+    });
+  }
+
+  function showCode(it, p) {
+    var pg = it.res.programs[p], f = finalOf(it, p);
+    var m = document.createElement("div");
+    m.className = "pb-modal";
+    m.innerHTML = '<div class="box"><div class="hd"><span>' + escH(pg.file) + '</span><button type="button" class="ghost" data-x="close">Uždaryti ✕</button></div><pre>' + escH(f.text) + '</pre></div>';
+    m.addEventListener("click", function (e) { if (e.target === m || (e.target.dataset && e.target.dataset.x === "close")) m.remove(); });
+    document.body.appendChild(m);
+  }
+  function show3d(it, p) {
+    if (typeof V3D === "undefined") return;
+    var pg = it.res.programs[p], o = offOf(it, p);
+    var vpg = { DX: pg.DX, DY: pg.DY, DZ: pg.DZ, bores: pg.bores.filter(function (b, k) { return !o.b[k]; }), routes: pg.routes.filter(function (r, k) { return !o.r[k]; }) };
+    V3D.open({ name: pg.file, doc: S2X.viewDoc(vpg), skip: {}, sel: {}, plain: true });
+  }
+
+  /* ---------------------------------------------------------------- open / wiring */
+  function open() {
+    el.root.hidden = false; document.body.style.overflow = "hidden";
+    render(); requestAnimationFrame(renderSvg);
+  }
+  function close() { el.root.hidden = true; document.body.style.overflow = ""; }
+
+  function init() {
+    el.root = $("si"); if (!el.root) return;
+    ["list", "count", "all", "stage", "svg", "tabs", "right", "progs", "status", "dl", "send", "file"].forEach(function (k) { el[k] = $("si" + k[0].toUpperCase() + k.slice(1)); });
+    $("siClose").addEventListener("click", close);
+    $("siAdd").addEventListener("click", function () { el.file.click(); });
+    el.file.addEventListener("change", function () { add(el.file.files); el.file.value = ""; });
+    el.list.addEventListener("click", function (e) { var r = e.target.closest(".si-row"); if (r) { cur = +r.dataset.i; hl = null; render(); } });
+    el.tabs.addEventListener("click", function (e) { var b = e.target.closest("button"); if (b) { items[cur].pi = +b.dataset.p; hl = null; render(); } });
+    el.right.addEventListener("change", function (e) {
+      var lab = e.target.closest(".si-item"); if (!lab) return;
+      var it = items[cur], p = +lab.dataset.p, o = offOf(it, p), on = e.target.checked;
+      if (lab.dataset.b) lab.dataset.b.split(",").forEach(function (k) { if (on) delete o.b[k]; else o.b[k] = 1; });
+      if (lab.dataset.r !== undefined) { if (on) delete o.r[lab.dataset.r]; else o.r[lab.dataset.r] = 1; }
+      it.done = null; it.pi = p; render();
+    });
+    el.right.addEventListener("mouseover", function (e) {
+      var lab = e.target.closest(".si-item"); var it = items[cur];
+      var nh = lab && lab.dataset.p !== undefined ? { p: +lab.dataset.p, b: lab.dataset.b ? lab.dataset.b.split(",").map(Number) : null, r: lab.dataset.r !== undefined ? +lab.dataset.r : null } : null;
+      if (nh && it && nh.p !== it.pi) { it.pi = nh.p; renderTabs(it); }
+      if (JSON.stringify(nh) !== JSON.stringify(hl)) { hl = nh; renderSvg(); }
+    });
+    el.right.addEventListener("click", function (e) {
+      var pr = e.target.closest(".si-prog"); if (!pr || e.target.closest(".si-item")) return;
+      items[cur].pi = +pr.dataset.p; render();
+    });
+    el.progs.addEventListener("click", function (e) {
+      var b = e.target.closest("button"); if (!b) return;
+      if (b.dataset.p3d !== undefined) show3d(items[cur], +b.dataset.p3d);
+      if (b.dataset.pcode !== undefined) showCode(items[cur], +b.dataset.pcode);
+    });
+    el.dl.addEventListener("click", function () { approve("dl"); });
+    el.send.addEventListener("click", function () { approve("send"); });
+    el.all.addEventListener("click", function () {
+      approve("dl", items.filter(function (it) { return !it.busy && !it.done && it.res.status === "ok" && !errorsOf(it).length; }));
+    });
+    ["dragenter", "dragover"].forEach(function (ev) { el.root.addEventListener(ev, function (e) { e.preventDefault(); el.root.classList.add("hot"); }); });
+    ["dragleave", "drop"].forEach(function (ev) { el.root.addEventListener(ev, function (e) { e.preventDefault(); if (ev === "drop" || e.target === el.root) el.root.classList.remove("hot"); }); });
+    el.root.addEventListener("drop", function (e) { add(e.dataTransfer.files); });
+    window.addEventListener("resize", function () { if (!el.root.hidden) renderSvg(); });
+    document.addEventListener("keydown", function (e) {
+      if (el.root.hidden || e.key !== "Escape") return;
+      var v3 = $("v3d"); if (v3 && v3.classList.contains("on")) return;
+      var m = document.querySelector(".pb-modal"); if (m) { m.remove(); return; }
+      close();
+    });
+    var ob = $("siOpen"); if (ob) ob.addEventListener("click", function () { if (items.length) open(); else el.file.click(); });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init); else init();
+  return { add: add, open: open, close: close, items: function () { return items; } };
 })();
 </script>
 </body>

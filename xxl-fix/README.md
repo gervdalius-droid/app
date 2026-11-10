@@ -50,6 +50,17 @@ arc directions, and stamps the file so you can tell a fixed program from an orig
 Also handles thickness override and edge/routing operations, with fixtures covering SWOOD and
 Maestro output.
 
+## STEP → program
+
+**`⬆ STEP → programa`** (or drop `.STEP` files on the page) reads the STEP export of one or
+more panels in the browser and recognises bores, grooves/LED channels and through contours
+exactly as step2xxl v2.12 does — same 1OP / turned-over 2OP / 90°-rotated programs, same
+lines. The reviewer sees each program on a drawing, can switch groups off, sees in red what
+the machine cannot do, and approves: download or write straight to the machine folder.
+Verified byte-for-byte against step2xxl.py on 21 real panels and 10 test panels
+(`fixtures/step`, references in `fixtures/step2xxl-ref`). Beyond step2xxl: inner through
+cut-outs and through holes larger than any drill are routed (step2xxl skips them).
+
 ## Make a part by hand
 
 **`＋ Nauja detalė`** (top right) opens a part builder, so the workshop can make a program
@@ -70,7 +81,7 @@ why in plain Lithuanian.
 python3 serve.py          # http://localhost:8748/
 ```
 
-Tests: <http://localhost:8748/test.html> — **375 checks** against real `.XXL` fixtures in
+Tests: <http://localhost:8748/test.html> — **429 checks** against real `.XXL` fixtures in
 [`fixtures/`](fixtures) (SWOOD portrait/edges, Maestro arcs/edges/routing).
 
 There's a `windows/` folder with a double-click launcher for the shop PC, because the person

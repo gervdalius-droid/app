@@ -1,0 +1,14 @@
+H DX=700 DY=400 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : MIXEDGE_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=300 Y=9 Z=-27 D=8 N="P" F=4 R=1#
+ XBO X=600 Y=9 Z=-27 D=8 N="P" F=5 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

@@ -1,0 +1,15 @@
+H DX=700 DY=400 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SYN_TWOFACE2_2OP
+;** Date codage : step2xxl
+; 2OP: panel turned over about the X axis after 1OP (long edge stays in place, Y is mirrored)
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=100 Y=350 Z=-12 D=5 N="P" F=1 R=1#
+ XBO X=600 Y=350 Z=-12 D=5 N="P" F=1 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

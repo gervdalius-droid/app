@@ -1,0 +1,14 @@
+H DX=400 DY=700 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : MIXEDGE_2OP
+;** Date codage : step2xxl
+; 2OP: same face up as 1OP, panel ROTATED 90 deg COUNTER-CLOCKWISE (seen from above): the former front edge (Y=0) is now the left end (X=0), long side along Y
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=9 Y=630 Z=-32 D=5 N="P" F=3 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

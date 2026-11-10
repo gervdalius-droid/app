@@ -1,0 +1,26 @@
+H DX=1000 DY=400 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SYN_FILLET_ROT_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=200 Y=363 Z=-12 D=5 N="P" F=1 R=1#
+ XBO X=500 Y=363 Z=-12 D=5 N="P" F=1 R=1#
+ XBO X=600 Y=9 Z=-30 D=8 N="P" F=5 R=1#
+ XBO X=800 Y=363 Z=-12 D=5 N="P" F=1 R=1#
+; ------ DEIMANTAS 16MM  - NAUJA - 
+; ***** DEIMANTAS 16MM  - NAUJA - 
+ XG0 X=142.25 Y=-12.75 Z=10 T=96 C=0 V=2000 D=24 F=1
+ XL2P X=142.25 Y=-12.75 Z=0 V=2000
+ XL2P X=142.25 Y=17.25 Z=-16 V=2000
+ XL2P X=142.25 Y=-12.75 Z=-16 V=4000
+ XL2P X=142.25 Y=80 Z=-16 V=4000
+ XA2P X=130 Y=92.25 Z=-16 I=130 J=80 G=3 V=4000
+ XL2P X=-5 Y=92.25 Z=-16 V=4000
+ XL2P X=-5 Y=92.25 Z=10 V=4000
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

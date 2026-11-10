@@ -987,6 +987,104 @@ async function run(){
      JSON.stringify(r1b.check));
 
   /* ---------------- part builder UI ---------------- */
+  /* ---------------- STEP import: step2xxl in the browser ----------------
+     Every program must be byte-identical to what step2xxl.py v2.12 writes
+     for the same STEP file (reference programs in fixtures/step2xxl-ref). */
+  section("STEP → programos (step2xxl naršyklėje)");
+  var sc = /<script id="s2x-core">([\s\S]*?)<\/script>/.exec(html);
+  ck("s2x-core įkeltas", !!sc);
+  if (sc) (0,eval)(sc[1]);
+  var SAME = { "LONGEDGE": ["1OP", "2OP"], "MIXEDGE": ["1OP", "2OP"], "TWOFACE": ["1OP", "2OP"], "GROOVES": ["1OP"],
+               "SYN_NOTCHES": ["1OP"], "SYN_FILLET_ROT": ["1OP"], "SYN_TWOFACE2": ["1OP", "2OP"], "SYN_EDGES": ["1OP", "2OP"],
+               "SYN_GROOVES": ["1OP"], "SYN_4NOTCH": ["1OP"] };
+  var stepTxt = {}, allProgs = [];
+  for (var sn in SAME) {
+    stepTxt[sn] = await (await fetch("fixtures/step/" + sn + ".STEP")).text();
+    var sr = S2X.process(stepTxt[sn], sn);
+    var names = sr.programs.map(function (p) { return p.op + "OP"; }).join(",");
+    ck(sn + ": programos " + SAME[sn].join(" + "), sr.status === "ok" && names === SAME[sn].join(","), sr.status + " " + names + " " + (sr.message || ""));
+    for (var pi = 0; pi < sr.programs.length; pi++) {
+      var pgm = sr.programs[pi], want = await (await fetch("fixtures/step2xxl-ref/" + pgm.file)).text();
+      var same = want === pgm.text;
+      if (!same) { var wa = want.split("\r\n"), ga = pgm.text.split("\r\n"), dl = 0; while (wa[dl] === ga[dl]) dl++; }
+      ck(sn + " " + pgm.op + "OP identiška step2xxl", same, same ? "" : "eil. " + (dl + 1) + "\nstep2xxl: " + wa[dl] + "\nXXL Fix:  " + ga[dl]);
+      allProgs.push(pgm);
+    }
+  }
+  // routing rules hold on every generated program
+  var airBad = [], deepBad = [], plBad = [];
+  allProgs.forEach(function (pg) {
+    var prev = null;
+    pg.text.split("\r\n").forEach(function (l) {
+      var m = /^ X(G0|L2P|A2P) X=(\S+) Y=(\S+) Z=(\S+)/.exec(l); if (!m) return;
+      var x = +m[2], y = +m[3], z = +m[4];
+      if (x < -20 - 1e-9 || x > pg.DX + 20 + 1e-9 || y < -20 - 1e-9 || y > pg.DY + 20 + 1e-9) airBad.push(pg.file + ": " + l);
+      if (z < -(pg.DZ - 2) - 1e-6) deepBad.push(pg.file + ": " + l);
+      if (prev && m[1] === "L2P" && Math.abs(prev.x - x) < 1e-9 && Math.abs(prev.y - y) < 1e-9 && z < prev.z - 1e-9 && z < 0) plBad.push(pg.file + ": " + l);
+      prev = { x: x, y: y, z: z };
+    });
+  });
+  ck("Frezavimas niekada > 20 mm už plokštės", !airBad.length, airBad.join("\n"));
+  ck("Frezavimas visada palieka 2 mm", !deepBad.length, deepBad.join("\n"));
+  ck("Freza niekada nesminga vertikaliai", !plBad.length, plBad.join("\n"));
+  // where XXL Fix does more than step2xxl
+  var cu = S2X.process(await (await fetch("fixtures/step/SYN_CUTOUTS.STEP")).text(), "SYN_CUTOUTS");
+  var cut1 = cu.programs[0] ? cu.programs[0].text : "";
+  ck("Didelė kiaurymė Ø60 frezuojama ratu, ne gręžiama", !/D=60 /.test(cut1) && /XA2P [^\n]* I=700 J=300 G=3/.test(cut1), cut1);
+  ck("Vidinė kiaurinė išpjova frezuojama", cu.programs[0] && cu.programs[0].routes.some(function (r) { return r.kind === "inner"; }));
+  ck("Ø35 lizdas lieka gręžimu", / XBO X=150 Y=100 Z=-13 D=35 N="P" F=1 R=1#/.test(cut1));
+  var sl = S2X.process(await (await fetch("fixtures/step/SYN_SLOT.STEP")).text(), "SYN_SLOT");
+  ck("Kiaurinė anga: programa yra (step2xxl rašytų „no machining“)", sl.status === "ok" && sl.programs.length === 1 && sl.programs[0].routes.length === 1, sl.status);
+  // reviewer switches items off
+  var tw = S2X.process(stepTxt.SYN_TWOFACE2, "T");
+  var t0 = tw.programs[0], off1 = {}; off1[0] = 1;
+  var tw1 = S2X.textWithout(t0, off1, {});
+  ck("Išjungta skylė dingsta iš programos", typeof tw1 === "object" && (t0.text.match(/XBO/g) || []).length - 1 === (tw1.text.match(/XBO/g) || []).length);
+  var allB = {}; t0.bores.forEach(function (b, k) { allB[k] = 1; });
+  var allR = {}; t0.routes.forEach(function (r, k) { allR[k] = 1; });
+  var tw2 = S2X.textWithout(t0, allB, allR);
+  ck("Viską išjungus — tuščia programa, be antraščių", tw2.empty && !/BP_SCM_DRILLING_BLOCK|DEIMANTAS/.test(tw2.text));
+  // what is not a single panel is refused, never programmed
+  var two = stepTxt.SYN_SLOT || await (await fetch("fixtures/step/SYN_SLOT.STEP")).text();
+  var mm = /#(\d+)\s*=\s*MANIFOLD_SOLID_BREP\(\s*'[^']*'\s*,\s*(#\d+)\s*\)\s*;/.exec(two);
+  var cutAt = two.lastIndexOf("ENDSEC;");
+  var twoSolids = two.slice(0, cutAt) + "#999999=MANIFOLD_SOLID_BREP(''," + mm[2] + ");\n" + two.slice(cutAt);
+  var ts = S2X.process(twoSolids, "DU");
+  ck("Du kūnai faile -> klaida, programų nėra", ts.status === "error" && !ts.programs.length, ts.message);
+  var junk = S2X.process("ISO-10303-21; nonsense", "X");
+  ck("Ne STEP -> aiški klaida", junk.status === "error" && !!junk.message, junk.message);
+  ck("Programa tik ASCII ir CRLF", allProgs.every(function (p) { return /^[\x00-\x7f]*$/.test(p.text) && /\r\n$/.test(p.text); }));
+
+  section("STEP → programos — langas");
+  await (async function () {
+    var fr = document.createElement("iframe");
+    fr.style.cssText = "width:1280px;height:1024px;border:1px solid #2b313d;border-radius:8px;margin:8px 0";
+    fr.src = "index.html";
+    document.getElementById("out").appendChild(fr);
+    await new Promise(function (res) { fr.onload = res; });
+    var w = fr.contentWindow, doc = fr.contentDocument, errs3 = [];
+    w.addEventListener("error", function (e) { errs3.push(e.message); });
+    ck("Mygtukas „STEP → programa“", !!doc.getElementById("siOpen"));
+    ck("Failų pasirinkime leidžiami STEP", /\.step/i.test(doc.getElementById("file").getAttribute("accept")));
+    var f1 = new w.File([stepTxt.SYN_TWOFACE2], "SYN_TWOFACE2.STEP"), f2 = new w.File([stepTxt.SYN_EDGES], "SYN_EDGES.step");
+    w.SI.add([f1, f2]);
+    await new Promise(function (r) { setTimeout(r, 400); });
+    ck("Langas atsidaro, 2 failai sąraše", !doc.getElementById("si").hidden && doc.querySelectorAll("#siList .si-row").length === 2);
+    ck("Programų kortelės (1OP + 2OP)", doc.querySelectorAll("#siProgs .pb-prog").length === 2);
+    ck("Rasti elementai su varnelėmis", doc.querySelectorAll("#siRight .si-item input").length >= 3);
+    ck("Brėžinyje skylės ir frezavimas (2 + 1)", doc.querySelectorAll("#siSvg .si-hit").length === 3, doc.querySelectorAll("#siSvg .si-hit").length);
+    var before = doc.querySelector("#siProgs .pb-prog .c").textContent;
+    var cb = doc.querySelector("#siRight .si-item input");
+    cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true }));
+    var after = doc.querySelector("#siProgs .pb-prog .c").textContent;
+    ck("Išjungtos skylės nebeįskaičiuotos", /^2 skylės/.test(before) && !/skyl/.test(after), before + " → " + after);
+    ck("Telpa į 1280×1024", doc.getElementById("si").scrollHeight <= 1024 && doc.getElementById("si").scrollWidth <= 1280);
+    doc.getElementById("siClose").click();
+    ck("Uždaromas", doc.getElementById("si").hidden);
+    ck("Klaidų nebuvo", errs3.length === 0, JSON.stringify(errs3));
+    fr.remove();
+  })();
+
   section("Nauja detalė — langas");
   await (async function () {
     var fr = document.createElement("iframe");

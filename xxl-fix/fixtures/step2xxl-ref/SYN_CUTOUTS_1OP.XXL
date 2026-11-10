@@ -1,0 +1,13 @@
+H DX=900 DY=450 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SYN_CUTOUTS_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=150 Y=100 Z=-13 D=35 N="P" F=1 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG
