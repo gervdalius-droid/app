@@ -238,23 +238,23 @@ const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const clone=o=>JSON.parse(JSON.stringify(o));
 const isObj=v=>v&&typeof v==='object'&&!Array.isArray(v);
-function merge(a,b){for(const k in b){if(isObj(b[k])&&isObj(a[k]))merge(a[k],b[k]);else a[k]=isObj(b[k])?clone(b[k]):b[k]}return a}
+function merge(a,b){for(const k in b){if(b[k]===null&&isObj(a)){a[k]=null;continue}if(isObj(b[k])&&isObj(a[k]))merge(a[k],b[k]);else a[k]=isObj(b[k])?clone(b[k]):b[k]}return a}
 function lsGet(k){try{return localStorage.getItem(k)}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 
 /* ---------- language ---------- */
 const L={
  lt:{ttl:'Cecho planas',run:'Dirba',idle:'Laisva',down:'Neveikia',busy:'Užimtas',free:'Laisvas',ppl:'ceche',edit:'Redaguoti',editOn:'Baigti redagavimą',tv:'TV režimas',tvOff:'Išeiti iš TV',
-  workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
+  workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Vietą keisk sąraše šalia vardo arba tempk žmogų plane.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
-  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
+  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',noOp:'Prie staklių nėra operatoriaus, todėl plane jos rodomos kaip laisvos. Priskyrus žmogų jos vėl rodomos kaip dirbančios.',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Vietą pasirink sąraše šalia vardo, arba tempk vardą tiesiai į planą. Paspaudęs stakles ar stalą gali pridėti darbuotojus vienu paspaudimu. Paspausk vardą – projektas ir detalės.',assignHere:'Pridėti čia',grpM:'Staklės',grpD:'Stalai ir patalpos',grpZ:'Zonos',dropOn:'Paleisk ant staklių ar stalo',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
-  workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
+  workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Change the place in the list next to the name, or drag the person on the plan.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
-  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
+  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',noOp:'Nobody is at this machine, so the plan shows it as idle. It shows as running again once someone is assigned.',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Pick the place in the list next to the name, or drag the name straight onto the plan. Tap a machine or desk to add workers with one tap. Tap a name for project and parts.',assignHere:'Add here',grpM:'Machines',grpD:'Desks and rooms',grpZ:'Zones',dropOn:'Drop on a machine or desk',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
@@ -453,6 +453,8 @@ function normalize(){
   {const l0=docs.layout.data;if(l0&&l0.items)for(const it of Object.values(l0.items))if(it&&it.t==='startech'&&+it.w===330&&+it.h===176){delete it.w;delete it.h}}
   const l=LAY(); if(!isObj(l.hall))l.hall=clone(DEF_LAYOUT.hall); if(!isObj(l.items))l.items={};
   const s=ST(); for(const k of ['st','people','stock','inst'])if(!isObj(s[k]))s[k]={};
+  for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
+  for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
 }
 function canWrite(){
@@ -613,7 +615,9 @@ const breakList=()=>Array.isArray(ST().breaks)?ST().breaks:DEF_BREAKS;
 function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{const a=String(v||'').split(':');return(+a[0]||0)*60+(+a[1]||0)};
   for(const b of breakList())if(b&&b.f&&b.t&&mm(b.f)<=m&&m<mm(b.t))return b;return null}
 const peopleAt=id=>onBreak()?[]:peopleAtRaw(id);
-const shown=id=>{const v=statusOf(id);return v==='run'&&onBreak()?'pause':v};
+const SELF_RUN={volter:1,compressor:1};
+const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).length===0};
+const shown=id=>{const v=statusOf(id);if(v==='run'&&noOperator(id))return'idle';return v==='run'&&onBreak()?'pause':v};
 const peopleAtRaw=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
 const statusOf=id=>{const s=ST().st[id];return s&&['run','idle','down'].includes(s.s)?s.s:'idle'};
 function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>String(x).padStart(2,'0');
@@ -758,7 +762,7 @@ function inspector(id){
     const cur=statusOf(id),since=ST().st[id]&&ST().st[id].ts;
     s+='<div class="row" role="group" aria-label="'+esc(t('status'))+'">';
     for(const k of ['run','idle','down'])s+='<button class="stbtn" type="button" data-act="st" data-s="'+k+'" aria-pressed="'+(cur===k)+'"><i class="dot d-'+k+'"></i>'+esc(t(k))+'</button>';
-    s+='</div>'+(since?'<div class="sub">'+esc(t(cur))+' '+esc(t('since'))+' '+esc(hhmm(since))+'</div>':'');
+    s+='</div>'+(since?'<div class="sub">'+esc(t(cur))+' '+esc(t('since'))+' '+esc(hhmm(since))+'</div>':'')+(cur==='run'&&noOperator(id)?'<div class="note">'+esc(t('noOp'))+'</div>':'');
   }
   if(T.kind==='rack'){
     const rows=(ST().stock[id]&&Array.isArray(ST().stock[id].rows))?ST().stock[id].rows:[];
@@ -1185,7 +1189,7 @@ function events3D(cv3){
     if(s.moved){T3.cam.user=true;saveCam();return}
     pendDel=null;const h=pick3(e);
     if(h&&h.pid&&!editing){selPerson=selPerson===h.pid?null:h.pid;render();return}
-    if(h){if(selPerson&&!editing){movePerson(selPerson,h.id);return}selItem=h.id}else selItem=null;
+    selPerson=null;if(h){selItem=h.id}else selItem=null;
     render();
   };
   cv3.addEventListener('pointerup',up);cv3.addEventListener('pointercancel',up);
@@ -1223,10 +1227,11 @@ function stationAt(x,y){
     const T=it&&TYPES[it.t];if(!T||T.kind==='wall'||T.kind==='gate'||T.kind==='aux')continue;
     const W=+it.w||T.w,H=+it.h||T.h,a=(+it.r||0)*Math.PI/180,dx=x-it.x,dy=y-it.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a);
     const d=Math.hypot(Math.max(0,Math.abs(lx)-W/2),Math.max(0,Math.abs(ly)-H/2))+(T.kind==='zone'?40:0);
-    if(d<=110&&d<bd){bd=d;best={id,lx,ly}}
+    if(d<=110&&d<bd){bd=d;best={id,lx,ly,d}}
   }
   return best;
 }
+function distTo(id,x,y){const it=LAY().items[id],T=it&&TYPES[it.t];if(!T)return 1e9;const l=localTo(id,x,y),W=+it.w||T.w,H=+it.h||T.h;return Math.hypot(Math.max(0,Math.abs(l[0])-W/2),Math.max(0,Math.abs(l[1])-H/2))}
 function localTo(id,x,y){const it=LAY().items[id],a=(+it.r||0)*Math.PI/180,dx=x-it.x,dy=y-it.y;return[dx*Math.cos(a)+dy*Math.sin(a),-dx*Math.sin(a)+dy*Math.cos(a)]}
 /* Walls: the hall outline plus drawn inner walls. A gate or door sitting on one opens it. */
 const WALLH=330;
@@ -1292,7 +1297,7 @@ $('#map').addEventListener('pointermove',e=>{
     return}
   if(!drag||e.pointerId!==drag.pid)return;
   if(drag.pp){
-    if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
+    if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<12)return;
     drag.moved=true;const q=svgPt(e);let gh=document.getElementById('ghost');
     if(!gh){gh=document.createElementNS('http://www.w3.org/2000/svg','g');gh.id='ghost';gh.setAttribute('class','fig sel');gh.style.pointerEvents='none';gh.innerHTML='<ellipse class="bd" cx="0" cy="0" rx="29" ry="16"/><circle class="hd" cx="0" cy="-2" r="13"/><circle class="hr" cx="0" cy="0" r="9"/>';$('#map').appendChild(gh)}
     gh.setAttribute('transform','translate('+q.x+','+q.y+')');return}
@@ -1324,7 +1329,9 @@ function endDrag(e){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
     const per=ST().people[d.pp];
     if(!d.moved||!per){pendDel=null;selPerson=selPerson===d.pp?null:d.pp;render();return}
-    const q=svgPt(e);let st=stationAt(q.x,q.y);
+    const q=svgPt(e),cur=per.at&&LAY().items[per.at]?per.at:null;let st=stationAt(q.x,q.y);
+    /* they stay with their own station unless dropped right onto another one */
+    if(cur&&st&&st.id!==cur&&st.d>0&&distTo(cur,q.x,q.y)<170){const l=localTo(cur,q.x,q.y);st={id:cur,lx:l[0],ly:l[1]}}
     if(!st&&per.at&&LAY().items[per.at]){const l=localTo(per.at,q.x,q.y);st={id:per.at,lx:l[0],ly:l[1]}}
     if(!st||!canWrite()){render();return}
     const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly)};if(st.id!==per.at)p.people[d.pp].ts=Date.now();
@@ -1362,7 +1369,7 @@ $('#map').addEventListener('click',e=>{
   if(pill&&!editing){selPerson=selPerson===pill.dataset.pid?null:pill.dataset.pid;render();return}
   const g=e.target.closest('.it');
   if(g){
-    if(selPerson&&!editing){movePerson(selPerson,g.dataset.id);return}
+    selPerson=null;
     selItem=g.dataset.id;
   }else selItem=null;
   render();
@@ -1398,12 +1405,13 @@ $('#rail').addEventListener('click',e=>{
     if(!f.f||!Object.keys(w).length){toast(t('pickWho'));return}
     let to=f.t||f.f,fr=f.f;if(to<fr){const x=to;to=fr;fr=x}
     const pr=String(f.p||'').trim().slice(0,60);
-    for(const k of Object.keys(ST().inst)){const i=ST().inst[k];if(!i||!i.t||i.t<today())delete ST().inst[k]}
-    ST().inst[f.id]={p:pr,f:fr,t:to,w};const np=addProject(pr);if(np)ST().projects=np;
-    instForm=null;commit(docs.state,null,true);return}
+    const ip={inst:{}};for(const k of Object.keys(ST().inst)){const i=ST().inst[k];if(!i||!i.t||i.t<today())ip.inst[k]=null}
+    const old=ST().inst[f.id],w2={};if(old&&isObj(old.w))for(const k in old.w)w2[k]=false;Object.assign(w2,w);
+    ip.inst[f.id]={p:pr,f:fr,t:to,w:w2};const np=addProject(pr);if(np)ip.projects=np;
+    instForm=null;commit(docs.state,ip);return}
   if(a==='instdel'){
     if(pendDel!=='n:'+iid){pendDel='n:'+iid;renderRail();return}
-    pendDel=null;delete ST().inst[iid];commit(docs.state,null,true);return}
+    pendDel=null;commit(docs.state,{inst:{[iid]:null}});return}
   if(a==='prect'||a==='pl'){
     const bb=hallBox(hallPts()),W=Math.round(bb.x1/10)*10,H=Math.round(bb.y1/10)*10,r=v=>Math.round(v/10)*10;
     setHall(a==='prect'?[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]:[{x:0,y:0},{x:r(W*.6),y:0},{x:r(W*.6),y:r(H*.45)},{x:W,y:r(H*.45)},{x:W,y:H},{x:0,y:H}]);return}
@@ -1416,15 +1424,15 @@ $('#rail').addEventListener('click',e=>{
     const p={stock:{}};p.stock[selItem]={rows};commit(docs.state,p);return}
   if(a==='pdel'){
     if(pendDel!=='p:'+pid){pendDel='p:'+pid;renderRail();return}
-    pendDel=null;delete ST().people[pid];commit(docs.state,null,true);return}
+    pendDel=null;commit(docs.state,{people:{[pid]:null}});return}
   if(a==='rot'){const it=LAY().items[selItem];const p={items:{}};p.items[selItem]={r:((+it.r||0)+90)%360};commit(docs.layout,p);return}
   if(a==='dup'){const it=LAY().items[selItem];if(!it)return;const id=it.t+Date.now().toString(36),c=clone(it),h=LAY().hall;c.x=Math.min(h.w,(+it.x||0)+40);c.y=Math.min(h.h,(+it.y||0)+40);
     const p={items:{}};p.items[id]=c;selItem=id;commit(docs.layout,p);return}
   if(a==='idel'){
     if(pendDel!=='i:'+selItem){pendDel='i:'+selItem;renderRail();return}
-    pendDel=null;const id=selItem;delete LAY().items[id];selItem=null;commit(docs.layout,null,true);
+    pendDel=null;const id=selItem;selItem=null;commit(docs.layout,{items:{[id]:null}});
     const here=Object.keys(ST().people).filter(k=>ST().people[k]&&ST().people[k].at===id);
-    if(here.length||ST().stock[id]||ST().st[id]){here.forEach(k=>{ST().people[k].at=null});delete ST().stock[id];delete ST().st[id];commit(docs.state,null,true)}
+    if(here.length||ST().stock[id]||ST().st[id]){const sp={people:{},stock:{[id]:null},st:{[id]:null}};here.forEach(k=>{sp.people[k]={at:null}});commit(docs.state,sp)}
     return}
   if(a==='additem'){
     const ty=$('#in-addt').value,T=TYPES[ty];if(!T)return;
