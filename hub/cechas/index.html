@@ -119,6 +119,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .rdim{font-family:var(--display);font-weight:700;font-size:28px;fill:var(--mark-ink);text-anchor:middle;paint-order:stroke;stroke:var(--mark);stroke-width:12px;stroke-linejoin:round;pointer-events:none}
 .wprev{stroke:var(--mark);stroke-width:16;stroke-linecap:butt;opacity:.85;pointer-events:none}
 .drawing #map,.drawing .it{cursor:crosshair}
+.dh{fill:var(--mark);stroke:var(--mark-ink);stroke-width:4;cursor:move}
 .vh{fill:var(--mark);stroke:var(--mark-ink);stroke-width:4;cursor:move}
 .vadd{cursor:pointer}.vadd circle{fill:var(--panel);stroke:var(--ink);stroke-width:3}.vadd text{font-family:var(--body);font-weight:600;font-size:26px;text-anchor:middle;fill:var(--ink);pointer-events:none}
 .pill text.pp{font-size:22px;font-weight:500}
@@ -198,14 +199,14 @@ const L={
  lt:{ttl:'Cecho planas',run:'Dirba',idle:'Laisva',down:'Neveikia',busy:'Užimtas',free:'Laisvas',ppl:'ceche',edit:'Redaguoti',editOn:'Baigti redagavimą',tv:'TV režimas',tvOff:'Išeiti iš TV',
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
-  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
+  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Paspausk darbuotoją, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
-  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
+  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Tap a worker, then a place on the plan. Tap a machine to change its status.',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
@@ -232,6 +233,32 @@ function concrete(){
   CONCRETE={canvas:c,url:c.toDataURL()};return CONCRETE;
 }
 const LN=(x1,y1,x2,y2,c,w)=>'<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="round"/>';
+/* Rooms (paint booth, operator room) are drawn at their real size instead of being stretched:
+   walls keep their thickness, the contents keep their proportions, and the door is a gap that can be
+   put anywhere on any wall. Sides: 0 front, 1 right, 2 back, 3 left; dp = 0..1 along that wall. */
+function doorGeo(it,T,W,H){
+  const ds=((+it.ds||0)%4+4)%4,L=ds%2?H:W,dw=Math.max(50,Math.min(+it.dw||T.dw,L-40)),dp=it.dp==null?.5:Math.max(0,Math.min(1,+it.dp)),c=(-L/2+dw/2+14)+(L-dw-28)*dp,hw=W/2,hh=H/2;
+  const P=(i,u)=>i===0?[u,hh]:i===1?[hw,u]:i===2?[u,-hh]:[-hw,u];
+  return{ds,L,dw,dp,c,hw,hh,P,n:[[0,-1],[-1,0],[0,1],[1,0]][ds],t:ds%2?[0,1]:[1,0],mid:P(ds,c)};
+}
+function roomSVG(it,T,W,H,inner,win){
+  const g=doorGeo(it,T,W,H),k=Math.min(W/T.w,H/T.h);
+  let s=R(-g.hw,-g.hh,W,H,'var(--booth)')+'<g transform="scale('+k+(T.flip&&g.ds===2?','+(-k):'')+')">'+inner+'</g>';
+  const seg=(i,u1,u2,c,w)=>{const a=g.P(i,u1),b=g.P(i,u2);return'<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="'+c+'" stroke-width="'+w+'" stroke-linecap="square"/>'};
+  for(let i=0;i<4;i++){const L=i%2?H:W;
+    if(i===g.ds){s+=seg(i,-L/2,g.c-g.dw/2,'var(--wall)',10)+seg(i,g.c+g.dw/2,L/2,'var(--wall)',10)}else s+=seg(i,-L/2,L/2,'var(--wall)',10);
+    if(win&&i===(g.ds+1)%4)s+='<line x1="'+g.P(i,-L*.22)[0]+'" y1="'+g.P(i,-L*.22)[1]+'" x2="'+g.P(i,L*.22)[0]+'" y2="'+g.P(i,L*.22)[1]+'" stroke="#7fb4d6" stroke-width="6"/>'}
+  const h=g.P(g.ds,g.c-g.dw/2),e=[h[0]+g.n[0]*g.dw,h[1]+g.n[1]*g.dw],o=g.P(g.ds,g.c+g.dw/2),sw=g.n[0]*g.t[1]-g.n[1]*g.t[0]>0?1:0;
+  s+='<line x1="'+h[0]+'" y1="'+h[1]+'" x2="'+e[0]+'" y2="'+e[1]+'" stroke="var(--wall)" stroke-width="5"/><path d="M'+e[0]+' '+e[1]+'A'+g.dw+' '+g.dw+' 0 0 '+sw+' '+o[0]+' '+o[1]+'" fill="none" stroke="var(--muted)" stroke-width="3" stroke-dasharray="8 8"/>';
+  return s;
+}
+function roomM(it,T,W,D,inner,op){
+  const g=doorGeo(it,T,W,D),k=Math.min(W/T.w,D/T.h),fz=T.flip&&g.ds===2?-1:1,m=[];
+  const wall=(i,u1,u2,y0,h)=>{if(u2-u1<1)return;const a=g.P(i,u1),b=g.P(i,u2);m.push(i%2?B(a[0]-5,a[1],a[0]+5,b[1],y0,h,'var(--wall)',null,op):B(a[0],a[1]-5,b[0],a[1]+5,y0,h,'var(--wall)',null,op))};
+  for(let i=0;i<4;i++){const L=i%2?D:W;if(i===g.ds){wall(i,-L/2,g.c-g.dw/2,0,260);wall(i,g.c+g.dw/2,L/2,0,260);wall(i,g.c-g.dw/2,g.c+g.dw/2,212,48)}else wall(i,-L/2,L/2,0,260)}
+  for(const b of inner){const c=Object.assign({},b);if(b.cyl){c.x=b.x*k;c.z=b.z*k*fz;c.r=b.r*k}else{c.x0=b.x0*k;c.x1=b.x1*k;const z0=b.z0*k*fz,z1=b.z1*k*fz;c.z0=Math.min(z0,z1);c.z1=Math.max(z0,z1)}m.push(c)}
+  return m;
+}
 function saw(p){
   let s='<g transform="translate(0,32)">';
   s+=LN(0,40,105,-140,'#6b7278',8);                                   // outrigger swing arm
@@ -278,16 +305,19 @@ const TYPES={
      s+=R(128,-100,11,200,'#2e3438');for(let y=-85;y<=85;y+=24)s+='<circle cx="133" cy="'+y+'" r="4" fill="#c9cdd1"/>';
      s+='<g class="mv mv-gantry">'+R(-22,-136,44,272,'#f1f2f3',S+' rx="5"')+R(-17,-34,34,48,'#1f5fae',S+' rx="4"')+'<circle cx="0" cy="-2" r="8" fill="#0d1011"/></g>';
      s+=R(160,-125,38,74,'#f1f2f3',S+' rx="4"')+R(160,-125,38,10,'#1f5fae')+R(166,70,28,36,'#2e3438',S+' rx="4"');return s}},
- booth:{kind:'machine',name:{lt:'Dažymo kamera',en:'Paint booth'},sub:{lt:'Dažymas ir lakavimas',en:'Painting and lacquering'},w:500,h:380,
-   draw(){let s=R(-245,-185,490,370,'var(--booth)');
+ booth:{kind:'machine',room:true,flip:true,dw:140,name:{lt:'Dažymo kamera',en:'Paint booth'},sub:{lt:'Dažymas ir lakavimas',en:'Painting and lacquering'},w:500,h:380,
+   draw(it,W,H){let s='';
      for(let x=-232;x<232;x+=16)s+=LN(x,-176,x+10,-152,'var(--muted)',3);
      s+=R(-235,-178,470,28,'none','stroke="var(--muted)" stroke-width="3"');
-     s+='<path d="M-70 185H-245V-185H245V185H70" fill="none" stroke="var(--wall)" stroke-width="10" stroke-linejoin="miter"/>';
-     s+='<path d="M-70 185A70 70 0 0 1 -140 115M70 185A70 70 0 0 0 140 115" fill="none" stroke="var(--muted)" stroke-width="3" stroke-dasharray="8 8"/>';
      s+=R(-215,-70,90,170,'none','stroke="var(--muted)" stroke-width="5"');for(let y=-45;y<100;y+=28)s+=LN(-213,y,-127,y,'var(--muted)',4);
      s+='<circle cx="40" cy="20" r="62" fill="none" stroke="var(--muted)" stroke-width="3" stroke-dasharray="10 8"/>'+R(-5,-8,90,56,'#e8dcc2',S);
      s+='<circle cx="195" cy="-100" r="32" fill="#c9cdd1" '+S+'/><g class="mv mv-spin"><path d="M195 -128L203 -100L195 -72L187 -100ZM167 -100L195 -108L223 -100L195 -92Z" fill="#3a3f44"/></g>';
-     return s}},
+     return roomSVG(it,this,W,H,s)}},
+ oproom:{kind:'desk',room:true,dw:90,name:{lt:'CNC operatorių kambarys',en:'CNC operator room'},sub:{lt:'Operatorių darbo vieta',en:'Operators’ workplace'},w:360,h:300,
+   draw(it,W,H){let s=R(-165,-138,230,66,'#d9c39a',S+' rx="3"')+R(-140,-132,62,9,'#23282c','rx="2"')+R(-66,-132,62,9,'#23282c','rx="2"')+R(-112,-108,58,14,'#c9cdd1',S+' rx="2"')+CI(-40,-104,6,'#8e959b',S);
+     s+=CI(-70,-36,24,'#3a3f44',S)+R(-90,-18,40,9,'#23282c','rx="4"');
+     s+=R(110,-138,56,96,'#c9cdd1',S)+LN(138,-136,138,-44,'#8d949a',3)+R(-165,96,70,44,'#59626a',S+' rx="3"');
+     return roomSVG(it,this,W,H,s,true)}},
  laser:{kind:'machine',name:{lt:'Lazerinis graviruoklis',en:'Laser engraver'},sub:{lt:'Graviravimas ir pjovimas',en:'Engraving and cutting'},w:160,h:116,
    draw(){return R(-78,-56,156,112,'#2f3539',S+' rx="9"')+R(-66,-45,108,90,'#7fb4d6','rx="4" opacity=".6"')+
      '<g class="mv mv-laser">'+R(-66,-5,108,9,'#c9cdd1')+R(-14,-12,18,22,'#d0202e',S)+'</g>'+R(50,-45,20,44,'#59626a','rx="3"')+'<circle cx="60" cy="24" r="7" fill="#d0202e"/>'}},
@@ -340,7 +370,7 @@ const TYPES={
      '<path d="M-40 -34L-52 -50H-28ZM40 34L28 50H52Z" fill="var(--mark)" stroke="var(--mline)" stroke-width="2"/>'}}
 };
 /* where the operator stands at each station (plan coordinates of the drawing, y down = front) */
-const OPS={altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[100,74],[-100,74]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
+const OPS={oproom:[[-70,0],[40,10]],altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[100,74],[-100,74]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
 function opAt(ty,T,i){const A=OPS[ty]||[[-(T.w/2+30),0],[T.w/2+30,0]],a=A[i%A.length],k=Math.floor(i/A.length),L=Math.hypot(a[0],a[1])||1;return[a[0]+a[0]/L*k*46,a[1]+a[1]/L*k*46]}
 const tname=T=>typeof T.name==='string'?T.name:T.name[lang];
 
@@ -497,7 +527,7 @@ function itemSVG(id,it){
   else if(T.kind==='aux'){stCls=anyRun()?'run':''}
   let s='<g class="it '+stCls+(selItem===id?' sel':'')+'" data-id="'+esc(id)+'" transform="translate('+(+it.x||0)+','+(+it.y||0)+')">';
   s+='<rect class="hit" x="'+(-sw/2-10)+'" y="'+(-sh/2-10)+'" width="'+(sw+20)+'" height="'+(sh+20)+'" rx="10"/>';
-  s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'><g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw()+'</g></g>';
+  s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'>'+(T.room?'<g class="draw" transform="rotate('+rot+')">'+T.draw(it,W,H):'<g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw())+'</g></g>';
   const ly=sh/2+40;
   if((T.kind!=='wall'&&T.kind!=='aux')||selItem===id)s+='<text class="lbl" y="'+ly+'">'+esc(itemName(id,it))+'</text>';
   if(stTxt){
@@ -509,6 +539,7 @@ function itemSVG(id,it){
   if(editing&&selItem===id){
     s+='<g transform="rotate('+rot+')">';
     for(const c of [[-1,-1],[1,-1],[1,1],[-1,1]])s+='<rect class="rh" data-rh="'+c[0]+','+c[1]+'" x="'+(c[0]*W/2-15)+'" y="'+(c[1]*H/2-15)+'" width="30" height="30" rx="5"/>';
+    if(T.room){const dg=doorGeo(it,T,W,H);s+='<circle class="dh" cx="'+dg.mid[0]+'" cy="'+dg.mid[1]+'" r="17"/>'}
     s+='</g><text class="rdim" y="'+(-sh/2-24)+'">'+Math.round(W)+' × '+Math.round(H)+' cm</text>';
   }
   if(ppl.length){
@@ -577,6 +608,7 @@ function inspector(id){
     const n1=v=>Math.round(v)/100;
     s+='<div class="row"><label class="grow" for="in-ix">'+esc(t('pos'))+'</label><input class="q" type="number" id="in-ix" data-chg="ix" step="0.1" value="'+n1(it.x)+'"><input class="q" type="number" id="in-iy" data-chg="iy" step="0.1" value="'+n1(it.y)+'" aria-label="Y"></div>';
     s+='<div class="row"><label class="grow" for="in-iw">'+esc(t('size'))+'</label><input class="q" type="number" id="in-iw" data-chg="iw" min="20" max="3000" step="5" value="'+Math.round(+it.w||T.w)+'"><input class="q" type="number" id="in-ih" data-chg="ih" min="20" max="3000" step="5" value="'+Math.round(+it.h||T.h)+'" aria-label="'+esc(t('size'))+'"></div>';
+    if(T.room)s+='<div class="row"><label class="grow" for="in-idw">'+esc(t('door'))+'</label><input class="q" type="number" id="in-idw" data-chg="idw" min="50" max="600" step="5" value="'+Math.round(+it.dw||T.dw)+'"></div><div class="note">'+esc(t('doorHint'))+'</div>';
     s+='<div class="row"><label class="grow" for="in-ir">'+esc(t('angle'))+'</label><input class="q" type="number" id="in-ir" data-chg="ir" step="5" value="'+(+it.r||0)+'"></div>';
     s+='<div class="row"><button class="btn" type="button" data-act="rot">'+esc(t('rot'))+'</button><button class="btn" type="button" data-act="dup">'+esc(t('dup'))+'</button><button class="btn" type="button" data-act="idel">'+esc(pendDel==='i:'+id?t('sure'):t('del'))+'</button></div>';
   }
@@ -669,7 +701,7 @@ function renderRail(){
     s+='<section class="card"><h2>'+esc(t('layout'))+'</h2><div class="note">'+esc(t('layoutHint'))+'</div>';
     s+='<div class="row"><button class="btn" type="button" data-act="drawwall" aria-pressed="'+(!!drawWall)+'">'+esc(drawWall?t('drawStop'):t('drawWall'))+'</button></div>'+(drawWall?'<div class="note">'+esc(t('drawHint'))+'</div>':'');
     s+='<div class="row"><select id="in-addt" class="grow" aria-label="'+esc(t('addItem'))+'">';
-    for(const k of ['wall','gate','desk','rack','partrack','toolrack','wip','wiptall','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
+    for(const k of ['wall','gate','desk','rack','partrack','toolrack','wip','wiptall','oproom','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
     s+='</select><button class="btn" type="button" data-act="additem">'+esc(t('add'))+'</button></div></section>';
   }
   $('#rail').innerHTML=s;
@@ -704,9 +736,10 @@ const MODELS={
  volter:()=>[B(-185,-125,155,125,0,75,'#3b4248'),B(-175,-110,145,110,75,5,'#c9a877'),
    B(-22,-136,22,-122,60,95,'#f1f2f3','gantry'),B(-22,122,22,136,60,95,'#f1f2f3','gantry'),B(-22,-136,22,136,150,26,'#f1f2f3','gantry'),B(-17,-34,17,14,96,80,'#1f5fae','gantry'),
    B(160,-125,198,-51,0,170,'#f1f2f3'),B(160,-125,198,-51,170,6,'#1f5fae'),B(176,84,184,92,0,95,'#6b7278'),B(166,70,194,106,95,36,'#2e3438')],
- booth:()=>[B(-245,-185,245,-175,0,260,'var(--wall)',null,.45),B(-245,-185,-235,185,0,260,'var(--wall)',null,.45),B(235,-185,245,185,0,260,'var(--wall)',null,.45),
-   B(-245,175,-70,185,0,260,'var(--wall)',null,.45),B(70,175,245,185,0,260,'var(--wall)',null,.45),B(-245,-185,245,185,260,6,'var(--wall)',null,.25),
-   B(-235,-175,235,-150,0,240,'#9aa1a7'),B(-215,-70,-125,100,0,150,'#8d949a',null,.55),B(30,10,50,30,0,80,'#6b7278'),B(-5,-8,85,48,80,4,'#e8dcc2'),B(163,-132,227,-68,266,34,'#c9cdd1')],
+ booth:(id,it,W,D)=>roomM(it,TYPES.booth,W,D,[B(-235,-175,235,-150,0,240,'#9aa1a7'),B(-215,-70,-125,100,0,150,'#8d949a',null,.55),B(30,10,50,30,0,80,'#6b7278'),B(-5,-8,85,48,80,4,'#e8dcc2'),B(163,-132,227,-68,262,30,'#c9cdd1')],.4),
+ oproom:(id,it,W,D)=>roomM(it,TYPES.oproom,W,D,[B(-165,-138,65,-72,72,5,'#d9c39a'),B(-160,-134,-152,-126,0,72,'#8a6f4a'),B(52,-134,60,-126,0,72,'#8a6f4a'),B(-160,-84,-152,-76,0,72,'#8a6f4a'),B(52,-84,60,-76,0,72,'#8a6f4a'),
+   B(-140,-132,-78,-126,84,40,'#23282c'),B(-66,-132,-4,-126,84,40,'#23282c'),B(-112,-108,-54,-94,77,3,'#c9cdd1'),CY(-70,-36,22,40,8,'#3a3f44'),CY(-70,-36,4,0,40,'#6b7278'),B(-90,-22,-50,-14,48,46,'#3a3f44'),
+   B(110,-138,166,-42,0,190,'#c9cdd1'),B(-165,96,-95,140,0,70,'#59626a')],.35),
  laser:()=>[B(-78,-56,78,56,0,92,'#2f3539'),B(-66,-45,42,45,92,5,'#7fb4d6',null,.7),B(50,-45,70,-1,92,6,'#59626a')],
  desk:()=>[B(-110,-50,110,50,82,8,'#d9c39a'),B(-104,-44,-96,-36,0,82,'#8a6f4a'),B(96,-44,104,-36,0,82,'#8a6f4a'),B(-104,36,-96,44,0,82,'#8a6f4a'),B(96,36,104,44,0,82,'#8a6f4a'),
    B(-104,-4,104,4,20,6,'#8a6f4a'),B(86,-22,106,22,90,12,'#6b7278')],
@@ -813,10 +846,10 @@ function build3D(){
     const T=it&&TYPES[it.t];if(!T||!MODELS[it.t])continue;
     const Wd=+it.w||T.w,Dp=+it.h||T.h,ppl=peopleAt(id);
     const g=new THREE.Group();g.position.set(+it.x||0,0,+it.y||0);g.rotation.y=-(+it.r||0)*Math.PI/180;g.userData.id=id;
-    const inner=new THREE.Group();inner.scale.set(Wd/T.w,1,Dp/T.h);g.add(inner);
+    const inner=new THREE.Group();if(!T.room)inner.scale.set(Wd/T.w,1,Dp/T.h);g.add(inner);
     let stK='',stT='',top=0;
     if(T.kind==='machine'){stK=statusOf(id);stT=t(stK)}else if(T.kind==='desk'){stK=ppl.length?'busy':'idle';stT=ppl.length?t('busy'):t('free')}else if(T.kind==='rack'){stT=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
-    for(const b of MODELS[it.t](id)){
+    for(const b of MODELS[it.t](id,it,Wd,Dp)){
       const m=b.cyl?cyl3(b):box3(b);if(stK==='down'){m.material.transparent=true;m.material.opacity=Math.min(m.material.opacity,.5)}
       inner.add(m);top=Math.max(top,b.y0+b.h);
       if(b.mv&&!b.cyl&&stK==='run')T3.movers.push({mesh:m,kind:b.mv,bx:m.position.x});
@@ -917,6 +950,11 @@ $('#map').addEventListener('pointerdown',e=>{
   const v=e.target.closest('.vh');
   if(v){const P=hallPts();drag={v:+v.dataset.v,P,vb:$('#map').getAttribute('viewBox').split(' ').map(Number),moved:false,pid:e.pointerId};
     try{$('#map').setPointerCapture(e.pointerId)}catch(_){}return}
+  const dh=e.target.closest('.dh');
+  if(dh&&selItem&&LAY().items[selItem]){
+    const it=LAY().items[selItem];
+    drag={dr:selItem,orig:{ds:it.ds,dp:it.dp},vb:$('#map').getAttribute('viewBox').split(' ').map(Number),moved:false,pid:e.pointerId};
+    try{$('#map').setPointerCapture(e.pointerId)}catch(_){}return}
   const rh=e.target.closest('.rh');
   if(rh&&selItem&&LAY().items[selItem]){
     /* resize from a corner: the opposite corner stays where it is; Shift keeps the proportions */
@@ -940,6 +978,12 @@ $('#map').addEventListener('pointermove',e=>{
   const p=svgPt(e);
   if(drag.P){const x=Math.round(p.x/10)*10,y=Math.round(p.y/10)*10,c=drag.P[drag.v];
     if(c.x!==x||c.y!==y){c.x=x;c.y=y;drag.moved=true;renderMap()}return}
+  if(drag.dr){
+    /* the door follows the pointer to the nearest wall of the room */
+    const it=LAY().items[drag.dr];if(!it)return;const T=TYPES[it.t],W=+it.w||T.w,H=+it.h||T.h,a=(+it.r||0)*Math.PI/180,dx=p.x-it.x,dy=p.y-it.y,lx=dx*Math.cos(a)+dy*Math.sin(a),ly=-dx*Math.sin(a)+dy*Math.cos(a);
+    const d=[Math.abs(ly-H/2),Math.abs(lx-W/2),Math.abs(ly+H/2),Math.abs(lx+W/2)],ds=d.indexOf(Math.min.apply(null,d)),L=ds%2?H:W,dw=Math.max(50,Math.min(+it.dw||T.dw,L-40)),span=L-dw-28;
+    it.ds=ds;it.dp=span>0?Math.max(0,Math.min(1,((ds%2?ly:lx)+L/2-dw/2-14)/span)):.5;it.dp=Math.round(it.dp*100)/100;
+    drag.moved=true;renderMap();return}
   if(drag.rz){
     const it=LAY().items[drag.rz];if(!it)return;
     const dx=p.x-drag.Ox,dy=p.y-drag.Oy,lx=drag.sx*(dx*drag.c+dy*drag.sn),ly=drag.sy*(-dx*drag.sn+dy*drag.c);
@@ -957,6 +1001,10 @@ function endDrag(e){
   const d=drag;drag=null;
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+    if(d.dr){
+      const it=LAY().items[d.dr];if(!it)return;
+      if(!canWrite()){it.ds=d.orig.ds;it.dp=d.orig.dp;render();return}
+      const p={items:{}};p.items[d.dr]={ds:it.ds,dp:it.dp};commit(docs.layout,p);return}
     if(d.rz){
       const it=LAY().items[d.rz];if(!it)return;
       if(!canWrite()){Object.assign(it,d.orig);if(d.orig.w===undefined)delete it.w;if(d.orig.h===undefined)delete it.h;render();return}
@@ -979,7 +1027,7 @@ $('#map').addEventListener('click',e=>{
   pendDel=null;
   const va=e.target.closest('.vadd');
   if(va&&editing){if(!canWrite())return;const P=hallPts(),i=+va.dataset.e,a=P[i],b=P[(i+1)%P.length];P.splice(i+1,0,{x:Math.round((a.x+b.x)/20)*10,y:Math.round((a.y+b.y)/20)*10});setHall(P);return}
-  if(e.target.closest('.vh')||e.target.closest('.rh'))return;
+  if(e.target.closest('.vh')||e.target.closest('.rh')||e.target.closest('.dh'))return;
   const pill=e.target.closest('.pill,.fig');
   if(pill&&!editing){selPerson=selPerson===pill.dataset.pid?null:pill.dataset.pid;render();return}
   const g=e.target.closest('.it');
@@ -1059,12 +1107,13 @@ $('#rail').addEventListener('change',e=>{
   const v=String(el.value).trim();
   if(c==='pn'){if(!v)return;const p={people:{}};p.people[el.dataset.pid]={n:v.slice(0,30)};commit(docs.state,p)}
   else if(c==='iname'){if(!v||!selItem)return;const p={items:{}};p.items[selItem]={n:v.slice(0,40)};commit(docs.layout,p)}
-  else if(['ix','iy','iw','ih','ir'].includes(c)){
+  else if(['ix','iy','iw','ih','ir','idw'].includes(c)){
     if(!selItem||v===''||isNaN(+v))return;const h=LAY().hall,o={};
     if(c==='ix')o.x=Math.max(0,Math.min(h.w,Math.round(+v*100)));
     if(c==='iy')o.y=Math.max(0,Math.min(h.h,Math.round(+v*100)));
     if(c==='iw')o.w=Math.max(20,Math.min(3000,Math.round(+v)));
     if(c==='ih')o.h=Math.max(20,Math.min(3000,Math.round(+v)));
+    if(c==='idw')o.dw=Math.max(50,Math.min(600,Math.round(+v)));
     if(c==='ir')o.r=((Math.round(+v)%360)+360)%360;
     const p={items:{}};p.items[selItem]=o;commit(docs.layout,p)}
   else if(c==='rowm'||c==='rowq'){
