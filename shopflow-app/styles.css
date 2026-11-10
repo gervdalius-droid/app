@@ -3031,3 +3031,26 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 @supports (height: 100dvh) {
   body, #app, .shell, .worker-shell, .login-screen { height: 100dvh; }
 }
+
+/* ENG ↔ WO: "same project?" */
+.englink-banner { display: flex; flex-direction: column; gap: 8px; padding: 11px 13px; border-radius: var(--r-md); font-size: 12.5px; }
+.englink-banner.ask { background: var(--accent-soft); color: var(--text); }
+.englink-banner.wait { flex-direction: row; align-items: center; gap: 9px; background: var(--orange-soft); color: var(--orange); font-weight: 600; }
+.englink-banner.wait .englink-meta { color: var(--text-2); font-weight: 500; }
+.englink-head { display: flex; align-items: center; gap: 8px; color: var(--accent-text); font-weight: 650; }
+.englink-row, .englink-pick { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 10px; background: var(--surface); text-align: left; width: 100%; border: 1px solid var(--border); font: inherit; color: inherit; }
+.englink-pick { cursor: pointer; }
+.englink-pick:hover { border-color: var(--accent); }
+.englink-row .grow, .englink-pick .grow { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.englink-row b, .englink-pick b { font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.englink-num { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; font-weight: 650; padding: 2px 7px; border-radius: 6px; background: var(--surface-2); flex: none; }
+.englink-meta { color: var(--text-2); font-size: 12px; }
+.englink-whys { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.englink-why { font-size: 11px; padding: 1px 7px; border-radius: 980px; background: var(--green-soft); color: var(--green); font-weight: 600; }
+.englink-banner .mini-act, .englink-pick .mini-act { flex: none; padding: 5px 11px; border-radius: 8px; font-size: 12px; font-weight: 640; background: var(--surface-2); }
+.englink-banner .mini-act.yes, .englink-pick .mini-act.yes { background: var(--accent); color: #fff; }
+.englink-banner .add-inline { align-self: flex-start; }
+.englink-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.englink-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 50vh; overflow: auto; }
+.englink-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 12px 0 6px; }
+@media (max-width: 560px) { .englink-row { flex-wrap: wrap; } }

@@ -3032,6 +3032,107 @@ var D = {
     if (!ids.size) Store.state.members.filter(m => m.role === "engineer").forEach(m => ids.add(m.id));
     return [...ids];
   },
+  /* ---------- same job twice: an ENG design project and a WO made separately ----------
+     Production often opens a WO before engineering hands off (or the engineer
+     never presses "Hand off"), so the same job sits in both lists. These score
+     every open engineering project against a WO by client, name and files, so
+     the app can ask "is this the same project?". Plain loops on purpose: this
+     file is read by older shop tablets. */
+  _normName(s) {
+    var x = String(s || "").toLowerCase();
+    if (x.normalize) x = x.normalize("NFD").replace(/[̀-ͯ]/g, "");
+    x = x.replace(/[„“”"'«»()\[\].,;:!?\/\\#+&*_\-–—]/g, " ");
+    x = x.replace(/\b(uab|mb|ab|ii|vsi|ltd|oy|sia|ou|gmbh)\b/g, " ");
+    return x.replace(/\s+/g, " ").trim();
+  },
+  _nameStems(s) {
+    var stop = {
+      ir: 1, su: 1, be: 1, the: 1, and: 1, for: 1, vnt: 1, pcs: 1,
+      projektas: 1, projekt: 1, project: 1, gamyba: 1, baldai: 1, brez: 1, breziniai: 1,
+      cnc: 1, programos: 1, drawings: 1, design: 1, programs: 1
+    };
+    var words = this._normName(s).split(" ");
+    var out = [];
+    for (var i = 0; i < words.length; i++) {
+      var w = words[i];
+      if (w.length < 3 && !/^\d+$/.test(w)) continue;
+      if (stop[w]) continue;
+      var st = w.length > 5 ? w.slice(0, 5) : w; // Lithuanian endings: virtuvė / virtuvei / virtuvės
+      if (out.indexOf(st) < 0) out.push(st);
+    }
+    return out;
+  },
+  _stemOverlap(a, b) {
+    if (!a.length || !b.length) return 0;
+    var common = 0;
+    for (var i = 0; i < a.length; i++) if (b.indexOf(a[i]) >= 0) common++;
+    return 2 * common / (a.length + b.length);
+  },
+  _clientScore(a, b) {
+    if (a.customerId && b.customerId && a.customerId === b.customerId) return 1;
+    var x = this._normName(a.client),
+      y = this._normName(b.client);
+    if (!x || !y) return 0;
+    if (x === y) return 1;
+    if (x.length >= 4 && y.length >= 4 && (x.indexOf(y) >= 0 || y.indexOf(x) >= 0)) return 0.85;
+    return this._stemOverlap(this._nameStems(x), this._nameStems(y));
+  },
+  /* the engineering project a WO is waiting on (asked, not yet confirmed) */
+  engLinkPending(prod) {
+    if (!prod || !prod.engLink || prod.engLink.status !== "pending") return null;
+    return this.order(prod.engLink.engId);
+  },
+  /* the WO an engineering project has been asked to merge with */
+  engLinkRequestFor(eng) {
+    if (!eng || !eng.linkRequest) return null;
+    var p = this.order(eng.linkRequest.prodId);
+    return p && p.engLink && p.engLink.status === "pending" && p.engLink.engId === eng.id ? p : null;
+  },
+  /* Open engineering projects that look like this WO, best first.
+     Each: {eng, score, why:[…]} — why lists what matched, for the question. */
+  engMatchesFor(prod, opts) {
+    var res = [];
+    if (!prod || prod.type === "eng" || prod.archived || prod.fromEngId) return res;
+    if (this.engLinkPending(prod)) return res;
+    var min = opts && opts.min != null ? opts.min : 0.55;
+    var no = prod.engNotMatch || [];
+    var pStems = this._nameStems(prod.product);
+    var pLink = String(prod.oneDriveUrl || "").trim();
+    var orders = Store.state.orders || [];
+    for (var i = 0; i < orders.length; i++) {
+      var e = orders[i];
+      if (e.type !== "eng" || e.archived || e.handedOffTo) continue;
+      if (no.indexOf(e.id) >= 0) continue;
+      if (this.engLinkRequestFor(e)) continue; // already asked about another WO
+      var why = [];
+      var cs = this._clientScore(prod, e);
+      var ps = this._stemOverlap(pStems, this._nameStems(e.product));
+      var sameFiles = pLink && pLink === String(e.oneDriveUrl || "").trim();
+      var samePf = prod.portfolioId && prod.portfolioId === e.portfolioId;
+      if (cs >= 0.85) why.push("client");
+      if (ps >= 0.5) why.push("name");
+      if (sameFiles) why.push("files");
+      if (samePf) why.push("portfolio");
+      // the client carries most of it; a name alone is too weak (two "kitchens")
+      var score = cs * 0.6 + ps * 0.4 + (sameFiles ? 0.6 : 0) + (samePf ? 0.25 : 0);
+      if (cs < 0.5 && !sameFiles && !samePf) score = Math.min(score, ps >= 0.8 ? 0.6 : 0.4);
+      if (score >= min) res.push({ eng: e, score: Math.min(1, score), why: why });
+    }
+    res.sort((a, b) => b.score - a.score || (b.eng.createdAt || 0) - (a.eng.createdAt || 0));
+    return res.slice(0, 4);
+  },
+  /* WOs that still need the question answered — for the dashboard */
+  unlinkedEngMatches() {
+    var out = [];
+    var orders = Store.state.orders || [];
+    for (var i = 0; i < orders.length; i++) {
+      var o = orders[i];
+      if (o.type === "eng" || o.archived || o.fromEngId) continue;
+      var m = this.engMatchesFor(o);
+      if (m.length) out.push({ order: o, matches: m });
+    }
+    return out;
+  },
   /* ---------- QR / barcode scanning ----------
      Labels (e.g. SWOOD) encode a part code like "SA_GA_VIRT_404"
      = {PROJECT}_{partNo}. We strip the part number to get the
@@ -7512,6 +7613,133 @@ var M = {
       orderId: o.id
     });
     Store.save();
+  },
+  /* ---------- "is this the same project as ENG-…?" ----------
+     Production says yes → the WO waits on the engineer. The engineer confirms
+     → the open design steps are closed, the ENG project is linked and archived
+     exactly as a hand-off would leave it. Says no → the pair is never asked
+     about again. */
+  _ltText(en, lt) {
+    return typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
+  },
+  _engLinkTargets(eng, byId) {
+    var ids = D.orderResponsible(eng);
+    if (!ids.length) ids = D.projectEngineers(eng);
+    return ids.filter(id => id !== byId);
+  },
+  requestEngLink(prodId, engId, byId) {
+    var prod = D.order(prodId),
+      eng = D.order(engId);
+    if (!prod || !eng || eng.type !== "eng" || prod.type === "eng") return [];
+    var now = Date.now();
+    prod.engLink = { engId: eng.id, by: byId, at: now, status: "pending" };
+    eng.linkRequest = { prodId: prod.id, by: byId, at: now };
+    var who = D.member(byId);
+    var name = who ? who.name : this._ltText("Production", "Gamyba");
+    var targets = this._engLinkTargets(eng, byId);
+    for (var i = 0; i < targets.length; i++) {
+      this.notify(targets[i], {
+        type: "eng_link",
+        orderId: eng.id,
+        text: this._ltText(
+          `${name} says ${prod.num} in production is the same job as ${eng.num} — confirm to close the design steps`,
+          `${name} pažymėjo, kad gamybos ${prod.num} yra tas pats projektas kaip ${eng.num} — patvirtinkite, kad uždarytume projektavimo etapus`)
+      }, byId);
+    }
+    this.log(byId, `asked to link **${prod.num}** with engineering **${eng.num}**${targets.length ? ` — waiting for ${targets.map(id => (D.member(id) || {}).name).filter(Boolean).join(", ")}` : ""}`, {
+      orderId: prod.id
+    });
+    Store.save();
+    return targets;
+  },
+  cancelEngLink(prodId, byId) {
+    var prod = D.order(prodId);
+    var eng = D.engLinkPending(prod);
+    if (!prod || !prod.engLink) return;
+    if (eng && eng.linkRequest && eng.linkRequest.prodId === prod.id) eng.linkRequest = null;
+    prod.engLink = null;
+    this.log(byId, `withdrew the link request on **${prod.num}**`, { orderId: prod.id });
+    Store.save();
+  },
+  /* "No, a different project" from the WO side — stop suggesting this pair */
+  dismissEngMatch(prodId, engId, byId) {
+    var prod = D.order(prodId);
+    if (!prod) return;
+    if (!Array.isArray(prod.engNotMatch)) prod.engNotMatch = [];
+    if (prod.engNotMatch.indexOf(engId) < 0) prod.engNotMatch.push(engId);
+    Store.save();
+  },
+  /* Engineer: yes, same job.
+     opIds — the open design steps to close (default: all of them)
+     fill  — copy files link / portfolio / client record / notes onto the WO where it has none */
+  confirmEngLink(engId, opts, byId) {
+    var eng = D.order(engId);
+    var prod = D.engLinkRequestFor(eng);
+    if (!eng || !prod) return null;
+    opts = opts || {};
+    var now = Date.now();
+    var open = eng.ops.filter(op => op.status !== "done");
+    var close = opts.opIds ? open.filter(op => opts.opIds.indexOf(op.id) >= 0) : open;
+    for (var i = 0; i < close.length; i++) {
+      var op = close[i];
+      if (op.startedAt) op.loggedMs = D.opElapsed(op);
+      op.startedAt = null;
+      op.status = "done";
+      op.qtyDone = (D.item(eng, op.itemId) || { qty: 1 }).qty;
+      op.completedAt = now;
+      op.completedBy = byId;
+      op.blockNote = null;
+      op.closedByLink = prod.id;
+    }
+    var filled = [];
+    if (opts.fill !== false) {
+      if (!String(prod.oneDriveUrl || "").trim() && eng.oneDriveUrl) { prod.oneDriveUrl = eng.oneDriveUrl; filled.push("files"); }
+      if (!prod.portfolioId && eng.portfolioId) { prod.portfolioId = eng.portfolioId; filled.push("portfolio"); }
+      if (!prod.customerId && eng.customerId) { prod.customerId = eng.customerId; filled.push("client"); }
+      if (!String(prod.notes || "").trim() && eng.notes) { prod.notes = eng.notes; filled.push("notes"); }
+    }
+    var still = eng.ops.filter(op => op.status !== "done").length;
+    prod.fromEngId = eng.id;
+    prod.engLink = { engId: eng.id, by: prod.engLink.by, at: prod.engLink.at, status: "confirmed", confirmedBy: byId, confirmedAt: now };
+    eng.handedOffTo = prod.id;
+    eng.linkRequest = null;
+    if (!still) { eng.archived = true; eng.archivedAt = now; }
+    var who = D.member(byId);
+    var asker = prod.engLink.by;
+    if (asker && asker !== byId) this.notify(asker, {
+      type: "eng_link_ok",
+      orderId: prod.id,
+      text: this._ltText(
+        `${who ? who.name : "The engineer"} confirmed ${prod.num} is ${eng.num}${close.length ? ` — ${close.length} design step${close.length === 1 ? "" : "s"} closed` : ""}`,
+        `${who ? who.name : "Inžinierius"} patvirtino: ${prod.num} yra ${eng.num}${close.length ? ` — uždaryta projektavimo etapų: ${close.length}` : ""}`)
+    }, byId);
+    this.log(byId, `confirmed **${prod.num}** is **${eng.num}**${close.length ? ` — closed ${close.length} design step${close.length === 1 ? "" : "s"}` : ""}${filled.length ? `, filled in ${filled.join(", ")}` : ""}${still ? "" : ", archived the design project"}`, {
+      orderId: eng.id
+    });
+    Store.save();
+    return { prod: prod, closed: close.length, filled: filled, archived: !still };
+  },
+  /* Engineer: no, they are different jobs */
+  rejectEngLink(engId, byId) {
+    var eng = D.order(engId);
+    var prod = D.engLinkRequestFor(eng);
+    if (!eng || !prod) return null;
+    var asker = prod.engLink.by;
+    prod.engLink = null;
+    eng.linkRequest = null;
+    if (!Array.isArray(prod.engNotMatch)) prod.engNotMatch = [];
+    if (prod.engNotMatch.indexOf(eng.id) < 0) prod.engNotMatch.push(eng.id);
+    var who = D.member(byId);
+    if (asker && asker !== byId) this.notify(asker, {
+      type: "eng_link_no",
+      orderId: prod.id,
+      text: this._ltText(
+        `${who ? who.name : "The engineer"}: ${prod.num} is not ${eng.num} — they stay separate`,
+        `${who ? who.name : "Inžinierius"}: ${prod.num} nėra ${eng.num} — projektai lieka atskiri`)
+    }, byId);
+    this.log(byId, `said **${prod.num}** is not **${eng.num}**`, { orderId: eng.id });
+    Store.save();
+    return prod;
   },
   /* ---------- Planner: projects ---------- */
   addGProject({

@@ -3928,7 +3928,10 @@ var Notif = {
     info: "info",
     todo: "todo",
     mention: "at",
-    task: "columns"
+    task: "columns",
+    eng_link: "link",
+    eng_link_ok: "check",
+    eng_link_no: "x"
   },
   bellHtml(memberId) {
     var n = D.unreadCount(memberId);
@@ -4005,7 +4008,7 @@ var Notif = {
     });
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       try {
-        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : "Update"), {
+        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : "Update"), {
           body: n.text
         });
       } catch (e) {}
@@ -4817,6 +4820,8 @@ var OrderDetail = {
         ${isEng && !o.clientApproved && App.isManager() ? `<button class="btn green project-link-btn" id="od-approve">
           ${icon("handshake", 15)} Confirm client approved the drawings
         </button>` : ""}
+        ${EngLink.engBanner(o)}
+        ${EngLink.prodBanner(o)}
 
         <div class="meta-grid">
           <div class="meta-box"><span class="t-label">Due date</span>
@@ -5576,6 +5581,7 @@ var OrderDetail = {
       };
       var handoff = $("#od-handoff", el);
       if (handoff) handoff.onclick = () => this.handoffModal(o.id);
+      EngLink.bind(el, o);
       var approve = $("#od-approve", el);
       if (approve) approve.onclick = () => {
         var engineers = M.confirmClientApproval(o.id, App.me.id);
@@ -5857,6 +5863,211 @@ var OrderDetail = {
 /* ============================================================
    New order modal — Standard articles / Custom job / Engineering
    ============================================================ */
+/* ============================================================
+   Same project in engineering and production (ENG ↔ WO)
+   Production is asked "is this ENG-…?" when it makes a WO that looks like
+   an open design project; the engineer confirms (closing the design steps)
+   or says no. Written with plain loops for the older shop tablets.
+   ============================================================ */
+var EngLink = {
+  WHY: {
+    client: "same client",
+    name: "similar name",
+    files: "same files folder",
+    portfolio: "same portfolio"
+  },
+  _engLine(e, why) {
+    var openSteps = e.ops.filter(op => op.status !== "done").length;
+    var whyTxt = (why || []).map(w => `<span class="englink-why">${esc(this.WHY[w] || w)}</span>`).join("");
+    return `<span class="englink-num">${esc(e.num)}</span>
+      <span class="grow"><b>${esc(e.product)}</b><span class="englink-meta">${esc(e.client || "")}${e.client ? " · " : ""}<span>open design steps</span> ${openSteps}/${e.ops.length}</span>${whyTxt ? `<span class="englink-whys">${whyTxt}</span>` : ""}</span>`;
+  },
+  /* banner inside a WO */
+  prodBanner(o) {
+    if (o.type === "eng" || o.archived || o.fromEngId) return "";
+    if (!App.can("orders.edit") && !App.isManager()) return "";
+    var pend = D.engLinkPending(o);
+    if (pend) {
+      var who = (o.engLink && D.member(o.engLink.by)) || null;
+      return `<div class="englink-banner wait">
+        ${icon("link", 15)}
+        <span class="grow"><b>Waiting for the engineer to confirm</b><span class="englink-meta"><span class="englink-num">${esc(pend.num)}</span> ${esc(pend.product)}${who ? " · " + esc(who.name) + " · " + fmtAgo(o.engLink.at) : ""}</span></span>
+        <button class="mini-act" id="el-cancel">Withdraw</button>
+      </div>`;
+    }
+    var m = D.engMatchesFor(o);
+    if (!m.length) return `<button class="btn ghost project-link-btn" id="el-pick">${icon("link", 15)} Link to an engineering project…</button>`;
+    return `<div class="englink-banner ask">
+      <div class="englink-head">${icon("link", 15)}<b>Is this the same project as one in engineering?</b></div>
+      ${m.map(x => `<div class="englink-row">${this._engLine(x.eng, x.why)}
+        <button class="mini-act yes" data-el-yes="${x.eng.id}">Yes, same</button>
+        <button class="mini-act" data-el-no="${x.eng.id}">No</button>
+      </div>`).join("")}
+      <button class="add-inline" id="el-pick">Pick another engineering project…</button>
+    </div>`;
+  },
+  /* banner inside an ENG project, for the engineer */
+  engBanner(o) {
+    if (o.type !== "eng" || !App.seesEng()) return "";
+    var prod = D.engLinkRequestFor(o);
+    if (!prod) return "";
+    var who = D.member(o.linkRequest.by);
+    return `<div class="englink-banner ask">
+      <div class="englink-head">${icon("link", 15)}<b>Production says this is the same job as a manufacturing project</b></div>
+      <div class="englink-row"><span class="englink-num">${esc(prod.num)}</span>
+        <span class="grow"><b>${esc(prod.product)}</b><span class="englink-meta">${esc(prod.client || "")}${who ? " · " + esc(who.name) : ""} · ${fmtAgo(o.linkRequest.at)}</span></span>
+      </div>
+      <div class="englink-actions">
+        <button class="btn green" id="el-confirm">${icon("check", 14)} Confirm — same project</button>
+        <button class="btn ghost" id="el-reject">No, a different project</button>
+      </div>
+    </div>`;
+  },
+  bind(el, o) {
+    var self = this;
+    $$("[data-el-yes]", el).forEach(b => b.onclick = () => self.ask(o.id, b.dataset.elYes));
+    $$("[data-el-no]", el).forEach(b => b.onclick = () => {
+      M.dismissEngMatch(o.id, b.dataset.elNo, App.me.id);
+      Drawer.refresh();
+    });
+    var pick = $("#el-pick", el);
+    if (pick) pick.onclick = () => this.pickModal(o.id);
+    var cancel = $("#el-cancel", el);
+    if (cancel) cancel.onclick = () => {
+      M.cancelEngLink(o.id, App.me.id);
+      Drawer.refresh();
+      App.render();
+    };
+    var conf = $("#el-confirm", el);
+    if (conf) conf.onclick = () => this.confirmModal(o.id);
+    var rej = $("#el-reject", el);
+    if (rej) rej.onclick = () => {
+      var prod = M.rejectEngLink(o.id, App.me.id);
+      Drawer.refresh();
+      App.render();
+      if (prod) Toast.show(`${prod.num} ≠ ${o.num}`, { emoji: "x", ms: 3500 });
+    };
+  },
+  /* send the question to the engineer */
+  ask(prodId, engId) {
+    var prod = D.order(prodId),
+      eng = D.order(engId);
+    var targets = M.requestEngLink(prodId, engId, App.me.id);
+    Modal.close();
+    Drawer.refresh();
+    App.render();
+    var names = targets.map(id => (D.member(id) || {}).name).filter(Boolean).join(", ");
+    Toast.show(names ? `${prod.num} → ${eng.num} · ${names}` : `${prod.num} → ${eng.num}`, { emoji: "link", ms: 4500 });
+    if (!targets.length && App.seesEng()) this.confirmModal(engId); // nobody else to ask — let me confirm it myself
+  },
+  /* right after a WO is created: ask straight away when there's a likely twin */
+  afterCreate(order) {
+    if (!order || order.type === "eng") return false;
+    var m = D.engMatchesFor(order);
+    if (!m.length) return false;
+    this.askModal(order.id, m);
+    return true;
+  },
+  askModal(prodId, matches) {
+    var o = D.order(prodId);
+    var m = matches || D.engMatchesFor(o);
+    var self = this;
+    Modal.open(`
+      <header><h2>Same project as in engineering?</h2><button class="icon-btn" data-close>${icon("x", 15)}</button></header>
+      <div class="modal-body">
+        <div class="t-caption">${esc(o.num)} · ${esc(o.product)} — ${esc(o.client || "")}</div>
+        <div class="t-caption">This looks like a project engineering is still working on. If it is the same job, the engineer gets a notification to confirm and their open design steps are closed.</div>
+        <div class="englink-list">
+          ${m.map(x => `<button class="englink-pick" data-el-yes="${x.eng.id}">${this._engLine(x.eng, x.why)}<span class="mini-act yes">Yes, same</span></button>`).join("")}
+        </div>
+      </div>
+      <footer>
+        <button class="btn ghost" id="el-other">Pick another…</button>
+        <span class="grow"></span>
+        <button class="btn" id="el-none">No, it's a new project</button>
+      </footer>
+    `, modal => {
+      $$("[data-close]", modal).forEach(b => b.onclick = () => Modal.close());
+      $$("[data-el-yes]", modal).forEach(b => b.onclick = () => self.ask(prodId, b.dataset.elYes));
+      $("#el-none", modal).onclick = () => {
+        for (var i = 0; i < m.length; i++) M.dismissEngMatch(prodId, m[i].eng.id, App.me.id);
+        Modal.close();
+        Drawer.refresh();
+      };
+      $("#el-other", modal).onclick = () => self.pickModal(prodId);
+    });
+  },
+  /* every open engineering project, searchable — for pairs the matcher misses */
+  pickModal(prodId) {
+    var o = D.order(prodId);
+    var self = this;
+    var all = Store.state.orders.filter(e => e.type === "eng" && !e.archived && !e.handedOffTo && !D.engLinkRequestFor(e));
+    var scored = D.engMatchesFor(o, { min: 0 });
+    var rank = {};
+    scored.forEach(x => rank[x.eng.id] = x.score);
+    all.sort((a, b) => (rank[b.id] || 0) - (rank[a.id] || 0) || (b.createdAt || 0) - (a.createdAt || 0));
+    var rows = q => {
+      var n = D._normName(q);
+      var list = all.filter(e => !n || D._normName(e.num + " " + e.product + " " + e.client).indexOf(n) >= 0);
+      return list.length ? list.slice(0, 40).map(e => `<button class="englink-pick" data-el-yes="${e.id}">${this._engLine(e)}<span class="mini-act yes">Link</span></button>`).join("") : `<div class="notif-empty"><span>No open engineering projects</span></div>`;
+    };
+    Modal.open(`
+      <header><h2>Link to an engineering project</h2><button class="icon-btn" data-close>${icon("x", 15)}</button></header>
+      <div class="modal-body">
+        <div class="t-caption">${esc(o.num)} · ${esc(o.product)}</div>
+        <input class="input" id="el-q" placeholder="Search ENG number, name or client…">
+        <div class="englink-list" id="el-list">${rows("")}</div>
+      </div>
+      <footer><button class="btn ghost" data-close>Cancel</button></footer>
+    `, modal => {
+      $$("[data-close]", modal).forEach(b => b.onclick = () => Modal.close());
+      var bindRows = () => $$("[data-el-yes]", modal).forEach(b => b.onclick = () => self.ask(prodId, b.dataset.elYes));
+      bindRows();
+      $("#el-q", modal).oninput = e => {
+        $("#el-list", modal).innerHTML = rows(e.target.value);
+        if (typeof I18N !== "undefined") I18N.translate($("#el-list", modal));
+        bindRows();
+      };
+      setTimeout(() => { var q = $("#el-q", modal); if (q) q.focus(); }, 30);
+    });
+  },
+  /* engineer: choose which design steps to close, then confirm */
+  confirmModal(engId) {
+    var eng = D.order(engId);
+    var prod = D.engLinkRequestFor(eng);
+    if (!prod) return;
+    var open = eng.ops.filter(op => op.status !== "done");
+    var stName = op => { var st = D.station(op.stationId); return st ? st.name : op.stationId; };
+    Modal.open(`
+      <header><h2>Confirm same project</h2><button class="icon-btn" data-close>${icon("x", 15)}</button></header>
+      <div class="modal-body">
+        <div class="t-caption"><b>${esc(eng.num)}</b> ${esc(eng.product)} = <b>${esc(prod.num)}</b> ${esc(prod.product)}</div>
+        ${open.length ? `<div class="field"><label>Design steps to mark done</label>
+          <div class="route-picker">
+            ${open.map(op => `<div class="route-pick on" data-op="${op.id}"><span class="chk">✓</span><b>${esc(stName(op))}</b></div>`).join("")}
+          </div></div>` : `<div class="t-caption">All design steps are already done.</div>`}
+        <label class="englink-check"><input type="checkbox" id="el-fill" checked> <span>Fill in what the manufacturing project is missing (files folder, portfolio, client, notes)</span></label>
+        <div class="t-caption">The design project is linked to the manufacturing project and archived once every step is done — the same as a hand-off.</div>
+      </div>
+      <footer>
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn green" id="el-ok">${icon("check", 14)} Confirm</button>
+      </footer>
+    `, modal => {
+      $$("[data-close]", modal).forEach(b => b.onclick = () => Modal.close());
+      $$(".route-pick", modal).forEach(rp => rp.onclick = () => rp.classList.toggle("on"));
+      $("#el-ok", modal).onclick = () => {
+        var ids = $$(".route-pick.on", modal).map(rp => rp.dataset.op);
+        var r = M.confirmEngLink(engId, { opIds: ids, fill: $("#el-fill", modal).checked }, App.me.id);
+        Modal.close();
+        Drawer.refresh();
+        App.render();
+        if (r) Toast.show(`${eng.num} = ${r.prod.num} ✓`, { emoji: "check", ms: 4000 });
+      };
+    });
+  }
+};
+
 var NewOrder = {
   mode: "articles",
   // articles | custom | eng
@@ -6187,6 +6398,7 @@ var NewOrder = {
           emoji: "🎉"
         });
         Drawer.open(order.id);
+        EngLink.afterCreate(order);
         if (waiting.length) _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee8() {
           var _iterator12, _step12, p;
           return _regeneratorRuntime().wrap(function _callee8$(_context8) {

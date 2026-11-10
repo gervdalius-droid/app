@@ -1270,6 +1270,7 @@ var SwoodImport = {
     Modal.close();
     App.navigate("projects");
     Drawer.open(order.id);
+    if (typeof EngLink !== "undefined") EngLink.afterCreate(order);
     Toast.show(`${order.num} created — ${order.parts.length} part codes${this.scope > 1 ? ` ×${this.scope}` : ""} across ${this.plan.items.length} materials`, {
       emoji: "import",
       ms: 5000
