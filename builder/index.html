@@ -127,6 +127,13 @@ main{padding-block:18px 40px}
 .libcat .x{padding:5px 8px 5px 0;opacity:.6}.libnew{display:inline-flex;gap:4px}.libnew input{width:150px;border:1px solid var(--line2);border-radius:999px;padding:4px 10px;font-size:12.5px}.libnew .btn{min-height:28px;padding:2px 10px}
 .libgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}.libitem{display:flex;flex-direction:column;gap:4px}.libitem .preset{width:100%}
 .libact{display:flex;gap:4px}.libact select{flex:1;min-width:0;border:1px solid var(--line2);border-radius:6px;padding:3px 5px;font-size:12px;background:var(--panel)}.libact .btn{min-height:26px;padding:2px 8px}
+.nestwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}.nestwrap .nesttab{min-width:640px}
+.nestcard h2{font:600 24px var(--f-display)}
+.nesttab{width:100%;border-collapse:collapse;margin:14px 0 6px;font-size:13.5px}.nesttab th,.nesttab td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}.nesttab th{font-size:12px;color:var(--muted);font-weight:600}
+.nesttab .r{text-align:right}.nesttab tfoot td{border-bottom:0}.nesttab .nestn{font-size:18px}.nestbd input{width:62px;padding:4px 6px;border:1px solid var(--line2);border-radius:6px;text-align:right;font:inherit;background:var(--panel)}
+.nestmat{margin-top:18px}.nestmat h3{font:600 17px var(--f-display);margin:0 0 8px}.nestgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));gap:14px}
+.nestsheet{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}.nestsheet figcaption{display:flex;gap:10px;align-items:baseline;font-size:13px;margin-bottom:4px}.nestsheet svg{width:100%;height:auto;display:block}
+.nestsheet text{font-family:var(--f-ui,system-ui)}.note.warn{color:#9a3b1d}
 .libsub{margin:6px 0 10px;font:600 16px var(--f-display)}.btn.libon{color:#9a6a00}
 .preset{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px}
 .preset:hover{border-color:var(--accent)}
@@ -8213,7 +8220,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8361,7 +8368,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -8913,13 +8920,14 @@ function render() {
     '<button class="btn projbtn" data-act="home" title="' + t('toHome') + '">☰ ' + t('projects') + '</button>' +
     '<label class="projname"><span class="unit">' + t('project') + '</span><input id="projname" type="text" data-bind="p.name" value="' + esc(S.proj.name) + '" placeholder="' + t('projPh') + '" autocomplete="off"' + (S.proj.name ? '' : ' aria-invalid="true"') + '><span class="saved" id="saved" title="' + t('autosaveT') + '">✓ ' + t('autosaved') + '</span></label>' +
     '<nav class="tabs" aria-label="tabs">' +
-      tabBtn('cab', t('tCab'), S.proj.cabinets.length) + tabBtn('room', t('tRoom')) + tabBtn('res', t('tRes'), nParts) + tabBtn('drw', t('tDrw')) + tabBtn('set', t('tSet')) + '</nav>' +
+      tabBtn('cab', t('tCab'), S.proj.cabinets.length) + tabBtn('room', t('tRoom')) + tabBtn('res', t('tRes'), nParts) + tabBtn('nest', t('tNest'), nestCount()) + tabBtn('drw', t('tDrw')) + tabBtn('set', t('tSet')) + '</nav>' +
     '<div class="hbtns">' + (S.admin ? '<button class="btn adminbadge" data-act="tab" data-v="set" title="' + (S.lang === 'lt' ? 'Administratoriaus režimas — kainos matomos' : 'Admin mode — prices shown') + '">€ Admin</button>' : '') + '<button class="btn newbtn" data-act="pnew" title="' + esc(t('prNew2')) + '">＋<span class="nlbl"> ' + t('prNew2') + '</span></button>' + langBtns() + '</div>' +
     '</div></header><main class="wrap">';
   if (S.tab === 'cab') h += viewCab(cabInfo);
   else if (S.tab === 'res') h += viewRes(buildProjectAll());
   else if (S.tab === 'room') h += '<div class="room" id="room"></div>';
   else if (S.tab === 'drw') h += viewDrw();
+  else if (S.tab === 'nest') h += viewNest();
   else h += viewSet();
   h += '</main><datalist id="dl-mat">' + listOpts('mat') + '</datalist><datalist id="dl-edge">' + listOpts('edge') + '</datalist><datalist id="dl-wt">' + listOpts('wt') + '</datalist>';
   var fx = document.activeElement && document.activeElement.id, ss = fx && document.activeElement.selectionStart;
@@ -8927,6 +8935,15 @@ function render() {
   mountIso(); mountRoom(); mountAssembly();
   clampNotes();
   if (fx) { var el = document.getElementById(fx); if (el) { el.focus(); try { if (ss != null) el.setSelectionRange(ss, ss); } catch (e) {} } }
+}
+var NEST_TIMER = null;
+function nestCount() {   // the boards badge on the tab; away from the tab it is worked out a moment after editing stops
+  var sum = function (pl) { return pl.reduce(function (a, m) { return a + m.sheets.length; }, 0); };
+  try { if (S.tab === 'nest') return sum(nestPlan(buildProjectAll())); } catch (e) { return null; }
+  clearTimeout(NEST_TIMER);
+  NEST_TIMER = setTimeout(function () { try { var n = sum(nestPlan(buildProjectAll())), b = document.querySelector('[data-act=tab][data-v=nest]'); if (!b) return;
+    var c = b.querySelector('.cnt'); if (!c) { c = document.createElement('span'); c.className = 'cnt'; b.appendChild(c); } c.textContent = n; } catch (e) {} }, 450);
+  return NEST_CACHE.val ? sum(NEST_CACHE.val) : null;
 }
 function partCount(info) {   // rows of the parts list: the cabinets' parts, extra parts that are made, worktop pieces as cut
   return info.reduce(function (a, x) { return a + (x && x.r ? x.r.panels.length : 0); }, 0) + S.proj.cabinets.reduce(function (a, c) {
@@ -9849,6 +9866,126 @@ function drwSheets(only, paper) {
 }
 var DRW_CACHE = null;
 function thumbSrc(x) { if (!x._uri) x._uri = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(x.svg); return x._uri; }   // thumbnails as pictures: far less page to build than inline drawings
+/* ======================================================================= cutting plan (Plokštės)
+   How many boards each material takes and how the parts lie on them - worked out here, at once, with the Nesting app's
+   board size, kerf and edge trim (its settings on this site are read; else 2800 × 2070, kerf 4, trim 15 as on the CNC).
+   MaxRects, the best placement of all the parts left on every step (best short side / best area / bottom-left), the
+   run with the fewest boards wins; boards with a grain (struktūra) keep the parts' length along the board's length. */
+function nestDefaults() {
+  var d = { boardW:2800, boardH:2070, kerf:3, kerfCnc:4, trim:15, trimCnc:15, machineMode:'cnc' };
+  try { Object.assign(d, JSON.parse(localStorage.getItem('nestDefaults') || '{}')); } catch (e) {}
+  var cnc = d.machineMode !== 'saw';
+  return { W:num(d.boardW) || 2800, H:num(d.boardH) || 2070, kerf:num(cnc ? d.kerfCnc : d.kerf) || 0, trim:num(cnc ? d.trimCnc : d.trim) || 0 };
+}
+function nestPack(types, W, H, kerf, trim, how) {   // types: [{ w, h, n, rot, ref }] (w along the board's length); returns sheets of placements
+  var UW = W - 2 * trim + kerf, UH = H - 2 * trim + kerf, left = types.map(function (t0) { return { t:t0, n:t0.n }; }), sheets = [], unplaced = [];
+  left.forEach(function (q) { var a = q.t.w + kerf <= UW + 1e-6 && q.t.h + kerf <= UH + 1e-6, b = q.t.rot && q.t.h + kerf <= UW + 1e-6 && q.t.w + kerf <= UH + 1e-6; if (!a && !b) { unplaced.push({ t:q.t, n:q.n }); q.n = 0; } });
+  var score = function (fr, w, h) { var dw = fr.w - w, dh = fr.h - h;
+    if (how === 'baf') return [fr.w * fr.h - w * h, Math.min(dw, dh)]; if (how === 'bl') return [fr.y + h, fr.x]; return [Math.min(dw, dh), Math.max(dw, dh)]; };
+  var guard = 0;
+  while (left.some(function (q) { return q.n > 0; }) && guard++ < 2000) {
+    var free = [{ x:0, y:0, w:UW, h:UH }], pl = [];
+    for (;;) {
+      var best = null;
+      left.forEach(function (q) { if (q.n <= 0) return; var w0 = q.t.w + kerf, h0 = q.t.h + kerf;
+        [[w0, h0, false], [h0, w0, true]].forEach(function (o, k) { if (k && (!q.t.rot || Math.abs(w0 - h0) < 1e-6)) return;
+          free.forEach(function (fr) { if (o[0] > fr.w + 1e-6 || o[1] > fr.h + 1e-6) return; var sc = score(fr, o[0], o[1]);
+            if (!best || sc[0] < best.sc[0] - 1e-9 || (Math.abs(sc[0] - best.sc[0]) < 1e-9 && (sc[1] < best.sc[1] - 1e-9 || (Math.abs(sc[1] - best.sc[1]) < 1e-9 && o[0] * o[1] > best.w * best.h))))
+              best = { q:q, x:fr.x, y:fr.y, w:o[0], h:o[1], r:o[2], sc:sc }; }); }); });
+      if (!best) break;
+      best.q.n--; pl.push({ x:best.x, y:best.y, w:best.w - kerf, h:best.h - kerf, rot:best.r, t:best.q.t, p:(best.q.t.items || [])[best.q.t.n - best.q.n - 1] });
+      var nf = [], bx = { x:best.x, y:best.y, w:best.w, h:best.h };
+      free.forEach(function (fr) {   // split every free rectangle the new part overlaps
+        if (bx.x >= fr.x + fr.w || bx.x + bx.w <= fr.x || bx.y >= fr.y + fr.h || bx.y + bx.h <= fr.y) { nf.push(fr); return; }
+        if (bx.x > fr.x) nf.push({ x:fr.x, y:fr.y, w:bx.x - fr.x, h:fr.h });
+        if (bx.x + bx.w < fr.x + fr.w) nf.push({ x:bx.x + bx.w, y:fr.y, w:fr.x + fr.w - bx.x - bx.w, h:fr.h });
+        if (bx.y > fr.y) nf.push({ x:fr.x, y:fr.y, w:fr.w, h:bx.y - fr.y });
+        if (bx.y + bx.h < fr.y + fr.h) nf.push({ x:fr.x, y:bx.y + bx.h, w:fr.w, h:fr.y + fr.h - bx.y - bx.h }); });
+      free = nf.filter(function (a, i) { if (a.w < 1 || a.h < 1) return false;   // drop the ones inside another
+        return !nf.some(function (b, j) { return j !== i && a.x >= b.x - 1e-6 && a.y >= b.y - 1e-6 && a.x + a.w <= b.x + b.w + 1e-6 && a.y + a.h <= b.y + b.h + 1e-6 && (j < i || a.w * a.h < b.w * b.h - 1e-6 || !(a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h)); }); });
+    }
+    if (!pl.length) break;
+    sheets.push(pl.map(function (q) { return { x:q.x + trim, y:q.y + trim, w:q.w, h:q.h, rot:q.rot, t:q.t }; }));
+  }
+  return { sheets:sheets, unplaced:unplaced };
+}
+function nestMaterial(parts, bd, grain) {   // parts of one material → the best of the runs
+  var key = {}, types = [];
+  parts.forEach(function (p) { var w = Math.max(p.L, p.W), h = Math.min(p.L, p.W);
+    if (grain) { w = p.L; h = p.W; }   // with a grain: the part's length (its grain) along the board's length
+    var k = w + 'x' + h; if (!key[k]) { key[k] = { w:w, h:h, n:0, rot:!grain, ref:[] }; types.push(key[k]); } key[k].n += p.qty || 1; key[k].ref.push(p); key[k].items = key[k].items || []; for (var qi = 0; qi < (p.qty || 1); qi++) key[k].items.push(p); });
+  var best = null;
+  ['bl', 'bssf', 'baf'].forEach(function (how) {   // bottom-left first: on a tie its tidy rows win
+    var r = nestPack(types.map(function (t0) { return Object.assign({}, t0); }), bd.W, bd.H, bd.kerf, bd.trim, how), last = r.sheets.length ? r.sheets[r.sheets.length - 1].reduce(function (a, q) { return a + q.w * q.h; }, 0) : 0;
+    if (!best || r.sheets.length < best.sheets.length || (r.sheets.length === best.sheets.length && last < best.last)) best = { sheets:r.sheets, unplaced:r.unplaced, last:last, how:how };
+  });
+  return best;
+}
+function boardOf(mat) { var d = nestDefaults(), b = (S.settings.boards || {})[mat] || {}; return { W:num(b.W) || d.W, H:num(b.H) || d.H, kerf:d.kerf, trim:d.trim, grain:!!b.grain }; }
+var NEST_CACHE = { key:null, val:null };
+function nestPlan(pj) {   // every material of the project, nested; cached while nothing changes
+  var mats = {};
+  pj.parts.forEach(function (p) { if (/STALVIR/i.test(String(p.name || '') + ' ' + String(p.short || '')) || !(p.L > 0 && p.W > 0)) return;   // worktops are not cut from these boards
+    var k = (p.mat || '—') + '|' + num(p.T); (mats[k] = mats[k] || { mat:p.mat || '—', T:num(p.T), parts:[] }).parts.push(p); });
+  var list = Object.keys(mats).map(function (k) { return mats[k]; }).sort(function (a, b) { return b.parts.length - a.parts.length; });
+  var ck = JSON.stringify([nestDefaults(), S.settings.boards || {}, list.map(function (m) { return [m.mat, m.T, m.parts.map(function (p) { return [p.L, p.W, p.qty, p.short]; })]; })]);
+  if (NEST_CACHE.key === ck) return NEST_CACHE.val;
+  var out = list.map(function (m) { var bd = boardOf(m.mat), r = nestMaterial(m.parts, bd, bd.grain), used = 0;
+    r.sheets.forEach(function (sh) { sh.forEach(function (q) { used += q.w * q.h; }); });
+    return { mat:m.mat, T:m.T, bd:bd, sheets:r.sheets, unplaced:r.unplaced, parts:m.parts.reduce(function (a, p) { return a + (p.qty || 1); }, 0), area:used / 1e6, util:r.sheets.length ? used / (r.sheets.length * bd.W * bd.H) : 0 }; });
+  NEST_CACHE = { key:ck, val:out };
+  return out;
+}
+var NEST_COLS = ['#cfe3f5', '#f7dcc0', '#d3ecd0', '#ecd4ee', '#f5e7b3', '#cdeae6', '#f3cfd3', '#dcd9f2', '#e6e6d0', '#d6e4c4'];
+function nestSheetSvg(m, sh, k) {
+  var bd = m.bd, used = sh.reduce(function (a, q) { return a + q.w * q.h; }, 0), f = function (v) { return (Math.round(v * 10) / 10).toString(); };
+  var svg = '<svg viewBox="-4 -4 ' + (bd.W + 8) + ' ' + (bd.H + 8) + '" class="nestsvg" role="img" aria-label="' + esc(m.mat + ' ' + (k + 1)) + '">' +
+    '<rect x="0" y="0" width="' + bd.W + '" height="' + bd.H + '" fill="#f6f3ec" stroke="#5b625d" stroke-width="5"/>' +
+    (bd.trim ? '<rect x="' + bd.trim + '" y="' + bd.trim + '" width="' + (bd.W - 2 * bd.trim) + '" height="' + (bd.H - 2 * bd.trim) + '" fill="none" stroke="#b9b2a2" stroke-width="3" stroke-dasharray="14 10"/>' : '');
+  sh.forEach(function (q) {
+    var p0 = q.p || q.t.ref[0], col = NEST_COLS[((+p0.cab || 0) + NEST_COLS.length - 1) % NEST_COLS.length], vert = q.h > q.w * 1.25;
+    var lab = String(p0.short || ''), dims = E.num(Math.round(q.t.w)) + '×' + E.num(Math.round(q.t.h)), along = vert ? q.h : q.w, across = vert ? q.w : q.h;
+    var fs = Math.min(80, across / 2.7, along / (Math.max(lab.length, dims.length) * 0.58)), two = fs >= 34;
+    if (!two) { fs = Math.min(80, across / 1.4, along / (dims.length * 0.58)); }   // too thin for both lines: the size only
+    var cx = q.x + q.w / 2, cy = (bd.H - q.y - q.h) + q.h / 2;
+    svg += '<g><title>' + esc(lab + ' · ' + (p0.name || '') + ' · ' + dims + (q.rot ? ' ↻' : '')) + '</title>' +
+      '<rect x="' + f(q.x) + '" y="' + f(bd.H - q.y - q.h) + '" width="' + f(q.w) + '" height="' + f(q.h) + '" fill="' + col + '" stroke="#2f3532" stroke-width="3"/>' +
+      (fs >= 22 ? '<text x="' + f(cx) + '" y="' + f(cy) + '" font-size="' + f(fs) + '" text-anchor="middle" dominant-baseline="central" fill="#1d2320"' + (vert ? ' transform="rotate(-90 ' + f(cx) + ' ' + f(cy) + ')"' : '') + '>' +
+        (two ? '<tspan x="' + f(cx) + '" dy="-0.55em" font-weight="700">' + esc(lab) + '</tspan><tspan x="' + f(cx) + '" dy="1.15em">' + dims + '</tspan>' : dims) + '</text>' : '') + '</g>';
+  });
+  return '<figure class="nestsheet"><figcaption><b>' + (k + 1) + ' / ' + m.sheets.length + '</b><span>' + Math.round(used / (bd.W * bd.H) * 100) + '%</span><span class="unit">' + sh.length + ' ' + t('nestPcs') + '</span></figcaption>' + svg + '</svg></figure>';
+}
+function viewNest() {
+  var pj = buildProjectAll(), plan = nestPlan(pj), nd = nestDefaults(), tot = plan.reduce(function (a, m) { return a + m.sheets.length; }, 0);
+  var h = '<section class="card nestcard"><div class="row" style="justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px"><div><h2 style="margin:0">' + t('nestT') + '</h2><p class="lead" style="margin:4px 0 0">' + t('nestL').replace('{k}', E.num(nd.kerf)).replace('{tr}', E.num(nd.trim)) + '</p></div>' +
+    '<div class="row" style="gap:8px"><button class="btn" data-act="nestopen" title="' + esc(t('nestOpenT')) + '">↗ ' + t('nestOpen') + '</button></div></div>';
+  if (!plan.length) return h + '<p class="note">' + t('nestNone') + '</p></section>';
+  h += '<div class="nestwrap"><table class="nesttab"><thead><tr><th>' + t('nestMat') + '</th><th>' + t('nestBoard') + '</th><th class="r">' + t('nestSheets') + '</th><th class="r">' + t('nestUtil') + '</th><th class="r">' + t('nestParts') + '</th><th class="r">' + t('nestArea') + '</th><th>' + t('nestGrain') + '</th></tr></thead><tbody>' +
+    plan.map(function (m, i) { var id = 'nb-' + i;
+      return '<tr><td><b>' + esc(m.mat) + '</b> <span class="unit">' + E.num(m.T) + ' mm</span></td>' +
+        '<td class="nestbd"><input type="text" inputmode="numeric" aria-label="' + esc(t('nestBW')) + '" data-nestw="' + esc(m.mat) + '" value="' + m.bd.W + '"> × <input type="text" inputmode="numeric" aria-label="' + esc(t('nestBH')) + '" data-nesth="' + esc(m.mat) + '" value="' + m.bd.H + '"></td>' +
+        '<td class="r"><b class="nestn">' + m.sheets.length + '</b>' + (m.unplaced.length ? ' <span class="badge warn">+' + m.unplaced.reduce(function (a, u) { return a + u.n; }, 0) + ' ' + t('nestBig') + '</span>' : '') + '</td>' +
+        '<td class="r">' + Math.round(m.util * 100) + '%</td><td class="r">' + m.parts + '</td><td class="r">' + E.num(Math.round(m.area * 100) / 100) + ' m²</td>' +
+        '<td><label class="chk"><input type="checkbox" id="' + id + '" data-nestg="' + esc(m.mat) + '"' + (m.bd.grain ? ' checked' : '') + '> ' + t('nestGrainL') + '</label></td></tr>'; }).join('') +
+    '</tbody><tfoot><tr><td colspan="2"><b>' + t('nestTot') + '</b></td><td class="r"><b>' + tot + '</b></td><td colspan="4"></td></tr></tfoot></table></div>';
+  plan.forEach(function (m) {
+    h += '<div class="nestmat"><h3>' + esc(m.mat) + ' <span class="unit">' + E.num(m.T) + ' mm · ' + m.bd.W + ' × ' + m.bd.H + ' · ' + m.sheets.length + ' ' + t('nestSh') + '</span></h3>' +
+      (m.unplaced.length ? '<p class="note warn">' + t('nestBigL') + ': ' + m.unplaced.map(function (u) { return esc(u.t.ref[0].short) + ' ' + E.num(u.t.w) + '×' + E.num(u.t.h) + ' (' + u.n + ')'; }).join(', ') + '</p>' : '') +
+      '<div class="nestgrid">' + m.sheets.map(function (sh, k) { return nestSheetSvg(m, sh, k); }).join('') + '</div></div>';
+  });
+  return h + '<p class="note">' + t('nestNote') + '</p></section>';
+}
+/* the whole project to the Nesting app (same site): the .xlsm it reads, handed over through this browser's storage */
+function nestHandoff() {
+  var pj = buildProjectAll(), w = window.open('about:blank', '_blank');
+  xlsmBytes(pj).then(function (bytes) {
+    var b = '', u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); for (var i = 0; i < u8.length; i += 0x8000) b += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    try { localStorage.setItem('dbNestHandoff', JSON.stringify({ name:projName() + '.xlsm', b64:btoa(b), at:Date.now() })); }
+    catch (e) { if (w) w.close(); toast(t('nestHandFail'), true); return; }
+    var url = (location.pathname.indexOf('/builder') >= 0 ? location.pathname.replace(/\/builder\/?.*$/, '/nesting/') : '/nesting/') + '?from=builder';
+    if (w) w.location.href = url; else location.href = url;
+  });
+}
 function viewDrw() {
   if (!DR) return '<div class="card empty">drawings.js</div>';
   if (!S.proj.cabinets.length) return '<div class="card empty">' + t('drwNone') + '</div>';
@@ -10338,6 +10475,10 @@ app.addEventListener('change', function (e) {
   if (el.getAttribute('data-act-change') === 'import') { importFile(el.files && el.files[0]); return; }
   if (el.getAttribute('data-act-change') === 'tpl') { loadTemplateFile(el.files && el.files[0]); el.value = ''; return; }
   if (el.getAttribute('data-act-change') === 'prjson' && S.admin) { var fl = el.files && el.files[0]; if (!fl) return; var rdr = new FileReader(); rdr.onload = function () { try { var nJ = prFromOffer(JSON.parse(rdr.result)); prSave(); render(); toast(nJ ? (S.lang === 'lt' ? 'Perimta kainų: ' : 'Prices taken: ') + nJ : (S.lang === 'lt' ? 'Faile kainų nerasta' : 'No prices in the file'), !nJ); } catch (er) { toast(t('badFile'), true); } }; rdr.readAsText(fl); el.value = ''; return; }
+  if (el.hasAttribute('data-nestw') || el.hasAttribute('data-nesth') || el.hasAttribute('data-nestg')) {   // a material's board size or grain (kept in the settings)
+    var nm = el.getAttribute('data-nestw') || el.getAttribute('data-nesth') || el.getAttribute('data-nestg'), bs = S.settings.boards = S.settings.boards || {}, bo = bs[nm] = bs[nm] || {};
+    if (el.hasAttribute('data-nestg')) bo.grain = el.checked; else { var v0 = num(el.value); if (!(v0 >= 300 && v0 <= 6000)) { toast(t('nestBadSize'), true); render(); return; } bo[el.hasAttribute('data-nestw') ? 'W' : 'H'] = v0; }
+    store('dbKurejas.settings', S.settings); render(); return; }
   if (el.getAttribute('data-act-change') === 'libmove') { var lbm = clib(), im = lbm.items.filter(function (it) { return it.id === el.getAttribute('data-v'); })[0]; if (im) { im.cat = el.value; clibSet(lbm); render(); } return; }
   if (el.getAttribute('data-act-change') === 'drwonly') { S.drwOnly = el.value; S.drwOpen = null; render(); return; }
   if (el.getAttribute('data-act-change') === 'looktex') { lookTexture(el.getAttribute('data-v'), el.files && el.files[0]); el.value = ''; return; }
@@ -10418,6 +10559,7 @@ app.addEventListener('click', function (e) {
       S.proj.cabinets.forEach(function (cc) { if (cc.libId === v) delete cc.libId; }); save(); break; }
     case 'libadd': { var la = clib().items.filter(function (it) { return it.id === v; })[0]; if (!la) break; var nc = normCab(Object.assign(clone(la.cab), { id:uid(), libFrom:la.id }));
       S.proj.cabinets.push(nc); S.sel = S.proj.cabinets.length - 1; S.picking = false; save(); toast(t('libAdded').replace('{n}', la.name)); break; }
+    case 'nestopen': nestHandoff(); return;
     case 'ledadd': { var lc = cur(); lc.leds = lc.leds || []; lc.leds.push({ at:v, side:v === 'bottom' && cabKind(lc) === 'PAKABINAMOS' ? 'out' : 'in', from:E.R.led.from, ends:'open', w:E.R.led.w, depth:E.R.led.depth }); save(); break; }
     case 'leddel': { var lc2 = cur(); if (lc2.leds) lc2.leds.splice(i, 1); save(); break; }
     case 'addsec': { var ns = newSection(v); ns.col = isNaN(i) ? 0 : i; S.colSel = ns.col; cur().sections.push(ns); save(); break; }
@@ -10650,7 +10792,7 @@ function saveFile(name, data, type) {
 
 document.documentElement.lang = S.lang;
 render();
-window.__dbk = { S:S, render:render, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
+window.__dbk = { S:S, render:render, nestPlan:nestPlan, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
 })();
 
 </script>

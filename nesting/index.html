@@ -3724,6 +3724,8 @@ function bootApp(){
   var urlName=null, urlGvs='';
   try{var u=new URLSearchParams(location.search);urlName=u.get('project');urlGvs=u.get('gvs')||'';}catch(e){}
   if(urlGvs)GVS_PROJECT_ID=urlGvs;
+  // ?from=builder → the cabinet builder (same site) left this project's .xlsm in localStorage: start a new project with it.
+  if(!urlName && /[?&]from=builder\b/.test(location.search) && builderHandoff()) return;
   if(urlName){
     loadProjectByName(urlName).then(function(ok){
       if(!ok){startupNew(true);var pn=document.getElementById('projName');if(pn)pn.value=urlName;}
@@ -3735,6 +3737,19 @@ function bootApp(){
   }
   // Otherwise show the startup picker: New Project vs. continue latest.
   showStartupModal();
+}
+
+function builderHandoff(){
+  var h=null; try{h=JSON.parse(localStorage.getItem('dbNestHandoff')||'null');}catch(e){}
+  if(!h||!h.b64||Date.now()-(+h.at||0)>30*60*1000) return false;   // only a fresh hand-over
+  try{localStorage.removeItem('dbNestHandoff');}catch(e){}
+  var bin=atob(h.b64), u8=new Uint8Array(bin.length); for(var i=0;i<bin.length;i++) u8[i]=bin.charCodeAt(i);
+  var name=h.name||'project.xlsm';
+  startupNew(true);
+  var pn=document.getElementById('projName'); if(pn){ pn.value=name.replace(/\.xlsm?$/i,'').replace(/_ReportLists_to_Excel$/,''); try{onProjectNameChange();}catch(e){} }
+  try{history.replaceState(null,'',location.pathname);}catch(e){}
+  processFile(new File([u8],name,{type:'application/vnd.ms-excel.sheet.macroEnabled.12'}));
+  return true;
 }
 
 // On load: require a valid shared login before the app boots.
