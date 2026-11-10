@@ -141,6 +141,8 @@ details.card:not([open]){gap:0}
 .run .beacon{animation:pulse 1.4s ease-in-out infinite}
 .run .mv-slide{animation:slide 4s ease-in-out infinite alternate}
 .run .mv-feed{animation:feed 6s linear infinite}
+.run .mv-feedy{animation:feedy 5s linear infinite}
+@keyframes feedy{from{transform:translateY(-92px)}to{transform:translateY(92px)}}
 .run .mv-gantry{animation:gantry 6s ease-in-out infinite alternate}
 .run .mv-laser{animation:laser 2.2s ease-in-out infinite alternate}
 .run .mv-spin{animation:spin 1.3s linear infinite;transform-box:fill-box;transform-origin:center}
@@ -301,12 +303,13 @@ const TYPES={
    draw:()=>saw({body:'#4a5157',front:'#b9bfc4',ext:'#c9cdd1',fence:'#dfe2e4',accent:'#c8102e',panel:'#4a5157',arm:'#4a5157'})},
  felder:{kind:'machine',name:'Felder K 940 S',sub:{lt:'Formatinės pjovimo staklės',en:'Sliding table saw'},w:330,h:372,
    draw:()=>saw({body:'#c9cdd1',front:'#1f4fa0',ext:'#dfe2e4',fence:'#dfe2e4',accent:'#1f4fa0',panel:'#c9cdd1',arm:'#dfe2e4'})},
- startech:{kind:'machine',name:'SCM Startech CN Plus',sub:{lt:'CNC gręžimo centras',en:'CNC drilling centre'},w:330,h:176,
+ startech:{kind:'machine',name:'SCM Startech CN Plus',sub:{lt:'CNC gręžimo centras',en:'CNC drilling centre'},w:180,h:240,
    draw(){let s='';
-     /* fold-out roller wings on both sides of the loading shelf: the panel rides on these along the front */
-     for(const x of [-160,80]){s+=R(x,-100,x<0?84:80,30,'#f1f2f3',S+' rx="2"');for(let i=7;i<(x<0?84:80)-3;i+=10)s+=LN(x+i,-96,x+i,-74,'#f0c400',4)}
+     /* yellow roller conveyor: in at the front flap (screen side), through the machine, out at the back */
+     for(const y0 of [-120,70]){s+=R(-80,y0,104,50,'#f1f2f3',S+' rx="2"');for(let y=y0+6;y<y0+48;y+=9)s+=LN(-75,y,19,y,'#f0c400',4)}
+     s+='<g class="mv mv-feedy">'+R(-62,-25,70,50,'#e8dcc2',S)+'</g>';
      s+=R(-85,-70,170,140,'#f1f2f3',S+' rx="5"')+R(-72,-52,144,112,'#dfe2e4','stroke="#aeb5bb" stroke-width="2" rx="3"')+R(-85,-70,170,9,'#1f3f7a');
-     s+=R(-76,-100,98,30,'#f1f2f3',S+' rx="2"')+'<g class="mv mv-feed" style="animation-duration:5s">'+R(-55,-97,110,24,'#e8dcc2',S)+'</g>';
+     s+='<path d="M-28 -40V40M-40 26L-28 42L-16 26" fill="none" stroke="#f0c400" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" opacity=".85"/>';
      s+=R(28,-98,52,28,'#f1f2f3',S+' rx="2"')+R(35,-94,38,11,'#23282c','rx="2"')+R(32,-77,46,7,'#17191b','rx="2"');
      return s+CI(22,-76,4.5,'#c8102e',S)}},
  olimpic:{kind:'machine',name:'SCM Olimpic K 360',sub:{lt:'Kraštų laminavimo staklės',en:'Edge bander'},w:420,h:190,
@@ -396,7 +399,7 @@ const TYPES={
      '<path d="M-40 -34L-52 -50H-28ZM40 34L28 50H52Z" fill="var(--mark)" stroke="var(--mline)" stroke-width="2"/>'}}
 };
 /* where the operator stands at each station (plan coordinates of the drawing, y down = front) */
-const OPS={oproom:[[-70,0],[40,10]],altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[56,-128],[-30,-128]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
+const OPS={oproom:[[-70,0],[40,10]],altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[56,-120],[-110,-95]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
 function opAt(ty,T,i){const A=OPS[ty]||[[-(T.w/2+30),0],[T.w/2+30,0]],a=A[i%A.length],k=Math.floor(i/A.length),L=Math.hypot(a[0],a[1])||1;return[a[0]+a[0]/L*k*46,a[1]+a[1]/L*k*46]}
 /* a worker dragged onto the plan keeps the exact spot (ox, oy: cm from the station's centre, in its own frame) */
 function standAt(it,T,W,H,p,i){if(p&&typeof p.ox==='number'&&typeof p.oy==='number')return[p.ox,p.oy];const o=opAt(it.t,T,i);return[o[0]*W/T.w,o[1]*H/T.h]}
@@ -419,6 +422,7 @@ let mode='loading', readOnly=false, stale=false;   // loading | db | local
 let selItem=null, selPerson=null, editing=false, pendDel=null, railDirty=false, drag=null, busy3=false, view=lsGet('cp.view')==='3d'?'3d':'2d', T3=null;
 
 function normalize(){
+  {const l0=docs.layout.data;if(l0&&l0.items)for(const it of Object.values(l0.items))if(it&&it.t==='startech'&&+it.w===330&&+it.h===176){delete it.w;delete it.h}}
   const l=LAY(); if(!isObj(l.hall))l.hall=clone(DEF_LAYOUT.hall); if(!isObj(l.items))l.items={};
   const s=ST(); for(const k of ['st','people','stock','inst'])if(!isObj(s[k]))s[k]={};
   if(!Array.isArray(s.projects))s.projects=[];
@@ -794,13 +798,13 @@ function sawM(p){const o=32;return[
 const MODELS={
  altendorf:()=>sawM({body:'#4a5157',front:'#b9bfc4',ext:'#c9cdd1',fence:'#dfe2e4',accent:'#c8102e',arm:'#4a5157'}),
  felder:()=>sawM({body:'#c9cdd1',front:'#1f4fa0',ext:'#dfe2e4',fence:'#dfe2e4',accent:'#1f4fa0',arm:'#dfe2e4'}),
- startech:()=>{const m=[B(-85,-70,85,70,0,200,'#f1f2f3'),B(-86,-72,86,-69,190,10,'#1f3f7a'),B(-72,-71.5,18,-69,128,44,'#2e3438'),B(-72,-71.5,18,-69,94,24,'#17191b'),
-   B(-76,-100,22,-70,84,6,'#f1f2f3'),B(-55,-97,55,-73,92,2,'#e8dcc2','feed'),
+ startech:()=>{const m=[B(-85,-70,85,70,0,84,'#f1f2f3'),B(-85,-70,85,70,100,100,'#f1f2f3'),B(-85,-70,-76,70,84,16,'#f1f2f3'),B(22,-70,85,70,84,16,'#f1f2f3'),
+   B(-86,-72,86,-69,190,10,'#1f3f7a'),B(-72,-71.5,18,-69,128,44,'#2e3438'),
    B(32,-77,78,-73,150,34,'#17191b'),B(35,-78.5,75,-77,153,28,'#7fb4d6'),B(28,-98,80,-70,118,3,'#f1f2f3'),B(34,-94,70,-82,121,2,'#23282c'),B(20,-74,28,-70,138,7,'#c8102e'),
-   B(34,-71.5,80,-69,20,60,'#dfe2e4'),B(40,-72.5,58,-71,32,18,'#c9cdd1')];
-   /* the two roller wings, folded out level with the shelf, each on a stay back to the cabinet */
-   for(const w of [[-160,-76],[80,160]]){m.push(B(w[0],-100,w[1],-70,84,4,'#f1f2f3'),B(w[0]<0?w[0]+2:w[1]-8,-76,w[0]<0?w[0]+8:w[1]-2,-70,0,84,'#c9cdd1'));
-     for(let x=w[0]+6;x<w[1]-4;x+=10)m.push(B(x,-98,x+3,-72,88,3,'#f0c400'))}
+   B(34,-71.5,80,-69,20,60,'#dfe2e4'),B(40,-72.5,58,-71,32,18,'#c9cdd1'),B(-62,-25,8,25,90,2,'#e8dcc2','feedz')];
+   /* the roller track: front flap, inside the machine, rear out-feed shelf; rollers lie across the direction of travel */
+   for(const sh of [[-120,-70],[70,120]]){m.push(B(-80,sh[0],24,sh[1],80,5,'#f1f2f3'),B(-32,sh[0]<0?sh[0]+6:sh[1]-12,-26,sh[0]<0?sh[0]+12:sh[1]-6,0,80,'#c9cdd1'))}
+   for(let y=-116;y<118;y+=10)m.push(B(-76,y,20,y+3,85,3,'#f0c400'));
    return m},
  olimpic:()=>{const m=[B(-205,-35,205,27,0,92,'#e9e6dc'),B(-198,-30,198,-28,0,4,'#23282c'),B(-205,27,205,39,84,8,'#c9cdd1'),B(-200,39,200,41,88,3,'#f0c400'),
    B(-150,-35,205,8,92,64,'#f3f0e6'),B(-132,8,18,10,112,36,'#3d4a52',null,.7),B(36,8,182,10,112,36,'#3d4a52',null,.7),B(-150,8,205,11,96,8,'#c8102e'),
@@ -896,7 +900,7 @@ function init3D(){
       if(view!=='3d'||document.hidden)return;
       const tt=(performance.now()-t0)/1000,still=window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       if(!still){
-        for(const m of T3.movers){const o=m.kind==='slide'?45*Math.sin(tt*1.4):m.kind==='gantry'?-15+120*Math.sin(tt*.9):((tt*55)%330)-170;m.mesh.position.x=m.bx+o}
+        for(const m of T3.movers){if(m.kind==='feedz'){m.mesh.position.z=m.bz+((tt*40)%220)-110;continue}const o=m.kind==='slide'?45*Math.sin(tt*1.4):m.kind==='gantry'?-15+120*Math.sin(tt*.9):((tt*55)%330)-170;m.mesh.position.x=m.bx+o}
         for(const w of T3.workers){const a=tt+w.ph;
           w.fig.position.x=3.5*Math.sin(a*.55);w.fig.position.z=2*Math.sin(a*.37+1);
           w.up.rotation.y=.16*Math.sin(a*.7);w.up.rotation.x=.05+.04*Math.sin(a*1.1);
@@ -1015,7 +1019,7 @@ function build3D(){
     for(const b of MODELS[it.t](id,it,Wd,Dp)){
       const m=b.cyl?cyl3(b):box3(b);if(stK==='down'){m.material.transparent=true;m.material.opacity=Math.min(m.material.opacity,.5)}
       inner.add(m);top=Math.max(top,b.ax?b.y0+b.r:b.y0+b.h);
-      if(b.mv&&stK==='run')T3.movers.push({mesh:m,kind:b.mv,bx:m.position.x});
+      if(b.mv&&stK==='run')T3.movers.push({mesh:m,kind:b.mv,bx:m.position.x,bz:m.position.z});
     }
     if(selItem===id){const s=new THREE.Mesh(new THREE.PlaneGeometry(Wd+40,Dp+40),new THREE.MeshBasicMaterial({color:new THREE.Color(mark),transparent:true,opacity:.55,toneMapped:false}));s.rotation.x=-Math.PI/2;s.position.y=.6;g.add(s)}
     if(stK){
