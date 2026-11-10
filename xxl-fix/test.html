@@ -862,12 +862,13 @@ async function run(){
 
   // 1. the step2xxl reference program, rebuilt by hand
   var ref = { name: "_10", DX: 744, DY: 560, DZ: 18, ops: [] };
-  mk(ref, "edge", { edge: "L", d: 5, depth: 32, s: 50, sr: "F", n: 3, step: 212.5 });
+  mk(ref, "edge", { edge: "L", d: 5, depth: 31.906, s: 50, sr: "F", n: 3, step: 212.5 });
   mk(ref, "hole", { d: 8, through: true, x: 30, xr: "L", y: 516, yr: "F", n: 2, step: 66, dir: "X" });
   mk(ref, "hole", { d: 8, through: true, x: 135, xr: "L", y: 50, yr: "F", n: 3, step: 212.5, dir: "Y" });
   var rb = PART.build(ref);
   ck("step2xxl pavyzdys: be klaidų, 1 programa", rb.ok && rb.programs.length === 1, JSON.stringify(rb.check));
-  var want = lines(fx.step2xxl_led, /^ XBO /), got = rb.ok ? lines(rb.programs[0].text, /^ XBO /) : [];
+  // step2xxl wrote -32 in the edge; the machine stops at 31.906, which is what XXL Fix writes
+  var want = lines(fx.step2xxl_led, /^ XBO /).map(function (l) { return l.replace(" Z=-32 ", " Z=-31.906 "); }), got = rb.ok ? lines(rb.programs[0].text, /^ XBO /) : [];
   ck("Gręžimų eilutės identiškos step2xxl (8/8)", want.join("\n") === got.join("\n"), got.join("\n"));
   ck("Antraštė kaip step2xxl", rb.ok && rb.programs[0].text.split("\r\n")[0] === fx.step2xxl_led.split(/\r?\n/)[0],
      rb.ok && rb.programs[0].text.split("\r\n")[0]);
@@ -881,7 +882,7 @@ async function run(){
   var sp = { name: "Šonas spintai", DX: 720, DY: 560, DZ: 18, ops: [] };
   mk(sp, "edge", { edge: "R", d: 8, depth: 27, s: 100, sr: "B" });                       // X=DX end -> F=2
   mk(sp, "edge", { edge: "B", d: 8, depth: 27, s: 100, sr: "R" });                       // long edge Ø8 in place -> F=5
-  mk(sp, "edge", { edge: "F", d: 5, depth: 32, s: 50, sr: "L", n: 2, step: 300 });       // long edge Ø5 -> rotated
+  mk(sp, "edge", { edge: "F", d: 5, depth: 31.906, s: 50, sr: "L", n: 2, step: 300 });       // long edge Ø5 -> rotated
   mk(sp, "hole", { face: "B", d: 35, depth: 13, x: 100, xr: "L", y: 22.5, yr: "F", mx: true }); // underside -> 2OP
   mk(sp, "hole", { d: 5, depth: 2, x: 360, xr: "L", y: 280, yr: "F" });                  // mark
   var sb = PART.build(sp), pk = sb.programs.map(function (p) { return p.kind; }).join(",");
@@ -896,12 +897,12 @@ async function run(){
   ck("2OP komentaras operatoriui", /; 2OP: panel turned over about the X axis/.test(t2));
   ck("Pasukta programa: DX=560 DY=720", /^H DX=560 DY=720 DZ=18 /.test(t3), t3.split("\r\n")[0]);
   ck("Priekis -> kairysis galas F=3, Y = 720 - x", lines(t3, /XBO/).join("|") ===
-     ' XBO X=9 Y=370 Z=-32 D=5 N="P" F=3 R=1#| XBO X=9 Y=670 Z=-32 D=5 N="P" F=3 R=1#', lines(t3, /XBO/).join("\n"));
+     ' XBO X=9 Y=370 Z=-31.906 D=5 N="P" F=3 R=1#| XBO X=9 Y=670 Z=-31.906 D=5 N="P" F=3 R=1#', lines(t3, /XBO/).join("\n"));
   ck("3OP komentaras: pasukti prieš laikrodžio rodyklę", /COUNTER-CLOCKWISE/.test(t3));
   ck("3D vaizdui: pasuktos skylės kairiajame gale", sb.ok && sb.programs[2].view.holes.every(function (h) { return h.face === 2 && h.x === 0; }));
 
   var lg = { name: "ILGA", DX: 1200, DY: 400, DZ: 18, ops: [] };
-  mk(lg, "edge", { edge: "F", d: 5, depth: 32, s: 100, sr: "L" });
+  mk(lg, "edge", { edge: "F", d: 5, depth: 31.906, s: 100, sr: "L" });
   var lgb = PART.check(lg);
   ck("Ø5 ilgojoje briaunoje, plokštė > 900 -> klaida", lgb.errors === 1, JSON.stringify(lgb.ops));
 
@@ -955,7 +956,10 @@ async function run(){
   e1.ops = []; mk(e1, "hole", { d: 15, through: true });             ck("Ø15 kiaurai -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "hole", { d: 8, depth: 18 });                  ck("Gylis = storis be „Kiaurai“ -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "hole", { x: 650 });                           ck("Skylė už ribų -> klaida", errs(e1) === 1);
-  e1.ops = []; mk(e1, "edge", { edge: "L", d: 8, depth: 40 });       ck("Briaunos gylis > 35 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "edge", { edge: "L", d: 8, depth: 40 });       ck("Briaunos gylis 40 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "edge", { edge: "L", d: 5, depth: 32 });       ck("Briaunos gylis 32 -> klaida (staklės iki 31.906)", errs(e1) === 1);
+  e1.ops = []; mk(e1, "edge", { edge: "L", d: 5, depth: PART.DEPTH.edge[5] });
+  ck("Ø5 briaunoje — numatytasis gylis 31.906, be klaidų", PART.DEPTH.edge[5] === 31.906 && errs(e1) === 0, PART.DEPTH.edge[5]);
   e1.ops = []; mk(e1, "groove", { w: 10 });                          ck("Griovelis siauresnis už frezą -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "groove", { depth: 17 });                      ck("Griovelis giliau nei storis-2 -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "circle", { D: 12 });                          ck("Kiaurymė < Ø20 -> klaida", errs(e1) === 1);
@@ -997,20 +1001,28 @@ async function run(){
   var SAME = { "LONGEDGE": ["1OP", "2OP"], "MIXEDGE": ["1OP", "2OP"], "TWOFACE": ["1OP", "2OP"], "GROOVES": ["1OP"],
                "SYN_NOTCHES": ["1OP"], "SYN_FILLET_ROT": ["1OP"], "SYN_TWOFACE2": ["1OP", "2OP"], "SYN_EDGES": ["1OP", "2OP"],
                "SYN_GROOVES": ["1OP"], "SYN_4NOTCH": ["1OP"] };
-  var stepTxt = {}, allProgs = [];
+  var stepTxt = {}, allProgs = [], capped = 0;
+  // step2xxl writes edge holes as modelled (e.g. -32); XXL Fix stops them at the machine maximum 31.906 — the only allowed difference
+  function capEdge(t) {
+    return t.replace(/^( XBO X=\S+ Y=\S+ Z=)(-[\d.]+)( D=\S+ N="P" F=([2-5]) R=1#)$/mg, function (m, a, z, b) {
+      if (+z < -31.906) { capped++; return a + "-31.906" + b; } return m;
+    });
+  }
   for (var sn in SAME) {
     stepTxt[sn] = await (await fetch("fixtures/step/" + sn + ".STEP")).text();
     var sr = S2X.process(stepTxt[sn], sn);
     var names = sr.programs.map(function (p) { return p.op + "OP"; }).join(",");
     ck(sn + ": programos " + SAME[sn].join(" + "), sr.status === "ok" && names === SAME[sn].join(","), sr.status + " " + names + " " + (sr.message || ""));
     for (var pi = 0; pi < sr.programs.length; pi++) {
-      var pgm = sr.programs[pi], want = await (await fetch("fixtures/step2xxl-ref/" + pgm.file)).text();
+      var pgm = sr.programs[pi], want = capEdge(await (await fetch("fixtures/step2xxl-ref/" + pgm.file)).text());
       var same = want === pgm.text;
       if (!same) { var wa = want.split("\r\n"), ga = pgm.text.split("\r\n"), dl = 0; while (wa[dl] === ga[dl]) dl++; }
       ck(sn + " " + pgm.op + "OP identiška step2xxl", same, same ? "" : "eil. " + (dl + 1) + "\nstep2xxl: " + wa[dl] + "\nXXL Fix:  " + ga[dl]);
       allProgs.push(pgm);
     }
   }
+  ck("Briaunų skylės 32 → 31.906 (" + capped + " eil.)", capped > 0 && allProgs.every(function (p) {
+    return !/^ XBO [^\n]*Z=-(3[2-9]|[4-9]\d)[^\n]* F=[2-5] /m.test(p.text); }));
   // routing rules hold on every generated program
   var airBad = [], deepBad = [], plBad = [];
   allProgs.forEach(function (pg) {

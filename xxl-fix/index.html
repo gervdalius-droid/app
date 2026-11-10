@@ -2844,7 +2844,7 @@ var PART = (function () {
     drills_through: [5, 8],
     drills_x_ends: [5, 8],    // horizontal spindles on the X ends
     drills_y_edges: [8],      // horizontal spindles reaching the long edges in place
-    edge_max_depth: 35,
+    edge_max_depth: 31.906,   // deepest edge hole the machine accepts (SWOOD CAM post maximum)
     face_left: 3, face_right: 2, face_front: 4, face_back: 5,
     rout: { T: 96, dia: 15.5, D: 24, name: "DEIMANTAS 16MM  - NAUJA - " },
     feed_cut: 4000, feed_plunge: 2000, safe_z: 10,
@@ -2858,7 +2858,7 @@ var PART = (function () {
   var EPS = 1e-6;
 
   /* default depths a shop uses for each drill */
-  var DEPTH = { top: { 5: 12, 8: 12, 15: 13, 35: 13 }, edge: { 5: 32, 8: 27 } };
+  var DEPTH = { top: { 5: 12, 8: 12, 15: 13, 35: 13 }, edge: { 5: 31.906, 8: 27 } };
 
   /* ---------------------------------------------------------------- numbers */
   function num(v) {                       // Xilog style: no trailing zeros, ≤ 6 decimals
@@ -3097,7 +3097,7 @@ var PART = (function () {
         if (longEdge && CFG.drills_y_edges.indexOf(o.d) >= 0)
           add(id, "info", "Ø" + num(o.d) + " ilgojoje briaunoje gręžiama vietoje (F=" + CFG.face_front + "/F=" + CFG.face_back + ") — pirmą kartą patikrinkite Maestro peržiūroje.");
         if (o.depth <= 0) add(id, "err", "Gylis turi būti didesnis už 0.");
-        else if (o.depth > CFG.edge_max_depth) add(id, "err", "Briaunų grąžtai siekia tik " + CFG.edge_max_depth + " mm.");
+        else if (o.depth > CFG.edge_max_depth + 1e-9) add(id, "err", "Briaunoje staklės gręžia ne giliau kaip " + num(CFG.edge_max_depth) + " mm.");
         if (cnt(o) > 1 && !(o.step > 0)) add(id, "err", "Žingsnis turi būti didesnis už 0.");
         var t = edgeH(o, P);
         if (t - o.d / 2 < -0.01 || t + o.d / 2 > P.DZ + 0.01) add(id, "err", "Aukštis " + num(t) + " — skylė išeina pro plokštumą (storis " + num(P.DZ) + ").");
@@ -4633,6 +4633,7 @@ var S2X = (function () {
     mark_depth: 2,
     drills_top: [5, 8, 15, 35], through_drills: [5, 8], drills_x_ends: [5, 8], drills_y_edges: [8],
     horizontal_max_depth: 35, cam_bolt_depth: 31.906, min_groove_length: 40,
+    edge_depth_cap: 31.906,   // the machine refuses deeper edge holes (SWOOD CAM post maximum = cam_bolt_depth)
     small_hole_as_mark: { max_d: 4, D: 5, Z: 2 }, max_width_y: 900
   };
   var EPS = 1e-3, PI = Math.PI;
@@ -5003,6 +5004,10 @@ var S2X = (function () {
       return [r3(g), r3(b.Y), r3(b.X)];
     }
     var keyed = bores.map(function (b, i) { return { b: b, k: key(b), i: i }; });
+    // XXL Fix: no edge hole deeper than the machine allows (step2xxl would write e.g. -32)
+    bores.forEach(function (b) {
+      if (b.F !== 1 && cfg.edge_depth_cap && -b.Z > cfg.edge_depth_cap + 1e-9) { b.capFrom = -b.Z; b.Z = -cfg.edge_depth_cap; b.capped = true; }
+    });
     keyed.sort(function (p, q) { for (var j = 0; j < 3; j++) if (p.k[j] !== q.k[j]) return p.k[j] - q.k[j]; return p.i - q.i; });
     return keyed.map(function (e) { return e.b; });
   }
@@ -5429,6 +5434,9 @@ var S2X = (function () {
       }
     });
     for (var wi = warnings.length - 1; wi >= 0; wi--) if (warnings[wi].drop) warnings.splice(wi, 1);
+    var capped = bores.filter(function (b) { return b.capped && !b.skip; });
+    if (capped.length) w("edge_cap", capped.length + " briaunos skylės gylis " + capped.map(function (b) { return num(b.capFrom); }).filter(function (v, i, a) { return a.indexOf(v) === i; }).join(", ") +
+                         " → " + num(cfg.edge_depth_cap) + " (giliau staklės briaunoje negręžia)", "info");
     var subs = bores.filter(function (b) { return b.mark_sub; });
     if (subs.length) w("marks", subs.length + " maž. skylės (bėgelių žymės) be tinkamo grąžto — gręžiamos kaip Ø" + num(cfg.small_hole_as_mark.D) + " žymės " + num(cfg.small_hole_as_mark.Z) + " mm gylio", "info");
     var cams = bores.filter(function (b) { return b.cam; });
