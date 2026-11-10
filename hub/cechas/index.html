@@ -109,7 +109,9 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .s-run{fill:var(--run)}.s-idle{fill:var(--idle)}.s-down{fill:var(--down)}.s-busy{fill:var(--busy)}
 .pill rect{fill:var(--person)}
 .pill text{fill:var(--person-ink);font-family:var(--display);font-weight:600;font-size:29px;text-anchor:middle}
-.pill{cursor:pointer}
+.pill,.fig{cursor:pointer}
+.fig .bd{fill:#2f67b3;stroke:var(--mline);stroke-width:2.5}.fig.sel .bd{fill:var(--mark)}
+.fig .hd{fill:#d9a97e;stroke:var(--mline);stroke-width:2.5}.fig .hr{fill:#5b4636}
 .pill.sel rect{fill:var(--mark)}.pill.sel text{fill:var(--mark-ink)}
 .dim{font-family:var(--display);font-size:24px;fill:var(--muted)}
 .elbl{font-family:var(--display);font-weight:700;font-size:28px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:9px;stroke-linejoin:round;pointer-events:none}
@@ -195,14 +197,14 @@ function lsSet(k,v){try{localStorage.setItem(k,v)}catch(e){}}
 const L={
  lt:{ttl:'Cecho planas',run:'Dirba',idle:'Laisva',down:'Neveikia',busy:'Užimtas',free:'Laisvas',ppl:'ceche',edit:'Redaguoti',editOn:'Baigti redagavimą',tv:'TV režimas',tvOff:'Išeiti iš TV',
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
-  since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
+  since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Paspausk darbuotoją, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
-  since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
+  since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Tap a worker, then a place on the plan. Tap a machine to change its status.',
@@ -323,6 +325,9 @@ const TYPES={
    draw(){let s=R(-48,-30,96,68,'#f1f2f3',S+' rx="4"')+R(-48,-2,96,38,'#c9cdd1',S)+R(-48,-8,96,7,'#8d949a');
      for(const x of [-12,0,12])s+=CI(x,8,3.5,'#23282c');
      return s+LN(22,-30,42,-40,'#6b7278',6)+CI(42,-40,5,'#23282c')+R(-24,-42,48,36,'#ff6a13',S+' rx="5"')+CI(0,-24,10,'#23282c',S)}},
+ partrack:{kind:'rack',unit:'parts',name:{lt:'Išgręžtų plokščių stelažas',en:'Drilled panel rack'},sub:{lt:'Išgręžtos detalės laukia surinkimo',en:'Drilled parts waiting for assembly'},w:200,h:84,
+   draw(){let s=R(-100,-42,200,84,'#59626a',S+' rx="3"')+R(-94,-36,188,72,'#d3d7da',S);const c=['#f4f4f0','#d9c39a','#9aa3a8','#f4f4f0','#b08d5a'];
+     for(let i=0;i<15;i++)s+=R(-88+i*12,-31,6,62-(i%4)*7,c[i%5],'stroke="var(--mline)" stroke-width="1.5"');return s}},
  wip:{kind:'store',name:{lt:'Surinkti baldai',en:'Assembled furniture'},sub:{lt:'Laikinai sandėliuojami gaminiai',en:'Pieces waiting on the floor'},w:180,h:60,
    draw(){let s='';for(let i=0;i<3;i++){const x=-90+i*60;s+=R(x,-30,60,60,'#d9c39a',S)+R(x+4,-26,52,48,'#f4f4f0','stroke="#c2a97c" stroke-width="2"')+LN(x+30,24,x+30,29,'#6b7278',3)}return s}},
  wiptall:{kind:'store',name:{lt:'Surinkta spinta',en:'Assembled wardrobe'},sub:{lt:'Laikinai sandėliuojamas gaminys',en:'Piece waiting on the floor'},w:100,h:60,
@@ -334,6 +339,9 @@ const TYPES={
      R(-152,-22,12,44,'var(--wall)')+R(140,-22,12,44,'var(--wall)')+
      '<path d="M-40 -34L-52 -50H-28ZM40 34L28 50H52Z" fill="var(--mark)" stroke="var(--mline)" stroke-width="2"/>'}}
 };
+/* where the operator stands at each station (plan coordinates of the drawing, y down = front) */
+const OPS={altendorf:[[-100,72],[112,96]],felder:[[-100,72],[112,96]],startech:[[100,74],[-100,74]],olimpic:[[-238,30],[238,30]],volter:[[218,92],[-218,0]],booth:[[60,95],[-60,95]],laser:[[-110,8]],desk:[[-138,0],[138,0]],vitap:[[-98,22],[98,22]],blum:[[-76,16],[76,16]],zone:[[-50,0],[50,0]]};
+function opAt(ty,T,i){const A=OPS[ty]||[[-(T.w/2+30),0],[T.w/2+30,0]],a=A[i%A.length],k=Math.floor(i/A.length),L=Math.hypot(a[0],a[1])||1;return[a[0]+a[0]/L*k*46,a[1]+a[1]/L*k*46]}
 const tname=T=>typeof T.name==='string'?T.name:T.name[lang];
 
 /* ---------- data ---------- */
@@ -485,7 +493,7 @@ function itemSVG(id,it){
   let stCls='',stTxt='';
   if(T.kind==='machine'){const s=statusOf(id);stCls=s;stTxt=t(s)}
   else if(T.kind==='desk'){stCls=ppl.length?'busy':'idle';stTxt=ppl.length?t('busy'):t('free')}
-  else if(T.kind==='rack'){stTxt=stockTotal(id)+' '+t('sheets')}
+  else if(T.kind==='rack'){stTxt=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
   else if(T.kind==='aux'){stCls=anyRun()?'run':''}
   let s='<g class="it '+stCls+(selItem===id?' sel':'')+'" data-id="'+esc(id)+'" transform="translate('+(+it.x||0)+','+(+it.y||0)+')">';
   s+='<rect class="hit" x="'+(-sw/2-10)+'" y="'+(-sh/2-10)+'" width="'+(sw+20)+'" height="'+(sh+20)+'" rx="10"/>';
@@ -503,10 +511,18 @@ function itemSVG(id,it){
     for(const c of [[-1,-1],[1,-1],[1,1],[-1,1]])s+='<rect class="rh" data-rh="'+c[0]+','+c[1]+'" x="'+(c[0]*W/2-15)+'" y="'+(c[1]*H/2-15)+'" width="30" height="30" rx="5"/>';
     s+='</g><text class="rdim" y="'+(-sh/2-24)+'">'+Math.round(W)+' × '+Math.round(H)+' cm</text>';
   }
-  let py=-sh/2-10;
-  ppl.forEach(e=>{
-    const nm=String(e[1].n||'?'),pr=String(e[1].pr||'').slice(0,26),hh=pr?68:42,w=Math.max(84,nm.length*16+36,pr.length*11.5+36);py-=hh+8;
-    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'"><rect x="'+(-w/2)+'" y="'+py+'" width="'+w+'" height="'+hh+'" rx="21"/><text y="'+(py+31)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" y="'+(py+57)+'">'+esc(pr)+'</text>':'')+'</g>';
+  if(ppl.length){
+    s+='<g transform="rotate('+rot+')" filter="url(#sh)">';
+    ppl.forEach((e,i)=>{const o=opAt(it.t,T,i),ax=o[0]*W/T.w,ay=o[1]*H/T.h,face=Math.atan2(-ax,ay)*180/Math.PI;
+      s+='<g class="fig'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><ellipse class="bd" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g>'});
+    s+='</g>';
+  }
+  /* the name tag sits right beside the person, on the side away from the station */
+  ppl.forEach((e,i)=>{
+    const o=opAt(it.t,T,i),ax=o[0]*W/T.w,ay=o[1]*H/T.h,wx=ax*Math.cos(a)-ay*Math.sin(a),wy=ax*Math.sin(a)+ay*Math.cos(a);
+    const nm=String(e[1].n||'?'),pr=String(e[1].pr||'').slice(0,26),hh=pr?68:42,w=Math.max(84,nm.length*16+36,pr.length*11.5+36);
+    const side=Math.abs(wx)>=Math.abs(wy),px=side?wx+(wx<0?-1:1)*(36+w/2):wx,py=(side?wy:wy+(wy<0?-1:1)*(36+hh/2))-hh/2;
+    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'"><rect x="'+(px-w/2)+'" y="'+py+'" width="'+w+'" height="'+hh+'" rx="21"/><text x="'+px+'" y="'+(py+31)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" x="'+px+'" y="'+(py+57)+'">'+esc(pr)+'</text>':'')+'</g>';
   });
   return s+'</g>';
 }
@@ -572,9 +588,10 @@ function inspector(id){
   }
   if(T.kind==='rack'){
     const rows=(ST().stock[id]&&Array.isArray(ST().stock[id].rows))?ST().stock[id].rows:[];
-    s+='<div><strong>'+esc(t('stock'))+'</strong> <span class="sub">'+esc(t('total'))+': '+stockTotal(id)+' '+esc(t('sheets'))+'</span></div>';
-    rows.forEach((r,i)=>{s+='<div class="row"><input class="grow" type="text" id="in-m'+i+'" data-chg="rowm" data-i="'+i+'" maxlength="60" value="'+esc(r.m)+'" aria-label="'+esc(t('mat'))+'"><input class="q" type="number" min="0" step="1" id="in-q'+i+'" data-chg="rowq" data-i="'+i+'" value="'+(+r.q||0)+'" aria-label="'+esc(t('qty'))+'"><button class="x" type="button" data-act="rowdel" data-i="'+i+'" aria-label="'+esc(t('del'))+'">✕</button></div>'});
-    s+='<button class="btn" type="button" data-act="rowadd">'+esc(t('addRow'))+'</button>';
+    const pu=T.unit==='parts';
+    s+='<div><strong>'+esc(t(pu?'partsHead':'stock'))+'</strong> <span class="sub">'+esc(t('total'))+': '+stockTotal(id)+' '+esc(t(pu?'partsU':'sheets'))+'</span></div>';
+    rows.forEach((r,i)=>{s+='<div class="row"><input class="grow" type="text"'+(pu?' list="projlist"':'')+' id="in-m'+i+'" data-chg="rowm" data-i="'+i+'" maxlength="60" value="'+esc(r.m)+'" aria-label="'+esc(t('mat'))+'"><input class="q" type="number" min="0" step="1" id="in-q'+i+'" data-chg="rowq" data-i="'+i+'" value="'+(+r.q||0)+'" aria-label="'+esc(t('qty'))+'"><button class="x" type="button" data-act="rowdel" data-i="'+i+'" aria-label="'+esc(t('del'))+'">✕</button></div>'});
+    s+='<button class="btn" type="button" data-act="rowadd">'+esc(t(pu?'addPart':'addRow'))+'</button>';
   }
   if((T.kind!=='zone'&&T.kind!=='gate'&&T.kind!=='wall')||ppl.length){
     s+='<div><strong>'+esc(t('here'))+'</strong></div>';
@@ -652,7 +669,7 @@ function renderRail(){
     s+='<section class="card"><h2>'+esc(t('layout'))+'</h2><div class="note">'+esc(t('layoutHint'))+'</div>';
     s+='<div class="row"><button class="btn" type="button" data-act="drawwall" aria-pressed="'+(!!drawWall)+'">'+esc(drawWall?t('drawStop'):t('drawWall'))+'</button></div>'+(drawWall?'<div class="note">'+esc(t('drawHint'))+'</div>':'');
     s+='<div class="row"><select id="in-addt" class="grow" aria-label="'+esc(t('addItem'))+'">';
-    for(const k of ['wall','gate','desk','rack','toolrack','wip','wiptall','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
+    for(const k of ['wall','gate','desk','rack','partrack','toolrack','wip','wiptall','dust','compressor','vitap','blum','zone','altendorf','felder','startech','olimpic','volter','booth','laser'])s+='<option value="'+k+'">'+esc(tname(TYPES[k]))+'</option>';
     s+='</select><button class="btn" type="button" data-act="additem">'+esc(t('add'))+'</button></div></section>';
   }
   $('#rail').innerHTML=s;
@@ -697,6 +714,8 @@ const MODELS={
  zone:()=>[B(-160,-110,160,110,0,1.5,'var(--mark)',null,.4)],
  vitap:()=>[B(-70,-40,70,44,0,85,'#f1f2f3'),B(-64,-2,64,42,85,5,'#c9cdd1'),B(-64,-8,64,-1,90,10,'#8d949a'),B(-50,-56,50,-10,90,62,'#1f5fae'),B(-36,-12,36,-6,96,26,'#23282c'),CY(-44,-2,8,90,30,'#8e959b'),CY(44,-2,8,90,30,'#8e959b')],
  blum:()=>[B(-30,-20,30,24,0,80,'#3a3f44'),B(-48,-2,48,36,80,5,'#c9cdd1'),B(-48,-8,48,-1,85,10,'#8d949a'),B(-8,-38,8,-24,85,55,'#6b7278'),B(-24,-42,24,-6,108,44,'#ff6a13'),CY(0,-24,10,152,30,'#23282c'),B(22,-34,44,-30,140,5,'#6b7278')],
+ partrack:id=>{const n=Math.max(3,Math.min(15,Math.ceil(stockTotal(id)/4)||3)),c=['#f4f4f0','#d9c39a','#9aa3a8','#f4f4f0','#b08d5a'],m=[B(-100,-42,100,42,0,14,'#59626a'),B(-100,-42,-96,-38,14,130,'#59626a'),B(96,-42,100,-38,14,130,'#59626a'),B(-100,38,-96,42,14,130,'#59626a'),B(96,38,100,42,14,130,'#59626a'),B(-100,-42,100,-38,140,5,'#59626a'),B(-100,38,100,42,140,5,'#59626a')];
+   for(let i=0;i<n;i++)m.push(B(-88+i*12,-31,-86.2+i*12,31-(i%4)*7,14,72+((i*37)%5)*10,c[i%5]));return m},
  wip:()=>{const m=[];for(let i=0;i<3;i++){const x=-90+i*60;m.push(B(x,-30,x+2,30,10,76,'#ecebe4'),B(x+58,-30,x+60,30,10,76,'#ecebe4'),B(x,-30,x+60,-28,10,76,'#ecebe4'),B(x,-30,x+60,30,10,2,'#ecebe4'),B(x,-30,x+60,-20,84,2,'#ecebe4'),B(x,20,x+60,30,84,2,'#ecebe4'),B(x+2,-28,x+58,26,46,2,'#ecebe4'),B(x+4,-24,x+10,-18,0,10,'#3a3f44'),B(x+50,-24,x+56,-18,0,10,'#3a3f44'),B(x+4,20,x+10,26,0,10,'#3a3f44'),B(x+50,20,x+56,26,0,10,'#3a3f44'))}return m},
  wiptall:()=>{const m=[B(-50,-30,-48,30,8,212,'#ecebe4'),B(48,-30,50,30,8,212,'#ecebe4'),B(-50,-30,50,-28,8,212,'#ecebe4'),B(-50,-30,50,30,8,2,'#ecebe4'),B(-50,-30,50,30,218,2,'#ecebe4'),B(-1,-28,1,28,10,208,'#ecebe4'),B(-50,-26,50,26,0,8,'#3a3f44')];for(const y of [60,110,160])m.push(B(-48,-28,-1,26,y,2,'#ecebe4'));m.push(B(1,-26,48,-22,190,3,'#9aa1a7'));return m},
  wall:()=>[B(-150,-8,150,8,0,320,'var(--panel)')],
@@ -796,7 +815,7 @@ function build3D(){
     const g=new THREE.Group();g.position.set(+it.x||0,0,+it.y||0);g.rotation.y=-(+it.r||0)*Math.PI/180;g.userData.id=id;
     const inner=new THREE.Group();inner.scale.set(Wd/T.w,1,Dp/T.h);g.add(inner);
     let stK='',stT='',top=0;
-    if(T.kind==='machine'){stK=statusOf(id);stT=t(stK)}else if(T.kind==='desk'){stK=ppl.length?'busy':'idle';stT=ppl.length?t('busy'):t('free')}else if(T.kind==='rack'){stT=stockTotal(id)+' '+t('sheets')}
+    if(T.kind==='machine'){stK=statusOf(id);stT=t(stK)}else if(T.kind==='desk'){stK=ppl.length?'busy':'idle';stT=ppl.length?t('busy'):t('free')}else if(T.kind==='rack'){stT=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
     for(const b of MODELS[it.t](id)){
       const m=b.cyl?cyl3(b):box3(b);if(stK==='down'){m.material.transparent=true;m.material.opacity=Math.min(m.material.opacity,.5)}
       inner.add(m);top=Math.max(top,b.y0+b.h);
@@ -811,7 +830,7 @@ function build3D(){
     const lines=[{t:itemName(id,it),c:ink}];if(stT)lines.push({t:stT.toUpperCase(),c:stK?stc[stK]:muted,w:600});
     if(T.kind!=='wall'&&T.kind!=='aux'){const lb=sprite(lines);lb.position.set(0,top+70,0);g.add(lb)}
     ppl.forEach((e,i)=>{
-      const pg=new THREE.Group();pg.userData.pid=e[0];pg.position.set((i-(ppl.length-1)/2)*62,0,Dp/2+48);
+      const pg=new THREE.Group();pg.userData.pid=e[0];{const o=opAt(it.t,T,i);pg.position.set(o[0]*Wd/T.w,0,o[1]*Dp/T.h);pg.rotation.y=Math.atan2(-o[0],-o[1])}
       const c=new THREE.Color(selPerson===e[0]?mark:'#2f67b3');
       const sm=(c)=>new THREE.MeshStandardMaterial({color:new THREE.Color(c),roughness:.8});
       for(const lx of [-7,7]){const leg=new THREE.Mesh(new THREE.CylinderGeometry(6,5.5,82,10),sm('#2b3340'));leg.position.set(lx,41,0);leg.castShadow=true;pg.add(leg)}
@@ -961,7 +980,7 @@ $('#map').addEventListener('click',e=>{
   const va=e.target.closest('.vadd');
   if(va&&editing){if(!canWrite())return;const P=hallPts(),i=+va.dataset.e,a=P[i],b=P[(i+1)%P.length];P.splice(i+1,0,{x:Math.round((a.x+b.x)/20)*10,y:Math.round((a.y+b.y)/20)*10});setHall(P);return}
   if(e.target.closest('.vh')||e.target.closest('.rh'))return;
-  const pill=e.target.closest('.pill');
+  const pill=e.target.closest('.pill,.fig');
   if(pill&&!editing){selPerson=selPerson===pill.dataset.pid?null:pill.dataset.pid;render();return}
   const g=e.target.closest('.it');
   if(g){
