@@ -53,7 +53,8 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.02e
 .d-run{background:var(--run)}.d-idle{background:var(--idle)}.d-down{background:var(--down)}.d-ppl{background:var(--person)}.d-pause{background:var(--warn)}.d-inst{background:var(--mark)}
 .sp{flex:1}
 .clock{font-family:var(--display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums}
-.sync{font-size:13px;color:var(--muted)}
+.sync{font-size:13px;color:var(--muted);max-width:170px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media (max-width:1500px){h1{font-size:21px}.counts{font-size:17px;gap:4px 11px}.btn{padding:5px 9px}.clock{font-size:22px}header{gap:6px 12px}}
 .tools{display:flex;gap:6px;flex-wrap:wrap}
 .btn{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 12px;font-weight:500}
 .btn:hover{border-color:var(--ink)}
@@ -64,6 +65,12 @@ main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px;
 #map{display:block;width:100%;height:100%;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 #brk{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:2;background:var(--mark);color:var(--mark-ink);font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.04em;text-transform:uppercase;padding:6px 20px;border-radius:6px;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 body.tv #brk{font-size:38px;padding:10px 28px}
+#ctl3{position:absolute;right:10px;bottom:10px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:70%}
+#ctl3 button{min-width:42px;height:42px;padding:0 10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);font-family:var(--display);font-weight:700;font-size:20px;line-height:1}
+#ctl3 button:hover{border-color:var(--ink)}
+#ctl3 button[aria-pressed="true"]{background:var(--mark);color:var(--mark-ink);border-color:var(--mark)}
+body:not(.tv) .tv-only{display:none}
+body.tv #ctl3 button{min-width:56px;height:56px;font-size:26px}
 #three{position:absolute;inset:0;touch-action:none}
 #three canvas{display:block;width:100%;height:100%}
 .hint3{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 8px;pointer-events:none}
@@ -187,7 +194,7 @@ a.btn{text-decoration:none;display:inline-block}
   <span class="clock" id="clock"></span>
 </header>
 <main>
-  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div></div>
+  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div><div id="ctl3" hidden><button type="button" class="tv-only" data-c="rot"></button><button type="button" data-c="l">⟲</button><button type="button" data-c="r">⟳</button><button type="button" data-c="u">↑</button><button type="button" data-c="d">↓</button><button type="button" data-c="in">+</button><button type="button" data-c="out">−</button><button type="button" data-c="fit"></button></div></div>
   <aside class="rail" id="rail"></aside>
 </main>
 <div id="toast" hidden></div>
@@ -211,14 +218,14 @@ const L={
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
-  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
+  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Tempk darbuotoją pele į vietą, kur jis stovi – prie bet kurių staklių ar stalo. Arba paspausk darbuotoją sąraše, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
-  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
+  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Drag a worker with the mouse to the spot where they stand, at any machine or desk. Or tap a worker in the list, then a place on the plan. Tap a machine to change its status.',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
 };
@@ -296,10 +303,11 @@ const TYPES={
    draw:()=>saw({body:'#c9cdd1',front:'#1f4fa0',ext:'#dfe2e4',fence:'#dfe2e4',accent:'#1f4fa0',panel:'#c9cdd1',arm:'#dfe2e4'})},
  startech:{kind:'machine',name:'SCM Startech CN Plus',sub:{lt:'CNC gręžimo centras',en:'CNC drilling centre'},w:330,h:176,
    draw(){let s='';
-     for(const x of [-160,85]){s+=R(x,-44,75,88,'#c9cdd1',S)+R(x,44,75,8,'#8d949a');for(let i=8;i<75;i+=14)s+=LN(x+i,-38,x+i,38,'#9aa1a7',4)}
-     s+='<g class="mv mv-feed" style="animation-duration:5s">'+R(-55,-22,110,60,'#e8dcc2',S)+'</g>';
+     /* fold-out roller wings on both sides of the loading shelf: the panel rides on these along the front */
+     for(const x of [-160,80]){s+=R(x,-100,x<0?84:80,30,'#f1f2f3',S+' rx="2"');for(let i=7;i<(x<0?84:80)-3;i+=10)s+=LN(x+i,-96,x+i,-74,'#f0c400',4)}
      s+=R(-85,-70,170,140,'#f1f2f3',S+' rx="5"')+R(-72,-52,144,112,'#dfe2e4','stroke="#aeb5bb" stroke-width="2" rx="3"')+R(-85,-70,170,9,'#1f3f7a');
-     s+=R(-76,-100,100,30,'#f1f2f3',S+' rx="2"')+R(-60,-96,68,22,'#23282c')+R(28,-98,52,28,'#f1f2f3',S+' rx="2"')+R(35,-94,38,11,'#23282c','rx="2"')+R(32,-77,46,7,'#17191b','rx="2"');
+     s+=R(-76,-100,98,30,'#f1f2f3',S+' rx="2"')+'<g class="mv mv-feed" style="animation-duration:5s">'+R(-55,-97,110,24,'#e8dcc2',S)+'</g>';
+     s+=R(28,-98,52,28,'#f1f2f3',S+' rx="2"')+R(35,-94,38,11,'#23282c','rx="2"')+R(32,-77,46,7,'#17191b','rx="2"');
      return s+CI(22,-76,4.5,'#c8102e',S)}},
  olimpic:{kind:'machine',name:'SCM Olimpic K 360',sub:{lt:'Kraštų laminavimo staklės',en:'Edge bander'},w:420,h:190,
    draw(){let s=CI(-185,-62,34,'#3a3f44',S)+CI(-185,-62,25,'#f4f4f0',S)+CI(-185,-62,6,'#23282c')+LN(-160,-42,-150,-30,'#f4f4f0',5);
@@ -548,6 +556,11 @@ function stopWall(){if(!drawWall)return;drawWall=null;document.body.classList.re
 let toastT;function toast(m){const el=$('#toast');el.textContent=m;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},2600)}
 
 /* ---------- map ---------- */
+/* UQ = plan units (cm) per screen pixel. Names, statuses, name tags and edit handles are scaled up from it,
+   so they stay readable on a laptop, a desktop and a TV, however long the hall is. */
+let UQ=1;
+const tvOn=()=>document.body.classList.contains('tv');
+const FL=()=>Math.max(1,UQ*(tvOn()?21:14)/34), FP=()=>Math.max(1,UQ*(tvOn()?19:13)/29), FH=()=>Math.max(1,UQ*10/19);
 function itemSVG(id,it){
   const T=TYPES[it.t];if(!T)return'';
   const rot=((+it.r||0)%360+360)%360, W=+it.w||T.w, H=+it.h||T.h, a=rot*Math.PI/180;
@@ -561,20 +574,20 @@ function itemSVG(id,it){
   let s='<g class="it '+stCls+(selItem===id?' sel':'')+'" data-id="'+esc(id)+'" transform="translate('+(+it.x||0)+','+(+it.y||0)+')">';
   s+='<rect class="hit" x="'+(-sw/2-10)+'" y="'+(-sh/2-10)+'" width="'+(sw+20)+'" height="'+(sh+20)+'" rx="10"/>';
   s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'>'+(T.room?'<g class="draw" transform="rotate('+rot+')">'+T.draw(it,W,H):'<g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw(it,W,H,{busy:peopleAtRaw(id).length>0,n:rackN(id)}))+'</g></g>';
-  const ly=sh/2+40;
-  const lab=showLbl(id,T);
-  if(lab&&((T.kind!=='wall'&&T.kind!=='aux')||selItem===id))s+='<text class="lbl" y="'+ly+'">'+esc(itemName(id,it))+'</text>';
+  const lab=showLbl(id,T),fl=FL(),fp=FP(),fh=FH();let lg='';
+  if(lab&&((T.kind!=='wall'&&T.kind!=='aux')||selItem===id))lg+='<text class="lbl" y="40">'+esc(itemName(id,it))+'</text>';
   if(stTxt&&lab){
     const col=T.kind==='rack'?'':' s-'+stCls;
     const half=stTxt.length*7.5+(T.kind==='rack'?0:14);
-    if(T.kind!=='rack')s+='<circle class="beacon s-'+stCls+'" cx="'+(-half)+'" cy="'+(ly+25)+'" r="10"/>';
-    s+='<text class="stt'+col+'" '+(T.kind==='rack'?'fill="var(--muted)" ':'')+'x="'+(T.kind==='rack'?0:12)+'" y="'+(ly+34)+'">'+esc(stTxt.toUpperCase())+'</text>';
+    if(T.kind!=='rack')lg+='<circle class="beacon s-'+stCls+'" cx="'+(-half)+'" cy="65" r="10"/>';
+    lg+='<text class="stt'+col+'" '+(T.kind==='rack'?'fill="var(--muted)" ':'')+'x="'+(T.kind==='rack'?0:12)+'" y="74">'+esc(stTxt.toUpperCase())+'</text>';
   }
+  if(lg)s+='<g transform="translate(0,'+(sh/2)+') scale('+fl+')">'+lg+'</g>';
   if(editing&&selItem===id){
     s+='<g transform="rotate('+rot+')">';
-    for(const c of [[-1,-1],[1,-1],[1,1],[-1,1]])s+='<rect class="rh" data-rh="'+c[0]+','+c[1]+'" x="'+(c[0]*W/2-15)+'" y="'+(c[1]*H/2-15)+'" width="30" height="30" rx="5"/>';
-    if(T.room){const dg=doorGeo(it,T,W,H);s+='<circle class="dh" cx="'+dg.mid[0]+'" cy="'+dg.mid[1]+'" r="17"/>'}
-    s+='</g><text class="rdim" y="'+(-sh/2-24)+'">'+Math.round(W)+' × '+Math.round(H)+' cm</text>';
+    for(const c of [[-1,-1],[1,-1],[1,1],[-1,1]])s+='<rect class="rh" data-rh="'+c[0]+','+c[1]+'" x="'+(c[0]*W/2-15*fh)+'" y="'+(c[1]*H/2-15*fh)+'" width="'+30*fh+'" height="'+30*fh+'" rx="'+5*fh+'"/>';
+    if(T.room){const dg=doorGeo(it,T,W,H);s+='<circle class="dh" cx="'+dg.mid[0]+'" cy="'+dg.mid[1]+'" r="'+17*fh+'"/>'}
+    s+='</g><text class="rdim" transform="translate(0,'+(-sh/2-24*fl)+') scale('+fl+')">'+Math.round(W)+' × '+Math.round(H)+' cm</text>';
   }
   if(ppl.length){
     s+='<g transform="rotate('+rot+')" filter="url(#sh)">';
@@ -586,8 +599,8 @@ function itemSVG(id,it){
   ppl.forEach((e,i)=>{
     const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],wx=ax*Math.cos(a)-ay*Math.sin(a),wy=ax*Math.sin(a)+ay*Math.cos(a);
     const nm=String(e[1].n||'?'),pr=String(e[1].pr||'').slice(0,26),hh=pr?68:42,w=Math.max(84,nm.length*16+36,pr.length*11.5+36);
-    const side=Math.abs(wx)>=Math.abs(wy),px=side?wx+(wx<0?-1:1)*(36+w/2):wx,py=(side?wy:wy+(wy<0?-1:1)*(36+hh/2))-hh/2;
-    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'"><rect x="'+(px-w/2)+'" y="'+py+'" width="'+w+'" height="'+hh+'" rx="21"/><text x="'+px+'" y="'+(py+31)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" x="'+px+'" y="'+(py+57)+'">'+esc(pr)+'</text>':'')+'</g>';
+    const side=Math.abs(wx)>=Math.abs(wy),px=side?wx+(wx<0?-1:1)*(36+w*fp/2):wx,py=side?wy:wy+(wy<0?-1:1)*(36+hh*fp/2);
+    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+px+','+py+') scale('+fp+')"><rect x="'+(-w/2)+'" y="'+(-hh/2)+'" width="'+w+'" height="'+hh+'" rx="21"/><text y="'+(31-hh/2)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" y="'+(57-hh/2)+'">'+esc(pr)+'</text>':'')+'</g>';
   });
   return s+'</g>';
 }
@@ -595,23 +608,25 @@ function renderMap(){
   const P=(drag&&drag.P)||hallPts(),b=hallBox(P),svg=$('#map');
   const vb=(drag&&drag.vb)||[b.x0-50,b.y0-50,b.x1-b.x0+100,b.y1-b.y0+140];
   svg.setAttribute('viewBox',vb.join(' '));svg.style.aspectRatio=vb[2]+'/'+vb[3];
+  {const r=svg.getBoundingClientRect();UQ=r.width>40&&r.height>40?Math.max(vb[2]/r.width,vb[3]/r.height):1}
+  const fl=FL(),fh=FH();
   svg.setAttribute('class',(editing?'editing ':'')+(selPerson?'picking':''));
   const d='M'+P.map(p=>p.x+' '+p.y).join('L')+'Z';
   let s='<defs><pattern id="g" width="100" height="100" patternUnits="userSpaceOnUse"><path d="M100 0H0V100" fill="none" stroke="var(--grid)" stroke-width="2"/></pattern><pattern id="cn" width="420" height="420" patternUnits="userSpaceOnUse"><image href="'+concrete().url+'" width="420" height="420" preserveAspectRatio="none"/></pattern>'+DEFS+'</defs>';
   s+='<path d="'+d+'" fill="var(--floor)"/><path d="'+d+'" fill="url(#cn)"/><path d="'+d+'" fill="url(#g)" opacity=".55"/><path d="'+d+'" fill="none" stroke="var(--wall)" stroke-width="26" stroke-linejoin="miter"/><path d="'+d+'" fill="none" stroke="var(--panel)" stroke-width="15" stroke-linejoin="miter"/>';
-  s+='<g><line x1="'+b.x0+'" y1="'+(b.y1+50)+'" x2="'+(b.x0+100)+'" y2="'+(b.y1+50)+'" stroke="var(--muted)" stroke-width="5"/><text class="dim" x="'+(b.x0+112)+'" y="'+(b.y1+58)+'">1 m · '+fmtM(b.x1-b.x0)+' × '+fmtM(b.y1-b.y0)+' m</text></g>';
+  s+='<g><line x1="'+b.x0+'" y1="'+(b.y1+50)+'" x2="'+(b.x0+100)+'" y2="'+(b.y1+50)+'" stroke="var(--muted)" stroke-width="5"/><text class="dim" style="font-size:'+Math.round(24*fl)+'px" x="'+(b.x0+112)+'" y="'+(b.y1+50+8*fl)+'">1 m · '+fmtM(b.x1-b.x0)+' × '+fmtM(b.y1-b.y0)+' m</text></g>';
   const items=Object.entries(LAY().items).filter(e=>e[1]&&TYPES[e[1].t]);
   const order={zone:0,wall:1,gate:1.5,rack:2,store:2,desk:3,aux:4,machine:4};
   items.sort((a,b)=>order[TYPES[a[1].t].kind]-order[TYPES[b[1].t].kind]);
   for(const [id,it] of items)s+=itemSVG(id,it);
   if(editing){
     P.forEach((p,i)=>{const q=P[(i+1)%P.length],len=Math.hypot(q.x-p.x,q.y-p.y)||1,mx=(p.x+q.x)/2,my=(p.y+q.y)/2,nx=-(q.y-p.y)/len,ny=(q.x-p.x)/len;
-      s+='<text class="elbl" x="'+(mx+nx*72)+'" y="'+(my+ny*56+10)+'">'+fmtM(len)+' m</text>';
-      s+='<g class="vadd" data-e="'+i+'" transform="translate('+mx+','+my+')"><circle r="15"/><text y="9">+</text></g>'});
-    P.forEach((p,i)=>{s+='<circle class="vh" data-v="'+i+'" cx="'+p.x+'" cy="'+p.y+'" r="19"/>'});
+      s+='<text class="elbl" transform="translate('+(mx+nx*72*fl)+','+(my+ny*56*fl+10*fl)+') scale('+fl+')">'+fmtM(len)+' m</text>';
+      s+='<g class="vadd" data-e="'+i+'" transform="translate('+mx+','+my+') scale('+fh+')"><circle r="15"/><text y="9">+</text></g>'});
+    P.forEach((p,i)=>{s+='<circle class="vh" data-v="'+i+'" cx="'+p.x+'" cy="'+p.y+'" r="'+19*fh+'"/>'});
   }
   if(drawWall&&drawWall.p1){const a=drawWall.p1,b=drawWall.p2||a;
-    s+='<line id="wprev" class="wprev" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/><circle class="vh" style="pointer-events:none" cx="'+a.x+'" cy="'+a.y+'" r="14"/><text id="wlen" class="elbl" x="'+a.x+'" y="'+(a.y-22)+'"></text>'}
+    s+='<line id="wprev" class="wprev" x1="'+a.x+'" y1="'+a.y+'" x2="'+b.x+'" y2="'+b.y+'"/><circle class="vh" style="pointer-events:none" cx="'+a.x+'" cy="'+a.y+'" r="14"/><text id="wlen" class="elbl" transform="translate('+a.x+','+(a.y-22)+')"></text>'}
   svg.innerHTML=s;
 }
 
@@ -630,7 +645,7 @@ function renderHeader(){
   $('#sync').textContent=saveErr?saveErr:mode==='local'?t('local'):stale?t('stale'):(mode==='db'&&docs.layout.loaded)?t('synced'):t('loading');
   const ba=$('#btnAuth');ba.hidden=!(mode==='local'&&WA&&!saveErr);ba.textContent=t('signIn');
   $('#btnLang').textContent=lang==='lt'?'EN':'LT';
-  $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');
+  $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
@@ -780,11 +795,12 @@ const MODELS={
  altendorf:()=>sawM({body:'#4a5157',front:'#b9bfc4',ext:'#c9cdd1',fence:'#dfe2e4',accent:'#c8102e',arm:'#4a5157'}),
  felder:()=>sawM({body:'#c9cdd1',front:'#1f4fa0',ext:'#dfe2e4',fence:'#dfe2e4',accent:'#1f4fa0',arm:'#dfe2e4'}),
  startech:()=>{const m=[B(-85,-70,85,70,0,200,'#f1f2f3'),B(-86,-72,86,-69,190,10,'#1f3f7a'),B(-72,-71.5,18,-69,128,44,'#2e3438'),B(-72,-71.5,18,-69,94,24,'#17191b'),
-   B(-76,-100,22,-70,86,6,'#f1f2f3'),B(-58,-96,8,-74,92,2,'#23282c'),B(-62,-103,-8,-100,28,58,'#f1f2f3'),
+   B(-76,-100,22,-70,84,6,'#f1f2f3'),B(-55,-97,55,-73,92,2,'#e8dcc2','feed'),
    B(32,-77,78,-73,150,34,'#17191b'),B(35,-78.5,75,-77,153,28,'#7fb4d6'),B(28,-98,80,-70,118,3,'#f1f2f3'),B(34,-94,70,-82,121,2,'#23282c'),B(20,-74,28,-70,138,7,'#c8102e'),
-   B(34,-71.5,80,-69,20,80,'#dfe2e4'),B(40,-72.5,58,-71,32,18,'#c9cdd1'),B(-55,-22,55,38,90,2,'#e8dcc2','feed')];
-   for(let i=0;i<5;i++)m.push(B(-58+i*10,-105,-55+i*10,-103,32,50,'#f0c400'));
-   for(const x of [-160,85])m.push(B(x,-44,x+75,44,82,8,'#c9cdd1'),B(x,44,x+75,52,82,14,'#8d949a'),B(x+(x<0?4:65),-40,x+(x<0?10:71),-34,0,82,'#8d949a'),B(x+(x<0?4:65),34,x+(x<0?10:71),40,0,82,'#8d949a'));
+   B(34,-71.5,80,-69,20,60,'#dfe2e4'),B(40,-72.5,58,-71,32,18,'#c9cdd1')];
+   /* the two roller wings, folded out level with the shelf, each on a stay back to the cabinet */
+   for(const w of [[-160,-76],[80,160]]){m.push(B(w[0],-100,w[1],-70,84,4,'#f1f2f3'),B(w[0]<0?w[0]+2:w[1]-8,-76,w[0]<0?w[0]+8:w[1]-2,-70,0,84,'#c9cdd1'));
+     for(let x=w[0]+6;x<w[1]-4;x+=10)m.push(B(x,-98,x+3,-72,88,3,'#f0c400'))}
    return m},
  olimpic:()=>{const m=[B(-205,-35,205,27,0,92,'#e9e6dc'),B(-198,-30,198,-28,0,4,'#23282c'),B(-205,27,205,39,84,8,'#c9cdd1'),B(-200,39,200,41,88,3,'#f0c400'),
    B(-150,-35,205,8,92,64,'#f3f0e6'),B(-132,8,18,10,112,36,'#3d4a52',null,.7),B(36,8,182,10,112,36,'#3d4a52',null,.7),B(-150,8,205,11,96,8,'#c8102e'),
@@ -841,8 +857,8 @@ function sprite(lines,bg){
   g.textAlign='center';g.textBaseline='middle';
   lines.forEach((l,i)=>{g.font=font(l.w||700);g.fillStyle=l.c;g.fillText(l.t,W/2,11+(fs+6)*(i+.5))});
   const tex=new THREE.CanvasTexture(c);tex.encoding=THREE.sRGBEncoding;tex.anisotropy=4;
-  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,toneMapped:false}));
-  sp.scale.set(W*.5,H*.5,1);sp.renderOrder=10;return sp;
+  const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,depthTest:false,toneMapped:false,sizeAttenuation:false}));
+  sp.center.set(.5,0);sp.userData.lab={W,H,k:1};sp.scale.set(.001,.001,1);sp.renderOrder=10;if(T3)T3.labels.push(sp);return sp;
 }
 function glow(color,size){
   const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);
@@ -869,8 +885,9 @@ function init3D(){
     scene.add(new THREE.HemisphereLight(0xffffff,0x8d928c,.1));
     const sun=new THREE.DirectionalLight(0xfff3e2,.92);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);sun.shadow.bias=-.0005;sun.shadow.normalBias=1.5;scene.add(sun);scene.add(sun.target);
     const fill=new THREE.DirectionalLight(0xdce8ff,.22);fill.position.set(900,1200,-1500);scene.add(fill);scene.add(root);
-    T3={el,renderer,scene,camera,root,sun,fill,workers:[],movers:[],pulsers:[],cam:{th:0,ph:.86,d:3000,tx:1200,tz:700,key:''},ray:new THREE.Raycaster()};
-    const fit=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix()};
+    T3={el,renderer,scene,camera,root,sun,fill,labels:[],workers:[],movers:[],pulsers:[],cam:{th:0,ph:.86,d:3000,tx:1200,tz:700,key:''},ray:new THREE.Raycaster()};
+    const fit=()=>{const w=el.clientWidth,h=el.clientHeight;if(!w||!h)return;renderer.setPixelRatio(Math.max(.75,Math.min(2,window.devicePixelRatio||1,Math.sqrt(4.2e6/(w*h)))));renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();
+      if(w!==T3.fw||h!==T3.fh){T3.fw=w;T3.fh=h;if(T3.cam.key&&!T3.cam.user)fitCam()}};
     T3.fit=fit;if(window.ResizeObserver)new ResizeObserver(fit).observe(el);else window.addEventListener('resize',fit);
     events3D(renderer.domElement);
     const t0=performance.now();
@@ -885,13 +902,40 @@ function init3D(){
           w.up.rotation.y=.16*Math.sin(a*.7);w.up.rotation.x=.05+.04*Math.sin(a*1.1);
           w.arms[0].rotation.x=-.85+.32*Math.sin(a*2.3);w.arms[1].rotation.x=-.85+.32*Math.sin(a*2.3+2.4)}
         for(const p of T3.pulsers){const k=90*(1+.28*Math.sin(tt*4.5));p.scale.set(k,k,1)}
-        if(document.body.classList.contains('tv')&&!T3.ptrs.size)T3.cam.th+=.0007;
+        if(tvOn()&&autoRot&&!T3.ptrs.size)T3.cam.th+=.0007;
       }
+      {const vh=el.clientHeight||600,tv=tvOn(),px=Math.max(tv?20:13,Math.min(tv?28:19,vh*(tv?.026:.021))),k=2*Math.tan(camera.fov*Math.PI/360)/vh;
+        /* labels keep a fixed size on screen; where two would cover each other, the later one steps up clear */
+        const vw=el.clientWidth||800,placed=[],v=new THREE.Vector3();
+        for(const sp of T3.labels){const L=sp.userData.lab,hp=L.H*px/50*L.k,wp=hp*L.W/L.H;sp.scale.set(wp*k,hp*k,1);
+          sp.getWorldPosition(v).project(camera);const x=(v.x+1)/2*vw,y=(1-v.y)/2*vh;let n=0;
+          for(;n<9;n++){const y1=y-n*(hp+4),y0=y1-hp;if(!placed.some(r=>x-wp/2<r[1]&&x+wp/2>r[0]&&y0<r[3]&&y1>r[2]))break}
+          sp.center.set(.5,-n*(hp+4)/hp);placed.push([x-wp/2,x+wp/2,y-n*(hp+4)-hp,y-n*(hp+4)])}}
       camUpd();renderer.render(scene,camera);
     })();
     return true;
   }catch(e){T3=null;return false}
 }
+let autoRot=lsGet('cp.rot')!=='0', camT=null;
+function saveCam(){clearTimeout(camT);camT=setTimeout(()=>{const c=T3.cam;lsSet('cp.cam',JSON.stringify({key:c.key,th:c.th,ph:c.ph,d:c.d,tx:c.tx,tz:c.tz}))},400)}
+/* frame the whole hall for this screen's shape: long side across, as close as fits with room for labels */
+function fitCam(){
+  if(!T3)return;const P=hallPts(),bb=hallBox(P),c=T3.cam,cam=T3.camera,v=new THREE.Vector3();
+  c.tx=(bb.x0+bb.x1)/2;c.tz=(bb.y0+bb.y1)/2;c.th=(bb.y1-bb.y0)>(bb.x1-bb.x0)*1.15?Math.PI/2:0;c.ph=.9;c.user=false;
+  let lo=200,hi=60000;
+  for(let i=0;i<24;i++){c.d=(lo+hi)/2;camUpd();cam.updateMatrixWorld();let ok=true;
+    for(const p of P){for(const y of [0,WALLH]){v.set(p.x,y,p.y).project(cam);if(Math.abs(v.x)>.95||v.y>.8||v.y<-.9||v.z>1){ok=false;break}}if(!ok)break}
+    if(ok)hi=c.d;else lo=c.d}
+  c.d=hi;
+}
+function camStep(k){
+  if(!T3)return;const c=T3.cam;
+  if(k==='rot'){autoRot=!autoRot;lsSet('cp.rot',autoRot?'1':'0');ctl3()}
+  else if(k==='fit'){fitCam();try{localStorage.removeItem('cp.cam')}catch(e){}}
+  else{if(k==='l')c.th+=.2;if(k==='r')c.th-=.2;if(k==='u')c.ph=Math.max(.08,c.ph-.08);if(k==='d')c.ph=Math.min(1.45,c.ph+.08);if(k==='in')c.d=Math.max(300,c.d*.85);if(k==='out')c.d=Math.min(60000,c.d*1.18);c.user=true;saveCam()}
+}
+function ctl3(){const L={rot:autoRot?'❚❚ '+t('rotOn'):'▶ '+t('rotOff'),fit:'⤢ '+t('fitAll')},A={l:'cL',r:'cR',u:'cU',d:'cD',in:'cIn',out:'cOut'};
+  document.querySelectorAll('#ctl3 button').forEach(b=>{const k=b.dataset.c;if(L[k])b.textContent=L[k];if(A[k]){b.setAttribute('aria-label',t(A[k]));b.title=t(A[k])}if(k==='rot')b.setAttribute('aria-pressed',autoRot)})}
 function camUpd(){const c=T3.cam,y=c.d*Math.cos(c.ph),r=c.d*Math.sin(c.ph);T3.camera.position.set(c.tx+r*Math.sin(c.th),y,c.tz+r*Math.cos(c.th));T3.camera.lookAt(c.tx,0,c.tz)}
 function clear3(g){for(let i=g.children.length-1;i>=0;i--){const o=g.children[i];clear3(o);if(o.geometry&&!o.geometry.userData.keep)o.geometry.dispose();if(o.material){if(o.material.map)o.material.map.dispose();o.material.dispose()}g.remove(o)}}
 const C3=c=>new THREE.Color(c).convertSRGBToLinear();
@@ -927,10 +971,11 @@ function cyl3(b){
 function build3D(){
   if(!T3)return;
   const {root,scene}=T3,P=hallPts(),bb=hallBox(P);
-  clear3(root);T3.movers=[];T3.pulsers=[];T3.workers=[];
+  clear3(root);T3.movers=[];T3.pulsers=[];T3.workers=[];T3.labels=[];
   scene.background=new THREE.Color(cv('--bg'));
   const key=[bb.x0,bb.y0,bb.x1,bb.y1].join(',');
-  if(T3.cam.key!==key){T3.cam.key=key;T3.cam.tx=(bb.x0+bb.x1)/2;T3.cam.tz=(bb.y0+bb.y1)/2;T3.cam.d=Math.max(bb.x1-bb.x0,(bb.y1-bb.y0)*1.6)*1.5}
+  if(T3.cam.key!==key){T3.cam.key=key;let sv=null;try{sv=JSON.parse(lsGet('cp.cam')||'null')}catch(e){}
+    if(sv&&sv.key===key&&sv.d>0)Object.assign(T3.cam,{th:+sv.th||0,ph:+sv.ph||.9,d:+sv.d,tx:+sv.tx||0,tz:+sv.tz||0,user:true});else{T3.fit();fitCam()}}
   const span=Math.max(bb.x1-bb.x0,bb.y1-bb.y0),cx=(bb.x0+bb.x1)/2,cz=(bb.y0+bb.y1)/2,sun=T3.sun;
   sun.position.set(cx+span*.82,span*.55,cz+span*.7);sun.target.position.set(cx,0,cz);
   const sc=sun.shadow.camera;sc.left=-span*.85;sc.right=span*.85;sc.top=span*.85;sc.bottom=-span*.85;sc.near=10;sc.far=span*3;sc.updateProjectionMatrix();
@@ -983,7 +1028,9 @@ function build3D(){
       if(stK==='run')T3.pulsers.push(gl);
     }
     const lines=[{t:itemName(id,it),c:ink}];if(stT)lines.push({t:stT.toUpperCase(),c:stK?stc[stK]:muted,w:600});
-    if(T.kind!=='wall'&&T.kind!=='aux'&&showLbl(id,T)){const lb=sprite(lines);lb.position.set(0,top+(stK?78:52),0);g.add(lb)}
+    /* one label per station: its name, its status, and who is working there on what */
+    ppl.forEach(e=>lines.push({t:String(e[1].n||'?')+(e[1].pr?' · '+String(e[1].pr).slice(0,26):''),c:selPerson===e[0]?mark:'#ffffff',w:500}));
+    if(T.kind!=='wall'&&T.kind!=='aux'&&showLbl(id,T)){const lb=sprite(lines);lb.position.set(0,top+(stK?58:22),0);g.add(lb)}
     ppl.forEach((e,i)=>{
       const pg=new THREE.Group();pg.userData.pid=e[0];{const o=standAt(it,T,Wd,Dp,e[1],i);pg.position.set(o[0],0,o[1]);pg.rotation.y=Math.atan2(-o[0],-o[1])}
       const c=new THREE.Color(selPerson===e[0]?mark:'#2f67b3');
@@ -995,12 +1042,11 @@ function build3D(){
       const head=new THREE.Mesh(new THREE.SphereGeometry(11.5,16,12),sm('#d9a97e'));head.position.y=152;head.castShadow=true;up.add(head);
       arms[0].rotation.x=-.8;arms[1].rotation.x=-.8;
       T3.workers.push({fig,up,arms,ph:i*1.7+(e[0].charCodeAt(e[0].length-1)%9)});
-      const pc=selPerson===e[0]?cv('--mark-ink'):'#16201b',nl=[{t:String(e[1].n||'?'),c:pc,w:600}];if(e[1].pr)nl.push({t:String(e[1].pr).slice(0,26),c:pc,w:500});
-      const nm=sprite(nl,selPerson===e[0]?mark:'rgba(255,255,255,.94)');nm.scale.multiplyScalar(.9);nm.position.y=e[1].pr?212:196;pg.add(nm);
       g.add(pg);
     });
     root.add(g);
   }
+  T3.labels.sort((a,b)=>a.userData.lab.k-b.userData.lab.k);   /* name tags claim their place first, station labels step around them */
   if(T3.fit)T3.fit();
 }
 function pick3(e){
@@ -1026,7 +1072,7 @@ function events3D(cv3){
   cv3.addEventListener('pointermove',e=>{
     const pp=T3.ptrs.get(e.pointerId);if(!pp)return;
     const dx=e.clientX-pp.x,dy=e.clientY-pp.y;pp.x=e.clientX;pp.y=e.clientY;
-    if(T3.ptrs.size===2){const a=[...T3.ptrs.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch&&d){T3.cam.d=Math.max(300,Math.min(12000,T3.cam.d*pinch/d))}pinch=d;return}
+    if(T3.ptrs.size===2){const a=[...T3.ptrs.values()],d=Math.hypot(a[0].x-a[1].x,a[0].y-a[1].y);if(pinch&&d){T3.cam.d=Math.max(300,Math.min(60000,T3.cam.d*pinch/d));T3.cam.user=true;saveCam()}pinch=d;return}
     if(!st)return;
     if(Math.hypot(e.clientX-st.x,e.clientY-st.y)>5)st.moved=true;
     if(!st.moved)return;
@@ -1041,21 +1087,26 @@ function events3D(cv3){
     if(!T3.ptrs.has(e.pointerId))return;T3.ptrs.delete(e.pointerId);pinch=0;
     const s=st;st=null;busy3=false;if(!s||e.type==='pointercancel'){if(s&&s.item)render();return}
     if(s.item&&s.moved){if(!canWrite()){render();return}const p={items:{}};p.items[s.item.id]=movedTo(s.item.id,s.item.x,s.item.y);selItem=s.item.id;commit(docs.layout,p);return}
-    if(s.moved)return;
+    if(s.moved){T3.cam.user=true;saveCam();return}
     pendDel=null;const h=pick3(e);
     if(h&&h.pid&&!editing){selPerson=selPerson===h.pid?null:h.pid;render();return}
     if(h){if(selPerson&&!editing){movePerson(selPerson,h.id);return}selItem=h.id}else selItem=null;
     render();
   };
   cv3.addEventListener('pointerup',up);cv3.addEventListener('pointercancel',up);
-  cv3.addEventListener('wheel',e=>{e.preventDefault();T3.cam.d=Math.max(300,Math.min(12000,T3.cam.d*Math.exp(e.deltaY*.0012)))},{passive:false});
+  cv3.addEventListener('wheel',e=>{e.preventDefault();T3.cam.d=Math.max(300,Math.min(60000,T3.cam.d*Math.exp(e.deltaY*.0012)));T3.cam.user=true;saveCam()},{passive:false});
 }
 function applyView(){
   if(view==='3d'&&!init3D()){view='2d';if(mode!=='loading')toast(t('no3d'))}
   const three=view==='3d';
-  $('#map').toggleAttribute('hidden',three);$('#three').hidden=!three;$('#hint3').hidden=!three;$('#mapwrap').classList.toggle('v3',three);
+  $('#map').toggleAttribute('hidden',three);$('#three').hidden=!three;$('#hint3').hidden=!three;$('#ctl3').hidden=!three;ctl3();$('#mapwrap').classList.toggle('v3',three);
   if(!window.THREE)$('#btnView').hidden=true;
 }
+$('#ctl3').addEventListener('click',e=>{const b=e.target.closest('button');if(b)camStep(b.dataset.c)});
+document.addEventListener('keydown',e=>{if(view!=='3d'||e.ctrlKey||e.metaKey||e.altKey)return;const a=document.activeElement;if(a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))return;
+  const k={ArrowLeft:'l',ArrowRight:'r',ArrowUp:'u',ArrowDown:'d','+':'in','=':'in','-':'out','0':'fit',' ':tvOn()?'rot':''}[e.key];if(k){e.preventDefault();camStep(k)}});
+/* the plan is redrawn when its pane changes size, so text stays the same size on screen */
+let rszT=null;if(window.ResizeObserver)new ResizeObserver(()=>{clearTimeout(rszT);rszT=setTimeout(()=>{if(view==='2d'&&!drag)renderMap()},150)}).observe($('#mapwrap'));
 $('#btnView').addEventListener('click',()=>{view=view==='3d'?'2d':'3d';applyView();lsSet('cp.view',view);render()});
 
 /* ---------- actions ---------- */
@@ -1132,7 +1183,7 @@ $('#map').addEventListener('pointermove',e=>{
     const p=svgPt(e),a=drawWall.p1,b=wallEnd(a,{x:Math.round(p.x/10)*10,y:Math.round(p.y/10)*10});drawWall.p2=b;
     const ln=document.getElementById('wprev'),tx=document.getElementById('wlen');
     if(ln){ln.setAttribute('x2',b.x);ln.setAttribute('y2',b.y)}
-    if(tx){tx.setAttribute('x',(a.x+b.x)/2);tx.setAttribute('y',(a.y+b.y)/2-22);tx.textContent=fmtM(Math.hypot(b.x-a.x,b.y-a.y))+' m'}
+    if(tx){tx.setAttribute('transform','translate('+(a.x+b.x)/2+','+((a.y+b.y)/2-22*FL())+') scale('+FL()+')');tx.textContent=fmtM(Math.hypot(b.x-a.x,b.y-a.y))+' m'}
     return}
   if(!drag||e.pointerId!==drag.pid)return;
   if(drag.pp){
