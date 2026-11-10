@@ -18,7 +18,7 @@ html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-wi
   --bg:#e6e8e2; --floor:#d3d7cf; --grid:#c3c8bf; --wall:#2a322d; --panel:#f3f4ef; --line:#c2c7be;
   --ink:#1b221e; --muted:#59645d; --mline:#262d29; --booth:#e4e6df;
   --mark:#f0b400; --mark-ink:#231a00;
-  --run:#17924b; --idle:#6f7b86; --down:#d23f2c; --busy:#2267c9;
+  --run:#17924b; --idle:#6f7b86; --down:#d23f2c; --busy:#2267c9; --warn:#b97800;
   --person:#1b221e; --person-ink:#f3f4ef;
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:"Barlow","Segoe UI",Arial,sans-serif;
@@ -27,13 +27,13 @@ html{color-scheme:light}body{margin:0}[hidden]{display:none!important}img{max-wi
   --bg:#131718; --floor:#20262a; --grid:#2b3236; --wall:#cdd5d0; --panel:#1b2023; --line:#353d41;
   --ink:#e9edea; --muted:#9ba7a1; --mline:#0b0e0f; --booth:#2a3135;
   --mark:#f5bd1f; --mark-ink:#231a00;
-  --run:#35c274; --idle:#8d99a4; --down:#f0624f; --busy:#5d9bf0;
+  --run:#35c274; --idle:#8d99a4; --down:#f0624f; --busy:#5d9bf0; --warn:#f0b23a;
   --person:#e9edea; --person-ink:#131718; color-scheme:dark } }
 :root[data-theme="dark"]{
   --bg:#131718; --floor:#20262a; --grid:#2b3236; --wall:#cdd5d0; --panel:#1b2023; --line:#353d41;
   --ink:#e9edea; --muted:#9ba7a1; --mline:#0b0e0f; --booth:#2a3135;
   --mark:#f5bd1f; --mark-ink:#231a00;
-  --run:#35c274; --idle:#8d99a4; --down:#f0624f; --busy:#5d9bf0;
+  --run:#35c274; --idle:#8d99a4; --down:#f0624f; --busy:#5d9bf0; --warn:#f0b23a;
   --person:#e9edea; --person-ink:#131718; color-scheme:dark }
 
 html,body{height:100%}
@@ -50,7 +50,7 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.02e
 .counts{display:flex;flex-wrap:wrap;gap:6px 14px;font-family:var(--display);font-size:19px;font-weight:600}
 .counts span{display:inline-flex;align-items:center;gap:6px}
 .dot{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
-.d-run{background:var(--run)}.d-idle{background:var(--idle)}.d-down{background:var(--down)}.d-ppl{background:var(--person)}.d-inst{background:var(--mark)}
+.d-run{background:var(--run)}.d-idle{background:var(--idle)}.d-down{background:var(--down)}.d-ppl{background:var(--person)}.d-pause{background:var(--warn)}.d-inst{background:var(--mark)}
 .sp{flex:1}
 .clock{font-family:var(--display);font-weight:700;font-size:26px;font-variant-numeric:tabular-nums}
 .sync{font-size:13px;color:var(--muted)}
@@ -62,6 +62,8 @@ h1{font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.02e
 main{flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px}
 .mapwrap{min-width:0;min-height:0;background:var(--bg);border:1px solid var(--line);border-radius:8px;overflow:hidden;position:relative}
 #map{display:block;width:100%;height:100%;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+#brk{position:absolute;top:12px;left:50%;transform:translateX(-50%);z-index:2;background:var(--mark);color:var(--mark-ink);font-family:var(--display);font-weight:700;font-size:26px;letter-spacing:.04em;text-transform:uppercase;padding:6px 20px;border-radius:6px;white-space:nowrap;max-width:94%;overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+body.tv #brk{font-size:38px;padding:10px 28px}
 #three{position:absolute;inset:0;touch-action:none}
 #three canvas{display:block;width:100%;height:100%}
 .hint3{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:5px;padding:3px 8px;pointer-events:none}
@@ -106,7 +108,7 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .picking .it .hit{stroke:var(--mark);stroke-dasharray:14 10}
 .lbl{font-family:var(--display);font-weight:700;font-size:34px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--floor);stroke-width:9px;stroke-linejoin:round}
 .stt{font-family:var(--display);font-weight:600;font-size:27px;text-anchor:middle;letter-spacing:.04em;paint-order:stroke;stroke:var(--floor);stroke-width:8px;stroke-linejoin:round}
-.s-run{fill:var(--run)}.s-idle{fill:var(--idle)}.s-down{fill:var(--down)}.s-busy{fill:var(--busy)}
+.s-pause{fill:var(--warn)}.s-run{fill:var(--run)}.s-idle{fill:var(--idle)}.s-down{fill:var(--down)}.s-busy{fill:var(--busy)}
 .pill rect{fill:var(--person)}
 .pill text{fill:var(--person-ink);font-family:var(--display);font-weight:600;font-size:29px;text-anchor:middle}
 .pill,.fig{cursor:pointer}
@@ -176,7 +178,7 @@ a.btn{text-decoration:none;display:inline-block}
   <span class="clock" id="clock"></span>
 </header>
 <main>
-  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div class="hint3" id="hint3" hidden></div></div>
+  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div></div>
   <aside class="rail" id="rail"></aside>
 </main>
 <div id="toast" hidden></div>
@@ -199,14 +201,14 @@ const L={
  lt:{ttl:'Cecho planas',run:'Dirba',idle:'Laisva',down:'Neveikia',busy:'Užimtas',free:'Laisvas',ppl:'ceche',edit:'Redaguoti',editOn:'Baigti redagavimą',tv:'TV režimas',tvOff:'Išeiti iš TV',
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
-  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
+  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Tempk darbuotoją pele į vietą, kur jis stovi – prie bet kurių staklių ar stalo. Arba paspausk darbuotoją sąraše, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
-  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
+  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Drag a worker with the mouse to the spot where they stand, at any machine or desk. Or tap a worker in the list, then a place on the plan. Tap a machine to change its status.',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
@@ -490,12 +492,19 @@ async function boot(){
 
 /* ---------- helpers ---------- */
 const itemName=(id,it)=>it.n||tname(TYPES[it.t]||TYPES.zone);
-const peopleAt=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
+/* Breaks: during one nobody is shown at a station and running machines show as paused; nothing stored changes */
+const DEF_BREAKS=[{f:'10:00',t:'10:15',n:'Pertrauka'},{f:'12:00',t:'12:45',n:'Pietūs'},{f:'15:00',t:'15:15',n:'Pertrauka'}];
+const breakList=()=>Array.isArray(ST().breaks)?ST().breaks:DEF_BREAKS;
+function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{const a=String(v||'').split(':');return(+a[0]||0)*60+(+a[1]||0)};
+  for(const b of breakList())if(b&&b.f&&b.t&&mm(b.f)<=m&&m<mm(b.t))return b;return null}
+const peopleAt=id=>onBreak()?[]:peopleAtRaw(id);
+const shown=id=>{const v=statusOf(id);return v==='run'&&onBreak()?'pause':v};
+const peopleAtRaw=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
 const statusOf=id=>{const s=ST().st[id];return s&&['run','idle','down'].includes(s.s)?s.s:'idle'};
 function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>String(x).padStart(2,'0');
   const tm=p(d.getHours())+':'+p(d.getMinutes());return d.toDateString()===n.toDateString()?tm:p(d.getMonth()+1)+'-'+p(d.getDate())+' '+tm}
 /* the dust extractor has no status of its own: it runs whenever any machine is running */
-const anyRun=()=>Object.entries(LAY().items).some(e=>e[1]&&TYPES[e[1].t]&&TYPES[e[1].t].kind==='machine'&&statusOf(e[0])==='run');
+const anyRun=()=>Object.entries(LAY().items).some(e=>e[1]&&TYPES[e[1].t]&&TYPES[e[1].t].kind==='machine'&&shown(e[0])==='run');
 const stockTotal=id=>{const s=ST().stock[id];return s&&Array.isArray(s.rows)?s.rows.reduce((a,r)=>a+(+r.q||0),0):0};
 function hallPts(){const h=LAY().hall;if(Array.isArray(h.pts)&&h.pts.length>=3)return h.pts.map(p=>({x:+p.x||0,y:+p.y||0}));const W=+h.w||2400,H=+h.h||1350;return[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]}
 function hallBox(P){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of P){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x);d=Math.max(d,p.y)}return{x0:a,y0:b,x1:c,y1:d}}
@@ -523,7 +532,7 @@ function itemSVG(id,it){
   const sw=Math.abs(W*Math.cos(a))+Math.abs(H*Math.sin(a)), sh=Math.abs(W*Math.sin(a))+Math.abs(H*Math.cos(a));
   const ppl=peopleAt(id);
   let stCls='',stTxt='';
-  if(T.kind==='machine'){const s=statusOf(id);stCls=s;stTxt=t(s)}
+  if(T.kind==='machine'){const s=shown(id);stCls=s;stTxt=t(s)}
   else if(T.kind==='desk'){stCls=ppl.length?'busy':'idle';stTxt=ppl.length?t('busy'):t('free')}
   else if(T.kind==='rack'){stTxt=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
   else if(T.kind==='aux'){stCls=anyRun()?'run':''}
@@ -587,10 +596,12 @@ function renderMap(){
 function renderHeader(){
   document.documentElement.lang=lang;
   $('#ttl').textContent='Dėdės Baldai · '+t('ttl');
-  const c={run:0,idle:0,down:0};
-  for(const [id,it] of Object.entries(LAY().items))if(it&&TYPES[it.t]&&TYPES[it.t].kind==='machine')c[statusOf(id)]++;
+  const c={run:0,idle:0,down:0,pause:0},brk=onBreak();
+  for(const [id,it] of Object.entries(LAY().items))if(it&&TYPES[it.t]&&TYPES[it.t].kind==='machine')c[shown(id)]++;
   const on=Object.values(ST().people).filter(p=>p&&p.at&&LAY().items[p.at]).length;
-  $('#counts').innerHTML='<span><i class="dot d-run"></i>'+c.run+' '+esc(t('run'))+'</span><span><i class="dot d-idle"></i>'+c.idle+' '+esc(t('idle'))+'</span><span><i class="dot d-down"></i>'+c.down+' '+esc(t('down'))+'</span><span><i class="dot d-ppl"></i>'+on+' '+esc(t('ppl'))+'</span>';
+  $('#counts').innerHTML='<span><i class="dot d-run"></i>'+c.run+' '+esc(t('run'))+'</span><span><i class="dot d-idle"></i>'+c.idle+' '+esc(t('idle'))+'</span><span><i class="dot d-down"></i>'+c.down+' '+esc(t('down'))+'</span><span><i class="dot d-ppl"></i>'+on+' '+esc(t(brk?'onBrk':'ppl'))+'</span>';
+  if(c.pause)$('#counts').innerHTML+='<span><i class="dot d-pause"></i>'+c.pause+' '+esc(t('pause'))+'</span>';
+  const bo=$('#brk');bo.hidden=!brk;if(brk)bo.textContent=(brk.n||t('brk'))+' · '+t('until')+' '+brk.t;
   const ni=Object.keys(ST().people).filter(k=>ST().people[k]&&instOf(k)).length;
   if(ni)$('#counts').innerHTML+='<span><i class="dot d-inst"></i>'+ni+' '+esc(t('instCount'))+'</span>';
   $('#sync').textContent=saveErr?saveErr:mode==='local'?t('local'):stale?t('stale'):(mode==='db'&&docs.layout.loaded)?t('synced'):t('loading');
@@ -603,7 +614,7 @@ function renderHeader(){
 }
 function inspector(id){
   const it=LAY().items[id];if(!it)return'';
-  const T=TYPES[it.t],ppl=peopleAt(id);
+  const T=TYPES[it.t],ppl=peopleAtRaw(id);
   let s='<section class="card"><div><h2>'+esc(itemName(id,it))+'</h2><div class="sub">'+esc(T.sub[lang])+'</div></div>';
   if(editing){
     s+='<div class="row"><input class="grow" type="text" id="in-iname" data-chg="iname" maxlength="40" value="'+esc(itemName(id,it))+'" aria-label="'+esc(t('name'))+'"></div>';
@@ -635,7 +646,7 @@ function inspector(id){
   return s+'</section>';
 }
 function renderRail(){
-  railDirty=false;
+  railDirty=false;const brk=onBreak();
   const ppl=Object.entries(ST().people).filter(e=>e[1]).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
   const plist=SF.orders.map(o=>o.label).concat(ST().projects.filter(p=>!SF.orders.some(o=>o.label===p)));
   const cur=selPerson&&ST().people[selPerson]?ST().people[selPerson].pr:'',so=SF.orders.find(o=>o.label===cur);
@@ -658,7 +669,7 @@ function renderRail(){
       else{
         const work=[p.pr,p.nt].filter(Boolean).join(' · ');
         s+='<li><div class="pcol"><button class="pbtn" type="button" data-act="pick" data-pid="'+esc(pid)+'">'+esc(p.n)+'</button>'+(work?'<span class="sub">'+esc(work)+'</span>':'')+'</div>';
-        s+=ins?'<span class="where on"><span class="badge">'+esc(t('atInst'))+'</span> '+esc(ins.p||'')+'</span></li>':'<span class="where'+(it?' on':'')+'">'+esc(it?itemName(p.at,it):t('off'))+'</span></li>';
+        s+=ins?'<span class="where on"><span class="badge">'+esc(t('atInst'))+'</span> '+esc(ins.p||'')+'</span></li>':'<span class="where'+(it?' on':'')+'">'+(brk&&it?'<span class="badge">'+esc(brk.n||t('brk'))+'</span> ':'')+esc(it?itemName(p.at,it):t('off'))+'</span></li>';
       }
     }
     s+='</ul>';
@@ -693,6 +704,9 @@ function renderRail(){
   s+='</section>';
 
   if(editing){
+    s+='<section class="card"><h2>'+esc(t('breaks'))+'</h2><div class="note">'+esc(t('brkHint'))+'</div>';
+    breakList().forEach((b,i)=>{s+='<div class="row"><input type="time" id="in-bf'+i+'" data-chg="bf" data-i="'+i+'" value="'+esc(b.f)+'" aria-label="'+esc(t('from'))+'"><input type="time" id="in-bt'+i+'" data-chg="bt" data-i="'+i+'" value="'+esc(b.t)+'" aria-label="'+esc(t('to'))+'"><input class="grow" type="text" id="in-bn'+i+'" data-chg="bn" data-i="'+i+'" maxlength="30" value="'+esc(b.n||'')+'" aria-label="'+esc(t('name'))+'"><button class="x" type="button" data-act="brkdel" data-i="'+i+'" aria-label="'+esc(t('del'))+'">✕</button></div>'});
+    s+='<button class="btn" type="button" data-act="brkadd">'+esc(t('brkAdd'))+'</button></section>';
     s+='<section class="card"><h2>'+esc(t('projects'))+'</h2><div class="row"><span class="sub grow">'+(SF.at?SF.orders.length+' '+esc(t('sfN'))+' '+esc(hhmm(SF.at)):esc(SF.err?t('sfErr'):t('sfNone')))+'</span><button class="btn" type="button" data-act="sfref">'+esc(t('refresh'))+'</button></div><div class="note">'+esc(t('projHint'))+'</div><textarea id="in-projs" data-chg="projs" aria-label="'+esc(t('projects'))+'">'+esc(ST().projects.join('\n'))+'</textarea></section>';
     const P=hallPts();
     s+='<section class="card"><h2>'+esc(t('hall'))+'</h2><div class="note">'+esc(t('wallsHint'))+'</div>';
@@ -843,14 +857,14 @@ function build3D(){
     const w=new THREE.Mesh(new THREE.PlaneGeometry(len,320),new THREE.MeshStandardMaterial({color:new THREE.Color(cv('--panel')),roughness:.95,metalness:0}));
     w.position.set((p.x+q.x)/2,160,(p.y+q.y)/2);w.rotation.y=ang;w.receiveShadow=true;root.add(w);
     const k=new THREE.Mesh(new THREE.BoxGeometry(len+14,10,14),new THREE.MeshStandardMaterial({color:new THREE.Color(cv('--wall')),roughness:.9}));k.position.set((p.x+q.x)/2,5,(p.y+q.y)/2);k.rotation.y=-Math.atan2(q.y-p.y,q.x-p.x);root.add(k)});
-  const stc={run:cv('--run'),idle:cv('--idle'),down:cv('--down'),busy:cv('--busy')},ink=cv('--ink'),muted=cv('--muted'),mark=cv('--mark');
+  const stc={pause:cv('--warn'),run:cv('--run'),idle:cv('--idle'),down:cv('--down'),busy:cv('--busy')},ink=cv('--ink'),muted=cv('--muted'),mark=cv('--mark');
   for(const [id,it] of Object.entries(LAY().items)){
     const T=it&&TYPES[it.t];if(!T||!MODELS[it.t])continue;
     const Wd=+it.w||T.w,Dp=+it.h||T.h,ppl=peopleAt(id);
     const g=new THREE.Group();g.position.set(+it.x||0,0,+it.y||0);g.rotation.y=-(+it.r||0)*Math.PI/180;g.userData.id=id;
     const inner=new THREE.Group();if(!T.room)inner.scale.set(Wd/T.w,1,Dp/T.h);g.add(inner);
     let stK='',stT='',top=0;
-    if(T.kind==='machine'){stK=statusOf(id);stT=t(stK)}else if(T.kind==='desk'){stK=ppl.length?'busy':'idle';stT=ppl.length?t('busy'):t('free')}else if(T.kind==='rack'){stT=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
+    if(T.kind==='machine'){stK=shown(id);stT=t(stK)}else if(T.kind==='desk'){stK=ppl.length?'busy':'idle';stT=ppl.length?t('busy'):t('free')}else if(T.kind==='rack'){stT=stockTotal(id)+' '+t(T.unit==='parts'?'partsU':'sheets')}
     for(const b of MODELS[it.t](id,it,Wd,Dp)){
       const m=b.cyl?cyl3(b):box3(b);if(stK==='down'){m.material.transparent=true;m.material.opacity=Math.min(m.material.opacity,.5)}
       inner.add(m);top=Math.max(top,b.y0+b.h);
@@ -1106,6 +1120,7 @@ $('#rail').addEventListener('click',e=>{
     const bb=hallBox(hallPts()),W=Math.round(bb.x1/10)*10,H=Math.round(bb.y1/10)*10,r=v=>Math.round(v/10)*10;
     setHall(a==='prect'?[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]:[{x:0,y:0},{x:r(W*.6),y:0},{x:r(W*.6),y:r(H*.45)},{x:W,y:r(H*.45)},{x:W,y:H},{x:0,y:H}]);return}
   if(a==='vdel'){const P=hallPts();if(P.length<=3)return;P.splice(+b.dataset.i,1);setHall(P);return}
+  if(a==='brkadd'||a==='brkdel'){const bl=clone(breakList());if(a==='brkadd')bl.push({f:'09:00',t:'09:15',n:t('brk')});else bl.splice(+b.dataset.i,1);commit(docs.state,{breaks:bl});return}
   if(a==='st'){const p={st:{}};p.st[selItem]={s:b.dataset.s,ts:Date.now()};commit(docs.state,p);return}
   if(a==='rowadd'||a==='rowdel'){
     const rows=clone((ST().stock[selItem]&&ST().stock[selItem].rows)||[]);
@@ -1146,6 +1161,10 @@ $('#rail').addEventListener('change',e=>{
     if(c==='idw')o.dw=Math.max(50,Math.min(600,Math.round(+v)));
     if(c==='ir')o.r=((Math.round(+v)%360)+360)%360;
     const p={items:{}};p.items[selItem]=o;commit(docs.layout,p)}
+  else if(c==='bf'||c==='bt'||c==='bn'){
+    const bl=clone(breakList()),i=+el.dataset.i;if(!bl[i])return;
+    if(c==='bn')bl[i].n=v.slice(0,30);else if(/^\d\d:\d\d/.test(v))bl[i][c==='bf'?'f':'t']=v.slice(0,5);else return;
+    commit(docs.state,{breaks:bl})}
   else if(c==='rowm'||c==='rowq'){
     const rows=clone((ST().stock[selItem]&&ST().stock[selItem].rows)||[]),i=+el.dataset.i;if(!rows[i])return;
     if(c==='rowm')rows[i].m=v.slice(0,60);else rows[i].q=Math.max(0,Math.round(+v||0));
@@ -1195,7 +1214,8 @@ $('#btnTv').addEventListener('click',()=>setTv(!document.body.classList.contains
 window.addEventListener('hashchange',()=>{const want=location.hash==='#tv';if(want!==document.body.classList.contains('tv'))setTv(want,false)});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('tv'))wake()});
 
-function tick(){const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+let brkKey=null;
+function tick(){const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 setInterval(tick,10000);tick();
 if(location.hash==='#tv')document.body.classList.add('tv');
 normalize();applyView();render();boot();
