@@ -324,11 +324,15 @@ const TYPES={
    draw(){return R(-78,-56,156,112,'#2f3539',S+' rx="9"')+R(-66,-45,108,90,'#7fb4d6','rx="4" opacity=".6"')+
      '<g class="mv mv-laser">'+R(-66,-5,108,9,'#c9cdd1')+R(-14,-12,18,22,'#d0202e',S)+'</g>'+R(50,-45,20,44,'#59626a','rx="3"')+'<circle cx="60" cy="24" r="7" fill="#d0202e"/>'}},
  desk:{kind:'desk',name:{lt:'Surinkimo stalas',en:'Assembly desk'},sub:{lt:'Surinkimas',en:'Assembly'},w:220,h:100,
-   draw(){let s=R(-110,-50,220,100,'#d9c39a',S+' rx="4"')+LN(-108,-17,108,-17,'#c2a97c',2)+LN(-108,17,108,17,'#c2a97c',2);
-     for(let x=-80;x<=40;x+=40)s+='<circle cx="'+x+'" cy="0" r="4" fill="#8a6f4a"/>';return s+R(86,-22,20,44,'#6b7278',S+' rx="3"')}},
- rack:{kind:'rack',name:{lt:'Plokščių stelažas',en:'Board rack'},sub:{lt:'Plokščių sandėliavimas, lakštas 2800 × 2070',en:'Board stock, sheet 2800 × 2070'},w:300,h:230,
-   draw(){return R(-150,-115,300,230,'#8a6f4a','rx="3"')+R(-146,-111,280,207,'#b08d5a',S)+R(-138,-103,280,207,'#9aa3a8',S)+R(-130,-95,280,207,'#f4f4f0',S)+
-     LN(-130,8,150,8,'#d5d5cf',2)}},
+   draw(it,W,H,cx){let s=R(-110,-50,220,100,'#d9c39a',S+' rx="4"')+LN(-108,-17,108,-17,'#c2a97c',2)+LN(-108,17,108,17,'#c2a97c',2);
+     for(let x=-80;x<=40;x+=40)s+='<circle cx="'+x+'" cy="0" r="4" fill="#8a6f4a"/>';s+=R(86,-22,20,44,'#6b7278',S+' rx="3"');
+     if(cx&&cx.busy)s+='<g filter="url(#sh)">'+R(-72,-36,120,72,'#f4f4f0',S)+R(-66,-30,108,60,'#e2c696','stroke="#c2a97c" stroke-width="2"')+LN(-12,-30,-12,30,'#f4f4f0',6)+LN(-12,-30,-12,30,'var(--mline)',1.5)+'</g>';
+     return s}},
+ rack:{kind:'rack',name:{lt:'Plokščių stelažas',en:'Board rack'},sub:{lt:'Plokštės stovi vertikaliai, lakštas 2800 × 2070',en:'Sheets stored upright, sheet 2800 × 2070'},w:300,h:120,
+   draw(it,W,H,cx){let s=R(-150,-60,300,120,'#59626a',S+' rx="3"')+R(-146,-56,292,112,'#c9cdd1');const c=['#f4f4f0','#b08d5a','#9aa3a8','#f4f4f0','#d9c39a','#3a3f44'],n=cx?cx.n:10;
+     for(let i=0;i<n;i++)s+=R(-142,-51+i*5.7,284,3.8,c[i%6],'stroke="var(--mline)" stroke-width="1"');
+     for(const x of [-146,-5,136])s+=R(x,-60,10,10,'#2e3438')+R(x,50,10,10,'#2e3438')+LN(x+5,-50,x+5,50,'#2e3438',2);
+     return s}},
  zone:{kind:'zone',name:{lt:'Zona',en:'Zone'},sub:{lt:'Pažymėta vieta',en:'Marked area'},w:320,h:220,
    draw(){return R(-160,-110,320,220,'none','stroke="var(--mark)" stroke-width="7" stroke-dasharray="26 16" rx="4"')}},
  toolrack:{kind:'store',name:{lt:'Įrankių stelažas',en:'Tool rack'},sub:{lt:'Įrankiai ir priemonės',en:'Tools and supplies'},w:200,h:64,
@@ -505,6 +509,8 @@ function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>S
   const tm=p(d.getHours())+':'+p(d.getMinutes());return d.toDateString()===n.toDateString()?tm:p(d.getMonth()+1)+'-'+p(d.getDate())+' '+tm}
 /* the dust extractor has no status of its own: it runs whenever any machine is running */
 const anyRun=()=>Object.entries(LAY().items).some(e=>e[1]&&TYPES[e[1].t]&&TYPES[e[1].t].kind==='machine'&&shown(e[0])==='run');
+/* how many upright sheets to draw in a board rack: the real count once stock is entered, a typical ten before that */
+const rackN=id=>{const r=ST().stock[id];return r&&Array.isArray(r.rows)&&r.rows.length?Math.min(18,stockTotal(id)):10};
 const stockTotal=id=>{const s=ST().stock[id];return s&&Array.isArray(s.rows)?s.rows.reduce((a,r)=>a+(+r.q||0),0):0};
 function hallPts(){const h=LAY().hall;if(Array.isArray(h.pts)&&h.pts.length>=3)return h.pts.map(p=>({x:+p.x||0,y:+p.y||0}));const W=+h.w||2400,H=+h.h||1350;return[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]}
 function hallBox(P){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of P){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x);d=Math.max(d,p.y)}return{x0:a,y0:b,x1:c,y1:d}}
@@ -538,7 +544,7 @@ function itemSVG(id,it){
   else if(T.kind==='aux'){stCls=anyRun()?'run':''}
   let s='<g class="it '+stCls+(selItem===id?' sel':'')+'" data-id="'+esc(id)+'" transform="translate('+(+it.x||0)+','+(+it.y||0)+')">';
   s+='<rect class="hit" x="'+(-sw/2-10)+'" y="'+(-sh/2-10)+'" width="'+(sw+20)+'" height="'+(sh+20)+'" rx="10"/>';
-  s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'>'+(T.room?'<g class="draw" transform="rotate('+rot+')">'+T.draw(it,W,H):'<g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw())+'</g></g>';
+  s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'>'+(T.room?'<g class="draw" transform="rotate('+rot+')">'+T.draw(it,W,H):'<g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw(it,W,H,{busy:peopleAtRaw(id).length>0,n:rackN(id)}))+'</g></g>';
   const ly=sh/2+40;
   if((T.kind!=='wall'&&T.kind!=='aux')||selItem===id)s+='<text class="lbl" y="'+ly+'">'+esc(itemName(id,it))+'</text>';
   if(stTxt){
@@ -757,9 +763,11 @@ const MODELS={
    B(-140,-132,-78,-126,84,40,'#23282c'),B(-66,-132,-4,-126,84,40,'#23282c'),B(-112,-108,-54,-94,77,3,'#c9cdd1'),CY(-70,-36,22,40,8,'#3a3f44'),CY(-70,-36,4,0,40,'#6b7278'),B(-90,-22,-50,-14,48,46,'#3a3f44'),
    B(110,-138,166,-42,0,190,'#c9cdd1'),B(-165,96,-95,140,0,70,'#59626a')],.35),
  laser:()=>[B(-78,-56,78,56,0,92,'#2f3539'),B(-66,-45,42,45,92,5,'#7fb4d6',null,.7),B(50,-45,70,-1,92,6,'#59626a')],
- desk:()=>[B(-110,-50,110,50,82,8,'#d9c39a'),B(-104,-44,-96,-36,0,82,'#8a6f4a'),B(96,-44,104,-36,0,82,'#8a6f4a'),B(-104,36,-96,44,0,82,'#8a6f4a'),B(96,36,104,44,0,82,'#8a6f4a'),
+ desk:id=>[...(peopleAtRaw(id).length?[B(-72,-36,48,36,90,2,'#ecebe4'),B(-72,-36,-70,36,92,56,'#ecebe4'),B(46,-36,48,36,92,56,'#ecebe4'),B(-72,-36,48,-34,92,56,'#ecebe4'),B(-72,34,48,36,92,56,'#ecebe4'),B(-13,-34,-11,34,92,56,'#ecebe4')]:[]),B(-110,-50,110,50,82,8,'#d9c39a'),B(-104,-44,-96,-36,0,82,'#8a6f4a'),B(96,-44,104,-36,0,82,'#8a6f4a'),B(-104,36,-96,44,0,82,'#8a6f4a'),B(96,36,104,44,0,82,'#8a6f4a'),
    B(-104,-4,104,4,20,6,'#8a6f4a'),B(86,-22,106,22,90,12,'#6b7278')],
- rack:id=>{const h=Math.max(4,Math.min(220,stockTotal(id)*1.8));return[B(-150,-115,150,115,0,12,'#8a6f4a'),B(-146,-111,134,96,12,h*.35,'#b08d5a'),B(-138,-103,142,104,12+h*.35,h*.3,'#9aa3a8'),B(-130,-95,150,112,12+h*.65,h*.35,'#f4f4f0')]},
+ rack:id=>{const c=['#f4f4f0','#b08d5a','#9aa3a8','#f4f4f0','#d9c39a','#3a3f44'],m=[B(-150,-60,150,60,0,10,'#59626a')];
+   for(const x of [-146,-5,136])m.push(B(x,-60,x+10,-52,10,212,'#2e3438'),B(x,52,x+10,60,10,212,'#2e3438'),B(x,-60,x+10,60,222,6,'#2e3438'));
+   for(let i=0,n=rackN(id);i<n;i++)m.push(B(-142,-51+i*5.7,142,-48.8+i*5.7,10,207,c[i%6]));return m},
  zone:()=>[B(-160,-110,160,110,0,1.5,'var(--mark)',null,.4)],
  vitap:()=>[B(-70,-40,70,44,0,85,'#f1f2f3'),B(-64,-2,64,42,85,5,'#c9cdd1'),B(-64,-8,64,-1,90,10,'#8d949a'),B(-50,-56,50,-10,90,62,'#1f5fae'),B(-36,-12,36,-6,96,26,'#23282c'),CY(-44,-2,8,90,30,'#8e959b'),CY(44,-2,8,90,30,'#8e959b')],
  blum:()=>[B(-30,-20,30,24,0,80,'#3a3f44'),B(-48,-2,48,36,80,5,'#c9cdd1'),B(-48,-8,48,-1,85,10,'#8d949a'),B(-8,-38,8,-24,85,55,'#6b7278'),B(-24,-42,24,-6,108,44,'#ff6a13'),CY(0,-24,10,152,30,'#23282c'),B(22,-34,44,-30,140,5,'#6b7278')],
