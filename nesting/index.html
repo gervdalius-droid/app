@@ -2486,14 +2486,42 @@ async function localPut(obj){
   var ok=false;
   try{await _idbReq('readwrite',function(st){return st.put(obj);});_idbNames[obj.name]=1;ok=true;}
   catch(e){console.warn('IndexedDB save failed',e);}
-  try{localStorage.setItem(LS_PROJECT_PREFIX+obj.name,JSON.stringify(obj));ok=true;}
-  catch(e){
-    // Per didelis localStorage'ui — pašalinam pasenusią kopiją, kad neužgožtų naujos.
-    if(ok){try{localStorage.removeItem(LS_PROJECT_PREFIX+obj.name);}catch(_){}}
-    else console.warn('localStorage save failed',e);
+  // localStorage (~5 MB, shared with the sign-in) only when IndexedDB failed;
+  // otherwise drop any old copy there so it can't fill up and block signing in.
+  if(ok){try{localStorage.removeItem(LS_PROJECT_PREFIX+obj.name);}catch(_){}}
+  else{
+    try{localStorage.setItem(LS_PROJECT_PREFIX+obj.name,JSON.stringify(obj));ok=true;}
+    catch(e){console.warn('localStorage save failed',e);}
   }
   return ok;
 }
+// Older versions kept every project in localStorage as well. Move those copies
+// into IndexedDB (keeping the newer one) and remove them from localStorage.
+async function _lsMoveProjectsToIdb(){
+  var keys=[];
+  try{for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(LS_PROJECT_PREFIX)===0)keys.push(k);}}catch(e){return;}
+  for(var j=0;j<keys.length;j++){
+    var name=keys[j].substring(LS_PROJECT_PREFIX.length), ls=_lsGet(name);
+    if(!ls||!ls.name){continue;}
+    try{
+      var cur=null;try{cur=await _idbReq('readonly',function(st){return st.get(ls.name);});}catch(e){}
+      var keep=_newer(cur||null,ls);
+      await _idbReq('readwrite',function(st){return st.put(keep);});
+      _idbNames[ls.name]=1;
+      localStorage.removeItem(keys[j]);
+    }catch(e){ console.warn('move to IndexedDB failed',name,e); return; }   // IndexedDB unusable: leave them
+  }
+}
+// Called by workshop-auth.js when the sign-in can't be saved because storage is
+// full: free the localStorage copies of projects that IndexedDB already holds.
+window.WorkshopAuthFreeSpace=function(){
+  try{
+    var drop=[];
+    for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);
+      if(k&&k.indexOf(LS_PROJECT_PREFIX)===0&&_idbNames[k.substring(LS_PROJECT_PREFIX.length)])drop.push(k);}
+    drop.forEach(function(k){localStorage.removeItem(k);});
+  }catch(e){}
+};
 async function localGet(name){
   var a=null;try{a=await _idbReq('readonly',function(st){return st.get(name);});}catch(e){}
   return _newer(a||null,_lsGet(name));
@@ -2523,7 +2551,7 @@ function localHasName(name){
   if(_idbNames[name])return true;
   try{return !!localStorage.getItem(LS_PROJECT_PREFIX+name);}catch(e){return false;}
 }
-localAll(); // užpildo _idbNames
+localAll().then(_lsMoveProjectsToIdb); // užpildo _idbNames, tada perkelia senas kopijas į IndexedDB
 // Neleisti uždaryti skirtuko, kol paskutinis išsaugojimas niekur nenukeliavo.
 window.addEventListener('beforeunload',function(e){
   if(_lastSaveLost){e.preventDefault();e.returnValue='';}

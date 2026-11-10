@@ -44,8 +44,27 @@
   var listeners = [];
   var meCache = null;
 
-  function read() { try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); return s && s.access_token ? s : null; } catch (e) { return null; } }
-  function write(s) { try { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY); } catch (e) {} emit(); }
+  // The session lives in localStorage. When the browser's storage is full (the
+  // label PC: years of cached projects) saving it used to fail silently, so a
+  // correct PIN ended in "account not active". Now: ask the app to free space
+  // (window.WorkshopAuthFreeSpace) and retry; if it still doesn't fit, keep the
+  // session in memory so this page works until it is reloaded.
+  var mem;                                    // undefined = storage holds the truth
+  function read() {
+    if (mem !== undefined) return mem && mem.access_token ? mem : null;
+    try { var s = JSON.parse(localStorage.getItem(KEY) || "null"); return s && s.access_token ? s : null; } catch (e) { return null; }
+  }
+  function store(s) { if (s) localStorage.setItem(KEY, JSON.stringify(s)); else localStorage.removeItem(KEY); }
+  function write(s) {
+    try { store(s); mem = undefined; }
+    catch (e) {
+      var ok = false;
+      try { if (typeof root.WorkshopAuthFreeSpace === "function") { root.WorkshopAuthFreeSpace(); store(s); ok = true; } } catch (e2) {}
+      if (ok) mem = undefined;
+      else { mem = s || null; try { localStorage.removeItem(KEY); } catch (e3) {} }
+    }
+    emit();
+  }
   function emit() { listeners.forEach(function (fn) { try { fn(read()); } catch (e) {} }); }
   function nowSec() { return Math.floor(Date.now() / 1000); }
 
