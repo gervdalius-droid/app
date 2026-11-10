@@ -113,6 +113,8 @@ textarea{font:inherit;color:inherit;background:var(--bg);border:1px solid var(--
 .pill.sel rect{fill:var(--mark)}.pill.sel text{fill:var(--mark-ink)}
 .dim{font-family:var(--display);font-size:24px;fill:var(--muted)}
 .elbl{font-family:var(--display);font-weight:700;font-size:28px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--bg);stroke-width:9px;stroke-linejoin:round;pointer-events:none}
+.rh{fill:var(--panel);stroke:var(--mark);stroke-width:6;cursor:nwse-resize}
+.rdim{font-family:var(--display);font-weight:700;font-size:28px;fill:var(--mark-ink);text-anchor:middle;paint-order:stroke;stroke:var(--mark);stroke-width:12px;stroke-linejoin:round;pointer-events:none}
 .vh{fill:var(--mark);stroke:var(--mark-ink);stroke-width:4;cursor:move}
 .vadd{cursor:pointer}.vadd circle{fill:var(--panel);stroke:var(--ink);stroke-width:3}.vadd text{font-family:var(--body);font-weight:600;font-size:26px;text-anchor:middle;fill:var(--ink);pointer-events:none}
 .pill text.pp{font-size:22px;font-weight:500}
@@ -192,14 +194,14 @@ const L={
  lt:{ttl:'Cecho planas',run:'Dirba',idle:'Laisva',down:'Neveikia',busy:'Užimtas',free:'Laisvas',ppl:'ceche',edit:'Redaguoti',editOn:'Baigti redagavimą',tv:'TV režimas',tvOff:'Išeiti iš TV',
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
-  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį, kad pakeistum pavadinimą, vietą, dydį, kampą arba ištrintum.',
+  addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
   hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Paspausk darbuotoją, tada vietą plane. Paspausk įrenginį, kad pakeistum būseną.',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
-  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item to change its name, position, size, angle, or delete it.',
+  addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
   hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Tap a worker, then a place on the plan. Tap a machine to change its status.',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
@@ -360,7 +362,7 @@ async function poll(){
     const row=await pullRow();
     for(const k in docs)docs[k].loaded=true;
     stale=false;
-    if(row&&!pend.length&&!flushing&&(Date.parse(row.updated_at)||0)!==lastT){applyRow(row);if(!drag&&!busy3)render()}
+    if(row&&!pend.length&&!flushing&&!drag&&!busy3&&(Date.parse(row.updated_at)||0)!==lastT){applyRow(row);render()}
   }catch(e){if(e&&e.status===401){mode='local'}else stale=true}
   renderHeader();
 }
@@ -441,6 +443,11 @@ function itemSVG(id,it){
     const half=stTxt.length*7.5+(T.kind==='rack'?0:14);
     if(T.kind!=='rack')s+='<circle class="beacon s-'+stCls+'" cx="'+(-half)+'" cy="'+(ly+25)+'" r="10"/>';
     s+='<text class="stt'+col+'" '+(T.kind==='rack'?'fill="var(--muted)" ':'')+'x="'+(T.kind==='rack'?0:12)+'" y="'+(ly+34)+'">'+esc(stTxt.toUpperCase())+'</text>';
+  }
+  if(editing&&selItem===id){
+    s+='<g transform="rotate('+rot+')">';
+    for(const c of [[-1,-1],[1,-1],[1,1],[-1,1]])s+='<rect class="rh" data-rh="'+c[0]+','+c[1]+'" x="'+(c[0]*W/2-15)+'" y="'+(c[1]*H/2-15)+'" width="30" height="30" rx="5"/>';
+    s+='</g><text class="rdim" y="'+(-sh/2-24)+'">'+Math.round(W)+' × '+Math.round(H)+' cm</text>';
   }
   let py=-sh/2-10;
   ppl.forEach(e=>{
@@ -795,6 +802,12 @@ $('#map').addEventListener('pointerdown',e=>{
   const v=e.target.closest('.vh');
   if(v){const P=hallPts();drag={v:+v.dataset.v,P,vb:$('#map').getAttribute('viewBox').split(' ').map(Number),moved:false,pid:e.pointerId};
     try{$('#map').setPointerCapture(e.pointerId)}catch(_){}return}
+  const rh=e.target.closest('.rh');
+  if(rh&&selItem&&LAY().items[selItem]){
+    /* resize from a corner: the opposite corner stays where it is; Shift keeps the proportions */
+    const it=LAY().items[selItem],T=TYPES[it.t],q=rh.dataset.rh.split(',').map(Number),W=+it.w||T.w,H=+it.h||T.h,a=(+it.r||0)*Math.PI/180,c=Math.cos(a),sn=Math.sin(a),ox=-q[0]*W/2,oy=-q[1]*H/2;
+    drag={rz:selItem,sx:q[0],sy:q[1],c,sn,Ox:it.x+ox*c-oy*sn,Oy:it.y+ox*sn+oy*c,W0:W,H0:H,orig:{x:it.x,y:it.y,w:it.w,h:it.h},vb:$('#map').getAttribute('viewBox').split(' ').map(Number),moved:false,pid:e.pointerId};
+    try{$('#map').setPointerCapture(e.pointerId)}catch(_){}return}
   const g=e.target.closest('.it');if(!g)return;
   const id=g.dataset.id,it=LAY().items[id];if(!it)return;
   const p=svgPt(e);
@@ -806,6 +819,14 @@ $('#map').addEventListener('pointermove',e=>{
   const p=svgPt(e);
   if(drag.P){const x=Math.round(p.x/10)*10,y=Math.round(p.y/10)*10,c=drag.P[drag.v];
     if(c.x!==x||c.y!==y){c.x=x;c.y=y;drag.moved=true;renderMap()}return}
+  if(drag.rz){
+    const it=LAY().items[drag.rz];if(!it)return;
+    const dx=p.x-drag.Ox,dy=p.y-drag.Oy,lx=drag.sx*(dx*drag.c+dy*drag.sn),ly=drag.sy*(-dx*drag.sn+dy*drag.c);
+    let W=Math.max(20,Math.round(lx/5)*5),H=Math.max(20,Math.round(ly/5)*5);
+    if(e.shiftKey){const k=Math.max(W/drag.W0,H/drag.H0);W=Math.max(20,Math.round(drag.W0*k/5)*5);H=Math.max(20,Math.round(drag.H0*k/5)*5)}
+    const hx=drag.sx*W/2,hy=drag.sy*H/2;
+    it.w=W;it.h=H;it.x=Math.round(drag.Ox+hx*drag.c-hy*drag.sn);it.y=Math.round(drag.Oy+hx*drag.sn+hy*drag.c);
+    drag.moved=true;renderMap();return}
   const h=LAY().hall;
   const x=Math.max(0,Math.min(h.w,Math.round((p.x-drag.dx)/10)*10)),y=Math.max(0,Math.min(h.h,Math.round((p.y-drag.dy)/10)*10));
   if(x!==drag.x||y!==drag.y){drag.moved=true;drag.x=x;drag.y=y;drag.g.setAttribute('transform','translate('+x+','+y+')')}
@@ -815,10 +836,19 @@ function endDrag(e){
   const d=drag;drag=null;
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+    if(d.rz){
+      const it=LAY().items[d.rz];if(!it)return;
+      if(!canWrite()){Object.assign(it,d.orig);if(d.orig.w===undefined)delete it.w;if(d.orig.h===undefined)delete it.h;render();return}
+      const p={items:{}};p.items[d.rz]={x:it.x,y:it.y,w:it.w,h:it.h};commit(docs.layout,p);return}
     if(!canWrite()){render();return}
     if(d.P){setHall(d.P);return}
     const p={items:{}};p.items[d.id]={x:d.x,y:d.y};selItem=d.id;commit(docs.layout,p);
-  }else if(d.P)renderMap();
+  }else{
+    /* a plain tap in edit mode: the pointer is captured by the plan, so select here rather than in the click handler */
+    suppressClick=true;setTimeout(()=>{suppressClick=false},0);
+    if(d.id){selItem=d.id;pendDel=null}
+    render();
+  }
 }
 let suppressClick=false;
 $('#map').addEventListener('pointerup',endDrag);
@@ -828,7 +858,7 @@ $('#map').addEventListener('click',e=>{
   pendDel=null;
   const va=e.target.closest('.vadd');
   if(va&&editing){if(!canWrite())return;const P=hallPts(),i=+va.dataset.e,a=P[i],b=P[(i+1)%P.length];P.splice(i+1,0,{x:Math.round((a.x+b.x)/20)*10,y:Math.round((a.y+b.y)/20)*10});setHall(P);return}
-  if(e.target.closest('.vh'))return;
+  if(e.target.closest('.vh')||e.target.closest('.rh'))return;
   const pill=e.target.closest('.pill');
   if(pill&&!editing){selPerson=selPerson===pill.dataset.pid?null:pill.dataset.pid;render();return}
   const g=e.target.closest('.it');
