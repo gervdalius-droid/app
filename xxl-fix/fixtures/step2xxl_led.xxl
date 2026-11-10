@@ -1,0 +1,29 @@
+H DX=744 DY=560 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : _10_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=9 Y=50 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=9 Y=262.5 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=9 Y=475 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=30 Y=516 Z=-24.559 D=8 N="L" F=1 R=1#
+ XBO X=96 Y=516 Z=-24.559 D=8 N="L" F=1 R=1#
+ XBO X=135 Y=50 Z=-24.559 D=8 N="L" F=1 R=1#
+ XBO X=135 Y=262.5 Z=-24.559 D=8 N="L" F=1 R=1#
+ XBO X=135 Y=475 Z=-24.559 D=8 N="L" F=1 R=1#
+; ------ DEIMANTAS 16MM  - NAUJA - 
+; ***** LED_PROFILE_DRAG_ON_EDGE
+ XG0 X=26.65 Y=254.85 Z=10 T=96 C=0 V=2000 D=24 F=1
+ XL2P X=26.65 Y=254.85 Z=-8 V=2000
+ XA2P X=26.75 Y=254.75 Z=-8 I=26.65 J=254.75 G=3 V=4000
+ XL2P X=26.75 Y=560 Z=-8 V=4000
+ XL2P X=26.75 Y=0 Z=-8 V=4000
+ XL2P X=26.75 Y=267.25 Z=-8 V=4000
+ XA2P X=26.65 Y=267.15 Z=-8 I=26.65 J=267.25 G=3 V=4000
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

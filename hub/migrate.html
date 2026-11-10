@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Perkeliama… · Dėdės Baldai</title>
+<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#e6e8e3;color:#59615b;font:15px system-ui,sans-serif}</style>
+<script>
+/* One-time carry-over from the old address (gervdalius-droid.github.io).
+   The old page sends this device's app SETTINGS here in the address #fragment
+   (never sent to any server), we keep only known setting keys, never overwrite
+   anything already saved here, then continue to the page that was asked for.
+   Sign-ins, keys and passwords are never carried — people sign in again. */
+(function () {
+  "use strict";
+  var ALLOW = /^(dbKurejas\.|dbRR\.|dedesBaldai\.(calc|baseline|history)|ncSettings$|nestDefaults$|fabflow_xlsm_|fabflow_lang$|pwColWidths$|ebLastName$|dxfed\.|cad$|xxlfix\.|dedes\.prasymai\.|hub-|shopflow\.(lang|theme)$|workshop\.lastName$|notices\.people\.v1$)/;
+  var h = location.hash.slice(1), p = {}, i, kv;
+  h.split("&").forEach(function (x) { i = x.indexOf("="); if (i > 0) p[x.slice(0, i)] = x.slice(i + 1); });
+  var to = decodeURIComponent(p.to || "/hub/shopfloor/");
+  if (!/^\/[^\/\\]/.test(to)) to = "/hub/shopfloor/";              // only pages on this site
+  try { history.replaceState(null, "", location.pathname); } catch (e) {}   // drop the data from the address bar / history
+  function b64(s) { s = s.replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; var b = atob(s), u = new Uint8Array(b.length); for (var j = 0; j < b.length; j++) u[j] = b.charCodeAt(j); return u; }
+  function apply(json) {
+    var n = 0;
+    try {
+      var d = JSON.parse(json);
+      Object.keys(d).forEach(function (k) {
+        if (!ALLOW.test(k) || typeof d[k] !== "string" || d[k].length > 2000000) return;
+        try { if (localStorage.getItem(k) == null) { localStorage.setItem(k, d[k]); n++; } } catch (e) {}
+      });
+      localStorage.setItem("migrated.from.github", String(Date.now()));
+    } catch (e) {}
+    return n;
+  }
+  function go() { location.replace(to); }
+  var m = p.m || "";
+  if (!m) return go();
+  try {
+    if (m.slice(0, 2) === "z." && window.DecompressionStream) {
+      var s = new Blob([b64(m.slice(2))]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+      new Response(s).text().then(apply).then(go, go);
+    } else if (m.slice(0, 2) === "j.") {
+      apply(new TextDecoder().decode(b64(m.slice(2)))); go();
+    } else go();
+  } catch (e) { go(); }
+  setTimeout(go, 4000);
+})();
+</script>
+</head>
+<body>Perkeliami šio įrenginio nustatymai…</body>
+</html>

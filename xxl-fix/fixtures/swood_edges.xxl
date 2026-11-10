@@ -1,0 +1,18 @@
+H DX=964 DY=425 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SPORTO_INV_13_
+;** Date codage : 7/30/2026
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=9 Y=50 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=9 Y=212.5 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=9 Y=375 Z=-32 D=5 N="P" F=3 R=1#
+ XBO X=9 Y=50 Z=-32 D=5 N="P" F=2 R=1#
+ XBO X=9 Y=212.5 Z=-32 D=5 N="P" F=2 R=1#
+ XBO X=9 Y=375 Z=-32 D=5 N="P" F=2 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

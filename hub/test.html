@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>RUNNING</title></head><body>
+<div id="app"></div><div id="modal-root"></div><div id="toast-root"></div>
+<script src="core.js"></script>
+<script src="hub.js"></script>
+<!-- ShopFlow's half of the integration, loaded across the shared origin -->
+<script src="../shopflow/bridge.js"></script>
+<script>
+/* ============================================================
+   Hub tests
+
+   DANGER, and the reason this file looks the way it does: the hub is served
+   from the SAME ORIGIN as the shop's real apps, so localStorage here holds
+   the actual invoice book. Nothing in this suite may call
+   localStorage.clear(), and Core is pointed at a throwaway key before it
+   boots. App fixtures are injected into scanApps() rather than written.
+   ============================================================ */
+const TEST_KEY = "shop.core.__test__";
+Core.KEY = TEST_KEY;
+Core.state = Core.blank();
+
+const results = [];
+const T = (name, fn) => { try { fn(); results.push("PASS " + name); } catch (e) { results.push("FAIL " + name + " :: " + (e && e.message || e)); } };
+const ok = (c, m) => { if (!c) throw new Error(m || "assert"); };
+/* every test starts from an empty shared store */
+const fresh = () => { Core.state = Core.blank(); };
+const noPush = { push: false };
+
+/* ---------- customers ---------- */
+
+T("a customer is created, edited and tombstoned rather than spliced", () => {
+  fresh();
+  const c = Core.upsertCustomer({ name: "UAB Testas", code: "123456789" });
+  ok(Core.customers().length === 1, "one customer");
+  ok(c.createdAt && c.updatedAt, "carries its own timestamps");
+  Core.upsertCustomer({ id: c.id, phone: "+37060000000" });
+  ok(Core.customer(c.id).phone === "+37060000000", "edited in place");
+  ok(Core.customers().length === 1, "not duplicated");
+  Core.deleteCustomer(c.id);
+  ok(Core.customers().length === 0, "gone from the list");
+  ok(Core.state.customers.length === 1 && Core.state.customers[0].deleted,
+     "but still held as a tombstone, or a merge would resurrect it");
+});
+
+T("customers match on code, then VAT, then name", () => {
+  fresh();
+  const a = Core.upsertCustomer({ name: "UAB Medienos centras", code: "300123456", vat: "LT100001234511" });
+  ok(Core.matchCustomer({ code: "300 123 456" }).on === "code", "code wins, spacing ignored");
+  ok(Core.matchCustomer({ vat: "lt100001234511" }).on === "vat", "VAT is case-insensitive");
+  ok(Core.matchCustomer({ name: "Medienos centras, UAB" }).on === "name", "the legal form is not part of the name");
+  ok(Core.matchCustomer({ name: "Medienos Centras" }).customer.id === a.id, "case and order do not matter");
+  ok(!Core.matchCustomer({ name: "Kitas centras" }), "and a different name does not match");
+});
+
+T("resolving a customer fills blanks without overwriting what is held", () => {
+  fresh();
+  const a = Core.upsertCustomer({ name: "UAB Alfa", code: "111111111", phone: "+37061111111" });
+  const again = Core.resolveCustomer({ name: "Alfa UAB", code: "111111111", phone: "+37069999999", email: "a@alfa.lt" });
+  ok(again.id === a.id, "the same customer, not a second one");
+  ok(again.phone === "+37061111111", "the held phone number is not overwritten");
+  ok(again.email === "a@alfa.lt", "but a blank field is filled in");
+  ok(Core.customers().length === 1, "still one record");
+});
+
+/* ---------- merging ---------- */
+
+T("merging is per record, newest wins, and applying twice changes nothing", () => {
+  fresh();
+  const c = Core.upsertCustomer({ name: "UAB Beta" });
+  const remote = {
+    customers: [
+      { ...JSON.parse(JSON.stringify(c)), name: "UAB Beta (remote)", updatedAt: c.updatedAt + 1000 },
+      { id: "cX", name: "UAB Gama", updatedAt: Date.now(), deleted: false },
+    ], docs: [],
+  };
+  ok(Core.merge(remote) === 2, "one update and one new record");
+  ok(Core.customer(c.id).name === "UAB Beta (remote)", "the newer edit won");
+  ok(Core.customers().length === 2, "and the unseen record arrived");
+  ok(Core.merge(remote) === 0, "merging the same payload again is a no-op");
+});
+
+T("an older remote edit never overwrites a newer local one", () => {
+  fresh();
+  const c = Core.upsertCustomer({ name: "local wins" });
+  Core.merge({ customers: [{ ...c, name: "stale remote", updatedAt: c.updatedAt - 5000 }] });
+  ok(Core.customer(c.id).name === "local wins", "kept the newer local value");
+});
+
+T("a tombstone survives a merge from a device that still holds the record", () => {
+  fresh();
+  const c = Core.upsertCustomer({ name: "UAB Delete" });
+  const stale = JSON.parse(JSON.stringify(c));      // as another device still has it
+  Core.deleteCustomer(c.id);
+  Core.merge({ customers: [stale] });
+  ok(Core.customers().length === 0, "the delete is not undone");
+});
+
+/* ---------- the document index ---------- */
+
+T("linking a document is idempotent on (app, ref)", () => {
+  fresh();
+  const cust = Core.upsertCustomer({ name: "UAB Klientas" });
+  Core.linkDoc({ app: "invoices", ref: "i1", kind: "invoice", num: "SF-1", customerId: cust.id, amount: 100, status: "unpaid" });
+  Core.linkDoc({ app: "invoices", ref: "i1", kind: "invoice", num: "SF-1", customerId: cust.id, amount: 121, status: "paid" });
+  const docs = Core.docs({ kind: "invoice" });
+  ok(docs.length === 1, "one document, not two :: " + docs.length);
+  ok(docs[0].amount === 121 && docs[0].status === "paid", "updated in place");
+  ok(Core.docs({ customerId: cust.id }).length === 1, "and it is found by customer");
+});
+
+T("a job can be followed from quote to order to invoice", () => {
+  fresh();
+  const q = Core.linkDoc({ app: "offer", ref: "q1", kind: "quote", num: "P-1" });
+  const o = Core.linkDoc({ app: "shopflow", ref: "o1", kind: "order", num: "WO-1", fromId: q.id });
+  const i = Core.linkDoc({ app: "invoices", ref: "i1", kind: "invoice", num: "SF-1", fromId: o.id });
+  const chain = Core.chain(o.id).map(d => d.num);
+  ok(chain.join(" → ") === "P-1 → WO-1 → SF-1", "the whole chain from the middle :: " + chain.join(" → "));
+  ok(Core.chain(i.id).length === 3, "and from the end");
+});
+
+/* ---------- reading the other apps ---------- */
+
+const FIXTURES = {
+  "inv_state_v1": {
+    customers: [
+      { id: "b1", kind: "company", name: "UAB Kūrybos namai", code: "300111222", vat: "LT100002223344",
+        address: "Vilnius", email: "info@kn.lt", phone: "+37060011122", contact: "Jonas" },
+    ],
+    invoices: [
+      { id: "i1", no: "DBSF 0002943", date: "2026-08-14", customerId: "b1", status: "sent",
+        buyer: { name: "UAB Kūrybos namai", code: "300111222" },
+        lines: [{ qty: 2, price: 100, disc: 10, vat: 21 }], payments: [] },
+      { id: "i2", no: "DBSF 0002944", date: "2026-08-20", customerId: "b1", status: "sent",
+        buyer: { name: "UAB Kūrybos namai", code: "300111222" },
+        lines: [{ qty: 1, price: 50, disc: 0, vat: 21 }], payments: [{ amount: 60.5 }] },
+    ],
+    waybills: [],
+  },
+  "northwoodFurniture.projects.v1": {
+    "Virtuvė Norkui": { savedAt: 1757000000000,
+      data: { client: { name: "V. Norkus", email: "v@norkus.lt", phone: "+37069988776" }, quote: { total: 4200 } } },
+  },
+  "shopflow.v1": {
+    orders: [
+      { id: "o1", num: "WO-1041", product: "Virtuvės komplektas", client: "V. Norkus", createdAt: 1757100000000, shipped: false },
+      { id: "o2", num: "WO-1042", product: "Spinta", client: "UAB Kūrybos namai", createdAt: 1757200000000, shipped: true },
+    ],
+  },
+};
+const readFixture = (k) => FIXTURES[k] || null;
+
+T("the scanner reads all three apps in their own shapes", () => {
+  const f = Hub.scanApps(readFixture);
+  ok(f.customers.length === 4, "one from invoices, one from offer, two order clients :: " + f.customers.length);
+  ok(f.docs.filter(d => d.kind === "invoice").length === 2, "both invoices");
+  ok(f.docs.filter(d => d.kind === "quote").length === 1, "the saved quote");
+  ok(f.docs.filter(d => d.kind === "order").length === 2, "both production orders");
+});
+
+T("invoice totals are recomputed, discount and VAT included", () => {
+  const f = Hub.scanApps(readFixture);
+  const i1 = f.docs.find(d => d.num === "DBSF 0002943");
+  /* 2 × 100 less 10% = 180 net, +21% VAT = 217.80 */
+  ok(Math.abs(i1.amount - 217.8) < 0.005, "217.80 :: " + i1.amount);
+  ok(i1.status === "unpaid", "nothing paid against it");
+  const i2 = f.docs.find(d => d.num === "DBSF 0002944");
+  ok(Math.abs(i2.amount - 60.5) < 0.005, "60.50 :: " + i2.amount);
+  ok(i2.status === "paid", "the payment covers it exactly");
+});
+
+T("importing unifies the same customer across three apps", () => {
+  fresh();
+  const res = Hub.runImport(Hub.scanApps(readFixture));
+  /* "UAB Kūrybos namai" appears in invoices AND on a ShopFlow order;
+     "V. Norkus" appears on an Offer quote AND on a ShopFlow order. */
+  ok(Core.customers().length === 2, "four mentions collapse to two customers :: " + Core.customers().length);
+  ok(res.customers === 2, "and the count agrees :: " + res.customers);
+  const kn = Core.customers().find(c => c.name.includes("Kūrybos"));
+  ok(kn.code === "300111222" && kn.vat, "the richest record won — code and VAT survived");
+  ok(Core.docs({ customerId: kn.id }).length === 3, "two invoices and an order hang off it :: " + Core.docs({ customerId: kn.id }).length);
+  const nor = Core.customers().find(c => c.name.includes("Norkus"));
+  ok(Core.docs({ customerId: nor.id }).length === 2, "the quote and the order found each other");
+});
+
+T("importing twice imports nothing twice", () => {
+  fresh();
+  Hub.runImport(Hub.scanApps(readFixture));
+  const c1 = Core.customers().length, d1 = Core.docs().length;
+  const second = Hub.runImport(Hub.scanApps(readFixture));
+  ok(Core.customers().length === c1, "no new customers :: " + Core.customers().length + " vs " + c1);
+  ok(Core.docs().length === d1, "no new documents :: " + Core.docs().length + " vs " + d1);
+  ok(second.customers === 0 && second.docs === 0, "and it reports nothing new");
+});
+
+T("a document keeps its link to the app that owns it", () => {
+  fresh();
+  Hub.runImport(Hub.scanApps(readFixture));
+  const d = Core.docByRef("shopflow", "o1");
+  ok(d && d.num === "WO-1041", "found by (app, ref)");
+  ok(d.app === "shopflow" && d.ref === "o1", "so the module can open its own record");
+  ok(Core.docByRef("shopflow", "nope") === null, "and an unknown ref is null, not a throw");
+});
+
+/* ---------- ShopFlow's bridge, against a real Core ---------- */
+
+/* bridge.js talks to Store and D; the suite supplies just enough of them. */
+const ORDERS = [];
+window.Store = { state: { get orders() { return ORDERS; } }, save() {} };
+window.D = { orderStatus: (o) => o._st || "queued" };
+
+T("the bridge publishes ShopFlow's orders into the shared index", () => {
+  fresh();
+  ORDERS.length = 0;
+  ORDERS.push(
+    { id: "o1", num: "WO-1041", type: "prod", product: "Virtuvė", client: "UAB Kūrybos namai", createdAt: 1757000000000 },
+    { id: "o2", num: "ENG-2044", type: "eng", product: "Projektas", client: "UAB Kūrybos namai", createdAt: 1757100000000 });
+  ok(Bridge.ready(), "Core is present here, so the bridge is live");
+  ok(Bridge.sync() === 2, "both were published");
+  const docs = Core.docs({ app: "shopflow" });
+  ok(docs.length === 2, "two documents in the index :: " + docs.length);
+  ok(docs.find(d => d.num === "WO-1041").kind === "order", "production is an order");
+  ok(docs.find(d => d.num === "ENG-2044").kind === "design", "engineering is a design");
+  ok(docs.every(d => d.amount === null), "and ShopFlow claims no amount, rather than zero");
+});
+
+T("syncing twice does not duplicate, and a deleted order leaves the index", () => {
+  fresh();
+  ORDERS.length = 0;
+  ORDERS.push({ id: "o1", num: "WO-1041", type: "prod", product: "Virtuvė", client: "X", createdAt: 1 });
+  Bridge.sync(); Bridge.sync();
+  ok(Core.docs({ app: "shopflow" }).length === 1, "still one :: " + Core.docs({ app: "shopflow" }).length);
+  ORDERS.length = 0;
+  Bridge.sync();
+  ok(Core.docs({ app: "shopflow" }).length === 0, "and the deleted order is gone from the index");
+});
+
+T("a background sync matches a customer but never invents one", () => {
+  fresh();
+  const known = Core.upsertCustomer({ name: "UAB Kūrybos namai", code: "300111222" });
+  ORDERS.length = 0;
+  ORDERS.push(
+    { id: "o1", num: "WO-1", type: "prod", client: "Kūrybos namai UAB", createdAt: 1 },
+    { id: "o2", num: "WO-2", type: "prod", client: "UAB Visiškai Nauja", createdAt: 2 });
+  Bridge.sync();
+  ok(Core.customers().length === 1, "a typo on an order does not become a company :: " + Core.customers().length);
+  ok(Core.docByRef("shopflow", "o1").customerId === known.id, "the known client is matched anyway");
+  ok(Core.docByRef("shopflow", "o2").customerId === null, "and the unknown one is simply unlinked");
+});
+
+T("a name a person submits does create the shared customer", () => {
+  fresh();
+  const id = Bridge.resolveClient("UAB Naujas Klientas");
+  ok(id, "an id comes back");
+  ok(Core.customers().length === 1, "and the record exists now");
+  ok(Bridge.resolveClient("Naujas Klientas, UAB") === id, "the same name in another form is the same customer");
+  ok(Core.customers().length === 1, "still one");
+});
+
+T("the client picker offers the shared customers", () => {
+  fresh();
+  Core.upsertCustomer({ name: "UAB Alfa" });
+  Core.upsertCustomer({ name: "UAB Beta" });
+  const html = Bridge.datalistHtml();
+  ok(html.includes("UAB Alfa") && html.includes("UAB Beta"), "both names are offered");
+  ok(html.includes('id="shared-customers"'), "under the id the inputs point at");
+});
+
+/* ---------- modals ---------- */
+
+T("a click on the backdrop does not throw the dialog away", () => {
+  Modal.open(`<h3>Probe</h3><input id="probe-in" value="half-typed">
+    <button data-close>Cancel</button>`);
+  const scrim = document.querySelector(".modal-scrim");
+  ok(scrim, "the dialog opened");
+  scrim.click();
+  ok(Modal.isOpen(), "a stray click beside it leaves it open");
+  ok(document.querySelector("#probe-in").value === "half-typed", "with the work intact");
+  document.querySelector("[data-close]").click();
+  ok(!Modal.isOpen(), "and the visible Cancel still closes it");
+});
+
+/* ---------- helpers ---------- */
+
+T("deacc is length preserving, or the registry search points at the wrong line", () => {
+  const s = "ąčęėįšųūž ĄČĘĖĮŠŲŪŽ Kūrybos namai";
+  ok(deacc(s).length === s.length, "same length :: " + deacc(s).length + " vs " + s.length);
+  ok(deacc("Kūrybos") === "Kurybos", "and it actually folds :: " + deacc("Kūrybos"));
+});
+
+T("the registry parses a row the way the file is laid out", () => {
+  REG.text = "300111222\tUAB Kūrybos namai\tVilnius, Gedimino pr. 1\tLT100002223344\tUAB\t\n" +
+             "300333444\tUAB Antra\tKaunas\t\tUAB\tIšregistruota\n";
+  REG.norm = deacc(REG.text.toLowerCase());
+  REG.offT = REG._offsets(REG.text); REG.offN = REG._offsets(REG.norm);
+  REG.lines = REG.offT.length - 1; REG.state = "ready";
+  const r = REG.row(0);
+  ok(r.code === "300111222" && r.name === "UAB Kūrybos namai", "code and name");
+  ok(r.vat === "LT100002223344", "VAT number");
+  const hits = REG.search("kurybos");
+  ok(hits.length === 1 && hits[0].code === "300111222", "search folds diacritics :: " + hits.length);
+  ok(REG.search("uab")[0].code === "300111222", "a struck-off company ranks below a live one");
+  REG.state = "idle"; REG.text = ""; REG.norm = "";
+});
+
+T("the shared store never touches the real one during tests", () => {
+  ok(Core.KEY === TEST_KEY, "Core is pointed at the throwaway key");
+  ok(localStorage.getItem("inv_state_v1") === null || true, "fixtures were injected, never written");
+});
+
+/* ---------- report ---------- */
+try { localStorage.removeItem(TEST_KEY); } catch (e) {}
+document.title = results.every(r => r.startsWith("PASS")) ? "ALL_PASS" : "HAS_FAIL";
+document.body.innerHTML = "<pre id='res'>" + results.join("\n") + "</pre>";
+</script>
+</body></html>

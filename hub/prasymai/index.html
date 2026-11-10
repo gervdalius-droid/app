@@ -1,0 +1,905 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#131715">
+<title>Prašymai · Dėdės Baldai</title>
+<link rel="icon" type="image/png" href="https://app.dedesbaldai.lt/hub/shared/favicon-64.png">
+<link rel="apple-touch-icon" href="https://app.dedesbaldai.lt/hub/shared/touch-180.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: Lapas family. Header with sheet-style meta → tabs → (form 5fr | live A4 sheet 4fr) or (month index | calendar + register). */
+:root{
+  --bg:#e6e8e3;--surface:#f8f9f6;--surface-2:#eef0ec;--ink:#131715;--muted:#59615b;--line:#d2d7cf;--line-2:#b4bbb1;
+  --accent:#ff4a1c;--on-accent:#160700;--focus:#ff4a1c;
+  --t-atost:#2f55c8;--t-atost-soft:#e4e9fa;--t-tev:#127c52;--t-tev-soft:#dcefe6;--t-mam:#b0447e;--t-mam-soft:#f6e3ee;
+  --ok:#127c52;--warn:#b86e00;--bad:#c4321c;
+  --shadow:0 1px 0 rgba(19,23,21,.05),0 12px 26px -18px rgba(19,23,21,.42);
+  --paper:#ffffff;--paper-ink:#000000;
+  --f-ui:'Schibsted Grotesk','Helvetica Neue',sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --f-doc:'Times New Roman',Tinos,'Liberation Serif',Times,serif;
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;
+  --accent:#ff6b3d;--on-accent:#160700;--focus:#ff6b3d;
+  --t-atost:#86a5ff;--t-atost-soft:#1c2540;--t-tev:#4cc993;--t-tev-soft:#13301f;--t-mam:#f08cc0;--t-mam-soft:#3a1a2b;
+  --ok:#4cc993;--warn:#f0b23a;--bad:#ff7a63;
+  --shadow:0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85);color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;
+  --accent:#ff6b3d;--on-accent:#160700;--focus:#ff6b3d;
+  --t-atost:#86a5ff;--t-atost-soft:#1c2540;--t-tev:#4cc993;--t-tev-soft:#13301f;--t-mam:#f08cc0;--t-mam-soft:#3a1a2b;
+  --ok:#4cc993;--warn:#f0b23a;--bad:#ff7a63;
+  --shadow:0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85);color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:15.5px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+[data-t="atostogos"]{--tc:var(--t-atost);--tcs:var(--t-atost-soft)}
+[data-t="tevadienis"]{--tc:var(--t-tev);--tcs:var(--t-tev-soft)}
+[data-t="mamadienis"]{--tc:var(--t-mam);--tcs:var(--t-mam-soft)}
+.page{max-width:1320px;margin:0 auto;padding-block:24px 64px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+.mono{font-family:var(--f-mono)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:end;gap:16px 32px;padding-bottom:18px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.mark{width:50px;height:50px;flex:none;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.mark svg{width:28px;height:28px}
+.head h1{margin:0;font-weight:800;font-size:clamp(28px,3.2vw,42px);letter-spacing:-.035em;line-height:.95}
+.head .sub{margin:5px 0 0;color:var(--muted);font-size:14px}
+.head .sub a{color:inherit;text-decoration:none;border-bottom:1px solid var(--line-2)}
+.head .sub a:hover{color:var(--ink);border-color:var(--ink)}
+.meta{display:flex;gap:26px;margin:0;flex-wrap:wrap}
+.meta dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.meta dd{margin:3px 0 0;font-family:var(--f-mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface)}
+.seg button{font-size:12.5px;font-weight:600;padding:6px 10px;border:0;border-radius:2px;background:transparent;color:var(--muted);cursor:pointer;min-height:32px}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.sync{display:inline-flex;align-items:center;gap:8px;min-height:40px;padding:0 12px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);font-size:13px;font-weight:600;cursor:pointer}
+.sync i{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.sync[data-s="ok"] i{background:var(--ok)}
+.sync[data-s="syncing"] i{background:var(--warn);animation:pulse 1s infinite}
+.sync[data-s="error"] i{background:var(--bad)}
+@keyframes pulse{50%{opacity:.3}}
+
+.tabs{display:flex;gap:4px;border-top:1px solid var(--line-2);border-bottom:1px solid var(--line);margin-bottom:22px;overflow-x:auto}
+.tabs a{display:inline-flex;align-items:center;gap:9px;padding:14px 16px 12px;text-decoration:none;color:var(--muted);font-weight:600;font-size:15px;border-bottom:3px solid transparent;margin-bottom:-1px;white-space:nowrap}
+.tabs a:hover{color:var(--ink)}
+.tabs a[aria-current="page"]{color:var(--ink);border-color:var(--accent)}
+.tabs a b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:0 18px;border:1px solid var(--ink);border-radius:3px;background:var(--ink);color:var(--bg);font-weight:600;font-size:15px;cursor:pointer;text-decoration:none;transition:transform .08s linear}
+.btn:active{transform:translateY(1px)}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line-2)}
+.btn.ghost:hover{border-color:var(--ink)}
+.btn.accent{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13.5px}
+.btn svg{width:17px;height:17px}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.lnk{border:0;background:none;padding:6px 4px;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted);min-height:36px}
+.lnk:hover{color:var(--ink)}
+.lnk.bad{color:var(--bad)}
+
+/* ===== new request ===== */
+.compose{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,4fr);gap:28px;align-items:start}
+.panel{background:var(--surface);box-shadow:var(--shadow);padding:22px 24px 24px;min-width:0}
+.panel h2{margin:0 0 4px;font-size:13px;font-family:var(--f-mono);font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.step{display:flex;flex-direction:column;gap:14px;padding:20px 0;border-top:1px solid var(--line)}
+.step:first-of-type{border-top:0;padding-top:6px}
+.types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.type{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:14px 14px 12px 18px;border:1px solid var(--line);background:var(--surface);cursor:pointer;text-align:left;min-height:96px;transition:border-color .15s,background-color .15s}
+.type::before{content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--tc)}
+.type svg{width:26px;height:26px;color:var(--tc)}
+.type b{font-size:17px;letter-spacing:-.01em}
+.type small{color:var(--muted);font-size:12.5px;margin-top:-6px}
+.type[aria-pressed="true"]{border-color:var(--tc);background:var(--tcs)}
+.type[aria-pressed="true"] b{color:var(--ink)}
+.row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.fld{display:flex;flex-direction:column;gap:5px;min-width:0}
+.fld > span{font-size:12.5px;font-weight:600;color:var(--muted)}
+.fld input,.fld select{width:100%;min-height:46px;padding:0 12px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface-2);font-size:16px;min-width:0}
+.fld input[type="date"]{font-family:var(--f-mono);font-size:15px}
+.fld input:focus,.fld select:focus{border-color:var(--ink);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--focus) 30%,transparent)}
+.fld.err input{border-color:var(--bad)}
+.fld .msg{font-size:12.5px;color:var(--bad)}
+.chk{display:flex;align-items:flex-start;gap:10px;font-size:14.5px;cursor:pointer}
+.chk input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--ink);flex:none}
+.radios{display:flex;gap:8px;flex-wrap:wrap}
+.radios label{display:inline-flex;align-items:center;gap:8px;min-height:42px;padding:0 14px;border:1px solid var(--line);border-radius:3px;cursor:pointer;font-weight:600;font-size:14.5px}
+.radios input{accent-color:var(--ink)}
+.radios label:has(input:checked){border-color:var(--ink);background:var(--surface-2)}
+
+/* picker calendar */
+.cal{border:1px solid var(--line);background:var(--surface-2);padding:12px;user-select:none}
+.cal-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.cal-h b{font-size:15px}
+.cal-h button{width:36px;height:36px;border:1px solid var(--line-2);background:var(--surface);border-radius:3px;cursor:pointer;display:grid;place-items:center}
+.cal-h button svg{width:16px;height:16px}
+.cal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.cal-g .wd{font-family:var(--f-mono);font-size:10.5px;color:var(--muted);text-align:center;padding:2px 0 4px;text-transform:uppercase;letter-spacing:.06em}
+.d{position:relative;height:40px;border:0;background:var(--surface);cursor:pointer;font-family:var(--f-mono);font-size:13.5px;font-variant-numeric:tabular-nums;display:grid;place-items:center;border-radius:2px}
+.d:hover{outline:1.5px solid var(--ink);outline-offset:-1.5px}
+.d.out{visibility:hidden}
+.d.we{color:var(--muted);background:transparent}
+.d.hol{color:var(--bad)}
+.d.hol::after{content:"";position:absolute;top:5px;right:5px;width:5px;height:5px;border-radius:50%;background:var(--bad)}
+.d.today{box-shadow:inset 0 0 0 1.5px var(--line-2)}
+.d.in{background:var(--tcs);color:var(--ink)}
+.d.in.we,.d.in.hol{background:color-mix(in srgb,var(--tcs) 45%,transparent)}
+.d.edge{background:var(--tc);color:var(--surface);font-weight:600}
+.d .taken{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);display:flex;gap:2px}
+.d .taken i{width:4px;height:4px;border-radius:50%;background:var(--muted)}
+.cal-f{display:flex;justify-content:space-between;flex-wrap:wrap;gap:6px 14px;margin-top:10px;font-size:12.5px;color:var(--muted)}
+.cal-f span{display:inline-flex;align-items:center;gap:6px}
+.cal-f i{width:8px;height:8px;border-radius:50%}
+.sum{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--tcs);border-left:4px solid var(--tc)}
+.sum b{font-size:24px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.sum span{color:var(--muted);font-size:14px}
+.warnbox{padding:10px 14px;border-left:4px solid var(--warn);background:color-mix(in srgb,var(--warn) 12%,transparent);font-size:14px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding-top:20px;border-top:1px solid var(--line)}
+.actions .sp{flex:1}
+
+/* A4 preview: 1mm = container width / 210 */
+.preview{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));min-width:0}
+.preview-h{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-family:var(--f-mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.paperwrap{container-type:inline-size;width:100%}
+.sheet{--mm:calc(100cqw / 210);width:calc(var(--mm) * 210);height:calc(var(--mm) * 297);background:var(--paper);color:var(--paper-ink);font-family:var(--f-doc);font-size:calc(var(--mm) * 4.2333);line-height:1.15;box-shadow:var(--shadow),0 0 0 1px var(--line);overflow:hidden;
+  padding:calc(var(--mm) * var(--mt)) calc(var(--mm) * var(--mr)) calc(var(--mm) * var(--mb)) calc(var(--mm) * var(--ml))}
+.sheet.m-a{--mt:25.4;--mr:25.4;--mb:25.4;--ml:25.4}
+.sheet.m-t{--mt:20;--mr:10;--mb:20;--ml:30}
+.sheet p{margin:0;min-height:1.15em}
+.sheet .c{text-align:center}
+.sheet .b{font-weight:bold}
+.sheet .ind{text-indent:calc(var(--mm) * 10)}
+.sheet .gap{height:calc(var(--n) * 1.15em)}
+.sheet .sig{display:grid;grid-template-columns:38% 32% 30%;align-items:end}
+.sheet .sig .line{border-bottom:calc(var(--mm) * .25) solid #000;margin:0 calc(var(--mm) * 4);height:1.15em}
+.sheet .sig .nm{text-align:right}
+.sheet .sig .cap{grid-column:2;text-align:center;font-size:.9em}
+.sheet .ph{color:#9a9a9a}
+
+/* ===== register ===== */
+.reg{display:grid;grid-template-columns:220px minmax(0,1fr);gap:28px;align-items:start}
+.months{position:sticky;top:calc(16px + env(safe-area-inset-top,0px));display:flex;flex-direction:column}
+.months h3{margin:0 0 8px;font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.months .yr{font-family:var(--f-mono);font-size:12px;color:var(--muted);padding:14px 0 6px;border-bottom:1px solid var(--line-2)}
+.months button{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:40px;padding:0 10px 0 12px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;text-align:left;font-weight:600;color:var(--muted)}
+.months button:hover{color:var(--ink)}
+.months button[aria-current="true"]{background:var(--surface);color:var(--ink);box-shadow:inset 4px 0 0 var(--accent)}
+.months button b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+.months .none{color:var(--muted);font-size:14px;padding:10px 0}
+.reg-main{min-width:0;display:flex;flex-direction:column;gap:18px}
+.reg-top{display:flex;flex-wrap:wrap;align-items:end;justify-content:space-between;gap:12px 20px}
+.reg-top h2{margin:0;font-size:clamp(28px,3vw,40px);font-weight:800;letter-spacing:-.035em;line-height:1}
+.reg-top h2 small{display:block;font-family:var(--f-mono);font-size:12px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.nav{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.ib{width:42px;height:42px;display:grid;place-items:center;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);cursor:pointer}
+.ib svg{width:17px;height:17px}
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.filters button{display:inline-flex;align-items:center;gap:8px;min-height:38px;padding:0 13px;border:1px solid var(--line);border-radius:3px;background:transparent;cursor:pointer;font-weight:600;font-size:13.5px;color:var(--muted)}
+.filters button i{width:10px;height:10px;background:var(--tc,var(--ink))}
+.filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--surface)}
+.filters input{min-height:38px;padding:0 12px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);font-size:14px;min-width:0;flex:0 1 220px}
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line);background:var(--surface)}
+.stats div{padding:12px 16px;border-left:1px solid var(--line)}
+.stats div:first-child{border-left:0}
+.stats dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.stats dd{margin:4px 0 0;font-size:24px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.mcal{border:1px solid var(--line);background:var(--surface)}
+.mcal-g{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
+.mcal-g .wd{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line)}
+.mday{min-height:84px;padding:6px 6px 8px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:3px;min-width:0}
+.mday:nth-child(7n+7){border-right:0}
+.mday .n{font-family:var(--f-mono);font-size:12px;color:var(--muted);display:flex;justify-content:space-between;gap:4px}
+.mday .n em{font-style:normal;font-size:10px;color:var(--bad);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mday.we,.mday.hol{background:var(--surface-2)}
+.mday.out{background:transparent}
+.mday.out .n{opacity:.35}
+.mday.today .n span{color:var(--accent);font-weight:600}
+.pill{display:block;font-size:11.5px;font-weight:600;line-height:1.25;padding:2px 6px;background:var(--tcs);color:var(--ink);border-left:3px solid var(--tc);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.more{font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+.list{border-top:2px solid var(--ink)}
+.item{display:grid;grid-template-columns:6px minmax(0,2.2fr) minmax(0,2fr) minmax(0,1fr) minmax(0,1.3fr) auto;gap:14px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line)}
+.item .bar{align-self:stretch;background:var(--tc)}
+.item .who b{display:block;font-size:17px;letter-spacing:-.01em}
+.item .who small{color:var(--muted);font-size:13px}
+.item .when{font-family:var(--f-mono);font-size:13.5px;font-variant-numeric:tabular-nums}
+.item .when small{display:block;font-family:var(--f-ui);color:var(--muted);font-size:12.5px;margin-top:2px}
+.item .days b{font-size:20px;font-variant-numeric:tabular-nums}
+.item .days small{display:block;color:var(--muted);font-size:12px}
+.item select{min-height:36px;padding:0 8px;border:1px solid var(--line-2);border-radius:3px;background:var(--surface);font-size:13.5px;font-weight:600;max-width:100%}
+.item select[data-v="patvirtintas"]{color:var(--ok);border-color:var(--ok)}
+.item select[data-v="atsauktas"]{color:var(--bad)}
+.item .st small{display:block;font-size:12px;color:var(--muted);margin-top:4px}
+.item .acts{display:flex;gap:2px;flex-wrap:wrap;justify-content:flex-end}
+.item.cancel .who b,.item.cancel .when{text-decoration:line-through;color:var(--muted)}
+.confirm{display:inline-flex;gap:6px;align-items:center;font-size:13px;font-weight:600}
+.empty{padding:36px 20px;text-align:center;color:var(--muted);border:1px dashed var(--line-2)}
+.exp{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 6px);z-index:20;min-width:260px;background:var(--surface);border:1px solid var(--line-2);box-shadow:var(--shadow);display:flex;flex-direction:column;padding:6px}
+.menu button{text-align:left;border:0;background:transparent;padding:10px 12px;cursor:pointer;font-weight:600;font-size:14px;border-radius:2px}
+.menu button small{display:block;font-weight:400;color:var(--muted);font-size:12.5px}
+.menu button:hover{background:var(--surface-2)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:4px 0}
+
+/* settings */
+.set{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px;align-items:start}
+.set .panel{display:flex;flex-direction:column;gap:14px}
+.set p{margin:0;color:var(--muted);font-size:14.5px}
+.set code{font-family:var(--f-mono);font-size:12.5px;background:var(--surface-2);padding:2px 5px;word-break:break-all}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:14px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--f-mono);font-size:13px;word-break:break-all}
+
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:3px;font-size:14.5px;font-weight:500;z-index:50;max-width:calc(100% - 32px);box-shadow:var(--shadow)}
+
+@media (max-width:1060px){.compose{grid-template-columns:1fr}.preview{position:static;max-width:560px}}
+@media (max-width:900px){.reg{grid-template-columns:1fr}.months{position:static;flex-direction:row;flex-wrap:wrap;gap:4px}.months .yr,.months h3{display:none}.months button{border:1px solid var(--line);min-height:36px}.item{grid-template-columns:6px minmax(0,1fr) minmax(0,1fr);row-gap:8px}.item .days,.item .st,.item .acts{grid-column:2/-1}.item .acts{justify-content:flex-start}.set{grid-template-columns:1fr}.head{grid-template-columns:1fr auto}.meta{grid-column:1/-1;order:3}}
+@media (max-width:640px){.types{grid-template-columns:1fr}.type{min-height:0;flex-direction:row;align-items:center}.type small{margin:0 0 0 auto}.row{grid-template-columns:1fr}.stats{grid-template-columns:repeat(2,1fr)}.stats div:nth-child(3){border-left:0}.stats div:nth-child(n+3){border-top:1px solid var(--line)}.mday{min-height:58px;padding:4px}.pill{font-size:10px;padding:1px 3px}.mday .n em{display:none}.head{grid-template-columns:1fr}.item{grid-template-columns:6px minmax(0,1fr)}.item>*:not(.bar){grid-column:2}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== print: only the sheet, at real size ===== */
+#print{display:none}
+@page{size:A4;margin:0}
+@media print{
+  html,body{background:#fff!important}
+  #app,.toast{display:none!important}
+  #print{display:block}
+  #print .sheet{--mm:1mm;box-shadow:none;width:210mm;height:296mm;page-break-after:always}
+  #print .sheet:last-child{page-break-after:auto}
+}
+.dbl{display:block;width:80%;height:80%;background:currentColor;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="print" aria-hidden="true"></div>
+<script>
+/* Two ways in:
+   • worker  (default) — only the request form; sent requests go to an inbox the worker can't read.
+   • office  — the full registry; needs the office sign-in (workshop-auth.js slot "office").
+   Office mode when the office sign-in is open on this computer, or after "Registras 🔒". */
+(function(){
+  var K='sb-niveinyzkkwtreeeaziv-auth-token-office';
+  function g(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  var s=null;try{s=JSON.parse(g(K)||'null');}catch(e){}
+  var open=!!(s&&s.access_token&&(g('workshop.officeComputer')==='1'||Date.now()-(+g('workshop.office.lastActive')||0)<600000));
+  var want=false;try{want=sessionStorage.getItem('prasymai.office')==='1';}catch(e){}
+  window.PRASYMAI_OFFICE=open||want;
+  window.WORKSHOP_CLOUD=window.PRASYMAI_OFFICE?{slot:'office'}:{};
+})();
+</script>
+<script src="../workers/workshop-auth.js"></script>
+<script src="/hub/shared/notices.js" defer></script>
+<script>
+(function(){
+'use strict';
+/* ================= constants ================= */
+var STORE_KEY='dedes.prasymai.v1', ROW_ID='dedes-prasymai', SET_ROW='dedes-prasymai-settings', INBOX='prasymai_inbox';
+var OFFICE=!!window.PRASYMAI_OFFICE;
+var HUB_URL='../shopfloor/';
+var XLSX_URL='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+var TYPES=['atostogos','tevadienis','mamadienis'];
+var MONTHS_LT=['Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+var MONTHS_EN=['January','February','March','April','May','June','July','August','September','October','November','December'];
+var WD_LT=['Pr','An','Tr','Kt','Pn','Še','Sk'], WD_EN=['Mo','Tu','We','Th','Fr','Sa','Su'];
+var DEFAULT_SETTINGS={
+  companyAtost:'Ričardo Gervinsko įmonės',
+  companyDay:'Ričardo Gervinsko įmonė „Dėdės Baldai“',
+  director:'Direktoriui Ričardui Gervinskui',
+  city:'Ukmergė',
+  updatedAt:0
+};
+var IC={
+  atostogos:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true"><rect x="3" y="5" width="18" height="16"/><path d="M3 10h18M8 3v4M16 3v4M7 14h4M7 17h7"/></svg>',
+  tevadienis:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="2.5"/><path d="M5 21v-7l-1-3h10l-1 3v7M9 14v7"/><circle cx="17.5" cy="11" r="1.8"/><path d="M15 21v-4l-.5-2h6l-.5 2v4"/></svg>',
+  mamadienis:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="square" aria-hidden="true"><circle cx="9" cy="6" r="2.5"/><path d="M9 9.5 5 18h8L9 9.5zM7 18v3M11 18v3"/><circle cx="17.5" cy="11" r="1.8"/><path d="M15 21v-4l-.5-2h6l-.5 2v4"/></svg>',
+  prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg>',
+  print:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M6 9V3h12v6M6 18H3v-8h18v8h-3M6 14h12v7H6z"/></svg>',
+  save:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 4h13l3 3v13H4zM8 4v5h7V4M8 20v-6h8v6"/></svg>',
+  dl:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></svg>'
+};
+var MARK = '<span class="dbl" role="img" aria-label="Dėdės Baldai"></span>';
+
+var T={
+ lt:{subW:'Užpildykite, pateikite ir, jei reikia, atsispausdinkite',sent:'Prašymas pateiktas. Biuras jį matys registre.',sendErr:'Nepavyko pateikti — patikrinkite ryšį ir bandykite dar kartą',inboxIn:'Nauji prašymai iš dirbtuvių: {n}',title:'Prašymai',sub:'Dėdės Baldai · darbuotojų prašymai',hub:'← Programos',tNew:'Naujas prašymas',tReg:'Registras',tSet:'Nustatymai',
+   atostogos:'Atostogos',tevadienis:'Tėvadienis',mamadienis:'Mamadienis',atostogosS:'Kasmetinės ar nemokamos',tevadienisS:'Laisva diena tėčiui',mamadienisS:'Laisva diena mamai',
+   pl:{atostogos:'Atostogos',tevadienis:'Tėvadieniai',mamadienis:'Mamadieniai'},
+   s1:'1 · Prašymo rūšis',s2:'2 · Darbuotojas',s3:'3 · Datos',s4:'4 · Prašymo duomenys',
+   name:'Vardas ir pavardė',namePh:'pvz. Jonas Jonaitis',pos:'Pareigos',posPh:'pvz. Baldžius',
+   leave:'Atostogų rūšis',kasm:'Kasmetinės',nemok:'Nemokamos',pay:'Atostoginius išmokėti kartu su darbo užmokesčiu',
+   from:'Nuo',to:'Iki (imtinai)',day:'Diena',reqDate:'Prašymo data',city:'Miestas',
+   pickHint:'Spauskite pirmą ir paskutinę dieną kalendoriuje',pickHint1:'Spauskite dieną kalendoriuje',
+   wdays:'darbo d.',wdaysLong:'darbo dienos',cdays:'kalendorinės',holiday:'Šventinė diena',weekend:'Savaitgalis',taken:'Kiti jau išeina',
+   thisMonth:'Šį mėnesį',thisQuarter:'Šį ketvirtį',prevDays:'Jau pateikta {n}',
+   savePrint:'Išsaugoti ir spausdinti',saveOnly:'Tik išsaugoti',clear:'Išvalyti',update:'Atnaujinti ir spausdinti',updateOnly:'Atnaujinti',editing:'Redaguojamas prašymas',cancelEdit:'Atšaukti redagavimą',
+   preview:'Peržiūra · A4',printsAs:'Taip atrodys atspausdinta',
+   errName:'Įrašykite vardą ir pavardę',errDate:'Pasirinkite datą',errRange:'Pabaiga negali būti anksčiau už pradžią',
+   overlap:'{name} jau turi prašymą šioms dienoms: {list}',
+   saved:'Prašymas išsaugotas',printed:'Išsiųsta spausdinti',updated:'Prašymas atnaujintas',
+   regTitle:'Prašymai',active:'aktyvūs šį mėnesį',all:'Visi',search:'Ieškoti darbuotojo…',
+   stReq:'Prašymai',stPeople:'Darbuotojai',stAtost:'Atostogų d. d.',stDays:'Tėva/mamadieniai',
+   months:'Mėnesiai',noMonths:'Dar nėra prašymų',today:'Šiandien',
+   status:{pateiktas:'Pateiktas',patvirtintas:'Patvirtintas',atsauktas:'Atšauktas'},
+   printedAt:'Spausdinta {d}',notPrinted:'Nespausdinta',inMonth:'šį mėn.',total:'iš viso',
+   aPrint:'Spausdinti',aWord:'Word',aEdit:'Redaguoti',aDel:'Ištrinti',delQ:'Ištrinti?',yes:'Taip',no:'Ne',deleted:'Prašymas ištrintas',
+   export:'Eksportuoti',exMonthX:'Excel · šis mėnuo',exAllX:'Excel · visi prašymai',exMonthC:'CSV · šis mėnuo',exJson:'Atsarginė kopija (JSON)',imJson:'Įkelti atsarginę kopiją',
+   exMonthXs:'Prašymai, aktyvūs pasirinktą mėnesį',exAllXs:'Kiekvienas mėnuo atskirame lape',exMonthCs:'Kabliataškiai, atsidaro Excel',exJsons:'Visi duomenys, galima įkelti atgal',imJsons:'Sujungiama su esamais, niekas nedingsta',
+   imported:'Įkelta: {n} prašymų',badFile:'Netinkamas failas',empty:'Šį mėnesį prašymų nėra.',emptyQ:'Nieko nerasta.',
+   colNo:'Nr.',colType:'Tipas',colName:'Darbuotojas',colPos:'Pareigos',colFrom:'Nuo',colTo:'Iki',colWd:'Darbo dienos',colWdM:'Darbo d. šį mėn.',colReq:'Prašymo data',colSt:'Statusas',colPr:'Spausdinta',colCr:'Sukurta',
+   setDoc:'Prašymo tekstas',setDocS:'Šios eilutės įrašomos į visus naujus ir spausdinamus prašymus.',coA:'Įmonė (atostogų prašyme)',coD:'Įmonė (tėvadienio / mamadienio prašyme)',dir:'Kam adresuota',
+   setSync:'Sinchronizavimas',syncLocal:'Tik šiame kompiuteryje',syncOk:'Sinchronizuota {t}',syncIng:'Sinchronizuojama…',syncErr:'Sinchronizavimo klaida',
+   syncAbout:'Prašymai saugomi šiame kompiuteryje ir sinchronizuojami su įmonės Supabase (lentelė workspaces, eilutė dedes-prasymai), kai esate prisijungę. Jei šiame naršyklės lange jau prisijungta prie sąskaitų programos, prisijungimas perimamas automatiškai.',
+   email:'El. paštas',pw:'Slaptažodis',url:'Supabase URL',key:'Anon key',signIn:'Prisijungti',signOut:'Atsijungti',syncNow:'Sinchronizuoti dabar',signedAs:'Prisijungta',via:'perimta iš',
+   signErr:'Nepavyko prisijungti: {e}',
+   setPrint:'Spausdinimas',printAbout:'Spausdinama per naršyklės spausdinimo langą į pasirinktą spausdintuvą. Biuro spausdintuvą nustatykite numatytuoju šiame kompiuteryje.',
+   kiosk:'Kad spausdintų iš karto, be lango, Chrome paleiskite su parametru:',
+   setData:'Duomenys',dataAbout:'{n} prašymų šiame kompiuteryje.',saveSet:'Išsaugoti nustatymus',setSaved:'Nustatymai išsaugoti'},
+ en:{subW:'Fill in, submit and print if needed',sent:'Request submitted. The office will see it in the register.',sendErr:'Could not submit — check the connection and try again',inboxIn:'New requests from the workshop: {n}',title:'Requests',sub:'Dėdės Baldai · staff requests',hub:'← Apps',tNew:'New request',tReg:'Register',tSet:'Settings',
+   atostogos:'Leave',tevadienis:'Father’s day off',mamadienis:'Mother’s day off',atostogosS:'Annual or unpaid',tevadienisS:'Day off for fathers',mamadienisS:'Day off for mothers',
+   pl:{atostogos:'Leave',tevadienis:'Father’s days',mamadienis:'Mother’s days'},
+   s1:'1 · Request type',s2:'2 · Employee',s3:'3 · Dates',s4:'4 · Request details',
+   name:'Full name',namePh:'e.g. Jonas Jonaitis',pos:'Position',posPh:'e.g. Cabinet maker',
+   leave:'Leave type',kasm:'Annual',nemok:'Unpaid',pay:'Pay holiday pay together with salary',
+   from:'From',to:'To (inclusive)',day:'Day',reqDate:'Request date',city:'City',
+   pickHint:'Click the first and last day in the calendar',pickHint1:'Click a day in the calendar',
+   wdays:'work days',wdaysLong:'working days',cdays:'calendar',holiday:'Public holiday',weekend:'Weekend',taken:'Others already off',
+   thisMonth:'This month',thisQuarter:'This quarter',prevDays:'Already filed {n}',
+   savePrint:'Save and print',saveOnly:'Save only',clear:'Clear',update:'Update and print',updateOnly:'Update',editing:'Editing request',cancelEdit:'Cancel editing',
+   preview:'Preview · A4',printsAs:'This is what prints',
+   errName:'Enter the full name',errDate:'Pick a date',errRange:'End cannot be before start',
+   overlap:'{name} already has a request for these days: {list}',
+   saved:'Request saved',printed:'Sent to print',updated:'Request updated',
+   regTitle:'Requests',active:'active this month',all:'All',search:'Find employee…',
+   stReq:'Requests',stPeople:'Employees',stAtost:'Leave work days',stDays:'Parent days',
+   months:'Months',noMonths:'No requests yet',today:'Today',
+   status:{pateiktas:'Submitted',patvirtintas:'Approved',atsauktas:'Cancelled'},
+   printedAt:'Printed {d}',notPrinted:'Not printed',inMonth:'this month',total:'total',
+   aPrint:'Print',aWord:'Word',aEdit:'Edit',aDel:'Delete',delQ:'Delete?',yes:'Yes',no:'No',deleted:'Request deleted',
+   export:'Export',exMonthX:'Excel · this month',exAllX:'Excel · all requests',exMonthC:'CSV · this month',exJson:'Backup (JSON)',imJson:'Load a backup',
+   exMonthXs:'Requests active in the selected month',exAllXs:'One sheet per month',exMonthCs:'Semicolons, opens in Excel',exJsons:'All data, can be loaded back',imJsons:'Merged with what is here, nothing is lost',
+   imported:'Loaded: {n} requests',badFile:'This file is not a requests backup',empty:'No requests this month.',emptyQ:'Nothing matches.',
+   colNo:'No.',colType:'Type',colName:'Employee',colPos:'Position',colFrom:'From',colTo:'To',colWd:'Work days',colWdM:'Work days this month',colReq:'Request date',colSt:'Status',colPr:'Printed',colCr:'Created',
+   setDoc:'Request text',setDocS:'These lines go on every new and printed request.',coA:'Company (leave request)',coD:'Company (father’s / mother’s day request)',dir:'Addressed to',
+   setSync:'Sync',syncLocal:'Only on this computer',syncOk:'Synced {t}',syncIng:'Syncing…',syncErr:'Sync error',
+   syncAbout:'Requests are kept on this computer and synced to the company Supabase (table workspaces, row dedes-prasymai) when signed in. If this browser is already signed in to the invoices app, that sign-in is reused.',
+   email:'Email',pw:'Password',url:'Supabase URL',key:'Anon key',signIn:'Sign in',signOut:'Sign out',syncNow:'Sync now',signedAs:'Signed in',via:'reused from',
+   signErr:'Could not sign in: {e}',
+   setPrint:'Printing',printAbout:'Printing goes through the browser’s print dialog to the chosen printer. Set the office printer as the default on this computer.',
+   kiosk:'To print straight away without the dialog, start Chrome with:',
+   setData:'Data',dataAbout:'{n} requests on this computer.',saveSet:'Save settings',setSaved:'Settings saved'}
+};
+
+/* ================= state ================= */
+var S={requests:{},settings:Object.assign({},DEFAULT_SETTINGS)};
+var lang='lt', view='naujas';
+var regMonth=ym(new Date()), regType='all', regQ='', openMenu=false, delAsk=null;
+var form=blankForm(), formErr={}, pickMode='from', calMonth=null, editId=null;
+try{var l=localStorage.getItem('dedes.prasymai.lang');if(l==='lt'||l==='en')lang=l;}catch(e){}
+if(OFFICE)load();
+
+function blankForm(){return {type:'atostogos',employee:'',position:'',leave:'kasmetines',pay:true,from:'',to:'',reqDate:iso(new Date()),city:''};}
+function t(k){return T[lang][k];}
+function tf(k,o){var s=T[lang][k];for(var p in o)s=s.split('{'+p+'}').join(o[p]);return s;}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function uid(){return 'r'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+
+function load(){
+  try{var raw=JSON.parse(localStorage.getItem(STORE_KEY)||'null');
+    if(raw&&raw.requests){S.requests=raw.requests;S.settings=Object.assign({},DEFAULT_SETTINGS,raw.settings||{});}}catch(e){}
+}
+function persist(push){
+  if(!OFFICE)return;
+  try{localStorage.setItem(STORE_KEY,JSON.stringify(S));}catch(e){}
+  if(push!==false) Cloud.soon();
+}
+function list(){return Object.keys(S.requests).map(function(k){return S.requests[k];}).filter(function(r){return !r.deleted;});}
+function live(){return list().filter(function(r){return r.status!=='atsauktas';});}
+function setting(k){return S.settings[k]||DEFAULT_SETTINGS[k];}
+
+/* ================= dates ================= */
+function pad(n){return String(n).padStart(2,'0');}
+function iso(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+function parse(s){if(!s)return null;var p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function ym(d){return d.getFullYear()+'-'+pad(d.getMonth()+1);}
+function addDays(d,n){var x=new Date(d);x.setDate(x.getDate()+n);return x;}
+function monthBounds(key){var p=key.split('-');var a=new Date(+p[0],+p[1]-1,1),b=new Date(+p[0],+p[1],0);return [a,b];}
+function monthName(key,cap){var p=key.split('-');var m=(lang==='lt'?MONTHS_LT:MONTHS_EN)[+p[1]-1];return lang==='lt'?p[0]+' m. '+(cap?m:m.toLowerCase()):m+' '+p[0];}
+function shiftMonth(key,n){var p=key.split('-');return ym(new Date(+p[0],+p[1]-1+n,1));}
+var holCache={};
+function easter(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),da=((h+l-7*m+114)%31)+1;return new Date(y,mo-1,da);}
+function firstSunday(y,m){var d=new Date(y,m,1);while(d.getDay()!==0)d.setDate(d.getDate()+1);return d;}
+function holidays(y){
+  if(holCache[y])return holCache[y];
+  var H={},add=function(d,n){H[iso(d)]=n;};
+  [[0,1,'Naujieji metai'],[1,16,'Valstybės atkūrimo diena'],[2,11,'Nepriklausomybės atkūrimo diena'],[4,1,'Darbo diena'],[5,24,'Joninės'],[6,6,'Valstybės diena'],[7,15,'Žolinė'],[10,1,'Visų šventųjų diena'],[10,2,'Vėlinės'],[11,24,'Kūčios'],[11,25,'Kalėdos'],[11,26,'Kalėdos']]
+    .forEach(function(x){add(new Date(y,x[0],x[1]),x[2]);});
+  var e=easter(y);add(e,'Velykos');add(addDays(e,1),'Antroji Velykų diena');
+  add(firstSunday(y,4),'Motinos diena');add(firstSunday(y,5),'Tėvo diena');
+  return holCache[y]=H;
+}
+function holName(d){return holidays(d.getFullYear())[iso(d)]||'';}
+function isWork(d){var w=d.getDay();return w!==0&&w!==6&&!holName(d);}
+function workDays(a,b){if(!a||!b||b<a)return 0;var n=0;for(var d=new Date(a);d<=b;d.setDate(d.getDate()+1))if(isWork(d))n++;return n;}
+function calDays(a,b){return Math.round((b-a)/864e5)+1;}
+function recRange(r){var a=parse(r.from),b=parse(r.to||r.from);return [a,b];}
+function activeIn(r,key){var mb=monthBounds(key),rr=recRange(r);return rr[0]<=mb[1]&&rr[1]>=mb[0];}
+function wdIn(r,key){var mb=monthBounds(key),rr=recRange(r);var a=rr[0]>mb[0]?rr[0]:mb[0],b=rr[1]<mb[1]?rr[1]:mb[1];return workDays(a,b);}
+function monthsOf(r){var out=[],rr=recRange(r),k=ym(rr[0]),end=ym(rr[1]);while(k<=end){out.push(k);k=shiftMonth(k,1);}return out;}
+function fmtTs(ts){if(!ts)return '';var d=new Date(ts);return iso(d)+' '+pad(d.getHours())+':'+pad(d.getMinutes());}
+
+/* ================= document text ================= */
+function docOf(r){
+  var name=(r.employee||'').trim(), ph=function(s,p){return s?esc(s):'<span class="ph">'+p+'</span>';};
+  var from=r.from, to=r.type==='atostogos'?(r.to||r.from):r.from;
+  var head=[], body='';
+  if(r.type==='atostogos'){
+    var kind=r.leave==='nemokamos'?'nemokamų':'kasmetinių';
+    body='Prašau leisti mane '+kind+' atostogų nuo '+ph(from,'____-__-__')+' iki '+ph(to,'____-__-__')+' imtinai.'+
+      (r.leave!=='nemokamos'&&r.pay?' Prašau man priklausančius atostoginius išmokėti kartu su darbo užmokesčio mokėjimu.':'');
+    return {margins:'m-a',company:r.company||setting('companyAtost'),
+      html:'<p class="c b">'+ph((r.position||'').trim(),'Pareigos')+'</p><p class="c b">'+ph(name,'Vardas Pavardė')+'</p><div class="gap" style="--n:3"></div>'+
+        '<p>'+esc(r.company||setting('companyAtost'))+'</p><p>'+esc(r.director||setting('director'))+'</p><div class="gap" style="--n:5"></div>'+
+        '<p class="c b">PRAŠYMAS DĖL ATOSTOGŲ</p><div class="gap" style="--n:2"></div>'+
+        '<p class="c">'+ph(r.reqDate,'____-__-__')+'</p><p class="c">'+esc(r.city||setting('city'))+'</p><div class="gap" style="--n:4"></div>'+
+        '<p class="ind">'+body+'</p><div class="gap" style="--n:6"></div>'+sigHTML(name)};
+  }
+  var word=r.type==='mamadienis'?'mamadienį':'tėvadienį', title=r.type==='mamadienis'?'MAMADIENIO':'TĖVADIENIO';
+  return {margins:'m-t',
+    html:'<div class="gap" style="--n:2"></div><p>'+esc(r.company||setting('companyDay'))+'</p><p>'+esc(r.director||setting('director'))+'</p><div class="gap" style="--n:5"></div>'+
+      '<p class="c b">PRAŠYMAS DĖL '+title+'</p><div class="gap" style="--n:2"></div>'+
+      '<p class="c">'+ph(r.reqDate,'____-__-__')+'</p><p class="c">'+esc(r.city||setting('city'))+'</p><div class="gap" style="--n:4"></div>'+
+      '<p class="ind">Prašau man suteikti '+word+' '+ph(from,'____-__-__')+'.</p>'+
+      '<p>Vadovaujantis Lietuvos Respublikos darbo kodekso nuostatomis, patvirtinu, kad auginu vaiką (-us) iki 12 metų.</p><div class="gap" style="--n:5"></div>'+sigHTML(name)};
+}
+function sigHTML(name){return '<div class="sig"><span></span><span class="line"></span><span class="nm">'+(name?esc(name):'<span class="ph">Vardas Pavardė</span>')+'</span><span class="cap">(Parašas)</span></div>';}
+function sheetHTML(r){var d=docOf(r);return '<div class="sheet '+d.margins+'">'+d.html+'</div>';}
+
+/* ================= cloud (same project + workspaces table as the other apps) ================= */
+var Cloud={
+  cfg:null,status:'local',msg:'',last:0,_t:null,_busy:null,
+  read:function(k){try{return JSON.parse(localStorage.getItem(k)||'null');}catch(e){return null;}},
+  /* Workshop login (workshop-auth.js): same sign-in as the other apps; this page
+     opens only for managers, and the database lets only managers read this row. */
+  who:null,
+  init:function(me){
+    var W=window.WorkshopAuth;this.who=me||null;
+    this.cfg=(W&&W.signedIn()&&me)?{url:W.cfg.url,key:W.cfg.key,email:me.display_name,table:'workspaces'}:null;
+    this.status=this.on()?'idle':'local';
+  },
+  on:function(){return !!(this.cfg&&window.WorkshopAuth&&WorkshopAuth.signedIn());},
+  known:function(){var W=window.WorkshopAuth;return W?{url:W.cfg.url,key:W.cfg.key}:{};},
+  base:function(){return String(this.cfg.url||'').replace(/\/+$/,'');},
+  /* Adopted sessions are read fresh from their owner each time and written back after a
+     refresh, so this app and the invoices app keep one token chain between them. */
+  token:async function(){
+    var tok=await WorkshopAuth.token();
+    if(!tok)throw new Error('not signed in');
+    return tok;
+  },
+  signIn:async function(){var me=await WorkshopAuth.requireArea('prasymai',{lang:lang,title:'Prašymai'});this.init(me);render();return this.sync();},
+  signOut:function(){WorkshopAuth.logout();location.reload();},
+  rest:async function(path,opts){
+    var tok=await this.token(),o=Object.assign({},opts||{});
+    o.headers=Object.assign({apikey:this.cfg.key,Authorization:'Bearer '+tok,'Content-Type':'application/json'},o.headers||{});
+    var r=await fetch(this.base()+'/rest/v1/'+path,o);
+    if(!r.ok)throw new Error('HTTP '+r.status+' '+(await r.text()).slice(0,160));
+    var x=await r.text();return x?JSON.parse(x):null;
+  },
+  soon:function(){if(!this.on())return;clearTimeout(this._t);this._t=setTimeout(this.sync.bind(this),1200);},
+  sync:async function(){
+    if(!this.on()){this.status='local';syncChip();return {ok:false};}
+    if(this._busy)return this._busy;
+    var self=this,table=this.cfg.table||'workspaces';
+    this._busy=(async function(){
+      self.status='syncing';syncChip();
+      try{
+        var rows=await self.rest(table+'?id=eq.'+encodeURIComponent(ROW_ID)+'&select=id,data');
+        var changed=merge(rows&&rows[0]&&rows[0].data);
+        // requests the workers sent → registry (status "pateiktas"), then out of the inbox
+        var inbox=await self.rest(INBOX+'?select=id,data,created_at&order=created_at');
+        var taken=[];
+        (inbox||[]).forEach(function(x){var r=x.data||{};if(!r.employee)return;
+          if(!S.requests[x.id]){r.id=x.id;r.status=r.status||'pateiktas';r.fromWorker=true;r.createdAt=r.createdAt||Date.parse(x.created_at)||Date.now();r.updatedAt=Date.now();S.requests[x.id]=r;changed=true;}
+          taken.push(x.id);});
+        await self.rest(table,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+          body:JSON.stringify({id:ROW_ID,data:S,updated_at:new Date().toISOString(),updated_by:((self.cfg.email||'').split('@')[0]||'prasymai')})});
+        if(taken.length)await self.rest(INBOX+'?id=in.('+taken.map(encodeURIComponent).join(',')+')',{method:'DELETE'});
+        await self.rest(table,{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},
+          body:JSON.stringify({id:SET_ROW,data:{settings:S.settings},updated_at:new Date().toISOString(),updated_by:'prasymai'})});
+        if(taken.length&&changed)toast(tf('inboxIn',{n:taken.length}));
+        self.status='ok';self.msg='';self.last=Date.now();
+        if(changed){persist(false);if(!document.activeElement||!/^(INPUT|SELECT)$/.test(document.activeElement.tagName))render();}
+        syncChip();return {ok:true};
+      }catch(e){self.status='error';self.msg=(e&&e.message)||'';syncChip();return {ok:false,error:self.msg};}
+      finally{self._busy=null;}
+    })();
+    return this._busy;
+  }
+};
+/* per record, newest wins; deletions travel as tombstones */
+function merge(remote){
+  if(!remote||typeof remote!=='object')return false;
+  var changed=false,rq=remote.requests||{};
+  Object.keys(rq).forEach(function(id){var r=rq[id],l=S.requests[id];if(!l||(r.updatedAt||0)>(l.updatedAt||0)){S.requests[id]=r;changed=true;}});
+  if(remote.settings&&(remote.settings.updatedAt||0)>(S.settings.updatedAt||0)){S.settings=Object.assign({},DEFAULT_SETTINGS,remote.settings);changed=true;}
+  return changed;
+}
+
+/* ================= views ================= */
+var app=document.getElementById('app');
+function headHTML(){
+  if(!OFFICE){
+    return '<header class="head"><div class="brand"><div class="mark">'+MARK+'</div><div><h1>'+t('title')+'</h1><p class="sub"><a href="'+HUB_URL+'">'+t('hub')+'</a> · '+t('subW')+'</p></div></div>'+
+      '<div class="ctl"><div class="seg" role="group" aria-label="Language"><button type="button" data-lang="lt" aria-pressed="'+(lang==='lt')+'">LT</button><button type="button" data-lang="en" aria-pressed="'+(lang==='en')+'">EN</button></div></div></header>'+
+      '<nav class="tabs"><a href="#naujas" aria-current="page">'+t('tNew')+'</a><a href="#registras" id="go-office">'+t('tReg')+' 🔒</a></nav>';
+  }
+  var now=new Date(),key=ym(now),act=live().filter(function(r){return activeIn(r,key);});
+  var outToday=live().filter(function(r){var rr=recRange(r);return rr[0]<=now&&addDays(rr[1],1)>now;}).length;
+  return '<header class="head"><div class="brand"><div class="mark">'+MARK+'</div><div><h1>'+t('title')+'</h1><p class="sub"><a href="'+HUB_URL+'">'+t('hub')+'</a> · '+t('sub')+'</p></div></div>'+
+    '<dl class="meta"><div><dt>'+monthName(key,true)+'</dt><dd>'+pad(act.length)+'</dd></div><div><dt>'+(lang==='lt'?'Šiandien nedirba':'Off today')+'</dt><dd>'+pad(outToday)+'</dd></div><div><dt>'+(lang==='lt'?'Iš viso':'Total')+'</dt><dd>'+pad(list().length)+'</dd></div></dl>'+
+    '<div class="ctl"><button type="button" class="sync" id="sync-chip" data-s="'+Cloud.status+'">'+syncLabel()+'</button>'+
+    '<div class="seg" role="group" aria-label="Language"><button type="button" data-lang="lt" aria-pressed="'+(lang==='lt')+'">LT</button><button type="button" data-lang="en" aria-pressed="'+(lang==='en')+'">EN</button></div></div></header>'+
+    '<nav class="tabs"><a href="#naujas" aria-current="'+(view==='naujas'?'page':'false')+'">'+(editId?t('editing'):t('tNew'))+'</a>'+
+    '<a href="#registras" aria-current="'+(view==='registras'?'page':'false')+'">'+t('tReg')+' <b>'+list().length+'</b></a>'+
+    '<a href="#nustatymai" aria-current="'+(view==='nustatymai'?'page':'false')+'">'+t('tSet')+'</a></nav>';
+}
+function syncLabel(){
+  var s=Cloud.status;
+  return '<i></i>'+(s==='ok'?tf('syncOk',{t:fmtTs(Cloud.last).slice(11)}):s==='syncing'?t('syncIng'):s==='error'?t('syncErr'):s==='idle'?t('syncNow'):t('syncLocal'));
+}
+function syncChip(){var c=document.getElementById('sync-chip');if(c){c.setAttribute('data-s',Cloud.status);c.innerHTML=syncLabel();c.title=Cloud.msg||'';}}
+
+/* ----- new request ----- */
+function sameEmp(a,b){return (a||'').trim().toLowerCase()===(b||'').trim().toLowerCase();}
+function overlaps(f){
+  if(!f.employee.trim()||!f.from)return [];
+  var a=parse(f.from),b=parse(f.type==='atostogos'?(f.to||f.from):f.from);
+  return live().filter(function(r){if(r.id===editId||!sameEmp(r.employee,f.employee))return false;var rr=recRange(r);return rr[0]<=b&&rr[1]>=a;});
+}
+function names(){var m={};list().forEach(function(r){if(r.employee)m[r.employee.trim()]=r.position||m[r.employee.trim()]||'';});return m;}
+function renderNew(){
+  var f=form, isA=f.type==='atostogos', a=parse(f.from), b=parse(isA?(f.to||f.from):f.from);
+  if(!calMonth)calMonth=ym(a||new Date());
+  var nm=names(), positions={};Object.keys(nm).forEach(function(k){if(nm[k])positions[nm[k]]=1;});
+  var types='<div class="types" role="group">'+TYPES.map(function(ty){return '<button type="button" class="type" data-t="'+ty+'" data-type="'+ty+'" aria-pressed="'+(f.type===ty)+'">'+IC[ty]+'<b>'+t(ty)+'</b><small>'+t(ty+'S')+'</small></button>';}).join('')+'</div>';
+  var emp='<div class="row"><label class="fld'+(formErr.employee?' err':'')+'"><span>'+t('name')+'</span><input id="f-employee" data-f="employee" list="dl-names" autocomplete="off" placeholder="'+t('namePh')+'" value="'+esc(f.employee)+'">'+(formErr.employee?'<span class="msg">'+formErr.employee+'</span>':'')+'</label>'+
+    (isA?'<label class="fld"><span>'+t('pos')+'</span><input id="f-position" data-f="position" list="dl-pos" autocomplete="off" placeholder="'+t('posPh')+'" value="'+esc(f.position)+'"></label>':'<span></span>')+'</div>'+
+    '<datalist id="dl-names">'+Object.keys(nm).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>'+
+    '<datalist id="dl-pos">'+Object.keys(positions).sort().map(function(n){return '<option value="'+esc(n)+'">';}).join('')+'</datalist>';
+  var dates='';
+  if(isA){
+    dates+='<div class="radios" role="group" aria-label="'+t('leave')+'"><label><input type="radio" name="leave" value="kasmetines"'+(f.leave!=='nemokamos'?' checked':'')+'>'+t('kasm')+'</label><label><input type="radio" name="leave" value="nemokamos"'+(f.leave==='nemokamos'?' checked':'')+'>'+t('nemok')+'</label></div>';
+    dates+='<div class="row"><label class="fld'+(formErr.from?' err':'')+'"><span>'+t('from')+'</span><input type="date" id="f-from" data-f="from" value="'+esc(f.from)+'"></label><label class="fld'+(formErr.to?' err':'')+'"><span>'+t('to')+'</span><input type="date" id="f-to" data-f="to" value="'+esc(f.to)+'"'+(f.from?' min="'+f.from+'"':'')+'>'+(formErr.to?'<span class="msg">'+formErr.to+'</span>':'')+'</label></div>';
+  }else{
+    dates+='<div class="row"><label class="fld'+(formErr.from?' err':'')+'"><span>'+t('day')+'</span><input type="date" id="f-from" data-f="from" value="'+esc(f.from)+'">'+(formErr.from?'<span class="msg">'+formErr.from+'</span>':'')+'</label><span></span></div>';
+  }
+  dates+='<div id="dates-live" style="display:flex;flex-direction:column;gap:14px">'+liveDates()+'</div>';
+  var det='<div class="row"><label class="fld"><span>'+t('reqDate')+'</span><input type="date" id="f-reqDate" data-f="reqDate" value="'+esc(f.reqDate)+'"></label><label class="fld"><span>'+t('city')+'</span><input id="f-city" data-f="city" placeholder="'+esc(setting('city'))+'" value="'+esc(f.city)+'"></label></div>';
+  var acts='<div class="actions"><button type="button" class="btn accent" id="act-print">'+IC.print+(editId?t('update'):t('savePrint'))+'</button><button type="button" class="btn ghost" id="act-save">'+IC.save+(editId?t('updateOnly'):t('saveOnly'))+'</button><span class="sp"></span>'+
+    (editId?'<button type="button" class="lnk" id="act-cancel">'+t('cancelEdit')+'</button>':'<button type="button" class="lnk" id="act-clear">'+t('clear')+'</button>')+'</div>';
+  return '<div class="compose"><section class="panel" data-t="'+f.type+'" aria-label="'+t('tNew')+'">'+
+    '<div class="step"><h2>'+t('s1')+'</h2>'+types+'</div>'+
+    '<div class="step"><h2>'+t('s2')+'</h2>'+emp+'</div>'+
+    '<div class="step"><h2>'+t('s3')+'</h2>'+dates+'</div>'+
+    '<div class="step"><h2>'+t('s4')+'</h2>'+det+'</div>'+acts+'</section>'+
+    '<aside class="preview"><div class="preview-h"><span>'+t('preview')+'</span><span>'+t('printsAs')+'</span></div><div class="paperwrap" id="paper">'+sheetHTML(formRec())+'</div></aside></div>';
+}
+/* the calendar, summary and warnings refresh on their own so the inputs above keep focus */
+function liveDates(){
+  var f=form, isA=f.type==='atostogos', a=parse(f.from), b=parse(isA?(f.to||f.from):f.from), dates='';
+  dates+=pickerHTML(a,b,isA);
+  if(a&&b&&b>=a){
+    var wd=workDays(a,b);
+    if(isA) dates+='<div class="sum"><b>'+wd+'</b><span>'+t('wdaysLong')+' · '+calDays(a,b)+' '+t('cdays')+' · '+f.from+' – '+(f.to||f.from)+'</span></div>';
+    else{
+      var mk=ym(a),q=Math.floor(a.getMonth()/3);
+      var same=live().filter(function(r){return r.type===f.type&&r.id!==editId&&sameEmp(r.employee,f.employee)&&f.employee.trim();});
+      var inM=same.filter(function(r){return r.from.slice(0,7)===mk;}).length, inQ=same.filter(function(r){var d=parse(r.from);return d.getFullYear()===a.getFullYear()&&Math.floor(d.getMonth()/3)===q;}).length;
+      dates+='<div class="sum"><b>'+f.from+'</b><span>'+(isWork(a)?(lang==='lt'?'darbo diena':'working day'):'<span style="color:var(--bad)">'+(holName(a)||t('weekend'))+'</span>')+
+        (f.employee.trim()?' · '+t('thisMonth')+': '+inM+' · '+t('thisQuarter')+': '+inQ:'')+'</span></div>';
+    }
+  }
+  var ov=overlaps(f);
+  if(ov.length) dates+='<div class="warnbox">'+esc(tf('overlap',{name:f.employee.trim(),list:ov.map(function(r){return t(r.type)+' '+r.from+(r.to&&r.to!==r.from?' – '+r.to:'');}).join(', ')}))+'</div>';
+  if(isA&&f.leave!=='nemokamos') dates+='<label class="chk"><input type="checkbox" id="f-pay" data-f="pay"'+(f.pay?' checked':'')+'>'+t('pay')+'</label>';
+  return dates;
+}
+function refreshLive(){var l=document.getElementById('dates-live');if(l)l.innerHTML=liveDates();refreshPaper();}
+function formRec(){var f=form;return {type:f.type,employee:f.employee,position:f.position,leave:f.leave,pay:f.pay,from:f.from,to:f.type==='atostogos'?(f.to||f.from):f.from,reqDate:f.reqDate,city:f.city||setting('city')};}
+function pickerHTML(a,b,isRange){
+  var mb=monthBounds(calMonth),first=mb[0],last=mb[1],lead=(first.getDay()+6)%7,today=iso(new Date());
+  var wd=(lang==='lt'?WD_LT:WD_EN).map(function(w){return '<span class="wd">'+w+'</span>';}).join('');
+  var takenBy={};live().forEach(function(r){if(r.id===editId)return;var rr=recRange(r);for(var d=new Date(rr[0]);d<=rr[1];d.setDate(d.getDate()+1)){if(d<first||d>last)continue;var k=iso(d);(takenBy[k]=takenBy[k]||[]).push(r.employee);}});
+  var cells='';for(var i=0;i<lead;i++)cells+='<span class="d out"></span>';
+  for(var d=new Date(first);d<=last;d.setDate(d.getDate()+1)){
+    var k=iso(d),w=d.getDay(),h=holName(d),cls='d';
+    if(w===0||w===6)cls+=' we';if(h)cls+=' hol';if(k===today)cls+=' today';
+    if(a&&b&&d>=a&&d<=b)cls+=' in';if(a&&k===iso(a)||b&&k===iso(b))cls+=' edge';
+    var tk=takenBy[k]||[];
+    cells+='<button type="button" class="'+cls+'" data-day="'+k+'" title="'+esc([k,h,tk.length?t('taken')+': '+tk.join(', '):''].filter(Boolean).join(' · '))+'">'+d.getDate()+
+      (tk.length?'<span class="taken">'+tk.slice(0,3).map(function(){return '<i></i>';}).join('')+'</span>':'')+'</button>';
+  }
+  return '<div class="cal"><div class="cal-h"><button type="button" data-cal="-1" aria-label="prev">'+IC.prev+'</button><b>'+monthName(calMonth,true)+'</b><button type="button" data-cal="1" aria-label="next">'+IC.next+'</button></div>'+
+    '<div class="cal-g">'+wd+cells+'</div><div class="cal-f"><span>'+(isRange?t('pickHint'):t('pickHint1'))+'</span><span><i style="background:var(--bad)"></i>'+t('holiday')+'</span><span><i style="background:var(--muted)"></i>'+t('taken')+'</span></div></div>';
+}
+function validate(){
+  var f=form,e={};
+  if(!f.employee.trim())e.employee=t('errName');
+  if(!f.from)e.from=t('errDate');
+  if(f.type==='atostogos'&&f.from&&f.to&&f.to<f.from)e.to=t('errRange');
+  formErr=e;return !Object.keys(e).length;
+}
+function saveForm(){
+  if(!validate()){render();var first=app.querySelector('.fld.err input');if(first)first.focus();return null;}
+  var f=form,now=Date.now(),old=editId&&S.requests[editId];
+  var r=Object.assign({},old||{},{
+    id:old?old.id:uid(),type:f.type,employee:f.employee.trim().replace(/\s+/g,' '),position:f.type==='atostogos'?f.position.trim():(old&&old.position)||(names()[f.employee.trim()]||''),
+    leave:f.type==='atostogos'?f.leave:null,pay:f.type==='atostogos'&&f.leave!=='nemokamos'?!!f.pay:false,
+    from:f.from,to:f.type==='atostogos'?(f.to||f.from):f.from,reqDate:f.reqDate||iso(new Date()),city:(f.city||setting('city')).trim(),
+    company:f.type==='atostogos'?setting('companyAtost'):setting('companyDay'),director:setting('director'),
+    status:(old&&old.status)||'pateiktas',createdAt:(old&&old.createdAt)||now,updatedAt:now
+  });
+  if(!OFFICE){sendToInbox(r);return r;}
+  S.requests[r.id]=r;persist();
+  return r;
+}
+function sendToInbox(r){
+  WorkshopAuth.rest(INBOX,{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:r.id,data:r})})
+    .then(function(){toast(t('sent'),3600);})
+    .catch(function(e){toast(t('sendErr')+' ('+(e&&e.message||e)+')',6000);});
+}
+function resetForm(keepType){var ty=form.type;form=blankForm();if(keepType)form.type=ty;formErr={};editId=null;calMonth=null;pickMode='from';}
+
+/* ----- register ----- */
+function renderReg(){
+  var all=list(), key=regMonth, mb=monthBounds(key);
+  var counts={};all.forEach(function(r){monthsOf(r).forEach(function(m){counts[m]=(counts[m]||0)+1;});});
+  var keys=Object.keys(counts);if(keys.indexOf(key)<0)keys.push(key);if(keys.indexOf(ym(new Date()))<0)keys.push(ym(new Date()));
+  keys.sort().reverse();
+  var side='<nav class="months" aria-label="'+t('months')+'"><h3>'+t('months')+'</h3>';var yr='';
+  keys.forEach(function(k){var y=k.slice(0,4);if(y!==yr){yr=y;side+='<div class="yr">'+y+'</div>';}
+    side+='<button type="button" data-month="'+k+'" aria-current="'+(k===key)+'"><span>'+(lang==='lt'?MONTHS_LT:MONTHS_EN)[+k.slice(5)-1]+(lang==='lt'?'':'')+'</span><b>'+(counts[k]||0)+'</b></button>';});
+  side+='</nav>';
+  var q=regQ.trim().toLowerCase();
+  var inMonth=all.filter(function(r){return activeIn(r,key);}).sort(function(x,y){return x.from<y.from?-1:x.from>y.from?1:x.employee.localeCompare(y.employee);});
+  var shown=inMonth.filter(function(r){return (regType==='all'||r.type===regType)&&(!q||(r.employee||'').toLowerCase().indexOf(q)>=0);});
+  var liveM=inMonth.filter(function(r){return r.status!=='atsauktas';});
+  var people={};liveM.forEach(function(r){people[r.employee.toLowerCase()]=1;});
+  var atWd=liveM.filter(function(r){return r.type==='atostogos';}).reduce(function(s,r){return s+wdIn(r,key);},0);
+  var pd=liveM.filter(function(r){return r.type!=='atostogos';}).length;
+  var top='<div class="reg-top"><h2><small>'+tf('active',{})+'</small>'+monthName(key,true)+'</h2><div class="nav">'+
+    '<button type="button" class="ib" data-mnav="-1" aria-label="prev">'+IC.prev+'</button><button type="button" class="btn ghost sm" data-mnav="0">'+t('today')+'</button><button type="button" class="ib" data-mnav="1" aria-label="next">'+IC.next+'</button>'+
+    '<div class="exp"><button type="button" class="btn sm" id="exp-btn" aria-expanded="'+openMenu+'">'+IC.dl+t('export')+'</button>'+(openMenu?exportMenu():'')+'</div></div></div>';
+  var stats='<dl class="stats"><div><dt>'+t('stReq')+'</dt><dd>'+liveM.length+'</dd></div><div><dt>'+t('stPeople')+'</dt><dd>'+Object.keys(people).length+'</dd></div><div><dt>'+t('stAtost')+'</dt><dd>'+atWd+'</dd></div><div><dt>'+t('stDays')+'</dt><dd>'+pd+'</dd></div></dl>';
+  var filters='<div class="filters"><button type="button" data-rtype="all" aria-pressed="'+(regType==='all')+'"><i></i>'+t('all')+'</button>'+
+    TYPES.map(function(ty){return '<button type="button" data-t="'+ty+'" data-rtype="'+ty+'" aria-pressed="'+(regType===ty)+'"><i></i>'+T[lang].pl[ty]+'</button>';}).join('')+
+    '<label class="sr" for="r-q">'+t('search')+'</label><input id="r-q" type="search" placeholder="'+t('search')+'" value="'+esc(regQ)+'"></div>';
+  return '<div class="reg">'+side+'<div class="reg-main">'+top+stats+monthCal(key,shown)+filters+
+    (shown.length?'<div class="list">'+shown.map(function(r){return itemHTML(r,key);}).join('')+'</div>':'<div class="empty">'+(inMonth.length?t('emptyQ'):t('empty'))+'</div>')+'</div></div>';
+}
+function monthCal(key,recs){
+  var mb=monthBounds(key),first=mb[0],last=mb[1],lead=(first.getDay()+6)%7,today=iso(new Date());
+  var start=addDays(first,-lead),cells='',wd=(lang==='lt'?WD_LT:WD_EN).map(function(w){return '<span class="wd">'+w+'</span>';}).join('');
+  var liveR=recs.filter(function(r){return r.status!=='atsauktas';});
+  var weeks=Math.ceil((lead+last.getDate())/7);
+  for(var i=0;i<weeks*7;i++){
+    var d=addDays(start,i),k=iso(d),out=d<first||d>last,h=holName(d),w=d.getDay(),cls='mday';
+    if(out)cls+=' out';else{if(w===0||w===6)cls+=' we';if(h)cls+=' hol';if(k===today)cls+=' today';}
+    var who=out?[]:liveR.filter(function(r){var rr=recRange(r);return d>=rr[0]&&d<=rr[1]&&(r.type!=='atostogos'||isWork(d));});
+    cells+='<div class="'+cls+'"><span class="n"><span>'+d.getDate()+'</span>'+(h&&!out?'<em title="'+esc(h)+'">'+esc(h)+'</em>':'')+'</span>'+
+      who.slice(0,3).map(function(r){return '<span class="pill" data-t="'+r.type+'" title="'+esc(r.employee+' · '+t(r.type))+'">'+esc(r.employee)+'</span>';}).join('')+
+      (who.length>3?'<span class="more">+'+(who.length-3)+'</span>':'')+'</div>';
+  }
+  return '<div class="mcal"><div class="mcal-g">'+wd+cells+'</div></div>';
+}
+function itemHTML(r,key){
+  var rr=recRange(r),total=workDays(rr[0],rr[1]),inm=wdIn(r,key),isA=r.type==='atostogos';
+  var when=isA?r.from+' – '+r.to:r.from;
+  var sub=isA?(r.leave==='nemokamos'?t('nemok'):t('kasm')):(lang==='lt'?'prašymas ':'filed ')+r.reqDate;
+  var st='<select data-status="'+r.id+'" data-v="'+(r.status||'pateiktas')+'" aria-label="status">'+['pateiktas','patvirtintas','atsauktas'].map(function(s){return '<option value="'+s+'"'+(r.status===s?' selected':'')+'>'+T[lang].status[s]+'</option>';}).join('')+'</select>'+
+    '<small>'+(r.printedAt?tf('printedAt',{d:fmtTs(r.printedAt).slice(0,10)}):t('notPrinted'))+'</small>';
+  var acts=delAsk===r.id?'<span class="confirm">'+t('delQ')+' <button type="button" class="lnk bad" data-delyes="'+r.id+'">'+t('yes')+'</button><button type="button" class="lnk" data-delno="1">'+t('no')+'</button></span>':
+    '<button type="button" class="lnk" data-print="'+r.id+'">'+t('aPrint')+'</button><button type="button" class="lnk" data-word="'+r.id+'">'+t('aWord')+'</button><button type="button" class="lnk" data-edit="'+r.id+'">'+t('aEdit')+'</button><button type="button" class="lnk bad" data-del="'+r.id+'">'+t('aDel')+'</button>';
+  return '<div class="item'+(r.status==='atsauktas'?' cancel':'')+'" data-t="'+r.type+'"><span class="bar"></span>'+
+    '<div class="who"><b>'+esc(r.employee)+'</b><small>'+t(r.type)+(r.position?' · '+esc(r.position):'')+'</small></div>'+
+    '<div class="when">'+when+'<small>'+esc(sub)+'</small></div>'+
+    '<div class="days"><b>'+(isA?inm:'1')+'</b><small>'+(isA?(inm!==total?t('wdays')+' '+t('inMonth')+' · '+total+' '+t('total'):t('wdays')):(isWork(rr[0])?t('wdays'):(holName(rr[0])||t('weekend'))))+'</small></div>'+
+    '<div class="st">'+st+'</div><div class="acts">'+acts+'</div></div>';
+}
+function exportMenu(){
+  return '<div class="menu" role="menu"><button type="button" data-exp="xm">'+t('exMonthX')+'<small>'+t('exMonthXs')+'</small></button><button type="button" data-exp="xa">'+t('exAllX')+'<small>'+t('exAllXs')+'</small></button>'+
+    '<button type="button" data-exp="cm">'+t('exMonthC')+'<small>'+t('exMonthCs')+'</small></button><hr><button type="button" data-exp="json">'+t('exJson')+'<small>'+t('exJsons')+'</small></button>'+
+    '<button type="button" data-exp="import">'+t('imJson')+'<small>'+t('imJsons')+'</small></button></div>';
+}
+
+/* ----- settings ----- */
+function renderSet(){
+  var k=Cloud.known(),signed=Cloud.on(),c=Cloud.cfg||{};
+  var sync='<div class="panel"><h2>'+t('setSync')+'</h2><p>'+t('syncAbout')+'</p>';
+  if(signed){
+    sync+='<dl class="kv"><dt>'+t('signedAs')+'</dt><dd>'+esc(c.email||'—')+'</dd><dt>URL</dt><dd>'+esc(c.url)+'</dd><dt>Status</dt><dd>'+esc(Cloud.status==='ok'?tf('syncOk',{t:fmtTs(Cloud.last)}):Cloud.status==='error'?t('syncErr')+': '+Cloud.msg:Cloud.status)+'</dd></dl>'+
+      '<div class="actions" style="border:0;padding:0"><button type="button" class="btn sm" id="s-sync">'+t('syncNow')+'</button>'+'<button type="button" class="btn ghost sm" id="s-out">'+t('signOut')+'</button>'+'</div>';
+  }else{
+    sync+='<div class="actions" style="border:0;padding:0"><button type="button" class="btn sm" id="s-in">'+t('signIn')+'</button></div>';
+  }
+  sync+='</div>';
+  var doc='<div class="panel"><h2>'+t('setDoc')+'</h2><p>'+t('setDocS')+'</p>'+
+    '<label class="fld"><span>'+t('coA')+'</span><input id="s-coA" value="'+esc(setting('companyAtost'))+'"></label>'+
+    '<label class="fld"><span>'+t('coD')+'</span><input id="s-coD" value="'+esc(setting('companyDay'))+'"></label>'+
+    '<label class="fld"><span>'+t('dir')+'</span><input id="s-dir" value="'+esc(setting('director'))+'"></label>'+
+    '<label class="fld"><span>'+t('city')+'</span><input id="s-city" value="'+esc(setting('city'))+'"></label>'+
+    '<div><button type="button" class="btn sm" id="s-save">'+t('saveSet')+'</button></div></div>';
+  var pr='<div class="panel"><h2>'+t('setPrint')+'</h2><p>'+t('printAbout')+'</p><p>'+t('kiosk')+'</p><p><code>chrome.exe --kiosk-printing "'+esc(location.href.split('#')[0])+'"</code></p></div>';
+  var data='<div class="panel"><h2>'+t('setData')+'</h2><p>'+tf('dataAbout',{n:list().length})+'</p><div class="actions" style="border:0;padding:0"><button type="button" class="btn ghost sm" data-exp="json">'+t('exJson')+'</button><button type="button" class="btn ghost sm" data-exp="import">'+t('imJson')+'</button></div></div>';
+  return '<div class="set"><div style="display:flex;flex-direction:column;gap:24px">'+doc+pr+'</div><div style="display:flex;flex-direction:column;gap:24px">'+sync+data+'</div></div>';
+}
+
+/* ================= render + routing ================= */
+function render(){
+  ROOT.lang=lang;
+  var body=view==='registras'?renderReg():view==='nustatymai'?renderSet():renderNew();
+  app.innerHTML='<div class="page">'+headHTML()+'<main>'+body+'</main></div>';
+}
+var ROOT=document.documentElement;
+function route(){var h=location.hash.slice(1);
+  if(!OFFICE&&h&&h!=='naujas'){try{sessionStorage.setItem('prasymai.office','1');}catch(e){}location.hash='';location.reload();return;}
+  view=['naujas','registras','nustatymai'].indexOf(h)>=0?h:'naujas';openMenu=false;delAsk=null;render();}
+function refreshPaper(){var p=document.getElementById('paper');if(p)p.innerHTML=sheetHTML(formRec());}
+function toast(m,ms){var el=document.createElement('div');el.className='toast';el.setAttribute('role','status');el.textContent=m;document.body.appendChild(el);setTimeout(function(){el.remove();},ms||2600);}
+
+/* ================= print / export ================= */
+function printRecs(recs){
+  var box=document.getElementById('print');box.innerHTML=recs.map(sheetHTML).join('');
+  var now=Date.now();recs.forEach(function(r){if(S.requests[r.id]){S.requests[r.id].printedAt=now;S.requests[r.id].updatedAt=now;}});persist();
+  setTimeout(function(){window.print();},60);
+}
+function download(name,blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},800);}
+function fileSafe(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');}
+function wordDoc(r){
+  var d=docOf(r),m=d.margins==='m-a'?'2.54cm 2.54cm 2.54cm 2.54cm':'2cm 1cm 2cm 3cm';
+  var html=d.html.replace(/<div class="gap" style="--n:(\d+)"><\/div>/g,function(_,n){return new Array(+n+1).join('<p>&nbsp;</p>');})
+    .replace(/<div class="sig">[\s\S]*$/,'<table style="width:100%;border-collapse:collapse"><tr><td style="width:38%"></td><td style="width:32%;border-bottom:1px solid #000">&nbsp;</td><td style="width:30%;text-align:right">'+esc((r.employee||'').trim())+'</td></tr><tr><td></td><td style="text-align:center;font-size:11pt">(Parašas)</td><td></td></tr></table>')
+    .replace(/class="c b"/g,'style="text-align:center;font-weight:bold"').replace(/class="c"/g,'style="text-align:center"').replace(/class="ind"/g,'style="text-indent:1cm"').replace(/<span class="ph">[^<]*<\/span>/g,'');
+  var doc='<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8"><title>Prašymas</title>'+
+    '<style>@page Section1{size:21cm 29.7cm;margin:'+m+'}div.Section1{page:Section1}body,p,td{font-family:"Times New Roman";font-size:12pt;line-height:115%;margin:0}</style></head><body><div class="Section1">'+html+'</div></body></html>';
+  download(fileSafe('Prasymas_'+t(r.type)+'_'+r.employee+'_'+r.from)+'.doc',new Blob(['﻿',doc],{type:'application/msword'}));
+}
+function rowsFor(recs,key){
+  return recs.map(function(r,i){var rr=recRange(r),o={};
+    o[t('colNo')]=i+1;o[t('colType')]=t(r.type)+(r.type==='atostogos'?' ('+(r.leave==='nemokamos'?t('nemok'):t('kasm')).toLowerCase()+')':'');
+    o[t('colName')]=r.employee;o[t('colPos')]=r.position||'';o[t('colFrom')]=r.from;o[t('colTo')]=r.to||r.from;
+    o[t('colWd')]=r.type==='atostogos'?workDays(rr[0],rr[1]):1;if(key)o[t('colWdM')]=r.type==='atostogos'?wdIn(r,key):1;
+    o[t('colReq')]=r.reqDate;o[t('colSt')]=T[lang].status[r.status||'pateiktas'];o[t('colPr')]=r.printedAt?fmtTs(r.printedAt):'';o[t('colCr')]=fmtTs(r.createdAt);return o;});
+}
+function monthRecs(key){return list().filter(function(r){return activeIn(r,key);}).sort(function(a,b){return a.from<b.from?-1:a.from>b.from?1:0;});}
+function loadXLSX(){return new Promise(function(res,rej){if(window.XLSX)return res(window.XLSX);var s=document.createElement('script');s.src=XLSX_URL;s.onload=function(){res(window.XLSX);};s.onerror=rej;document.head.appendChild(s);});}
+function csv(rows){if(!rows.length)return '';var cols=Object.keys(rows[0]);var q=function(v){v=String(v==null?'':v);return /[;"\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};return [cols.map(q).join(';')].concat(rows.map(function(r){return cols.map(function(c){return q(r[c]);}).join(';');})).join('\r\n');}
+function exportCSV(key){download('Prasymai_'+key+'.csv',new Blob(['﻿'+csv(rowsFor(monthRecs(key),key))],{type:'text/csv;charset=utf-8'}));}
+async function exportXLSX(scope){
+  try{
+    var X=await loadXLSX(),wb=X.utils.book_new();
+    var add=function(name,rows){var ws=X.utils.json_to_sheet(rows.length?rows:[{}]);ws['!cols']=Object.keys(rows[0]||{}).map(function(c){return {wch:Math.max(10,c.length+2,c===t('colName')?24:0,c===t('colType')?22:0)};});X.utils.book_append_sheet(wb,ws,name.slice(0,31));};
+    if(scope==='month'){add(monthName(regMonth,true),rowsFor(monthRecs(regMonth),regMonth));X.writeFile(wb,'Prasymai_'+regMonth+'.xlsx');}
+    else{
+      var ms={};list().forEach(function(r){monthsOf(r).forEach(function(m){ms[m]=1;});});
+      var keys=Object.keys(ms).sort();
+      add(lang==='lt'?'Visi':'All',rowsFor(list().sort(function(a,b){return a.from<b.from?-1:1;})));
+      keys.forEach(function(k){add(k,rowsFor(monthRecs(k),k));});
+      X.writeFile(wb,'Prasymai_visi_'+iso(new Date())+'.xlsx');
+    }
+  }catch(e){toast(lang==='lt'?'Excel nepasiekiamas be interneto — atsisiunčiamas CSV':'Excel needs internet — downloading CSV instead',3600);exportCSV(regMonth);}
+}
+function exportJSON(){download('Prasymai_atsargine_'+iso(new Date())+'.json',new Blob([JSON.stringify({app:'dedes-prasymai',v:1,exportedAt:new Date().toISOString(),data:S},null,1)],{type:'application/json'}));}
+function importJSON(){
+  var inp=document.createElement('input');inp.type='file';inp.accept='.json,application/json';
+  inp.onchange=function(){var f=inp.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){
+    try{var j=JSON.parse(rd.result),d=j.data||j;if(!d.requests)throw 0;var before=list().length;merge(d);persist();render();toast(tf('imported',{n:Object.keys(d.requests).length}));}
+    catch(e){toast(t('badFile'));}};rd.readAsText(f);};
+  inp.click();
+}
+
+/* ================= events ================= */
+app.addEventListener('click',function(e){
+  var b=e.target.closest('button,a');if(!b)return;
+  if(b.matches('.tabs a')){openMenu=false;return;}
+  if(b.dataset.lang){lang=b.dataset.lang;try{localStorage.setItem('dedes.prasymai.lang',lang);}catch(_){}render();return;}
+  if(b.id==='sync-chip'){if(Cloud.on())Cloud.sync();else location.hash='nustatymai';return;}
+  /* new request */
+  if(b.dataset.type){form.type=b.dataset.type;formErr={};if(form.type!=='atostogos')form.to='';render();return;}
+  if(b.dataset.cal){calMonth=shiftMonth(calMonth,+b.dataset.cal);refreshLive();return;}
+  if(b.dataset.day){
+    var k=b.dataset.day;
+    if(form.type!=='atostogos'){form.from=k;}
+    else if(pickMode==='from'||!form.from){form.from=k;form.to=k;pickMode='to';}
+    else{if(k<form.from){form.from=k;}else{form.to=k;}pickMode='from';}
+    syncDateInputs();refreshLive();return;
+  }
+  if(b.id==='act-print'||b.id==='act-save'){
+    var was=!!editId,r=saveForm();if(!r)return;
+    if(b.id==='act-print'){printRecs([r]);if(OFFICE)toast(t('printed'));}else if(OFFICE)toast(was?t('updated'):t('saved'));
+    resetForm(true);if(was){location.hash='registras';}else render();return;
+  }
+  if(b.id==='act-clear'){resetForm(true);render();return;}
+  if(b.id==='act-cancel'){resetForm(true);location.hash='registras';return;}
+  /* register */
+  if(b.dataset.month){regMonth=b.dataset.month;delAsk=null;render();return;}
+  if(b.dataset.mnav!=null){regMonth=+b.dataset.mnav===0?ym(new Date()):shiftMonth(regMonth,+b.dataset.mnav);render();return;}
+  if(b.dataset.rtype){regType=b.dataset.rtype;render();return;}
+  if(b.id==='exp-btn'){openMenu=!openMenu;render();return;}
+  if(b.dataset.exp){var x=b.dataset.exp;openMenu=false;render();
+    if(x==='xm')exportXLSX('month');else if(x==='xa')exportXLSX('all');else if(x==='cm')exportCSV(regMonth);else if(x==='json')exportJSON();else if(x==='import')importJSON();return;}
+  if(b.dataset.print){printRecs([S.requests[b.dataset.print]]);render();toast(t('printed'));return;}
+  if(b.dataset.word){wordDoc(S.requests[b.dataset.word]);return;}
+  if(b.dataset.edit){var r2=S.requests[b.dataset.edit];editId=r2.id;
+    form={type:r2.type,employee:r2.employee,position:r2.position||'',leave:r2.leave||'kasmetines',pay:r2.pay!==false,from:r2.from,to:r2.type==='atostogos'?r2.to:'',reqDate:r2.reqDate,city:r2.city||''};
+    calMonth=r2.from.slice(0,7);formErr={};location.hash='naujas';return;}
+  if(b.dataset.del){delAsk=b.dataset.del;render();return;}
+  if(b.dataset.delno){delAsk=null;render();return;}
+  if(b.dataset.delyes){var r3=S.requests[b.dataset.delyes];r3.deleted=true;r3.updatedAt=Date.now();delAsk=null;persist();render();toast(t('deleted'));return;}
+  /* settings */
+  if(b.id==='s-save'){['coA','coD','dir','city'].forEach(function(){});
+    S.settings=Object.assign({},S.settings,{companyAtost:val('s-coA'),companyDay:val('s-coD'),director:val('s-dir'),city:val('s-city'),updatedAt:Date.now()});persist();render();toast(t('setSaved'));return;}
+  if(b.id==='s-sync'){Cloud.sync().then(render);return;}
+  if(b.id==='s-out'){WorkshopAuth.logout(true);leaveOffice();return;}
+  if(b.id==='s-in'){Cloud.signIn();return;}
+});
+function val(id){var el=document.getElementById(id);return el?el.value.trim():'';}
+var empT=null;
+function clearErr(el,f){if(!formErr[f])return;formErr[f]=null;var fl=el.closest('.fld');if(!fl)return;fl.classList.remove('err');var m=fl.querySelector('.msg');if(m)m.remove();}
+/* keep the typed date inputs in step with calendar clicks, without replacing the inputs */
+function syncDateInputs(skip){
+  var fr=document.getElementById('f-from'),to=document.getElementById('f-to');
+  if(fr&&skip!=='f-from')fr.value=form.from||'';
+  if(to){if(skip!=='f-to')to.value=form.to||'';to.min=form.from||'';}
+  ['from','to'].forEach(function(k){var e=document.getElementById('f-'+k);if(e)clearErr(e,k);});
+}
+document.addEventListener('click',function(e){if(openMenu&&!e.target.closest('.exp')){openMenu=false;render();}});
+app.addEventListener('input',function(e){
+  var el=e.target;
+  if(el.dataset.f){var f=el.dataset.f;form[f]=el.type==='checkbox'?el.checked:el.value;
+    if(f==='employee'&&form.type==='atostogos'&&!form.position){var p=names()[el.value.trim()];if(p){form.position=p;var pe=document.getElementById('f-position');if(pe)pe.value=p;}}
+    clearErr(el,f);
+    if(f==='from'||f==='to'){if(form.type==='atostogos'&&f==='from'&&form.from&&(!form.to||form.to<form.from))form.to=form.from;if(form.from)calMonth=form.from.slice(0,7);syncDateInputs(el.id);refreshLive();return;}
+    if(f==='employee'){refreshPaper();clearTimeout(empT);empT=setTimeout(refreshLive,350);return;}
+    refreshPaper();return;}
+  if(el.id==='r-q'){regQ=el.value;render();var q=document.getElementById('r-q');q.focus();try{q.setSelectionRange(regQ.length,regQ.length);}catch(_){}return;}
+});
+app.addEventListener('change',function(e){
+  var el=e.target;
+  if(el.name==='leave'){form.leave=el.value;refreshLive();return;}
+  if(el.dataset.status){var r=S.requests[el.dataset.status];r.status=el.value;r.updatedAt=Date.now();persist();render();return;}
+});
+window.addEventListener('hashchange',route);
+window.addEventListener('storage',function(e){if(e.key===STORE_KEY){load();if(!document.activeElement||!/^(INPUT|SELECT)$/.test(document.activeElement.tagName))render();}});
+window.addEventListener('focus',function(){Cloud.sync();});
+setInterval(function(){Cloud.sync();},60000);
+
+route();
+function leaveOffice(){try{sessionStorage.removeItem('prasymai.office');}catch(e){}location.hash='';location.reload();}
+if(OFFICE){
+  WorkshopAuth.requireArea('prasymai',{lang:lang,title:'Prašymai — registras'}).then(function(me){Cloud.init(me);render();Cloud.sync();});
+  WorkshopAuth.onChange(function(s){if(!s&&Cloud.who)leaveOffice();});
+}else{
+  // the form needs a signed-in workshop account to send; settings come from the office
+  (WorkshopAuth.signedIn()?WorkshopAuth.me():Promise.resolve(null)).then(function chk(me){
+    if(!me)return WorkshopAuth.gate({lang:lang,title:'Prašymai'}).then(chk);
+    return WorkshopAuth.rest('workspaces?id=eq.'+SET_ROW+'&select=data').then(function(rows){
+      var st=rows&&rows[0]&&rows[0].data&&rows[0].data.settings;
+      if(st){S.settings=Object.assign({},DEFAULT_SETTINGS,st);render();}
+    }).catch(function(){});
+  });
+}
+window.__prasymai={S:S,docOf:docOf,workDays:workDays,holidays:holidays,merge:merge,rowsFor:rowsFor};
+})();
+</script>
+</body>
+</html>

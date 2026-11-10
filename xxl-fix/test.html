@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="lt"><head><meta charset="utf-8"><title>XXL Fix — testai</title>
+<style>
+body{background:#0f1115;color:#e6e9ef;font:13px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;margin:0;padding:24px}
+h1{font-size:17px;margin:0 0 4px}
+#sum{margin:14px 0 18px;padding:12px 16px;border-radius:10px;font-size:15px;font-weight:700}
+.pass{background:rgba(61,220,132,.14);color:#3ddc84}
+.fail{background:rgba(255,92,92,.14);color:#ff5c5c}
+.t{padding:3px 0;border-bottom:1px solid #1e222b}
+.t.ok::before{content:"PASS  ";color:#3ddc84}
+.t.no::before{content:"FAIL  ";color:#ff5c5c}
+.t .d{color:#98a2b3;padding-left:6em;white-space:pre-wrap}
+h2{font-size:13px;color:#4da3ff;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.8px}
+</style></head>
+<body>
+<h1>XXL Ašių taisyklė — testai</h1>
+<div id="sum">vykdoma…</div>
+<div id="out"></div>
+
+<script>
+var P = 0, F = 0, out;
+function section(t){ var h=document.createElement("h2"); h.textContent=t; document.getElementById("out").appendChild(h); }
+function ck(name, cond, detail){
+  var d=document.createElement("div"); d.className="t "+(cond?"ok":"no");
+  d.innerHTML='<span>'+name+'</span>'+(detail&&!cond?'<div class="d">'+String(detail).replace(/[<>&]/g,function(c){return {'<':'&lt;','>':'&gt;','&':'&amp;'}[c];})+'</div>':'');
+  document.getElementById("out").appendChild(d);
+  cond ? P++ : F++;
+}
+function near(a,b,eps){ return Math.abs(a-b) <= (eps===undefined?1e-6:eps); }
+
+// physical machine-plane point of every hole, sorted — the geometry fingerprint
+function fingerprint(doc){
+  return doc.holes.map(function(h){
+    return [h.face===1||h.face===6?"T":"E", h.x.toFixed(4), h.y.toFixed(4), (h.z||0).toFixed(4), h.d].join("|");
+  }).sort();
+}
+function rotPts(doc, ccw){
+  return doc.holes.map(function(h){
+    var nx = ccw ? doc.DY - h.y : h.y;
+    var ny = ccw ? h.x : doc.DX - h.x;
+    return [h.face===1||h.face===6?"T":"E", nx.toFixed(4), ny.toFixed(4), (h.z||0).toFixed(4), h.d].join("|");
+  }).sort();
+}
+
+async function run(){
+  // load the core straight out of index.html so tests exercise shipped code
+  var html = await (await fetch("index.html")).text();
+  var core = /<script id="xxl-core">([\s\S]*?)<\/script>/.exec(html);
+  if(!core){ document.getElementById("sum").className="fail"; document.getElementById("sum").textContent="Nerastas xxl-core!"; return; }
+  (0,eval)(core[1]);
+  var v3 = /<script id="v3d-core">([\s\S]*?)<\/script>/.exec(html);
+  if (v3) (0,eval)(v3[1]);
+
+  var fx = {};
+  for (var n of ["swood_portrait","maestro_edges","maestro_routing","maestro_arcs","swood_edges","step2xxl_led"])
+    fx[n] = await (await fetch("fixtures/"+n+".xxl")).text();
+
+  /* ---------------- parsing ---------------- */
+  section("Skaitymas / parsing");
+  var sw = XXL.parse(fx.swood_portrait);
+  ck("SWOOD: DX=684 DY=2200 DZ=18", sw.DX===684 && sw.DY===2200 && sw.DZ===18, sw.DX+" x "+sw.DY+" x "+sw.DZ);
+  ck("SWOOD: atpažintas dialektas", sw.dialect==="swood", sw.dialect);
+  ck("SWOOD: 24 gręžimai", sw.holes.length===24, sw.holes.length);
+  ck("SWOOD: visi F=1", Object.keys(sw.faceUse).join()==="1", JSON.stringify(sw.faceUse));
+  ck("SWOOD: be klaidų", sw.errors.length===0, sw.errors.join("; "));
+
+  var me = XXL.parse(fx.maestro_edges);
+  ck("Maestro: DX=888 DY=600", me.DX===888 && me.DY===600, me.DX+" x "+me.DY);
+  ck("Maestro: dialektas maestro", me.dialect==="maestro", me.dialect);
+  ck("Maestro: 6 briaunų gręžimai", me.holes.length===6, me.holes.length);
+  ck("Maestro: F2 kairė (X=0)", me.holes.filter(function(h){return h.face===2;}).every(function(h){return h.x===0;}), JSON.stringify(me.holes.filter(function(h){return h.face===2;}).map(function(h){return [h.x,h.y];})));
+  ck("Maestro: F3 dešinė (X=DX)", me.holes.filter(function(h){return h.face===3;}).every(function(h){return h.x===888;}), JSON.stringify(me.holes.filter(function(h){return h.face===3;}).map(function(h){return [h.x,h.y];})));
+  ck("Maestro: F2/F3 Y = 50/300/550", JSON.stringify(me.holes.map(function(h){return h.y;}).sort(function(a,b){return a-b;}))==="[50,50,300,300,550,550]",
+     JSON.stringify(me.holes.map(function(h){return h.y;})));
+
+  var mr = XXL.parse(fx.maestro_routing);
+  ck("Maestro: frezavimo kelias rastas", mr.paths.length===1 && mr.paths[0].pts.length===7, mr.paths.length+" kelias, "+(mr.paths[0]||{pts:[]}).pts.length+" tšk.");
+  var ma = XXL.parse(fx.maestro_arcs);
+  ck("Maestro: lankai (XA2P) suskaityti", ma.paths.length>0, ma.paths.length);
+
+  /* ---------------- plane origin / SWOOD edge holes ---------------- */
+  section("Briaunų gręžiniai be ChangePlane (SWOOD)");
+  var se = XXL.parse(fx.swood_edges);            // 964 x 425 x 18, F2 + F3, be ChangePlane
+  ck("SWOOD briaunos: 964×425, 6 gręžiniai", se.DX===964 && se.DY===425 && se.holes.length===6,
+     se.DX+"x"+se.DY+" holes="+se.holes.length);
+  ck("Faile nėra ChangePlane", se.hasPlanes===false, se.hasPlanes);
+  ck("F3 teigiamos reikšmės nelaikomos Maestro atskaita", (function(){
+      var r = se.holes.filter(function(h){return h.face===3;});
+      return r.length===3 && r.every(function(h){return h.x===964;}) &&
+             JSON.stringify(r.map(function(h){return h.y;}))==="[50,212.5,375]"; })(),
+     JSON.stringify(se.holes.filter(function(h){return h.face===3;}).map(function(h){return [h.x,h.y];})));
+  ck("F2 kairėje briaunoje", (function(){
+      var l = se.holes.filter(function(h){return h.face===2;});
+      return l.length===3 && l.every(function(h){return h.x===0;}) &&
+             JSON.stringify(l.map(function(h){return h.y;}))==="[50,212.5,375]"; })(),
+     JSON.stringify(se.holes.filter(function(h){return h.face===2;}).map(function(h){return [h.x,h.y];})));
+  ck("Visi gręžiniai plokštės ribose",
+     se.holes.every(function(h){return h.x>=0&&h.x<=se.DX&&h.y>=0&&h.y<=se.DY;}),
+     JSON.stringify(se.holes.map(function(h){return [h.x,h.y];})));
+  ck("Storio koordinatė 9 (18/2)", se.holes.every(function(h){return h.t===9;}),
+     JSON.stringify(se.holes.map(function(h){return h.t;})));
+  ck("Maestro neigiamos F3 reikšmės vis dar teisingos", (function(){
+      var r = me.holes.filter(function(h){return h.face===3;});
+      return r.every(function(h){return h.x===888 && h.y>=0 && h.y<=600;}); })(),
+     JSON.stringify(me.holes.filter(function(h){return h.face===3;}).map(function(h){return [h.x,h.y];})));
+
+  [true,false].forEach(function(ccw){
+    var rr = XXL.rotate(fx.swood_edges, ccw), rd = XXL.parse(rr.text);
+    var tag = "SWOOD briaunos "+(ccw?"CCW":"CW");
+    ck(tag+": matmenys 425×964", rd.DX===425 && rd.DY===964, rd.DX+"x"+rd.DY);
+    ck(tag+": gręžiniai lieka ribose",
+       rd.holes.every(function(h){return h.x>=-0.01&&h.x<=rd.DX+0.01&&h.y>=-0.01&&h.y<=rd.DY+0.01;}),
+       JSON.stringify(rd.holes.map(function(h){return [h.x,h.y];})));
+    ck(tag+": pasukta padėtis teisinga", (function(){
+        var want = se.holes.map(function(h){
+          return (ccw ? [se.DY-h.y, h.x] : [h.y, se.DX-h.x]).map(function(v){return v.toFixed(3);}).join(","); }).sort();
+        var got = rd.holes.map(function(h){return [h.x.toFixed(3),h.y.toFixed(3)].join(",");}).sort();
+        return JSON.stringify(want)===JSON.stringify(got); })(),
+       JSON.stringify(rd.holes.map(function(h){return [h.x,h.y];})));
+    ck(tag+": rezultate irgi nėra ChangePlane", XXL.parse(rr.text).hasPlanes===false);
+    ck(tag+": storio koordinatė nepakito", rd.holes.every(function(h){return h.t===9;}),
+       JSON.stringify(rd.holes.map(function(h){return h.t;})));
+  });
+  ck("SWOOD briaunos: CCW→CW grąžina originalą", (function(){
+      var b = XXL.parse(XXL.rotate(XXL.rotate(fx.swood_edges,true).text,false).text);
+      return b.DX===se.DX && b.DY===se.DY &&
+             JSON.stringify(b.holes.map(function(h){return [h.face,h.x,h.y,h.t];}))===
+             JSON.stringify(se.holes.map(function(h){return [h.face,h.x,h.y,h.t];})); })());
+
+  /* ---------------- rotation geometry ---------------- */
+  section("Geometrija po pasukimo");
+  [["swood_portrait",true],["swood_portrait",false],["maestro_edges",true],["maestro_edges",false],
+   ["maestro_routing",true],["maestro_routing",false],["maestro_arcs",true],["maestro_arcs",false]].forEach(function(c){
+    var name=c[0], ccw=c[1], tag=name+" "+(ccw?"CCW":"CW");
+    var src = XXL.parse(fx[name]);
+    var r = XXL.rotate(fx[name], ccw);
+    var d2 = XXL.parse(r.text);
+    ck(tag+": DX/DY sukeisti", d2.DX===src.DY && d2.DY===src.DX, d2.DX+" x "+d2.DY+" (laukta "+src.DY+" x "+src.DX+")");
+    ck(tag+": DZ nepakito", d2.DZ===src.DZ, d2.DZ);
+    ck(tag+": kiekvienas gręžimas fiziškai toje pat vietoje",
+       JSON.stringify(fingerprint(d2))===JSON.stringify(rotPts(src,ccw)),
+       "gauta "+JSON.stringify(fingerprint(d2)).slice(0,300)+"\nlaukta "+JSON.stringify(rotPts(src,ccw)).slice(0,300));
+    ck(tag+": gręžimų skaičius nepakito", d2.holes.length===src.holes.length, d2.holes.length+" vs "+src.holes.length);
+    var inside = d2.holes.every(function(h){ return h.x>=-0.001 && h.x<=d2.DX+0.001 && h.y>=-0.001 && h.y<=d2.DY+0.001; });
+    ck(tag+": visi gręžimai plokštės ribose", inside,
+       JSON.stringify(d2.holes.filter(function(h){return h.x<0||h.x>d2.DX||h.y<0||h.y>d2.DY;}).map(function(h){return [h.face,h.x,h.y];})));
+    // routing paths
+    var pSrc=[], pDst=[];
+    src.paths.forEach(function(p){ p.pts.forEach(function(q){ if(isFinite(q[0])&&isFinite(q[1]))
+      pSrc.push((ccw?src.DY-q[1]:q[1]).toFixed(4)+","+(ccw?q[0]:src.DX-q[0]).toFixed(4)); }); });
+    d2.paths.forEach(function(p){ p.pts.forEach(function(q){ if(isFinite(q[0])&&isFinite(q[1]))
+      pDst.push(q[0].toFixed(4)+","+q[1].toFixed(4)); }); });
+    ck(tag+": frezavimo taškai pasukti teisingai", JSON.stringify(pSrc)===JSON.stringify(pDst),
+       "gauta "+JSON.stringify(pDst).slice(0,220)+"\nlaukta "+JSON.stringify(pSrc).slice(0,220));
+  });
+
+  /* ---------------- round trip ---------------- */
+  section("Grįžtamumas / round-trip");
+  ["swood_portrait","maestro_edges","maestro_routing","maestro_arcs"].forEach(function(n){
+    var a = XXL.rotate(fx[n], true).text;
+    var b = XXL.rotate(a, false).text;          // CCW then CW == identity
+    var o = XXL.parse(fx[n]), z = XXL.parse(b);
+    ck(n+": CCW→CW grąžina matmenis", o.DX===z.DX && o.DY===z.DY, z.DX+" x "+z.DY);
+    ck(n+": CCW→CW grąžina geometriją", JSON.stringify(fingerprint(o))===JSON.stringify(fingerprint(z)),
+       JSON.stringify(fingerprint(z)).slice(0,300));
+    ck(n+": CCW→CW grąžina plokštumas", JSON.stringify(o.faceUse)===JSON.stringify(z.faceUse),
+       JSON.stringify(z.faceUse)+" vs "+JSON.stringify(o.faceUse));
+  });
+  ["swood_portrait","maestro_edges"].forEach(function(n){
+    var t = fx[n];
+    for (var i=0;i<4;i++) t = XXL.rotate(t, true).text;     // 4x90 = 360
+    var o = XXL.parse(fx[n]), z = XXL.parse(t);
+    ck(n+": 4×CCW = pilnas apsukimas", o.DX===z.DX && o.DY===z.DY &&
+       JSON.stringify(fingerprint(o))===JSON.stringify(fingerprint(z)), z.DX+" x "+z.DY);
+  });
+
+  /* ---------------- face mapping ---------------- */
+  section("Plokštumų perskaičiavimas");
+  var mapCCW = {2:4,3:5,4:3,5:2}, mapCW = {2:5,3:4,4:2,5:3};
+  Object.keys(mapCCW).forEach(function(f){
+    ck("CCW: F"+f+" → F"+mapCCW[f], XXL._.rotFace(+f,true)===mapCCW[f], XXL._.rotFace(+f,true));
+    ck("CW:  F"+f+" → F"+mapCW[f],  XXL._.rotFace(+f,false)===mapCW[f], XXL._.rotFace(+f,false));
+  });
+  ck("F1 ir F6 nekinta", XXL._.rotFace(1,true)===1 && XXL._.rotFace(6,true)===6 && XXL._.rotFace(1,false)===1);
+  var edg = XXL.rotate(fx.maestro_edges, true);
+  var ed2 = XXL.parse(edg.text);
+  ck("Briaunų plokštumos perrašytos F2/F3 → F4/F5", JSON.stringify(Object.keys(ed2.faceUse).sort())==='["4","5"]', JSON.stringify(ed2.faceUse));
+  ck("O ;ChangePlane eilutės atnaujintos", !/O\s+Y=600/.test(edg.text) && /F=4|F=5/.test(edg.text),
+     (edg.text.match(/^O .*$/gm)||[]).slice(0,4).join(" | "));
+
+  /* ---------------- byte-level fidelity ---------------- */
+  section("Formato išsaugojimas");
+  var sr = XXL.rotate(fx.swood_portrait, true);
+  var sl = fx.swood_portrait.split(/\r?\n/), rl = sr.text.split(/\r?\n/);
+  ck("Eilučių skaičius +1 (antspaudas)", rl.length===sl.length+1, rl.length+" vs "+sl.length);
+  ck("CRLF išsaugota", /\r\n/.test(sr.text), JSON.stringify(sr.text.slice(0,90)));
+  ck("Komentarai nepaliesti", rl.filter(function(l){return /^;Fichier/.test(l);}).length===1 &&
+     sr.text.indexOf(";Fichier : DESINE_SPORTO_RUBINE_LENKTAS_1OP")>=0);
+  ck("Užbaigiantis '#' išsaugotas", (sr.text.match(/#\s*$/gm)||[]).length===24, (sr.text.match(/#\s*$/gm)||[]).length);
+  ck("N=\"L\" D=8 nepaliesti", (sr.text.match(/D=8 N="L"/g)||[]).length===24, (sr.text.match(/D=8 N="L"/g)||[]).length);
+  ck("Z gylis nepakito", (sr.text.match(/Z=-24\.559/g)||[]).length===24, (sr.text.match(/Z=-24\.559/g)||[]).length);
+  ck("Antraštė: DX=2200 DY=684", /H DX=2200 DY=684 DZ=18/.test(sr.text), rl[0]);
+  ck("BZ=21 nepakito", /BZ=21/.test(sr.text), rl[0]);
+  ck("Antspaudas įterptas po antraštės", /^;\*\*\* XXL Fix: pasukta 90 CCW/.test(rl[1]), rl[1]);
+  ck(".END išlikęs", /^\.END/m.test(sr.text));
+  ck("Desimalės išsaugotos (88.248485 → Y)", /Y=88\.248485/.test(sr.text),
+     (sr.text.match(/XBO [^\n]*/)||[""])[0]);
+  ck("Sveikieji lieka sveikais (nėra 2191.000000)", !/=\d+\.000000/.test(sr.text),
+     (sr.text.match(/=\d+\.000000/g)||[]).slice(0,3).join());
+
+  var mrr = XXL.rotate(fx.maestro_routing, true).text;
+  ck("Maestro 3 dešimtainiai išlaikyti", /X=\d+\.\d{3}\b/.test(mrr), (mrr.match(/XBO [^\n]*/)||[""])[0]);
+  ck("XG0 įrankio parametrai nepaliesti", /T=96 P=0 D=20 C=0 V=4000 S=18000 s=0/.test(mrr));
+  var mar = XXL.rotate(fx.maestro_arcs, true).text;
+  ck("Lanko kryptis G=3 nepakito", (mar.match(/G=3/g)||[]).length===(fx.maestro_arcs.match(/G=3/g)||[]).length,
+     (mar.match(/XA2P [^\n]*/)||[""])[0]);
+  ck("Lanko centras I/J pasuktas", /I=\d/.test(mar) && /J=\d/.test(mar), (mar.match(/XA2P [^\n]*/)||[""])[0]);
+
+  /* ---------------- arc radius invariance ---------------- */
+  section("Lankų teisingumas");
+  (function(){
+    var src = fx.maestro_arcs, rot = XXL.rotate(src, true).text;
+    function arcs(t){
+      var o=[], m, re=/^XA2P .*$/gm;
+      var lines = t.split(/\r?\n/); var prev=null;
+      lines.forEach(function(l){
+        var p = XXL._.params(XXL._.splitComment(l)[0]);
+        if(/^\s*(XL2P|XG0)/.test(l) && p.X!==undefined) prev=[parseFloat(p.X),parseFloat(p.Y)];
+        if(/^\s*XA2P/.test(l) && p.I!==undefined && prev){
+          var r1=Math.hypot(prev[0]-parseFloat(p.I), prev[1]-parseFloat(p.J));
+          var r2=Math.hypot(parseFloat(p.X)-parseFloat(p.I), parseFloat(p.Y)-parseFloat(p.J));
+          o.push([r1,r2]); prev=[parseFloat(p.X),parseFloat(p.Y)];
+        }
+      });
+      return o;
+    }
+    var a1=arcs(src), a2=arcs(rot);
+    ck("Lankų rasta abiejuose", a1.length>0 && a1.length===a2.length, a1.length+" vs "+a2.length);
+    ck("Spinduliai sutampa pradžioje ir gale (originalas)", a1.every(function(p){return near(p[0],p[1],1e-6);}), JSON.stringify(a1));
+    ck("Spinduliai nepakito po pasukimo",
+       a1.every(function(p,i){ return a2[i] && near(p[0],a2[i][0],1e-6) && near(p[1],a2[i][1],1e-6); }),
+       JSON.stringify(a1)+" vs "+JSON.stringify(a2));
+  })();
+
+  /* ---------------- thickness ---------------- */
+  section("Medžiagos storio keitimas");
+
+  // side-hole thickness coordinate: 9 in 18mm -> 8 in 16mm
+  var th = XXL.setThickness(fx.maestro_edges, 16);
+  var thd = XXL.parse(th.text);
+  ck("DZ antraštėje 18 → 16", thd.DZ===16, thd.DZ);
+  ck("DX/DY nepakito", thd.DX===888 && thd.DY===600, thd.DX+"x"+thd.DY);
+  ck("Centruoti briaunų gręžiniai 9 → 8", thd.holes.every(function(h){return h.t===8;}),
+     JSON.stringify(thd.holes.map(function(h){return h.t;})));
+  ck("Briaunų gręžinių padėtis plokštėje nepakito",
+     JSON.stringify(thd.holes.map(function(h){return [h.x,h.y];}))===JSON.stringify(me.holes.map(function(h){return [h.x,h.y];})),
+     JSON.stringify(thd.holes.map(function(h){return [h.x,h.y];})));
+  ck("Briaunos gręžimo gylis Z=-32 nepakito", (th.text.match(/Z=-32\.000/g)||[]).length===6,
+     (th.text.match(/Z=-32[^\s]*/g)||[]).join(","));
+  ck("Formatas: 3 dešimtainiai išlaikyti (X=8.000)", /X=8\.000/.test(th.text),
+     (th.text.match(/XBO [^\n]*/)||[""])[0]);
+  ck("Antspaudas apie storį", /;\*\*\* XXL Fix: storis 18 -> 16 mm \*\*\*/.test(th.text), th.text.split(/\r?\n/)[1]);
+
+  // through vs blind depths on face 1
+  var thr = XXL.setThickness(fx.maestro_routing, 16);       // DZ=18, blind -12, through -23, routing -20
+  ck("Kiauras gręžinys -23 → -21 (5 mm užleidimas išlaikytas)", /Z=-21\.000/.test(thr.text),
+     (thr.text.match(/Z=-2[0-9.]+/g)||[]).join(","));
+  ck("Aklinas gręžinys -12 nepakito", (thr.text.match(/Z=-12\.000/g)||[]).length===(fx.maestro_routing.match(/Z=-12\.000/g)||[]).length,
+     (thr.text.match(/Z=-12\.000/g)||[]).length+" vs "+(fx.maestro_routing.match(/Z=-12\.000/g)||[]).length);
+  ck("Kiauras frezavimas -20 → -18", (thr.text.match(/Z=-18\.000/g)||[]).length===5,
+     (thr.text.match(/Z=-1[0-9.]+/g)||[]).join(","));
+  ck("Pakėlimo aukštis Z=20 nepakito", (thr.text.match(/Z=20\.000/g)||[]).length===(fx.maestro_routing.match(/Z=20\.000/g)||[]).length,
+     (thr.text.match(/Z=20\.000/g)||[]).length+" vs "+(fx.maestro_routing.match(/Z=20\.000/g)||[]).length);
+  ck("ZFAST nepaliestas", /SET ZFAST=20\.000/.test(thr.text));
+
+  // SWOOD file: DZ=18, Z=-24.559 (through, 6.559 overshoot)
+  var sth = XXL.setThickness(fx.swood_portrait, 16);
+  ck("SWOOD: Z=-24.559 → -22.559", (sth.text.match(/Z=-22\.559/g)||[]).length===24,
+     (sth.text.match(/Z=-2[0-9.]+/g)||[]).slice(0,2).join(","));
+  ck("SWOOD: DZ=16, BZ=21 nepaliestas", /DZ=16 /.test(sth.text) && /BZ=21/.test(sth.text), sth.text.split(/\r?\n/)[0]);
+  ck("SWOOD: X/Y koordinatės nepakito", JSON.stringify(XXL.parse(sth.text).holes.map(function(h){return [h.x,h.y];}))===
+     JSON.stringify(sw.holes.map(function(h){return [h.x,h.y];})));
+
+  // policies
+  function mkEdge(dz, t){ return 'H DX=400 DY=300 DZ='+dz+' -B C=0 T=0 R=1 *MM /"S" V=0\r\n.OP1 ;B\r\nREFERENCE=LOWERLEFT\r\nF=2\r\nO X=0.000 Y=0.000 Z=0.000 F=2 ;ChangePlane\r\nXBO X='+t+' Y=50.000 Z=-32.000 D=5 G=1 N="P"\r\n.END\r\n'; }
+  function tOf(txt){ return XXL.parse(txt).holes[0].t; }
+  ck("policy center: 9/18 → 8/16", tOf(XXL.setThickness(mkEdge("18.000","9.000"),16,{policy:"center"}).text)===8);
+  ck("policy center: 12.5/18 paliekamas", tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"center"}).text)===12.5);
+  ck("policy center: necentruotas duoda įspėjimą",
+     XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"center"}).warnings.length>0,
+     JSON.stringify(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"center"}).warnings));
+  ck("policy scale: 12.5/18 → 11.111/16", Math.abs(tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"scale"}).text)-12.5*16/18)<0.001,
+     tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"scale"}).text));
+  ck("policy bottom: 12.5 nekeičiamas", tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"bottom"}).text)===12.5);
+  ck("policy top: 12.5/18 → 10.5/16 (5.5 nuo viršaus)", tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"top"}).text)===10.5,
+     tOf(XXL.setThickness(mkEdge("18.000","12.500"),16,{policy:"top"}).text));
+  ck("Storėjimas 18 → 25 taip pat veikia", tOf(XXL.setThickness(mkEdge("18.000","9.000"),25).text)===12.5);
+  ck("Beveik centruotas (10.0 iš 19.8) laikomas centruotu",
+     tOf(XXL.setThickness(mkEdge("19.800","10.000"),16,{policy:"center"}).text)===8,
+     tOf(XXL.setThickness(mkEdge("19.800","10.000"),16,{policy:"center"}).text));
+
+  // safety warnings
+  var brk = XXL.setThickness(mkEdge("18.000","9.000").replace('F=2\r\nO X=0.000 Y=0.000 Z=0.000 F=2 ;ChangePlane\r\nXBO X=9.000 Y=50.000 Z=-32.000 D=5 G=1 N="P"',
+      'F=1\r\nO X=0.000 Y=0.000 Z=0.000 F=1 ;ChangePlane\r\nXBO X=100.000 Y=50.000 Z=-17.000 D=5 G=1 N="P"'), 16);
+  ck("Aklinas -17 mm 16 mm plokštėje → įspėjimas apie prakalimą",
+     brk.warnings.some(function(w){return /taps kiauras/.test(w);}), JSON.stringify(brk.warnings));
+  var big = XXL.setThickness(mkEdge("18.000","9.000").replace('D=5','D=14'), 10);
+  ck("⌀14 gręžinys 10 mm storyje → įspėjimas apie sienelę",
+     big.warnings.some(function(w){return /išeina už/.test(w);}), JSON.stringify(big.warnings));
+  ck("Storio keitimas be DZ antraštėje atmetamas",
+     XXL.setThickness('H DX=1 DY=1 -B C=0 T=0 R=1 *MM /"S" V=0\r\n.END\r\n',16).ok===false);
+
+  /* ---------------- combined transform ---------------- */
+  section("Sukimas + storis kartu");
+  var both = XXL.transform(fx.maestro_edges, {rot:true, ccw:true, dz:16, policy:"center"});
+  var bd = XXL.parse(both.text);
+  ck("Kartu: matmenys sukeisti ir DZ pakeistas", bd.DX===600 && bd.DY===888 && bd.DZ===16,
+     bd.DX+"x"+bd.DY+"x"+bd.DZ);
+  ck("Kartu: briaunų gręžiniai centre (8 mm)", bd.holes.every(function(h){return h.t===8;}),
+     JSON.stringify(bd.holes.map(function(h){return h.t;})));
+  ck("Kartu: plokštumos perskaičiuotos F2/F3 → F4/F5", JSON.stringify(Object.keys(bd.faceUse).sort())==='["4","5"]',
+     JSON.stringify(bd.faceUse));
+  ck("Kartu: gręžinių padėtis = pasukta originalo padėtis",
+     JSON.stringify(fingerprint(bd))===JSON.stringify(rotPts(me,true)),
+     JSON.stringify(fingerprint(bd)).slice(0,200));
+  ck("Kartu: tik VIENAS antspaudas", (both.text.match(/XXL Fix:/g)||[]).length===1,
+     (both.text.match(/;\*\*\*[^\n]*/g)||[]).join(" ~ "));
+  ck("Kartu: antspaude abu veiksmai", /pasukta 90 laipsniu.*storis 18 -> 16 mm/.test(both.text),
+     both.text.split(/\r?\n/)[1]);
+  ck("Kartu: eilučių +1", both.text.split(/\r?\n/).length===fx.maestro_edges.split(/\r?\n/).length+1,
+     both.text.split(/\r?\n/).length);
+  ck("Tik storis (be sukimo) veikia", (function(){
+     var r=XXL.transform(fx.maestro_edges,{rot:false,dz:16}); var z=XXL.parse(r.text);
+     return r.ok && z.DX===888 && z.DY===600 && z.DZ===16; })());
+  ck("Tik sukimas (be storio) veikia", (function(){
+     var r=XXL.transform(fx.maestro_edges,{rot:true,ccw:true,dz:null}); var z=XXL.parse(r.text);
+     return r.ok && z.DX===600 && z.DY===888 && z.DZ===18; })());
+  ck("Nieko nedarant grąžina ok:false", XXL.transform(fx.maestro_edges,{rot:false,dz:null}).ok===false);
+  ck("Tas pats storis nelaikomas pakeitimu", XXL.transform(fx.maestro_edges,{rot:false,dz:18}).ok===false);
+  ck("Kartu: CRLF išsaugota", /\r\n/.test(both.text));
+  ck("Kartu: tvarka nesvarbi (storis→sukimas = sukimas→storis)", (function(){
+      var a = XXL.parse(XXL.transform(fx.maestro_edges,{rot:true,ccw:true,dz:16}).text);
+      var b = XXL.parse(XXL.setThickness(XXL.rotate(fx.maestro_edges,true,{stamp:false}).text,16,{stamp:false}).text);
+      return a.DX===b.DX && a.DY===b.DY && a.DZ===b.DZ &&
+             JSON.stringify(fingerprint(a))===JSON.stringify(fingerprint(b)) &&
+             JSON.stringify(a.holes.map(function(h){return h.t;}))===JSON.stringify(b.holes.map(function(h){return h.t;}));
+    })());
+
+  /* ---------------- decision rules ---------------- */
+  section("Sukimas žingsniais (mygtukas spaudžiamas kol tinka)");
+  [[0, 684, 2200], [1, 2200, 684], [2, 684, 2200], [3, 2200, 684]].forEach(function (c) {
+    var n = c[0];
+    var r = XXL.transform(fx.swood_portrait, { rot: n });
+    if (n === 0) { ck("0 žingsnių — niekas nedaroma", r.ok === false); return; }
+    var d = XXL.parse(r.text);
+    ck(n + "×90° = " + (n*90) + "°: matmenys " + c[1] + "×" + c[2],
+       d.DX === c[1] && d.DY === c[2], d.DX + "x" + d.DY);
+    ck(n + "×90°: gręžinių skaičius nepakito", d.holes.length === sw.holes.length, d.holes.length);
+    ck(n + "×90°: antspaude " + (n*90) + " laipsniu",
+       new RegExp("pasukta " + (n*90) + " laipsniu").test(r.text), r.text.split(/\r?\n/)[1]);
+    ck(n + "×90°: vienas antspaudas", (r.text.match(/XXL Fix:/g) || []).length === 1);
+    ck(n + "×90°: eilučių +1", r.text.split(/\r?\n/).length === fx.swood_portrait.split(/\r?\n/).length + 1);
+    // every hole must land where a pure n*90 rotation puts it
+    var want = sw.holes.map(function (h) {
+      var x = h.x, y = h.y, DX = sw.DX, DY = sw.DY;
+      for (var k = 0; k < n; k++) { var nx = DY - y, ny = x; x = nx; y = ny; var t = DX; DX = DY; DY = t; }
+      return x.toFixed(4) + "," + y.toFixed(4);
+    }).sort();
+    var got = d.holes.map(function (h) { return h.x.toFixed(4) + "," + h.y.toFixed(4); }).sort();
+    ck(n + "×90°: kiekvienas gręžinys tiksliai savo vietoje",
+       JSON.stringify(got) === JSON.stringify(want), JSON.stringify(got).slice(0, 160));
+  });
+  ck("4×90° = pradinė padėtis", (function () {
+      var d = XXL.parse(XXL.transform(fx.swood_portrait, { rot: 4 }).text || fx.swood_portrait);
+      return XXL.transform(fx.swood_portrait, { rot: 4 }).ok === false ||
+             (d.DX === sw.DX && d.DY === sw.DY); })());
+  ck("2×90° briaunų plokštumos grįžta atgal", (function () {
+      var d = XXL.parse(XXL.transform(fx.maestro_edges, { rot: 2 }).text);
+      return JSON.stringify(Object.keys(d.faceUse).sort()) === '["2","3"]'; })(),
+     JSON.stringify(XXL.parse(XXL.transform(fx.maestro_edges,{rot:2}).text).faceUse));
+  ck("2×90° geometrija = dukart pasukta", (function () {
+      var d = XXL.parse(XXL.transform(fx.maestro_edges, { rot: 2 }).text);
+      return d.holes.every(function (h, i) {
+        return Math.abs(h.x - (me.DX - me.holes[i].x)) < 1e-6 &&
+               Math.abs(h.y - (me.DY - me.holes[i].y)) < 1e-6; }); })(),
+     JSON.stringify(XXL.parse(XXL.transform(fx.maestro_edges,{rot:2}).text).holes.map(function(h){return [h.x,h.y];})));
+  var bad = XXL.parse("H DX=100 DY=200 DZ=18 -B C=0 T=0 R=1 *MM /\"X\" V=0\r\nREFERENCE=UPPERLEFT\r\nXBO X=10 Y=20 Z=-5 D=5 G=1 N=\"P\"\r\n.END\r\n");
+  ck("REFERENCE=UPPERLEFT pažymima klaida", bad.errors.length>0, JSON.stringify(bad.errors));
+  ck("Ne XXL failas atmetamas", XXL.parse("labas\nrytas").errors.length>0);
+
+  /* ---------------- skipping operations ---------------- */
+  section("Operacijų praleidimas");
+  var ops = XXL.operations(sw);
+  ck("operations(): 24 gręžimai SWOOD faile", ops.length===24 && ops.every(function(o){return o.kind==="bore";}), ops.length);
+  ck("operations(): rikiuota pagal eilutę", ops.every(function(o,i){return i===0||ops[i-1].id<o.id;}));
+  var opr = XXL.operations(mr);
+  ck("operations(): frezavimas atpažįstamas", opr.some(function(o){return o.kind==="route";}) &&
+     opr.filter(function(o){return o.kind==="route";})[0].n===7,
+     JSON.stringify(opr.map(function(o){return o.kind;})));
+  ck("operations(): frezavimo ilgis apskaičiuotas", opr.filter(function(o){return o.kind==="route";})[0].len>0,
+     opr.filter(function(o){return o.kind==="route";})[0].len);
+
+  var sk1 = XXL.applySkip(fx.swood_portrait, [ops[0].id, ops[3].id]);
+  var sl = sk1.text.split(/\r?\n/);
+  ck("applySkip: užkomentuota tiek eilučių, kiek operacijų", sk1.lines===2 && sk1.ops===2, sk1.lines+"/"+sk1.ops);
+  ck("applySkip: eilutės prasideda komentaru", sl.filter(function(l){return l.indexOf(XXL.SKIP_TAG)===0;}).length===2);
+  ck("applySkip: eilučių skaičius nepakito",
+     sl.length===fx.swood_portrait.split(/\r?\n/).length, sl.length);
+  ck("applySkip: likę gręžiniai — 22", XXL.parse(sk1.text).holes.length===22, XXL.parse(sk1.text).holes.length);
+  ck("applySkip: antraštė ir .END nepaliesti", /^H DX=684/.test(sl[0]) && /^\.END/m.test(sk1.text));
+  ck("applySkip: deterministinis", XXL.applySkip(fx.swood_portrait,[ops[0].id]).text ===
+     XXL.applySkip(fx.swood_portrait,[ops[0].id]).text);
+  ck("applySkip: ta pati eilutė nežymima dukart", (function(){
+      var once = XXL.applySkip(fx.swood_portrait,[ops[0].id]).text;
+      var again = XXL.applySkip(once, [ops[0].id], XXL.parse(fx.swood_portrait)).text;
+      return (again.match(/XXLFIX-SKIP/g)||[]).length===1; })(),
+     (XXL.applySkip(XXL.applySkip(fx.swood_portrait,[ops[0].id]).text,[ops[0].id],XXL.parse(fx.swood_portrait)).text.match(/XXLFIX-SKIP/g)||[]).length);
+
+  // a routing block must go as a unit, and state lines must survive
+  var rp = mr.paths[0];
+  var sk2 = XXL.applySkip(fx.maestro_routing, [rp.op]);
+  ck("Frezavimas praleidžiamas visas (XG0 + visi XL2P)",
+     sk2.lines===(rp.lastLine-rp.line+1) && XXL.parse(sk2.text).paths.length===0,
+     sk2.lines+" eil., liko "+XXL.parse(sk2.text).paths.length+" kelias");
+  ck("Plokštumų/būsenos eilutės NEužkomentuotos", (function(){
+      var bad = sk2.text.split(/\r?\n/).filter(function(l){
+        return l.indexOf(XXL.SKIP_TAG)===0 && /(REFERENCE=|ChangePlane|^;XXLFIX-SKIP\s*F=\d|SET )/.test(l); });
+      return bad.length===0; })(),
+     JSON.stringify(sk2.text.split(/\r?\n/).filter(function(l){return l.indexOf(XXL.SKIP_TAG)===0;}).slice(0,3)));
+  ck("Praleidus frezavimą, gręžimai lieka", XXL.parse(sk2.text).holes.length===mr.holes.length,
+     XXL.parse(sk2.text).holes.length+"/"+mr.holes.length);
+
+  // skip runs last, so commented lines carry the transformed coordinates
+  var tr = XXL.transform(fx.swood_portrait, {rot:true, ccw:true, skip:[ops[0].id]});
+  ck("Praleista eilutė turi PASUKTAS koordinates", /XXLFIX-SKIP\s+XBO X=9 Y=70 /.test(tr.text),
+     (tr.text.match(/^;XXLFIX-SKIP.*$/m)||[""])[0]);
+  ck("transform: vien praleidimas jau duoda rezultatą",
+     XXL.transform(fx.maestro_edges,{rot:false, skip:[me.holes[0].op]}).ok===true);
+  ck("transform: be nieko — ok:false", XXL.transform(fx.maestro_edges,{rot:false, skip:[]}).ok===false);
+  var tr2 = XXL.transform(fx.maestro_edges, {rot:true, ccw:true, dz:16, skip:[me.holes[0].op, me.holes[1].op]});
+  ck("Sukimas+storis+praleidimas: vienas antspaudas", (tr2.text.match(/XXL Fix:/g)||[]).length===1,
+     (tr2.text.match(/;\*\*\*[^\n]*/g)||[]).join(" ~ "));
+  ck("Sukimas+storis+praleidimas: antspaude visi trys", /pasukta 90 laipsniu.*storis 18 -> 16.*praleista operaciju: 2/.test(tr2.text),
+     tr2.text.split(/\r?\n/)[1]);
+  ck("Sukimas+storis+praleidimas: liko 4 gręžiniai", XXL.parse(tr2.text).holes.length===4,
+     XXL.parse(tr2.text).holes.length);
+  ck("Likę gręžiniai po storio — centre (8 mm)",
+     XXL.parse(tr2.text).holes.every(function(h){return h.t===8;}),
+     JSON.stringify(XXL.parse(tr2.text).holes.map(function(h){return h.t;})));
+
+  // everything off -> still a structurally valid program
+  var allOff = XXL.transform(fx.swood_portrait, {rot:false, skip:ops.map(function(o){return o.id;})});
+  var ad = XXL.parse(allOff.text);
+  ck("Praleidus viską: programa vis tiek galioja", ad.errors.length===0 && ad.holes.length===0 &&
+     /^H DX=684/.test(allOff.text.split(/\r?\n/)[0]) && /^\.END/m.test(allOff.text), ad.holes.length);
+
+  // 3D reflects the selection
+  var skMap = {}; skMap[ops[0].id]=1; skMap[ops[1].id]=1;
+  var S6 = V3D.build(sw, skMap);
+  ck("3D: praleisti gręžiniai pažymėti off", S6.holes.filter(function(h){return h.off;}).length===2,
+     S6.holes.filter(function(h){return h.off;}).length);
+  ck("3D: praleistiems nekuriami judesiai",
+     !S6.moves.some(function(m){return m.id===ops[0].id || m.id===ops[1].id;}));
+  ck("3D: kelias trumpesnis nei su visais",
+     S6.moves.length < V3D.build(sw, {}).moves.length,
+     S6.moves.length+" vs "+V3D.build(sw,{}).moves.length);
+
+  /* ---------------- stable operation ids ---------------- */
+  section("Operacijų tapatybė (id stabilumas)");
+  ck("parse(): kiekviena operacija turi op indeksą",
+     sw.holes.every(function(h,i){return h.op===i;}), JSON.stringify(sw.holes.slice(0,4).map(function(h){return h.op;})));
+  ck("op indeksai eina programos tvarka", (function(){
+      var all = me.holes.concat(me.paths).sort(function(a,b){return a.line-b.line;});
+      return all.every(function(o,i){return o.op===i;}); })());
+  ck("XG0 keliai taip pat gauna op indeksą", mr.paths.every(function(p){return typeof p.op==="number";}),
+     JSON.stringify(mr.paths.map(function(p){return p.op;})));
+
+  // the bug: transform() inserts a stamp line, shifting every LINE index by 1.
+  // Op indexes must not shift, or a click lands on the next hole.
+  ["swood_portrait","maestro_edges","maestro_routing","maestro_arcs"].forEach(function(n){
+    var a = XXL.parse(fx[n]);
+    [true,false].forEach(function(ccw){
+      var b = XXL.parse(XXL.rotate(fx[n], ccw).text);
+      ck(n+(ccw?" CCW":" CW")+": eilučių numeriai pasislenka (antspaudas)",
+         b.holes[0].line === a.holes[0].line + 1, a.holes[0].line+" -> "+b.holes[0].line);
+      ck(n+(ccw?" CCW":" CW")+": op indeksai NEpasislenka",
+         b.holes.every(function(h,i){ return h.op === a.holes[i].op; }),
+         JSON.stringify(b.holes.slice(0,4).map(function(h){return h.op;})));
+    });
+    var c = XXL.parse(XXL.transform(fx[n], {rot:true, ccw:true, dz:XXL.parse(fx[n]).DZ-2}).text);
+    ck(n+": op indeksai stabilūs ir po storio keitimo",
+       c.holes.every(function(h,i){ return h.op === a.holes[i].op; }));
+  });
+  ck("Praleidimas taiko TĄ PAČIĄ operaciją, kurią parodo išvestis", (function(){
+      var out = XXL.transform(fx.swood_portrait, {rot:true, ccw:true}).text;
+      var picked = XXL.operations(XXL.parse(out))[5];        // what the user sees/clicks
+      var fin = XXL.transform(fx.swood_portrait, {rot:true, ccw:true, skip:[picked.id]}).text;
+      var cm = fin.split(/\r?\n/).filter(function(l){return l.indexOf(XXL.SKIP_TAG)===0;});
+      return cm.length===1 && cm[0].indexOf("X="+picked.x+" ")>=0 && cm[0].indexOf("Y="+picked.y+" ")>=0;
+    })(),
+    (XXL.transform(fx.swood_portrait,{rot:true,ccw:true,skip:[XXL.operations(XXL.parse(XXL.transform(fx.swood_portrait,{rot:true,ccw:true}).text))[5].id]}).text.match(/^;XXLFIX-SKIP.*$/m)||[""])[0]);
+
+  /* ---------------- editing holes ---------------- */
+  section("Gręžinių koregavimas");
+  function opById(txt, id){ return XXL.operations(XXL.parse(txt)).find(function(o){return o.id===id;}); }
+
+  var e1 = XXL.transform(fx.swood_portrait, {edits:{5:{dx:2}}});
+  ck("F1: X +2", opById(e1.text,5).x === sw.holes[5].x + 2, opById(e1.text,5).x+" vs "+sw.holes[5].x);
+  ck("F1: Y nepaliestas", opById(e1.text,5).y === sw.holes[5].y);
+  ck("Kiti gręžiniai nepaliesti", (function(){
+      var a=XXL.operations(sw), b=XXL.operations(XXL.parse(e1.text));
+      return a.every(function(o,i){ return i===5 || (o.x===b[i].x && o.y===b[i].y && o.z===b[i].z); }); })());
+  ck("Eilučių skaičius nepakito (+antspaudas)",
+     e1.text.split(/\r?\n/).length === fx.swood_portrait.split(/\r?\n/).length + 1);
+  ck("Formatas: dešimtainiai išlaikyti (88.248485 → 90.248485)", /X=90\.248485/.test(e1.text),
+     (e1.text.match(/XBO [^\n]*90\.[^\n]*/)||[""])[0]);
+  ck("Formatas: sveikas lieka sveiku (70 → 72)", (function(){
+      var t = XXL.transform(fx.swood_portrait, {edits:{0:{dx:2}}}).text;
+      return /X=72 /.test(t) && !/X=72\.0/.test(t); })(),
+     (XXL.transform(fx.swood_portrait,{edits:{0:{dx:2}}}).text.match(/XBO [^\n]*X=72[^\n]*/)||[""])[0]);
+  var e2 = XXL.transform(fx.swood_portrait, {edits:{0:{dy:-0.5, dz:1}}});
+  ck("F1: Y −0.5 su dešimtainiais", Math.abs(opById(e2.text,0).y - (sw.holes[0].y - 0.5)) < 1e-9, opById(e2.text,0).y);
+  ck("Gylis Z +1", Math.abs(opById(e2.text,0).z - (sw.holes[0].z + 1)) < 1e-9, opById(e2.text,0).z);
+
+  // edge holes use along-edge / thickness, per face
+  var g2 = XXL.operations(me).find(function(o){return o.face===2;});
+  var g3 = XXL.operations(me).find(function(o){return o.face===3;});
+  var e3 = XXL.transform(fx.maestro_edges, {edits:{}});
+  var ed2 = {}; ed2[g2.id] = {ds:2, dt:-1};
+  var r2 = XXL.transform(fx.maestro_edges, {edits:ed2});
+  ck("F2: pagal briauną +2", opById(r2.text,g2.id).y === g2.y + 2, opById(r2.text,g2.id).y+" vs "+g2.y);
+  ck("F2: storyje −1", opById(r2.text,g2.id).t === g2.t - 1, opById(r2.text,g2.id).t);
+  var ed3 = {}; ed3[g3.id] = {ds:2, dt:-1};
+  var r3 = XXL.transform(fx.maestro_edges, {edits:ed3});
+  ck("F3 (atvirkštinė ašis): pagal briauną +2", opById(r3.text,g3.id).y === g3.y + 2, opById(r3.text,g3.id).y+" vs "+g3.y);
+  ck("F3: storyje −1", opById(r3.text,g3.id).t === g3.t - 1, opById(r3.text,g3.id).t);
+  ck("Briaunos gręžimo gylis nepaliestas", opById(r3.text,g3.id).z === g3.z, opById(r3.text,g3.id).z);
+
+  // edits are expressed in the FINAL frame
+  var rotOut = XXL.transform(fx.swood_portrait, {rot:true, ccw:true}).text;
+  var seen = XXL.operations(XXL.parse(rotOut))[5];
+  var both = XXL.transform(fx.swood_portrait, {rot:true, ccw:true, edits:{5:{dx:2}}});
+  ck("Pataisa +2 galutinėje sistemoje (po pasukimo)",
+     opById(both.text,5).x === seen.x + 2, opById(both.text,5).x+" vs "+(seen.x+2));
+  ck("Pataisa + storis + praleidimas kartu: vienas antspaudas", (function(){
+      var t = XXL.transform(fx.maestro_edges, {rot:true, ccw:true, dz:16, edits:ed2, skip:[g3.id]});
+      return (t.text.match(/XXL Fix:/g)||[]).length===1 &&
+             /pasukta 90 laipsniu.*storis 18 -> 16.*pataisyta gręžiniu: 1.*praleista operaciju: 1/.test(t.text); })(),
+     XXL.transform(fx.maestro_edges,{rot:true,ccw:true,dz:16,edits:ed2,skip:[g3.id]}).text.split(/\r?\n/)[1]);
+
+  ck("Tuščia pataisa nelaikoma pakeitimu", XXL.transform(fx.swood_portrait,{edits:{5:{}}}).ok===false);
+  ck("Nulinė pataisa nelaikoma pakeitimu", XXL.transform(fx.swood_portrait,{edits:{5:{dx:0,dy:0}}}).ok===false);
+  ck("Išėjimas už plokštės — įspėjimas",
+     XXL.transform(fx.swood_portrait,{edits:{5:{dy:5000}}}).warnings.some(function(w){return /išeina už plokštės/.test(w);}),
+     JSON.stringify(XXL.transform(fx.swood_portrait,{edits:{5:{dy:5000}}}).warnings));
+  ck("Išėjimas už storio — įspėjimas", (function(){
+      var e={}; e[g2.id]={dt:40};
+      return XXL.transform(fx.maestro_edges,{edits:e}).warnings.some(function(w){return /nepatenka į/.test(w);}); })());
+  ck("⌀ keitimas", (function(){
+      var e={}; e[5]={d:10};
+      return opById(XXL.transform(fx.swood_portrait,{edits:e}).text,5).d===10; })());
+  ck("Pataisyti gręžiniai matomi 3D", (function(){
+      var t=XXL.transform(fx.swood_portrait,{edits:{5:{dx:2}}}).text;
+      var S=V3D.build(XXL.parse(t),{});
+      return Math.abs(S.holes[5].p0[0] - (sw.holes[5].x+2)) < 1e-9; })());
+
+  /* ---------------- 3D scene + spindle motion ---------------- */
+  section("3D vaizdas ir suklio judesys");
+  ck("V3D modulis pasiekiamas", typeof V3D === "object" && typeof V3D._build === "function");
+
+  var S1 = V3D._build(XXL.parse(fx.maestro_routing));   // 770x360x18, ZFAST=20
+  ck("Pakėlimo aukštis iš ZFAST (18+20=38)", S1.clear===38, S1.clear);
+  ck("Kiekvienas gręžinys turi ašį", S1.holes.length===10 && S1.holes.every(function(h){
+       return h.p0.every(isFinite) && h.p1.every(isFinite); }), S1.holes.length);
+  ck("Viršaus gręžinys grąžta žemyn nuo DZ", (function(){
+       var h=S1.holes.find(function(x){return x.face===1;});
+       return h && h.p0[2]===18 && h.p1[2]===18-Math.abs(h.z); })(),
+     JSON.stringify(S1.holes.filter(function(h){return h.face===1;})[0]||{}));
+  ck("total = greitoji + darbinė", Math.abs(S1.total-(S1.rapid+S1.feed))<1e-6,
+     S1.total+" vs "+(S1.rapid+S1.feed));
+  ck("Visi judesiai turi teigiamą ilgį", S1.moves.every(function(m){return m.len>0 && isFinite(m.len);}));
+  ck("Visos judesių koordinatės baigtinės", S1.moves.every(function(m){
+       return m.a.every(isFinite) && m.b.every(isFinite); }));
+  ck("Judesiai jungiasi (b[i] === a[i+1])", S1.moves.every(function(m,i){
+       return i===0 || JSON.stringify(S1.moves[i-1].b)===JSON.stringify(m.a); }),
+     JSON.stringify(S1.moves.slice(0,3)));
+  ck("Yra ir greitosios, ir darbinės eigos", S1.moves.some(function(m){return m.t==="rapid";}) &&
+     S1.moves.some(function(m){return m.t==="feed";}) && S1.moves.some(function(m){return m.t==="plunge";}),
+     JSON.stringify(S1.moves.map(function(m){return m.t;}).filter(function(v,i,a){return a.indexOf(v)===i;})));
+  ck("Gręžimas nusileidžia tiksliai į gylį", (function(){
+       var pl=S1.moves.filter(function(m){return m.t==="plunge";});
+       return pl.length>0 && pl.every(function(m){return Math.abs(m.b[2]-(18+(-12)))<1e-6 || Math.abs(m.b[2]-(18-23))<1e-6;}); })(),
+     JSON.stringify(S1.moves.filter(function(m){return m.t==="plunge";}).map(function(m){return m.b[2];})));
+
+  // face -> axis mapping
+  var S2 = V3D._build(XXL.parse(fx.maestro_edges));     // 888x600x18, F2/F3 edges, depth 32
+  ck("F2 (kairė) grąžta iš X=0 į vidų", (function(){
+       var h=S2.holes.find(function(x){return x.face===2;});
+       return h && h.p0[0]===0 && Math.abs(h.p1[0]-32)<1e-6 && h.p0[2]===9; })(),
+     JSON.stringify(S2.holes.filter(function(h){return h.face===2;})[0]||{}));
+  ck("F3 (dešinė) grąžta iš X=DX į vidų", (function(){
+       var h=S2.holes.find(function(x){return x.face===3;});
+       return h && h.p0[0]===888 && Math.abs(h.p1[0]-856)<1e-6 && h.p0[2]===9; })(),
+     JSON.stringify(S2.holes.filter(function(h){return h.face===3;})[0]||{}));
+  ck("Briaunų gręžiniai sėdi storio viduryje (z=9)", S2.holes.every(function(h){return h.p0[2]===9;}),
+     JSON.stringify(S2.holes.map(function(h){return h.p0[2];})));
+  ck("Prie briaunos privažiuojama iš išorės (X<0 arba X>DX)", (function(){
+       var app=S2.moves.filter(function(m){return /briauna/.test(m.note||"");});
+       return app.length===6 && app.every(function(m){return m.b[0]<0 || m.b[0]>888; }); })(),
+     JSON.stringify(S2.moves.filter(function(m){return /briauna/.test(m.note||"");}).map(function(m){return m.b;})));
+  ck("Briaunos gręžimas horizontalus (z nekinta)", S2.moves.filter(function(m){return m.t==="plunge";})
+       .every(function(m){return Math.abs(m.a[2]-m.b[2])<1e-6;}));
+
+  // after thickness change the 3D holes follow the new centre
+  var S3 = V3D._build(XXL.parse(XXL.setThickness(fx.maestro_edges,16).text));
+  ck("Po storio 16: briaunų gręžiniai z=8", S3.holes.every(function(h){return h.p0[2]===8;}),
+     JSON.stringify(S3.holes.map(function(h){return h.p0[2];})));
+
+  // rotation is visible in 3D too
+  var S4 = V3D._build(XXL.parse(XXL.rotate(fx.swood_portrait,true).text));
+  ck("Po pasukimo 3D matmenys 2200×684", S4.DX===2200 && S4.DY===684, S4.DX+"x"+S4.DY);
+  ck("Visi gręžiniai plokštės ribose", S4.holes.every(function(h){
+       return h.p0[0]>=-0.01 && h.p0[0]<=S4.DX+0.01 && h.p0[1]>=-0.01 && h.p0[1]<=S4.DY+0.01; }));
+
+  // arcs become polylines
+  var S5 = V3D._build(XXL.parse(fx.maestro_arcs));
+  ck("Lankai išskaidomi į atkarpas", S5.moves.some(function(m){return m.note==="lankas";}),
+     S5.moves.filter(function(m){return m.note==="lankas";}).length);
+  ck("Lanko atkarpos išlaiko spindulį", (function(){
+       var arc=S5.moves.filter(function(m){return m.note==="lankas";});
+       if(!arc.length) return false;
+       return arc.every(function(m){return m.len>0 && m.len<20;}); })(),
+     JSON.stringify(S5.moves.filter(function(m){return m.note==="lankas";}).map(function(m){return Math.round(m.len*100)/100;})));
+  ck("Tuščia programa nesugriauna 3D", (function(){
+       var e=V3D._build(XXL.parse('H DX=100 DY=100 DZ=18 -B C=0 T=0 R=1 *MM /"S" V=0\r\n.END\r\n'));
+       return e.moves.length===0 && e.holes.length===0 && e.total===0; })());
+
+  /* ---------------- UI smoke test ----------------
+     The core can be perfectly healthy while the page renders nothing - that
+     happened, and 259 core tests said everything was fine.  So drive the real
+     page in an iframe: upload a file, rotate it, click a hole, check a card
+     actually appears. */
+  section("Programos langas (UI)");
+  await (async function () {
+    var fr = document.createElement("iframe");
+    fr.style.cssText = "width:1280px;height:900px;border:1px solid #2b313d;border-radius:8px;margin:8px 0";
+    fr.src = "index.html";
+    document.getElementById("out").appendChild(fr);
+    await new Promise(function (res) { fr.onload = res; });
+    var w = fr.contentWindow, doc = fr.contentDocument;
+    var errs = [];
+    w.addEventListener("error", function (e) { errs.push(e.message); });
+    await new Promise(function (r) { setTimeout(r, 400); });
+
+    ck("Langas užsikrauna be klaidų", errs.length === 0, JSON.stringify(errs));
+    ck("Moduliai įkelti", typeof w.XXL === "object" && typeof w.V3D === "object" &&
+       typeof w.OUT === "object", [typeof w.XXL, typeof w.V3D, typeof w.OUT].join());
+
+    // every helper render() reaches for must exist, or the page silently dies
+    var need = ["load","recompute","render","drawPanel","wireCards","editHTML","opsHTML",
+                "changeHTML","noteHTML","opLabel","rnd","outName","sendName","save",
+                "downloadAll","selectOp","toggleOp","nudge","hasEdit","esc","outRefresh"];
+    var miss = need.filter(function (n) { return typeof w[n] !== "function"; });
+    ck("Visos render() naudojamos funkcijos yra", miss.length === 0, "trūksta: " + miss.join(", "));
+
+    // every id the script asks for must exist in the markup
+    var html = await (await fetch("index.html")).text();
+    var used = {}, m, re1 = /\$\("#([A-Za-z0-9_-]+)"\)/g, re2 = /getElementById\("([A-Za-z0-9_-]+)"\)/g;
+    while ((m = re1.exec(html))) used[m[1]] = 1;
+    while ((m = re2.exec(html))) used[m[1]] = 1;
+    var missIds = Object.keys(used).filter(function (id) { return !doc.getElementById(id); });
+    ck("Visi JS naudojami elementų id egzistuoja", missIds.length === 0, "trūksta: " + missIds.join(", "));
+
+    // ---- upload, the way a person does it ----
+    var dt = new DataTransfer();
+    dt.items.add(new File([fx.swood_portrait], "DESINE_1OP.XXL", { type: "text/plain" }));
+    var inp = doc.getElementById("file");
+    inp.files = dt.files;
+    inp.dispatchEvent(new Event("change", { bubbles: true }));
+    await new Promise(function (r) { setTimeout(r, 900); });
+
+    ck("Įkėlus failą atsiranda kortelė", doc.querySelectorAll(".card").length === 1,
+       doc.querySelectorAll(".card").length + " kortelės");
+    ck("Gulsčia detalė pasukama automatiškai", w.files[0].rot === 1, w.files[0].rot);
+    ck("Matmenys po pasukimo 2200×684",
+       w.files[0].viewDoc.DX === 2200 && w.files[0].viewDoc.DY === 684,
+       w.files[0].viewDoc.DX + "x" + w.files[0].viewDoc.DY);
+    ck("Yra sukimo ir atsisiuntimo mygtukai",
+       !!doc.querySelector("[data-rot]") && !!doc.querySelector("[data-dl]"));
+
+    var cv = doc.querySelector("[data-cv]");
+    var painted = (function () {
+      if (!cv || !cv.width) return 0;
+      var d = cv.getContext("2d").getImageData(0, 0, cv.width, cv.height).data, n = 0;
+      for (var i = 3; i < d.length; i += 4) if (d[i] > 0) n++;
+      return n;
+    })();
+    ck("Brėžinys nupieštas", painted > 10000, painted + " taškų");
+
+    // ---- rotate ----
+    function clickRot() { var b = doc.querySelector("[data-rot]"); if (b) b.click(); return !!b; }
+    clickRot();
+    await new Promise(function (r) { setTimeout(r, 400); });
+    ck("Sukimo mygtukas keičia kampą",
+       !!doc.querySelector(".ang") && doc.querySelector(".ang").textContent === "180°",
+       doc.querySelector(".ang") ? doc.querySelector(".ang").textContent : "nėra .ang");
+    ck("180° grąžina pradinius matmenis",
+       w.files[0].viewDoc.DX === 684 && w.files[0].viewDoc.DY === 2200,
+       w.files[0].viewDoc.DX + "x" + w.files[0].viewDoc.DY);
+    clickRot(); clickRot();
+    await new Promise(function (r) { setTimeout(r, 400); });
+    ck("4 paspaudimai grįžta į 0°",
+       !!doc.querySelector(".ang") && doc.querySelector(".ang").textContent === "0°",
+       doc.querySelector(".ang") ? doc.querySelector(".ang").textContent : "nėra .ang");
+
+    // ---- click a hole, nudge it ----
+    clickRot();
+    await new Promise(function (r) { setTimeout(r, 400); });
+    cv = doc.querySelector("[data-cv]");
+    if (!cv || !cv._hits) { ck("Brėžinys turi spustelimų gręžinių", false, "nėra"); fr.remove(); return; }
+    var hit = cv._hits[3], r0 = cv.getBoundingClientRect();
+    cv.dispatchEvent(new w.MouseEvent("click",
+      { clientX: r0.left + hit.x, clientY: r0.top + hit.y, bubbles: true }));
+    await new Promise(function (r) { setTimeout(r, 400); });
+    ck("Spustelėjus gręžinį atsiveria redaktorius", !!doc.querySelector(".ed"),
+       doc.querySelector(".ed") ? "ok" : "nėra");
+    var beforeX = w.XXL.operations(w.files[0].viewDoc).find(function (o) { return o.id === hit.id; }).x;
+    var plus2 = Array.prototype.slice.call(doc.querySelectorAll("[data-nu]"))
+      .filter(function (b) { return b.dataset.k === "dx" && b.dataset.v === "2"; })[0];
+    ck("Redaktoriuje yra X ašies mygtukai", !!plus2);
+    if (plus2) {
+      plus2.click();
+      await new Promise(function (r) { setTimeout(r, 400); });
+      var afterX = w.XXL.operations(w.files[0].viewDoc).find(function (o) { return o.id === hit.id; }).x;
+      ck("Mygtukas +2 pastumia gręžinį", Math.abs(afterX - beforeX - 2) < 1e-6, beforeX + " -> " + afterX);
+    }
+
+    // a setting that changes the program must never come back by itself,
+    // and must be visible even with the drawer shut
+    ck("Storio keitimas NEĮSIMENAMAS tarp sesijų", (function () {
+        try {
+          w.localStorage.setItem("xxlfix.settings.v2",
+            JSON.stringify({ dzOn: true, dz: "16", dzPolicy: "center",
+                             outAuto: false, outTags: "orig", outPrefix: "NEW_" }));
+        } catch (e) { return true; }
+        var saved = JSON.parse(w.localStorage.getItem("xxlfix.settings.v2"));
+        w.loadSettings();
+        return doc.getElementById("dzOn").checked === false && saved.dzOn === true;
+      })(), doc.getElementById("dzOn").checked);
+    ck("Įjungtas storio keitimas matomas ant uždaryto stalčiaus", (function () {
+        doc.getElementById("dzOn").checked = true;
+        doc.getElementById("dzOn").dispatchEvent(new w.Event("change"));
+        var shut = !doc.getElementById("drawer").classList.contains("open");
+        var txt = doc.getElementById("drawerBadge").textContent;
+        doc.getElementById("dzOn").checked = false;
+        doc.getElementById("dzOn").dispatchEvent(new w.Event("change"));
+        return shut && /storis/.test(txt);
+      })(), doc.getElementById("drawerBadge").textContent);
+    ck("Išjungus — ženkliuko nebelieka",
+       doc.getElementById("drawerBadge").textContent.trim() === "",
+       doc.getElementById("drawerBadge").textContent);
+
+    // playback lives in the card now, not only in the big window
+    ck("3D rodinyje yra atkūrimo juosta", (function () {
+        var b = Array.prototype.slice.call(doc.querySelectorAll("[data-view]"))
+                 .filter(function (x) { return x.dataset.v === "3d"; })[0];
+        if (b) b.click();
+        return !!doc.querySelector(".playbar") && !!doc.querySelector("[data-play]");
+      })(), doc.querySelector(".playbar") ? "yra" : "nėra");
+    await new Promise(function (r) { setTimeout(r, 500); });
+    ck("„Leisti" + "“ paleidžia suklio simuliaciją", await (async function () {
+        var p = doc.querySelector("[data-play]"); if (!p) return false;
+        p.click();
+        await new Promise(function (r) { setTimeout(r, 900); });
+        var v = w.files[0]._v3;
+        var moved = v && v.anim.s > 0;
+        p.click();                                   // pause
+        return moved;
+      })(), w.files[0]._v3 ? Math.round(w.files[0]._v3.anim.s) + " mm" : "-");
+    ck("Sustabdžius — nebejuda", w.files[0]._v3 && !w.files[0]._v3.anim.playing);
+    ck("Slankiklis perkelia į vidurį", (function () {
+        var sc = doc.querySelector("[data-scrub]"); if (!sc) return false;
+        sc.value = 500; sc.dispatchEvent(new w.Event("input"));
+        var v = w.files[0]._v3;
+        return Math.abs(v.anim.s - v.scene.total / 2) < 1;
+      })(), doc.querySelector("[data-pos]") ? doc.querySelector("[data-pos]").textContent : "-");
+    (function () {
+        var b = Array.prototype.slice.call(doc.querySelectorAll("[data-view]"))
+                 .filter(function (x) { return x.dataset.v === "2d"; })[0];
+        if (b) b.click();
+    })();
+    await new Promise(function (r) { setTimeout(r, 400); });
+
+    ck("Šviesi tema (šviesus fonas)", (function () {
+        var bg = w.getComputedStyle(doc.body).backgroundColor;
+        var m = /rgb\((\d+), (\d+), (\d+)\)/.exec(bg);
+        return m && (+m[1] + +m[2] + +m[3]) / 3 > 200;
+      })(), w.getComputedStyle(doc.body).backgroundColor);
+    ck("Brėžinio fonas šviesiai pilkas (ne baltas, ne tamsus)", (function () {
+        if (!w.PAL) return false;
+        var m = /^#(\w\w)(\w\w)(\w\w)$/.exec(w.PAL.bg); if (!m) return false;
+        var lum = (parseInt(m[1],16) + parseInt(m[2],16) + parseInt(m[3],16)) / 3;
+        return lum > 180 && lum < 245;               // light, but not glaring white
+      })(), w.PAL && w.PAL.bg);
+    ck("Detalė šviesesnė už foną (matosi kontūras)", (function () {
+        function lum(c){ var m=/^#(\w\w)(\w\w)(\w\w)$/.exec(c);
+          return m ? (parseInt(m[1],16)+parseInt(m[2],16)+parseInt(m[3],16))/3 : 0; }
+        return w.PAL && lum(w.PAL.fill) > lum(w.PAL.bg) + 10;
+      })(), w.PAL ? w.PAL.fill + " vs " + w.PAL.bg : "-");
+
+    ck("Failo vardas su NEW_ priešdėliu",
+       /^NEW_DESINE_1OP/.test(w.outName(w.files[0].name, w.files[0])),
+       w.outName(w.files[0].name, w.files[0]));
+    ck("3D perjungiklis veikia", (function () {
+        var b = Array.prototype.slice.call(doc.querySelectorAll("[data-view]"))
+                 .filter(function (x) { return x.dataset.v === "3d"; })[0];
+        if (!b) return false; b.click();
+        return w.files[0].view === "3d"; })());
+    ck("Telpa į 19\" ekraną (1280×1024)", doc.body.scrollHeight <= 1024,
+       doc.body.scrollHeight + " px");
+    ck("Veikimo metu klaidų nebuvo", errs.length === 0, JSON.stringify(errs));
+    fr.remove();
+  })();
+
+  /* ---------------- LED profile routing ---------------- */
+  section("LED frezavimas (stalčių žymės)");
+  var ld = XXL.parse(fx.step2xxl_led);
+  ck("LED: 8 gręžimai + 1 frezavimas", ld.holes.length===8 && ld.paths.length===1,
+     ld.holes.length+" / "+ld.paths.length);
+  ck("LED: kelias pavadintas iš komentaro", ld.paths[0] && ld.paths[0].name==="LED_PROFILE_DRAG_ON_EDGE",
+     ld.paths[0] && ld.paths[0].name);
+  ck("LED: atpažintas kaip LED", ld.paths[0] && ld.paths[0].led===true);
+  ck("LED: operations() perduoda led", XXL.operations(ld).filter(function(o){return o.led;}).length===1);
+  ck("Kiti frezavimai NE LED", ["maestro_routing","maestro_arcs"].every(function(n){
+       return XXL.parse(fx[n]).paths.every(function(p){ return !p.led; }); }));
+  ck("isLed: tik atskiras žodis LED", XXL.isLed("LED_PROFILE_DRAG_ON_EDGE") && XXL.isLed("led profile") &&
+     !XXL.isLed("SLEDGE") && !XXL.isLed("") && !XXL.isLed(null));
+  var lr = XXL.transform(fx.step2xxl_led, { skip: [ld.paths[0].op] });
+  var lo = XXL.parse(lr.text);
+  ck("Praleidus LED: frezavimo neliko", lr.ok && lo.paths.length===0, lo.paths.length);
+  ck("Praleidus LED: visi 8 gręžimai liko", lo.holes.length===8 &&
+     fingerprint(lo).join()===fingerprint(ld).join());
+  ck("Praleidus LED: nė vienos aktyvios T=96 eilutės",
+     !lr.text.split(/\r?\n/).some(function(l){ return /^\s*X(G0|L2P|A2P)/.test(l); }));
+  ck("Praleidus LED: .END vietoje", /\n\.END\r?\n/.test(lr.text));
+
+  /* ---------------- part builder (Nauja detalė) ----------------
+     The generator must write exactly what step2xxl writes - that output is
+     what has been running on the machine. */
+  section("Nauja detalė — programų generavimas");
+  var pc = /<script id="part-core">([\s\S]*?)<\/script>/.exec(html);
+  ck("part-core įkeltas", !!pc);
+  if (pc) (0,eval)(pc[1]);
+  function mk(P, kind, o) { var x = PART.make(kind, P); Object.assign(x, o || {}); P.ops.push(x); return x; }
+  function lines(t, re) { return t.split(/\r?\n/).filter(function (l) { return re.test(l); }); }
+  function moves(t) {
+    return lines(t, /^ X(G0|L2P|A2P) /).map(function (l) {
+      var g = function (k) { var m = new RegExp(" " + k + "=(-?[\\d.]+)").exec(l); return m ? +m[1] : NaN; };
+      return { t: /^ XG0/.test(l) ? "G0" : /^ XA2P/.test(l) ? "A" : "L", x: g("X"), y: g("Y"), z: g("Z"), l: l };
+    });
+  }
+
+  // 1. the step2xxl reference program, rebuilt by hand
+  var ref = { name: "_10", DX: 744, DY: 560, DZ: 18, ops: [] };
+  mk(ref, "edge", { edge: "L", d: 5, depth: 32, s: 50, sr: "F", n: 3, step: 212.5 });
+  mk(ref, "hole", { d: 8, through: true, x: 30, xr: "L", y: 516, yr: "F", n: 2, step: 66, dir: "X" });
+  mk(ref, "hole", { d: 8, through: true, x: 135, xr: "L", y: 50, yr: "F", n: 3, step: 212.5, dir: "Y" });
+  var rb = PART.build(ref);
+  ck("step2xxl pavyzdys: be klaidų, 1 programa", rb.ok && rb.programs.length === 1, JSON.stringify(rb.check));
+  var want = lines(fx.step2xxl_led, /^ XBO /), got = rb.ok ? lines(rb.programs[0].text, /^ XBO /) : [];
+  ck("Gręžimų eilutės identiškos step2xxl (8/8)", want.join("\n") === got.join("\n"), got.join("\n"));
+  ck("Antraštė kaip step2xxl", rb.ok && rb.programs[0].text.split("\r\n")[0] === fx.step2xxl_led.split(/\r?\n/)[0],
+     rb.ok && rb.programs[0].text.split("\r\n")[0]);
+  ck("Failo vardas <PAVADINIMAS>_1OP.XXL", rb.ok && rb.programs[0].file === "_10_1OP.XXL", rb.ok && rb.programs[0].file);
+  ck("CRLF ir tik ASCII", rb.ok && /\r\n/.test(rb.programs[0].text) && /^[\x00-\x7f]*$/.test(rb.programs[0].text));
+  ck("Pabaiga .END / ;FINEPROG", rb.ok && /\r\n\.END\r\n;\*+\r\n;FINEPROG\r\n$/.test(rb.programs[0].text));
+  var rp = rb.ok ? XXL.parse(rb.programs[0].text) : { errors: ["-"], holes: [] };
+  ck("XXL Fix perskaito: 8 gręžimai, be klaidų", rp.errors.length === 0 && rp.holes.length === 8, rp.errors.join("; ") + " / " + rp.holes.length);
+
+  // 2. faces and the extra programs
+  var sp = { name: "Šonas spintai", DX: 720, DY: 560, DZ: 18, ops: [] };
+  mk(sp, "edge", { edge: "R", d: 8, depth: 27, s: 100, sr: "B" });                       // X=DX end -> F=2
+  mk(sp, "edge", { edge: "B", d: 8, depth: 27, s: 100, sr: "R" });                       // long edge Ø8 in place -> F=5
+  mk(sp, "edge", { edge: "F", d: 5, depth: 32, s: 50, sr: "L", n: 2, step: 300 });       // long edge Ø5 -> rotated
+  mk(sp, "hole", { face: "B", d: 35, depth: 13, x: 100, xr: "L", y: 22.5, yr: "F", mx: true }); // underside -> 2OP
+  mk(sp, "hole", { d: 5, depth: 2, x: 360, xr: "L", y: 280, yr: "F" });                  // mark
+  var sb = PART.build(sp), pk = sb.programs.map(function (p) { return p.kind; }).join(",");
+  ck("Programos: 1OP + 2OP (apversta) + 3OP (pasukta)", sb.ok && pk === "main,flip,rot", pk + " " + JSON.stringify(sb.check));
+  var t1 = sb.ok ? sb.programs[0].text : "", t2 = sb.ok ? sb.programs[1].text : "", t3 = sb.ok ? sb.programs[2].text : "";
+  ck("Vardai be lietuviškų raidžių", sb.ok && sb.programs[0].file === "Sonas_spintai_1OP.XXL", sb.ok && sb.programs[0].file);
+  ck("Dešinys galas (X=DX) -> F=2, X=aukštis", t1.indexOf(' XBO X=9 Y=460 Z=-27 D=8 N="P" F=2 R=1#') >= 0, lines(t1, /XBO/).join("\n"));
+  ck("Ilgoji briauna Ø8 vietoje -> F=5, X išilgai, Y=aukštis", t1.indexOf(' XBO X=620 Y=9 Z=-27 D=8 N="P" F=5 R=1#') >= 0);
+  ck("Žymė ≤ 2 mm -> N=\"L\"", t1.indexOf(' XBO X=360 Y=280 Z=-2 D=5 N="L" F=1 R=1#') >= 0);
+  ck("Apačios skylės -> 2OP, Y atspindėtas (560-22.5)", lines(t2, /XBO/).join("|") ===
+     ' XBO X=100 Y=537.5 Z=-13 D=35 N="P" F=1 R=1#| XBO X=620 Y=537.5 Z=-13 D=35 N="P" F=1 R=1#', lines(t2, /XBO/).join("\n"));
+  ck("2OP komentaras operatoriui", /; 2OP: panel turned over about the X axis/.test(t2));
+  ck("Pasukta programa: DX=560 DY=720", /^H DX=560 DY=720 DZ=18 /.test(t3), t3.split("\r\n")[0]);
+  ck("Priekis -> kairysis galas F=3, Y = 720 - x", lines(t3, /XBO/).join("|") ===
+     ' XBO X=9 Y=370 Z=-32 D=5 N="P" F=3 R=1#| XBO X=9 Y=670 Z=-32 D=5 N="P" F=3 R=1#', lines(t3, /XBO/).join("\n"));
+  ck("3OP komentaras: pasukti prieš laikrodžio rodyklę", /COUNTER-CLOCKWISE/.test(t3));
+  ck("3D vaizdui: pasuktos skylės kairiajame gale", sb.ok && sb.programs[2].view.holes.every(function (h) { return h.face === 2 && h.x === 0; }));
+
+  var lg = { name: "ILGA", DX: 1200, DY: 400, DZ: 18, ops: [] };
+  mk(lg, "edge", { edge: "F", d: 5, depth: 32, s: 100, sr: "L" });
+  var lgb = PART.check(lg);
+  ck("Ø5 ilgojoje briaunoje, plokštė > 900 -> klaida", lgb.errors === 1, JSON.stringify(lgb.ops));
+
+  // 3. routing rules (2 mm skin, ramp, never plunge, 20 mm air limit)
+  var rt = { name: "R", DX: 720, DY: 560, DZ: 18, ops: [] };
+  mk(rt, "groove", { dir: "X", p: 20, pr: "B", w: 16, depth: 8, full: true });
+  mk(rt, "groove", { dir: "Y", p: 100, pr: "L", w: 40, depth: 10, full: false, a: 50, ar: "F", len: 200 });
+  ["FL", "FR", "BL", "BR"].forEach(function (c) { mk(rt, "notch", { corner: c, a: 40, b: 30 }); });
+  mk(rt, "cut", { xr: "L", x: 300, yr: "F", y: 200, w: 120, h: 80 });
+  mk(rt, "circle", { xr: "L", x: 200, yr: "B", y: 120, D: 60 });
+  mk(rt, "groove", { face: "B", dir: "Y", p: 30, pr: "R", w: 16, depth: 6, full: true });
+  var rtb = PART.build(rt);
+  ck("Frezavimai: be klaidų", rtb.ok, JSON.stringify(rtb.check));
+  var mv = [], air = [], deep = [], plunge = [], ramps = 0;
+  rtb.programs.forEach(function (pg) {
+    var m = moves(pg.text), prev = null;
+    m.forEach(function (q) {
+      if (q.x < -20 - 1e-9 || q.x > pg.DX + 20 + 1e-9 || q.y < -20 - 1e-9 || q.y > pg.DY + 20 + 1e-9) air.push(q.l);
+      if (q.z < -(18 - 2) - 1e-9) deep.push(q.l);
+      if (prev && q.t === "L" && q.x === prev.x && q.y === prev.y && q.z < prev.z - 1e-9 && q.z < 0) plunge.push(q.l);
+      if (prev && q.t === "L" && prev.z === 0 && q.z < 0 && (q.x !== prev.x || q.y !== prev.y)) ramps++;
+      prev = q;
+    });
+    mv = mv.concat(m);
+  });
+  var nRoutes = rtb.programs.reduce(function (a, p) { return a + p.routes.length; }, 0);
+  ck("Niekada > 20 mm už plokštės (NC17050)", air.length === 0, air.join("\n"));
+  ck("Visada lieka 2 mm (Z ≥ -16)", deep.length === 0, deep.join("\n"));
+  ck("Niekada nesminga vertikaliai į medžiagą", plunge.length === 0, plunge.join("\n"));
+  ck("Kiekvienas frezavimas įeina nuožulniai", ramps === nRoutes, ramps + " / " + nRoutes);
+  ck("Kiaurymė: 4 lankai G=3 aplink centrą", lines(rtb.programs[0].text, / XA2P .* I=200 J=440 G=3 /).length === 4);
+  ck("Apačios griovelis -> 2OP", rtb.programs.length === 2 && rtb.programs[1].routes.length === 1);
+  ck("Kampų išpjovos: medžiaga dešinėje (frezuoja atliekų pusėje)", (function () {
+    // every notch path stays inside its notch rectangle grown by the lead-in, i.e. in the waste
+    return rt.ops.filter(function (o) { return o.kind === "notch"; }).every(function (o, k) {
+      var r = PART.notchRect(o, rt), rtx = rtb.programs[0].routes.filter(function (q) { return q.name === "NOTCH"; })[k];
+      return rtx.moves.every(function (q) {
+        return q.x >= r.x0 - PART.LEAD - 1e-6 && q.x <= r.x1 - PART.R + 1e-6 + (r.x0 > 0 ? PART.LEAD + PART.R : 0) &&
+               q.y >= r.y0 - PART.LEAD - 1e-6 && q.y <= r.y1 + PART.LEAD + 1e-6;
+      });
+    });
+  })());
+  var rp2 = XXL.parse(rtb.programs[0].text);
+  ck("XXL Fix perskaito frezavimus", rp2.errors.length === 0 && rp2.paths.length === rtb.programs[0].routes.length, rp2.paths.length);
+  ck("Nė vienas frezavimas nepažymėtas kaip LED", rp2.paths.every(function (p) { return !p.led; }));
+
+  // 4. checks a worker will hit
+  function errs(P) { return PART.check(P).errors; }
+  var e1 = { name: "E", DX: 600, DY: 400, DZ: 18, ops: [] };
+  mk(e1, "hole", { d: 6 });                                         ck("Ø6 grąžto nėra -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "hole", { d: 15, through: true });             ck("Ø15 kiaurai -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "hole", { d: 8, depth: 18 });                  ck("Gylis = storis be „Kiaurai“ -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "hole", { x: 650 });                           ck("Skylė už ribų -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "edge", { edge: "L", d: 8, depth: 40 });       ck("Briaunos gylis > 35 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "groove", { w: 10 });                          ck("Griovelis siauresnis už frezą -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "groove", { depth: 17 });                      ck("Griovelis giliau nei storis-2 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "circle", { D: 12 });                          ck("Kiaurymė < Ø20 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "cut", { xr: "L", x: 0 });                     ck("Išpjova liečia kraštą -> klaida", errs(e1) === 1);
+  var e2 = { name: "E", DX: 400, DY: 1000, DZ: 18, ops: [] };
+  ck("Per plati (Y > 900) -> klaida", errs(e2) === 1);
+  var e3 = { name: "", DX: 600, DY: 400, DZ: 18, ops: [] };
+  ck("Be pavadinimo -> klaida", errs(e3) === 1);
+  e1.ops = []; mk(e1, "shelf"); mk(e1, "hinge"); mk(e1, "edge"); mk(e1, "groove"); mk(e1, "notch"); mk(e1, "cut"); mk(e1, "circle"); mk(e1, "hole");
+  ck("Visos naujos operacijos iškart teisingos", errs(e1) === 0, JSON.stringify(PART.check(e1).ops));
+
+  // 5. measured from an edge -> stays put when the panel grows
+  var g1 = { name: "G", DX: 600, DY: 400, DZ: 18, ops: [] };
+  mk(g1, "hole", { x: 37, xr: "R", y: 50, yr: "B" });
+  g1.DX = 800; g1.DY = 500;
+  var hp = PART.holePts(g1.ops[0], g1)[0];
+  ck("Skylė lieka 37 nuo dešinės / 50 nuo galo pakeitus dydį", hp.x === 763 && hp.y === 450, hp.x + "," + hp.y);
+  var c2 = { name: "C", DX: 600, DY: 400, DZ: 18, ops: [] };
+  mk(c2, "hole", { x: 0, xr: "C", n: 3, step: 32, dir: "X" });
+  ck("Centruota eilė lieka centre", PART.holePts(c2.ops[0], c2).map(function (p) { return p.x; }).join() === "268,300,332");
+
+  // 6. turning the whole part 90° four times changes nothing
+  var q = rt; for (var qi = 0; qi < 4; qi++) q = PART.rotate(q);
+  ck("Pasukus 4×90° — tos pačios programos", JSON.stringify(PART.build(q).programs.map(function (p) { return p.text; })) ===
+     JSON.stringify(rtb.programs.map(function (p) { return p.text; })));
+  var r1x = PART.rotate(sp), r1b = PART.build(r1x);
+  ck("Pasukus 90°: tos pačios skylės (tik kitoje padėtyje)", r1b.ok &&
+     r1b.programs.reduce(function (a, p) { return a + p.bores.length; }, 0) === sb.programs.reduce(function (a, p) { return a + p.bores.length; }, 0),
+     JSON.stringify(r1b.check));
+
+  /* ---------------- part builder UI ---------------- */
+  section("Nauja detalė — langas");
+  await (async function () {
+    var fr = document.createElement("iframe");
+    fr.style.cssText = "width:1280px;height:1024px;border:1px solid #2b313d;border-radius:8px;margin:8px 0";
+    fr.src = "index.html";
+    document.getElementById("out").appendChild(fr);
+    await new Promise(function (res) { fr.onload = res; });
+    var w = fr.contentWindow, doc = fr.contentDocument, errs2 = [];
+    w.addEventListener("error", function (e) { errs2.push(e.message); });
+    try { w.localStorage.removeItem("xxlfix.builder.draft.v1"); } catch (e) {}
+    await new Promise(function (r) { setTimeout(r, 300); });
+    var ob = doc.getElementById("pbOpen");
+    ck("Mygtukas „Nauja detalė“ antraštėje", !!ob);
+    ob.click();
+    await new Promise(function (r) { setTimeout(r, 200); });
+    ck("Langas atsidaro", !doc.getElementById("pb").hidden);
+    ck("8 operacijų mygtukai", doc.querySelectorAll("#pbTiles [data-add]").length === 8);
+    w.PB.set({ v: 1, name: "TEST", DX: 720, DY: 560, DZ: 18, ops: [] });
+    Array.prototype.forEach.call(doc.querySelectorAll("#pbTiles [data-add]"), function (b) { b.click(); });
+    await new Promise(function (r) { setTimeout(r, 200); });
+    ck("Visos 8 operacijos pridėtos", w.PB.get().ops.length === 8, w.PB.get().ops.length);
+    ck("Brėžinyje matosi operacijos", doc.querySelectorAll("#pbSvg g.op").length >= 8, doc.querySelectorAll("#pbSvg g.op").length);
+    var b = w.PB.built();
+    ck("Paruošta be klaidų", b && b.ok && b.programs.length >= 1, b && JSON.stringify(b.check));
+    ck("Programų kortelė apačioje", doc.querySelectorAll("#pbProgs .pb-prog").length === (b ? b.programs.length : -1));
+    ck("Pasirinkta paskutinė operacija rodo nustatymus", !!doc.querySelector("#pbRight .pb-ph"));
+    // type a bad value: status turns red, button disabled
+    var o = w.PB.get().ops[0]; w.PB.select(o.id);
+    var inp = doc.querySelector('#pbRight .pb-num[data-k="depth"] input');
+    inp.value = "25"; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    ck("Klaidingas gylis -> „pataisykite“ ir atsisiuntimas išjungtas",
+       /pataisykite/.test(doc.getElementById("pbStatus").textContent) && doc.getElementById("pbDl").disabled);
+    inp.value = "12,5"; inp.dispatchEvent(new Event("input", { bubbles: true }));
+    ck("Kablelis priimamas (12,5)", w.PB.get().ops[0].depth === 12.5, w.PB.get().ops[0].depth);
+    ck("Telpa į 1280×1024 be slinkimo", doc.getElementById("pb").scrollHeight <= 1024 && doc.getElementById("pb").scrollWidth <= 1280,
+       doc.getElementById("pb").scrollWidth + "×" + doc.getElementById("pb").scrollHeight);
+    // type a value straight on the drawing
+    w.PB.set({ v: 1, name: "INL", DX: 720, DY: 400, DZ: 18, ops: [] });
+    doc.querySelector('#pbTiles [data-add="hinge"]').click();
+    await new Promise(function (r) { setTimeout(r, 100); });
+    var ekx = doc.querySelector('#pbSvg .ek[data-ek="x"]');
+    ck("Brėžinyje skaičiai spaudžiami", !!ekx && !!doc.querySelector('#pbSvg .ek[data-ek="DX"]'));
+    if (ekx) {
+      ekx.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+      var box = doc.querySelector(".pb-inl");
+      ck("Atsidaro įvedimo laukelis su reikšme", !!box && box.value === "100", box && box.value);
+      if (box) {
+        box.value = "120,5";
+        box.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }));
+        ck("Įvesta reikšmė pritaikyta", w.PB.get().ops[0].x === 120.5, w.PB.get().ops[0].x);
+      }
+    }
+    var ekd = doc.querySelector('#pbSvg .ek[data-ek="DX"]');
+    ekd.dispatchEvent(new PointerEvent("pointerdown", { bubbles: true, button: 0 }));
+    var bx2 = doc.querySelector(".pb-inl"); bx2.value = "900";
+    bx2.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    ck("Esc atšaukia", w.PB.get().DX === 720 && !doc.querySelector(".pb-inl"), w.PB.get().DX);
+    // copy / paste
+    w.PB.select(w.PB.get().ops[0].id);
+    doc.dispatchEvent(new KeyboardEvent("keydown", { key: "c", ctrlKey: true, bubbles: true }));
+    doc.dispatchEvent(new KeyboardEvent("keydown", { key: "v", ctrlKey: true, bubbles: true }));
+    var ops2 = w.PB.get().ops;
+    ck("Ctrl+C / Ctrl+V: kopija atsiranda šalia", ops2.length === 2 && ops2[1].x === 170.5 && ops2[1].id !== ops2[0].id,
+       JSON.stringify(ops2.map(function (q) { return [q.id, q.x]; })));
+    w.PB.set({ v: 1, name: "KITA", DX: 1000, DY: 500, DZ: 18, ops: [] });
+    doc.querySelector('#pbClipBar [data-clip="paste"]').click();
+    ck("Įklijuojama į kitą detalę toje pačioje vietoje", w.PB.get().ops.length === 1 && w.PB.get().ops[0].x === 120.5);
+    doc.getElementById("pbClose").click();
+    ck("Uždaromas", doc.getElementById("pb").hidden);
+    ck("Klaidų nebuvo", errs2.length === 0, JSON.stringify(errs2));
+    fr.remove();
+  })();
+
+  /* ---------------- summary ---------------- */
+  var s=document.getElementById("sum");
+  s.className = F? "fail":"pass";
+  s.textContent = (F? "✗ ":"✓ ") + P + " praėjo, " + F + " nepavyko  (iš viso " + (P+F) + ")";
+  window.__RESULT__ = {pass:P, fail:F};
+}
+run().catch(function(e){
+  var s=document.getElementById("sum"); s.className="fail"; s.textContent="Klaida: "+e.message;
+  window.__RESULT__={pass:P,fail:F,error:String(e&&e.stack||e)};
+});
+</script>
+</body></html>

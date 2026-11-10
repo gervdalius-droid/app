@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>ShopFlow — Production, at a glance</title>
+<link rel="icon" type="image/png" href="icons/favicon-64.png">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0071e3">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ShopFlow">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="stylesheet" href="styles.css?v=dbl1109b">
+  <meta name="shopflow-build" content="dbl1109b">
+</head>
+<body>
+  <!-- ============================================================
+       Boot guard — deliberately ES5, and first on the page.
+
+       A syntax error in any app file stops that file dead, App never
+       exists, and the page just sits there white: no message, nothing in
+       the UI to report. That is what a shop floor sees when a tablet's
+       browser is older than the code. This catches it and says so, in the
+       language of the person holding the tablet.
+       Nothing in here may use const, let, arrow functions, template
+       literals or ?. — it has to parse on the engine that could not parse
+       the app.
+       ============================================================ -->
+  <script>
+  (function () {
+    var errs = [];
+    window.__sfErrors = errs;
+    window.addEventListener("error", function (e) {
+      if (e && e.message) {
+        errs.push(e.message + (e.filename ? " — " + String(e.filename).split("/").pop() : "") + (e.lineno ? ":" + e.lineno : ""));
+      } else if (e && e.target && (e.target.src || e.target.href)) {
+        errs.push("could not load " + String(e.target.src || e.target.href).split("/").pop());
+      }
+    }, true);
+
+    /* Can this engine read what the app is written in? */
+    var modern = true;
+    try { new Function("var o={a:1}; return o?.a ?? 0;")(); } catch (_) { modern = false; }
+    window.__sfModern = modern;
+
+    function chromeVersion() {
+      var m = /Chrom(?:e|ium)\/(\d+)/.exec(navigator.userAgent);
+      return m ? parseInt(m[1], 10) : 0;
+    }
+
+    function show() {
+      var app = document.getElementById("app");
+      if (app && app.children.length) return;            // it started — nothing to say
+      var v = chromeVersion();
+      var lt = (localStorage.getItem("shopflow.lang") || navigator.language || "").indexOf("lt") === 0;
+      var title, body;
+      if (!modern) {
+        title = lt ? "Ši naršyklė per sena" : "This browser is too old";
+        body = (lt
+          ? "ShopFlow reikia Chrome 80 ar naujesnės. Šiame įrenginyje"
+          : "ShopFlow needs Chrome 80 or newer. This device has")
+          + " " + (v ? "Chrome " + v : (lt ? "nežinoma naršyklė" : "an unknown browser")) + ".<br><br>"
+          + (lt
+            ? "Atnaujinkite „Chrome“ ir „Android System WebView“ per Play parduotuvę, tada atidarykite iš naujo."
+            : "Update Chrome and Android System WebView from the Play Store, then open this again.");
+      } else {
+        title = lt ? "ShopFlow neįsijungė" : "ShopFlow did not start";
+        body = (lt ? "Klaida:" : "Error:") + "<br><code>"
+          + (errs.length ? errs.join("<br>") : (lt ? "nežinoma" : "unknown"))
+          + "</code><br><br>" + (v ? "Chrome " + v + " · " : "") + navigator.userAgent;
+      }
+      document.body.innerHTML =
+        '<div style="font:15px/1.6 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;max-width:620px;margin:12vh auto;padding:0 24px;color:#1d1d1f">'
+        + '<div style="font-size:40px;line-height:1">🪚</div>'
+        + '<h1 style="font-size:22px;margin:14px 0 8px">' + title + '</h1>'
+        + '<p style="color:#4a4a4f;word-break:break-word">' + body + '</p>'
+        + '<p style="margin-top:22px"><a href="?sfreset=1" style="color:#0071e3">'
+        + (lt ? "Išvalyti įrašytą versiją ir bandyti dar kartą" : "Clear the stored copy and try again")
+        + '</a></p></div>';
+    }
+
+    /* an escape hatch for a tablet stuck on a bad cached build */
+    if (location.search.indexOf("sfreset=1") >= 0) {
+      try {
+        if (navigator.serviceWorker) navigator.serviceWorker.getRegistrations().then(function (rs) {
+          for (var i = 0; i < rs.length; i++) rs[i].unregister();
+        });
+        if (window.caches) caches.keys().then(function (ks) {
+          for (var i = 0; i < ks.length; i++) caches.delete(ks[i]);
+        });
+      } catch (_) {}
+      setTimeout(function () { location.replace(location.pathname); }, 700);
+    }
+
+    window.addEventListener("load", function () { setTimeout(show, 4000); });
+  })();
+  </script>
+
+  <div id="app"></div>
+  <div id="modal-root"></div>
+  <div id="drawer-root"></div>
+  <div id="toast-root"></div>
+  <div id="palette-root"></div>
+  <div id="mywork-root"></div>
+  <script src="legacy-polyfills.js?v=dbl1109b"></script>
+  <script src="icons.js?v=dbl1109b"></script>
+  <script src="i18n.js?v=dbl1109b"></script>
+  <script src="data.js?v=dbl1109b"></script>
+  <script src="realdata.js?v=dbl1109b"></script>
+  <script src="app.js?v=dbl1109b"></script>
+  <script src="manager.js?v=dbl1109b"></script>
+  <script src="worker.js?v=dbl1109b"></script>
+  <script src="wb.js?v=dbl1109b"></script>
+  <script src="scan.js?v=dbl1109b"></script>
+  <script src="gpm.js?v=dbl1109b"></script>
+  <script src="swood.js?v=dbl1109b"></script>
+  <script src="sheet-export.js?v=dbl1109b"></script>
+  <script src="reports.js?v=dbl1109b"></script>
+  <script src="insights.js?v=dbl1109b"></script>
+  <script src="files.js?v=dbl1109b"></script>
+  <!-- shared customers + document index. Both are optional: if the hub is not
+       deployed, core.js 404s and bridge.js quietly does nothing. -->
+  <script src="../hub/core.js" onerror="/* hub not deployed — ShopFlow runs alone */"></script>
+  <script src="bridge.js?v=dbl1109b"></script>
+  <script src="sync-config.js?v=dbl1109b" onerror="/* no cloud config yet — runs local */"></script>
+  <script src="sync.js?v=dbl1109b"></script>
+  <!-- Dėdės Baldai notices: popups + phone notifications. ShopFlow shows its own
+       mentions/tasks itself, so those are only pushed, not popped here. -->
+  <script>window.NOTICES_CFG = { side: "right", bottom: 92, inset: 25, z: 65, skipKinds: ["shopflow"],
+    person: function () { try { return (typeof App !== "undefined" && App.me) ? { id: App.me.id, name: App.me.name } : null; } catch (e) { return null; } } };</script>
+  <script src="../hub/workers/workshop-auth.js" onerror="/* hub not reachable — no notices */"></script>
+  <script src="../hub/shared/notices.js" defer onerror="/* hub not reachable — no notices */"></script>
+  <script>App.boot().catch(e => { console.error('[boot]', e); document.body.innerHTML = '<p style="font:15px system-ui;padding:40px">ShopFlow could not start: ' + (e && e.message || e) + '</p>'; })</script>
+</body>
+</html>

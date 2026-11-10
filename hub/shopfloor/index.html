@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<script src="/hub/shared/gate.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#131715">
+<link rel="icon" type="image/png" href="https://app.dedesbaldai.lt/hub/shared/favicon-64.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Dėdės Baldai">
+<link rel="apple-touch-icon" href="https://app.dedesbaldai.lt/hub/shared/touch-180.png">
+<title>Dėdės Baldai Hub</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600&family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style id="hub-css">
+/* Layout: three switchable directions over one data set.
+   Lapas = apps nested as parts on a 2800×2070 sheet (asymmetric 12-col spans).
+   Stotis = 5fr sticky clock column / 8fr full-width station rows.
+   Žurnalas = 5fr editorial lead + cover / 7fr dropped contents index. */
+/* generated from tokens.py: light first, every direction restates every token */
+:root{--bg:#e6e8e3;--surface:#f8f9f6;--surface-2:#eef0ec;--ink:#131715;--muted:#59615b;--line:#d2d7cf;--line-2:#b4bbb1;--accent:#ff4a1c;--on-accent:#160700;--s-design:#2f55c8;--s-cnc:#c27c00;--s-prod:#127c52;--s-staff:#7a4ab8;--focus:#ff4a1c;--shadow:0 1px 0 rgba(19,23,21,.05),0 12px 26px -18px rgba(19,23,21,.42);--f-display:'Schibsted Grotesk','Helvetica Neue',sans-serif;--f-body:'Schibsted Grotesk','Helvetica Neue',sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;--r:3px;--r-dock:4px;--ease:cubic-bezier(.2,.8,.2,1);--ease-snap:cubic-bezier(.3,.7,.1,1);}
+:root[data-dir="stotis"]{--bg:#f2f1ec;--surface:#ffffff;--surface-2:#e8e7e1;--ink:#0b1015;--muted:#535b63;--line:#d4d3cb;--line-2:#0b1015;--accent:#ffc400;--on-accent:#0b1015;--s-design:#1f5fe0;--s-cnc:#b88400;--s-prod:#0e8050;--s-staff:#7a3fd0;--focus:#0b1015;--shadow:none;--f-display:'Big Shoulders Display','Arial Narrow',sans-serif;--f-body:'Archivo','Helvetica Neue',sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;--r:0px;--r-dock:0px;}
+:root[data-dir="zurnalas"]{--bg:#edefe7;--surface:#f8f9f3;--surface-2:#e3e6db;--ink:#0f231c;--muted:#56645d;--line:#cdd2c4;--line-2:#0f231c;--accent:#86590a;--on-accent:#fbf8ef;--s-design:#2d50b8;--s-cnc:#b5470f;--s-prod:#1d7a46;--s-staff:#6b4a9e;--focus:#86590a;--shadow:none;--f-display:'Newsreader','Iowan Old Style',Georgia,serif;--f-body:'Hanken Grotesk','Helvetica Neue',sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;--r:999px;--r-dock:999px;}
+@media (prefers-color-scheme: dark){
+:root:not([data-theme="light"]){--bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;--accent:#ff6b3d;--on-accent:#160700;--s-design:#86a5ff;--s-cnc:#f0b23a;--s-prod:#4cc993;--s-staff:#c3a1ff;--focus:#ff6b3d;--shadow:0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85);color-scheme:dark;}
+:root[data-dir="stotis"]:not([data-theme="light"]){--bg:#121c25;--surface:#18242f;--surface-2:#1d2b38;--ink:#f1f4f6;--muted:#8fa0ae;--line:#263646;--line-2:#f1f4f6;--accent:#ffc93c;--on-accent:#0b1015;--s-design:#7fb0ff;--s-cnc:#ffc93c;--s-prod:#5fd39b;--s-staff:#c9a7ff;--focus:#ffc93c;--shadow:none;color-scheme:dark;}
+:root[data-dir="zurnalas"]:not([data-theme="light"]){--bg:#0d1f19;--surface:#122a22;--surface-2:#0a1814;--ink:#ece9dd;--muted:#93a89d;--line:#1f3a30;--line-2:#ece9dd;--accent:#e2b766;--on-accent:#0d1f19;--s-design:#93abff;--s-cnc:#ff9466;--s-prod:#6fd29a;--s-staff:#c2a8f0;--focus:#e2b766;--shadow:none;color-scheme:dark;}
+}
+:root[data-theme="dark"]{--bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;--accent:#ff6b3d;--on-accent:#160700;--s-design:#86a5ff;--s-cnc:#f0b23a;--s-prod:#4cc993;--s-staff:#c3a1ff;--focus:#ff6b3d;--shadow:0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85);color-scheme:dark;}
+:root[data-theme="dark"][data-dir="stotis"]{--bg:#121c25;--surface:#18242f;--surface-2:#1d2b38;--ink:#f1f4f6;--muted:#8fa0ae;--line:#263646;--line-2:#f1f4f6;--accent:#ffc93c;--on-accent:#0b1015;--s-design:#7fb0ff;--s-cnc:#ffc93c;--s-prod:#5fd39b;--s-staff:#c9a7ff;--focus:#ffc93c;--shadow:none;color-scheme:dark;}
+:root[data-theme="dark"][data-dir="zurnalas"]{--bg:#0d1f19;--surface:#122a22;--surface-2:#0a1814;--ink:#ece9dd;--muted:#93a89d;--line:#1f3a30;--line-2:#ece9dd;--accent:#e2b766;--on-accent:#0d1f19;--s-design:#93abff;--s-cnc:#ff9466;--s-prod:#6fd29a;--s-staff:#c2a8f0;--focus:#e2b766;--shadow:none;color-scheme:dark;}
+
+@property --sweep{syntax:'<percentage>';inherits:false;initial-value:0%}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;transition:background-color .3s var(--ease),color .3s var(--ease)}
+[data-g="design"]{--stage:var(--s-design)}
+[data-g="cnc"]{--stage:var(--s-cnc)}
+[data-g="production"]{--stage:var(--s-prod)}
+[data-g="staff"]{--stage:var(--s-staff)}
+.page{max-width:1320px;margin:0 auto;padding-block:28px 120px;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px))}
+:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+a{color:inherit}
+button{font:inherit;color:inherit}
+.kbd{font-family:var(--f-mono);font-size:12px;font-weight:500;min-width:26px;height:26px;padding:0 7px;display:inline-grid;place-items:center;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:min(var(--r),7px);color:var(--muted);background:var(--surface);transition:transform .09s linear,border-width .09s linear;flex:none}
+a:active .kbd,.hit .kbd{transform:translateY(1px);border-bottom-width:1px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* reveal: starts visible (.35), releases after so hover transforms still apply */
+@keyframes rv{from{opacity:.35;transform:translateY(10px)}to{opacity:1;transform:none}}
+.anim .rv{animation:rv .52s var(--ease) backwards;animation-delay:calc(min(var(--i,0),9) * 45ms)}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.28s;animation-timing-function:cubic-bezier(.2,.8,.2,1)}
+
+/* shared controls */
+.ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;padding:3px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface)}
+.seg button{font-size:12.5px;font-weight:600;padding:6px 10px;border:0;border-radius:calc(var(--r) - 2px);background:transparent;color:var(--muted);cursor:pointer;min-height:32px;letter-spacing:.02em}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.ib{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;min-height:40px;padding:0 13px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--ink);cursor:pointer}
+.ib:hover{border-color:var(--ink)}
+.ib svg{width:16px;height:16px}
+.btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;min-height:42px;padding:0 18px;border:1px solid var(--ink);border-radius:var(--r);background:var(--ink);color:var(--bg);cursor:pointer;text-decoration:none}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn svg{width:16px;height:16px}
+.empty{padding:48px 24px;text-align:center;color:var(--muted);border:1px dashed var(--line-2);border-radius:var(--r)}
+
+/* ============ LAPAS ============ */
+.L-head{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:end;gap:20px 36px;padding-bottom:22px}
+.brand{display:flex;align-items:center;gap:14px;min-width:0}
+.L .mark{width:52px;height:52px;flex:none;background:var(--ink);color:var(--bg);display:grid;place-items:center}
+.L .mark svg{width:30px;height:30px}
+.L h1{margin:0;font-family:var(--f-display);font-weight:800;font-size:clamp(30px,3.4vw,46px);letter-spacing:-.035em;line-height:.92}
+.L .sub{margin:6px 0 0;color:var(--muted);font-size:14px}
+.L-meta{display:flex;gap:28px;margin:0;flex-wrap:wrap}
+.L-meta dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.L-meta dd{margin:3px 0 0;font-family:var(--f-mono);font-size:15px;font-weight:500;font-variant-numeric:tabular-nums;white-space:nowrap}
+.L-bar{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;border-top:1px solid var(--line-2)}
+.L-filters{display:flex;flex-wrap:wrap;gap:6px}
+.L-filters button{display:inline-flex;align-items:center;gap:9px;min-height:40px;padding:0 14px;border:1px solid var(--line);border-radius:var(--r);background:transparent;cursor:pointer;font-size:14px;font-weight:600;color:var(--muted)}
+.L-filters button i{width:10px;height:10px;background:var(--stage,var(--ink));flex:none}
+.L-filters button b{font-family:var(--f-mono);font-weight:500;font-size:12px}
+.L-filters button[aria-pressed="true"]{border-color:var(--ink);color:var(--ink);background:var(--surface)}
+.L-search{position:relative;flex:0 1 300px;min-width:0}
+.L-search input{width:100%;min-height:40px;font-family:var(--f-mono);font-size:13.5px;padding:0 40px 0 36px;border:1px solid var(--line-2);border-radius:var(--r);background:var(--surface);color:var(--ink)}
+.L-search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--muted)}
+.L-search .kbd{position:absolute;right:8px;top:50%;transform:translateY(-50%);height:22px;min-width:22px;font-size:11px}
+.L-ruler{display:flex;justify-content:space-between;font-family:var(--f-mono);font-size:10.5px;color:var(--muted);padding:0 1px 9px;background:repeating-linear-gradient(90deg,var(--line-2) 0 1px,transparent 1px 2.5%) bottom/100% 5px no-repeat}
+.L-sheet{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-auto-rows:minmax(158px,auto);grid-auto-flow:dense;gap:8px;padding:8px;background:var(--surface-2);border:1px solid var(--line-2)}
+.L-part{grid-column:span var(--c);grid-row:span var(--r);position:relative;display:flex;flex-direction:column;gap:12px;padding:16px 18px 14px 26px;background:var(--surface);color:inherit;text-decoration:none;box-shadow:var(--shadow);min-width:0;transition:transform .22s var(--ease),box-shadow .22s var(--ease)}
+.L-part::before{content:"";position:absolute;inset:-2px;padding:2px;background:conic-gradient(from 0deg,var(--accent) var(--sweep),transparent 0);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;pointer-events:none;transition:--sweep .55s var(--ease)}
+a.L-part:hover,a.L-part.hit{transform:translateY(-2px)}
+a.L-part:hover::before,a.L-part:focus-visible::before,a.L-part.hit::before{--sweep:100%}
+a.L-part:active{transform:scale(.99)}
+a.L-part:focus-visible{outline:none}
+.L-edge{position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--stage)}
+.L-top{display:flex;align-items:center;gap:8px}
+.L-code{font-family:var(--f-mono);font-size:11.5px;color:var(--muted);letter-spacing:.04em;margin-right:auto}
+.L-tag{font-family:var(--f-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:2px 7px;border:1px solid var(--stage);color:var(--stage)}
+.L-ico{width:42px;height:42px;color:var(--stage)}
+.L-ico svg{width:100%;height:100%}
+.L-part h3{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(20px,1.75vw,25px);letter-spacing:-.025em;line-height:1.05;text-wrap:balance}
+.L-part p{margin:6px 0 0;color:var(--muted);font-size:14.5px;max-width:42ch}
+.L-part.big{padding:22px 26px 18px 34px}
+.L-part.big .L-ico{width:96px;height:96px;margin-block:6px auto}
+.L-part.big h3{font-weight:800;font-size:clamp(36px,4.2vw,62px);letter-spacing:-.045em;line-height:.92}
+.L-part.big p{font-size:16px;margin-top:10px}
+.L-dim{margin-top:auto;display:flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:11px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.L-dim i{flex:1;height:1px;background:currentColor;opacity:.55;position:relative;min-width:12px}
+.L-dim i::before{content:"";position:absolute;top:-4px;height:9px;width:1px;background:currentColor}
+.L-dim i:first-child::before{left:0}
+.L-dim i:last-child::before{right:0}
+.L-part.off{background:repeating-linear-gradient(135deg,transparent 0 7px,var(--line) 7px 8px),var(--surface-2);box-shadow:none;color:var(--muted)}
+.L-part.off .L-ico{opacity:.5}
+.L-foot{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px 24px;margin-top:14px;font-family:var(--f-mono);font-size:11.5px;color:var(--muted)}
+.L-legend{display:flex;flex-wrap:wrap;gap:6px 16px;align-items:center}
+.L-legend span{display:inline-flex;align-items:center;gap:6px}
+.L-legend i{width:12px;height:4px;background:var(--stage)}
+@media (max-width:960px){.L-head{grid-template-columns:1fr auto}.L-meta{grid-column:1/-1;order:3}}
+@media (max-width:900px){.L-sheet{grid-template-columns:repeat(6,minmax(0,1fr))}.L-part{grid-column:span 3;grid-row:span 1}.L-part.big{grid-column:span 6}.L-part.big .L-ico{width:64px;height:64px}}
+@media (max-width:560px){.L-head{grid-template-columns:1fr}.L-meta{gap:18px}.L-meta div:nth-child(1){display:none}.L-sheet{grid-template-columns:1fr}.L-part,.L-part.big{grid-column:1/-1}.L-search{flex:1 1 100%}.L-ruler span:nth-child(2),.L-ruler span:nth-child(4){display:none}}
+
+/* ============ STOTIS ============ */
+.S{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:0 56px;align-items:start}
+.S-side{position:sticky;top:calc(28px + env(safe-area-inset-top,0px));display:flex;flex-direction:column;gap:22px;min-width:0}
+.S-brand{display:flex;align-items:center;gap:12px;font-family:var(--f-display);font-weight:800;font-size:24px;letter-spacing:.03em;text-transform:uppercase;line-height:1}
+.S-mark{width:44px;height:44px;background:var(--accent);color:var(--on-accent);display:grid;place-items:center;flex:none}
+.S-mark svg{width:26px;height:26px}
+.S-clock{font-family:var(--f-display);font-weight:800;font-size:clamp(96px,11.5vw,176px);line-height:.8;letter-spacing:-.01em;font-variant-numeric:tabular-nums;margin-top:8px}
+.S-when{display:flex;flex-wrap:wrap;align-items:center;gap:10px 14px;font-size:18px;font-weight:500}
+.S-week{background:var(--accent);color:var(--on-accent);font-family:var(--f-display);font-weight:800;font-size:19px;letter-spacing:.08em;text-transform:uppercase;padding:3px 10px}
+.S-greet{margin:0;color:var(--muted);font-size:16px}
+.S-filters{display:flex;flex-direction:column;border-top:3px solid var(--line-2)}
+.S-filters button{display:flex;align-items:center;gap:12px;min-height:54px;padding:0 4px;border:0;border-bottom:1px solid var(--line);background:transparent;cursor:pointer;font-family:var(--f-display);font-weight:800;font-size:22px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);text-align:left}
+.S-filters button i{width:14px;height:14px;border:2px solid var(--stage,var(--ink));flex:none}
+.S-filters button b{margin-left:auto;font-family:var(--f-mono);font-weight:500;font-size:14px}
+.S-filters button[aria-pressed="true"]{color:var(--ink)}
+.S-filters button[aria-pressed="true"] i{background:var(--stage,var(--ink))}
+.S-search{position:relative}
+.S-search input{width:100%;min-height:52px;font-size:18px;padding:0 44px 0 34px;border:0;border-bottom:2px solid var(--line-2);background:transparent;color:var(--ink);border-radius:0}
+.S-search svg{position:absolute;left:2px;top:50%;transform:translateY(-50%);width:20px;height:20px;color:var(--muted)}
+.S-search .kbd{position:absolute;right:0;top:50%;transform:translateY(-50%)}
+.S-board{display:flex;flex-direction:column;gap:40px;min-width:0}
+.S-group h2{display:flex;align-items:center;gap:12px;margin:0 0 10px;font-family:var(--f-display);font-weight:800;font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.S-group h2 i{width:12px;height:12px;background:var(--stage)}
+.S-group h2 span{font-family:var(--f-mono);font-weight:500;letter-spacing:0;font-size:13px}
+.S-list{border-top:3px solid var(--line-2)}
+.S-row{position:relative;isolation:isolate;display:grid;grid-template-columns:72px minmax(0,1fr) auto 40px;align-items:center;gap:22px;min-height:112px;padding:16px 14px 16px 0;border-bottom:1px solid var(--line);color:inherit;text-decoration:none;transition:color .2s var(--ease-snap),padding .24s var(--ease-snap)}
+.S-row::before{content:"";position:absolute;inset:0;background:var(--accent);transform:scaleX(0);transform-origin:left;transition:transform .24s var(--ease-snap);z-index:-1}
+a.S-row:hover,a.S-row:focus-visible,a.S-row.hit{color:var(--on-accent);padding-left:12px}
+a.S-row:hover::before,a.S-row:focus-visible::before,a.S-row.hit::before{transform:scaleX(1)}
+a.S-row:focus-visible{outline-offset:-3px}
+a.S-row:active{transform:scale(.995)}
+.S-key{width:68px;height:68px;display:grid;place-items:center;border:2px solid currentColor;font-family:var(--f-display);font-weight:800;font-size:38px;line-height:1}
+.S-name{display:block;font-family:var(--f-display);font-weight:800;font-size:clamp(34px,4.3vw,62px);line-height:.88;text-transform:uppercase;letter-spacing:.005em;overflow-wrap:anywhere}
+.S-desc{display:block;margin-top:8px;font-size:16px;color:var(--muted);transition:color .2s}
+a.S-row:hover .S-desc,a.S-row:focus-visible .S-desc,a.S-row.hit .S-desc{color:inherit}
+.S-tag{font-family:var(--f-mono);font-size:12px;font-weight:500;text-transform:uppercase;letter-spacing:.06em;border:1.5px solid currentColor;padding:4px 9px;white-space:nowrap}
+.S-tag.none{border:0;padding:0}
+.S-go svg{width:34px;height:34px;transition:transform .24s var(--ease-snap)}
+a.S-row:hover .S-go svg{transform:translateX(4px)}
+.S-row.off{color:var(--muted)}
+.S-row.off .S-key{border-style:dashed}
+@media (max-width:900px){.S{grid-template-columns:1fr;gap:28px}.S-side{position:static}.S-clock{font-size:96px}.S-filters{flex-direction:row;flex-wrap:wrap;border-top:0;gap:6px}.S-filters button{border:2px solid var(--line);min-height:48px;padding:0 12px;font-size:18px}.S-filters button[aria-pressed="true"]{border-color:var(--ink)}.S-filters button b{margin-left:4px}}
+@media (max-width:560px){.S-row{grid-template-columns:52px minmax(0,1fr) 28px;gap:14px;min-height:96px}.S-key{width:50px;height:50px;font-size:28px}.S-tag{display:none}.S-go svg{width:26px;height:26px}.S-name{font-size:36px}}
+
+/* ============ ŽURNALAS ============ */
+.Z-mast{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 24px;padding-bottom:14px;border-bottom:4px double var(--line-2)}
+.Z-title{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.Z-title b{font-family:var(--f-display);font-weight:500;font-size:26px;letter-spacing:-.01em}
+.Z-title span,.Z-issue{font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.Z-issue{font-family:var(--f-mono);letter-spacing:.08em}
+.Z-spread{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,7fr);gap:48px 80px;padding-top:44px}
+.Z-dateline{margin:0 0 18px;font-family:var(--f-mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.Z-greet{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(52px,6.8vw,108px);line-height:.94;letter-spacing:-.025em;text-wrap:balance}
+.Z-greet em{font-style:italic;color:var(--accent)}
+.Z-stand{margin:22px 0 0;font-size:18px;color:var(--muted);max-width:34ch}
+.Z-cover{display:block;margin-top:40px;padding-top:16px;border-top:1px solid var(--line-2);color:inherit;text-decoration:none}
+.Z-cover-k{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.Z-art{margin:20px 0 14px;color:var(--ink)}
+.Z-art svg{width:100%;height:auto;max-height:240px;display:block}
+.Z-art .big{width:120px;height:120px;color:var(--stage)}
+.Z-cover h3{margin:0;font-family:var(--f-display);font-weight:400;font-size:clamp(30px,3vw,40px);letter-spacing:-.02em;line-height:1}
+.Z-cover p{margin:8px 0 0;color:var(--muted);font-size:15.5px}
+.Z-open{display:inline-flex;align-items:center;gap:8px;margin-top:16px;font-weight:600;font-size:14px;color:var(--accent)}
+.Z-open svg{width:16px;height:16px;transition:transform .3s var(--ease)}
+.Z-cover:hover .Z-open svg,.Z-cover.hit .Z-open svg{transform:translateX(5px)}
+.Z-cover:hover h3,.Z-cover.hit h3{font-style:italic}
+.Z-index{margin-top:132px;min-width:0}
+.Z-tools{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:end;gap:14px 24px}
+.Z-tabs{display:flex;flex-wrap:wrap;gap:4px 18px}
+.Z-tabs button{border:0;background:transparent;padding:6px 0;cursor:pointer;font-size:15px;font-weight:500;color:var(--muted);background-image:linear-gradient(var(--accent),var(--accent));background-size:0 2px;background-repeat:no-repeat;background-position:0 100%;transition:background-size .3s var(--ease),color .2s;min-height:40px}
+.Z-tabs button b{font-family:var(--f-mono);font-weight:400;font-size:11px;vertical-align:super;margin-left:3px}
+.Z-tabs button[aria-pressed="true"]{color:var(--ink);background-size:100% 2px}
+.Z-search{position:relative;flex:0 1 260px;min-width:0}
+.Z-search input{width:100%;min-height:42px;font-family:var(--f-display);font-style:italic;font-size:19px;padding:0 34px 0 0;border:0;border-bottom:1px solid var(--line-2);background:transparent;color:var(--ink);border-radius:0}
+.Z-search .kbd{position:absolute;right:0;top:50%;transform:translateY(-50%);height:22px;min-width:22px;font-size:11px}
+.Z-search svg{display:none}
+.Z-group h2{display:flex;justify-content:space-between;margin:40px 0 0;padding-bottom:8px;border-bottom:1px solid var(--line-2);font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+.Z-group h2 span:first-child{display:inline-flex;align-items:center;gap:9px}
+.Z-group h2 i{width:7px;height:7px;border-radius:50%;background:var(--stage)}
+.Z-group ol{list-style:none;margin:0;padding:0}
+.Z-entry{display:grid;grid-template-columns:44px minmax(0,auto) minmax(28px,1fr) auto;align-items:baseline;gap:16px;padding:20px 0 18px;border-bottom:1px solid var(--line);color:inherit;text-decoration:none}
+.Z-no{font-family:var(--f-mono);font-size:12.5px;color:var(--muted);transition:color .2s}
+.Z-name{font-family:var(--f-display);font-size:clamp(27px,2.7vw,36px);line-height:1.02;letter-spacing:-.02em;background-image:linear-gradient(currentColor,currentColor);background-size:0 1px;background-repeat:no-repeat;background-position:0 96%;transition:background-size .3s var(--ease)}
+.Z-desc{display:block;margin-top:6px;font-size:15px;color:var(--muted)}
+.Z-lead{align-self:center;border-bottom:1px dotted var(--muted);opacity:.55;transform:translateY(-4px);height:1px}
+.Z-k{font-family:var(--f-mono);font-size:13px;color:var(--muted);transition:transform .3s var(--ease),color .2s}
+a.Z-entry:hover .Z-name,a.Z-entry:focus-visible .Z-name,a.Z-entry.hit .Z-name{background-size:100% 1px}
+a.Z-entry:hover .Z-no,a.Z-entry:hover .Z-k,a.Z-entry.hit .Z-k,a.Z-entry:focus-visible .Z-k{color:var(--accent)}
+a.Z-entry:hover .Z-k,a.Z-entry.hit .Z-k{transform:translateX(-4px)}
+.Z-entry.off .Z-name{color:var(--muted)}
+@media (max-width:960px){.Z-spread{grid-template-columns:1fr;padding-top:28px}.Z-index{margin-top:0}}
+@media (max-width:560px){.Z-entry{grid-template-columns:32px minmax(0,1fr) auto;gap:12px}.Z-lead{display:none}.Z-search{flex:1 1 100%}}
+
+/* ============ dock ============ */
+.dock{position:fixed;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:30;display:flex;align-items:center;gap:3px;padding:5px;background:var(--ink);color:var(--bg);border-radius:var(--r-dock);box-shadow:0 10px 30px -12px rgba(0,0,0,.45)}
+.dock .lbl{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;opacity:.6;padding:0 8px 0 10px}
+.dock a{font-size:13px;font-weight:600;padding:9px 13px;border-radius:calc(var(--r-dock) - 3px);text-decoration:none;color:inherit;opacity:.72;min-height:38px;display:inline-flex;align-items:center;gap:6px;transition:opacity .15s,background-color .2s}
+.dock a:hover{opacity:1}
+.dock a[aria-current="true"]{background:var(--bg);color:var(--ink);opacity:1}
+.dock .sep{width:1px;height:22px;background:currentColor;opacity:.25;margin:0 4px}
+.dock svg{width:15px;height:15px}
+@media (max-width:640px){.dock{left:calc(12px + env(safe-area-inset-left,0px));right:calc(12px + env(safe-area-inset-right,0px));justify-content:space-between}.dock .lbl{display:none}.dock a{padding:9px 10px;font-size:12.5px}}
+
+/* ============ edit drawer + toast ============ */
+.ed-wrap{position:fixed;inset:0;z-index:40;background:color-mix(in srgb,var(--ink) 45%,transparent);display:flex;justify-content:flex-end}
+.ed{width:min(580px,100%);height:100%;overflow:auto;background:var(--surface);color:var(--ink);display:flex;flex-direction:column;gap:6px;padding-block:calc(20px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-bottom,0px));padding-left:20px;padding-right:max(20px,env(safe-area-inset-right,0px))}
+.ed h2{margin:0 0 4px;font-family:var(--f-display);font-size:26px;letter-spacing:-.02em}
+.ed .note{margin:0 0 8px;color:var(--muted);font-size:14px}
+.ed-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 0;border-top:1px solid var(--line)}
+.ed-row label{display:flex;flex-direction:column;gap:4px;font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.04em;min-width:0}
+.ed-row .w{grid-column:1/-1}
+.ed input,.ed select{font:inherit;font-size:15px;font-weight:400;color:var(--ink);background:var(--surface-2);border:1px solid var(--line-2);border-radius:min(var(--r),8px);padding:9px 11px;width:100%;min-width:0}
+.ed input.url{font-family:var(--f-mono);font-size:13px}
+.ed-row .del{align-self:end;justify-self:start;border:0;background:transparent;color:var(--s-cnc);font-weight:600;cursor:pointer;min-height:40px}
+.ed-foot{position:sticky;bottom:0;display:flex;gap:8px;justify-content:space-between;padding-top:12px;background:var(--surface);margin-top:auto}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:var(--r-dock);font-size:14px;font-weight:500;z-index:50;max-width:calc(100% - 32px)}
+
+/* ============ SPEC ============ */
+.spec{max-width:1180px;margin:0 auto}
+.sp-hero{padding:8px 0 36px;display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:24px 64px;align-items:end;border-bottom:1px solid var(--line-2)}
+.sp-eyebrow{margin:0 0 14px;font-family:var(--f-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sp-hero h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:clamp(44px,6vw,88px);letter-spacing:-.04em;line-height:.92}
+[data-dir="zurnalas"] .sp-hero h1{font-weight:400}
+[data-dir="stotis"] .sp-hero h1{text-transform:uppercase;letter-spacing:0;font-weight:800}
+.sp-lede{margin:18px 0 0;font-size:19px;color:var(--muted);max-width:52ch}
+.sp-facts{display:grid;grid-template-columns:1fr 1fr;gap:18px 24px;margin:0}
+.sp-facts dt{font-family:var(--f-mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.sp-facts dd{margin:4px 0 0;font-weight:600;font-size:16px}
+.sp-sec{display:grid;grid-template-columns:220px minmax(0,1fr);gap:16px 56px;padding:44px 0;border-bottom:1px solid var(--line)}
+.sp-h{position:sticky;top:calc(20px + env(safe-area-inset-top,0px));align-self:start}
+.sp-h span{font-family:var(--f-mono);font-size:12px;color:var(--accent);font-weight:600}
+.sp-h h2{margin:6px 0 0;font-family:var(--f-display);font-weight:700;font-size:28px;letter-spacing:-.02em;line-height:1.05}
+[data-dir="zurnalas"] .sp-h h2{font-weight:400}
+[data-dir="stotis"] .sp-h h2{text-transform:uppercase;letter-spacing:.01em;font-weight:800}
+.sp-b{min-width:0;max-width:820px}
+.sp-b > p{margin:0 0 14px;font-size:16.5px;max-width:68ch}
+.sp-b h3{margin:28px 0 10px;font-family:var(--f-display);font-size:22px;letter-spacing:-.01em}
+.sp-b h3:first-child{margin-top:0}
+.sp-rules{list-style:none;margin:8px 0 0;padding:0;border-top:1px solid var(--line)}
+.sp-rules li{display:grid;grid-template-columns:150px minmax(0,1fr);gap:16px;padding:12px 0;border-bottom:1px solid var(--line);font-size:15px}
+.sp-rules li b{font-family:var(--f-mono);font-size:12px;font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.sp-note{margin:22px 0 0;padding:16px 18px;border-left:4px solid var(--accent);background:var(--surface);font-size:15.5px}
+.sp-dir{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:24px 36px;padding:28px 0;border-top:1px solid var(--line)}
+.sp-dir:first-of-type{border-top:0;padding-top:0}
+.sp-dir h3{margin:0 0 8px}
+.sp-dir h3 small{font-family:var(--f-mono);font-size:12px;font-weight:400;color:var(--muted);margin-left:8px;letter-spacing:.04em}
+.sp-dir p{margin:0 0 12px;font-size:15.5px}
+.sp-dir dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:6px 14px;margin:0 0 14px;font-size:14.5px}
+.sp-dir dt{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);padding-top:2px}
+.sp-dir dd{margin:0}
+.sw-row{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 16px}
+.sw{width:26px;height:26px;border:1px solid var(--line)}
+.wf{aspect-ratio:16/11;width:100%;max-width:100%;border:1px solid var(--line-2);padding:8px;display:grid;gap:4px;overflow:hidden}
+.wf div{min-width:0;min-height:0}
+.tbl{overflow-x:auto;margin:6px 0 0;border:1px solid var(--line)}
+.tbl table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+.tbl th{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line-2);background:var(--surface)}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:last-child td{border-bottom:0}
+.tbl code,.mono{font-family:var(--f-mono);font-size:12.5px}
+.chipc{display:inline-flex;align-items:center;gap:8px;font-family:var(--f-mono);font-size:12.5px;font-variant-numeric:tabular-nums}
+.chipc i{width:20px;height:20px;border:1px solid var(--line-2);flex:none}
+.ok{color:var(--s-prod);font-weight:600}
+.warn{color:var(--s-cnc);font-weight:600}
+.code{position:relative;margin:12px 0 0}
+.code pre{margin:0;padding:16px 18px;overflow-x:auto;background:var(--surface-2);border:1px solid var(--line);font-family:var(--f-mono);font-size:12.5px;line-height:1.6;color:var(--ink);tab-size:2}
+.code button{position:absolute;top:8px;right:8px;font-family:var(--f-mono);font-size:11px;padding:4px 9px;border:1px solid var(--line-2);background:var(--surface);color:var(--muted);cursor:pointer;border-radius:min(var(--r),6px)}
+.spec-seg{margin:0 0 14px}
+.spec-seg .seg button{font-size:13px;padding:7px 14px}
+.specimen{padding:14px 0;border-bottom:1px solid var(--line)}
+.specimen .meta{font-family:var(--f-mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+@media (max-width:860px){.sp-hero,.sp-sec,.sp-dir{grid-template-columns:1fr}.sp-h{position:static}.sp-rules li{grid-template-columns:1fr;gap:4px}}
+
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+.dbl{display:block;width:80%;height:80%;background:currentColor;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat}
+</style>
+<script>window.HUB_LOCK="lapas"</script>
+</head>
+<body>
+<script id="hub-boot">(function(){var D=['lapas','stotis','zurnalas'],r=document.documentElement,d='lapas';try{var h=location.hash.slice(1),s=localStorage.getItem('hub-dir');d=window.HUB_LOCK||(D.indexOf(h)>=0?h:(D.indexOf(s)>=0?s:'lapas'));var t=localStorage.getItem('hub-theme');if(t==='light'||t==='dark')r.setAttribute('data-theme',t);}catch(e){}r.setAttribute('data-dir',d);})();</script>
+<div id="app"></div>
+<script type="application/json" id="hub-data">{"base":"https://app.dedesbaldai.lt/","apps":[
+{"id":"builder","code":"DB-01","group":"design","icon":"cabinet","url":"https://app.dedesbaldai.lt/builder/","name":{"lt":"Spintelių kūrėjas","en":"Cabinet Studio"},"desc":{"lt":"Spintelė → detalių sąrašas ir CNC operacijos be inžinieriaus","en":"Cabinet settings → part list and CNC ops, no engineer"}},
+{"id":"braizykle","code":"DB-02","group":"design","icon":"compass","url":"https://app.dedesbaldai.lt/cad/","name":{"lt":"Braižyklė","en":"Braižyklė"},"desc":{"lt":"Brėžinių braižymas naršyklėje","en":"Drafting in the browser"}},
+{"id":"draft","code":"DB-03","group":"design","icon":"dxf","url":"https://app.dedesbaldai.lt/cad/draft.html","name":{"lt":"DXF redaktorius","en":"DXF Editor"},"desc":{"lt":"DXF importas, matmenys, nuožulos, detalių perkėlimas lapuose","en":"Import DXF, resize, chamfer, move parts on sheets"},"tag":{"lt":"Draft v3","en":"Draft v3"}},
+{"id":"nesting","code":"DB-04","group":"cnc","icon":"nest","url":"https://app.dedesbaldai.lt/nesting/","name":{"lt":"Nesting","en":"Nesting"},"desc":{"lt":"Plokščių optimizavimas, išdėstymai ir etikečių spausdinimas","en":"Board optimisation, layouts and label printing"},"tag":{"lt":"Prisijungimas","en":"Login"}},
+{"id":"xxlfix","code":"DB-05","group":"cnc","icon":"code","url":"https://app.dedesbaldai.lt/xxl-fix/","name":{"lt":"XXL Fix","en":"XXL Fix"},"desc":{"lt":"XXL CNC programų taisymas ir rankinis detalių kūrimas","en":"Fix .XXL CNC programs and create panels by hand"}},
+{"id":"shopflow","code":"DB-06","group":"production","icon":"track","url":"https://app.dedesbaldai.lt/shopflow-app/","name":{"lt":"ShopFlow","en":"ShopFlow"},"desc":{"lt":"Gamybos sekimas dirbtuvėse","en":"Workshop production tracking"}},
+{"id":"prasymai","code":"DB-07","group":"staff","icon":"doc","url":"https://app.dedesbaldai.lt/hub/prasymai/","name":{"lt":"Prašymai","en":"Requests"},"desc":{"lt":"Atostogų, tėvadienių ir mamadienių prašymai: užpildyti, pateikti, atsispausdinti","en":"Leave and parent-day requests: fill in, submit, print"}},
+{"id":"offer","code":"DB-08","group":"office","icon":"doc","url":"https://app.dedesbaldai.lt/offer/","name":{"lt":"Pasiūlymai","en":"Offers"},"desc":{"lt":"Savikaina ir pasiūlymai klientams","en":"Costing and customer offers"}},
+{"id":"crm","code":"DB-09","group":"office","icon":"people","url":"https://app.dedesbaldai.lt/hub/crm/","name":{"lt":"CRM","en":"CRM"},"desc":{"lt":"Klientai, užklausos ir kiti žingsniai — viskas vienoje vietoje","en":"Clients, deals and next steps in one place"}}
+]}</script>
+<script type="application/json" id="hub-tokens">{"lapas": {"fonts": {"display": "'Schibsted Grotesk','Helvetica Neue',sans-serif", "body": "'Schibsted Grotesk','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "3px", "r-dock": "4px"}, "light": {"bg": "#e6e8e3", "surface": "#f8f9f6", "surface-2": "#eef0ec", "ink": "#131715", "muted": "#59615b", "line": "#d2d7cf", "line-2": "#b4bbb1", "accent": "#ff4a1c", "on-accent": "#160700", "s-design": "#2f55c8", "s-cnc": "#c27c00", "s-prod": "#127c52", "s-staff": "#7a4ab8", "focus": "#ff4a1c", "shadow": "0 1px 0 rgba(19,23,21,.05),0 12px 26px -18px rgba(19,23,21,.42)"}, "dark": {"bg": "#0f1211", "surface": "#191d1b", "surface-2": "#141816", "ink": "#e9ede8", "muted": "#8e9890", "line": "#2a302c", "line-2": "#3d4540", "accent": "#ff6b3d", "on-accent": "#160700", "s-design": "#86a5ff", "s-cnc": "#f0b23a", "s-prod": "#4cc993", "s-staff": "#c3a1ff", "focus": "#ff6b3d", "shadow": "0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85)"}}, "stotis": {"fonts": {"display": "'Big Shoulders Display','Arial Narrow',sans-serif", "body": "'Archivo','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "0px", "r-dock": "0px"}, "light": {"bg": "#f2f1ec", "surface": "#ffffff", "surface-2": "#e8e7e1", "ink": "#0b1015", "muted": "#535b63", "line": "#d4d3cb", "line-2": "#0b1015", "accent": "#ffc400", "on-accent": "#0b1015", "s-design": "#1f5fe0", "s-cnc": "#b88400", "s-prod": "#0e8050", "s-staff": "#7a3fd0", "focus": "#0b1015", "shadow": "none"}, "dark": {"bg": "#121c25", "surface": "#18242f", "surface-2": "#1d2b38", "ink": "#f1f4f6", "muted": "#8fa0ae", "line": "#263646", "line-2": "#f1f4f6", "accent": "#ffc93c", "on-accent": "#0b1015", "s-design": "#7fb0ff", "s-cnc": "#ffc93c", "s-prod": "#5fd39b", "s-staff": "#c9a7ff", "focus": "#ffc93c", "shadow": "none"}}, "zurnalas": {"fonts": {"display": "'Newsreader','Iowan Old Style',Georgia,serif", "body": "'Hanken Grotesk','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "999px", "r-dock": "999px"}, "light": {"bg": "#edefe7", "surface": "#f8f9f3", "surface-2": "#e3e6db", "ink": "#0f231c", "muted": "#56645d", "line": "#cdd2c4", "line-2": "#0f231c", "accent": "#86590a", "on-accent": "#fbf8ef", "s-design": "#2d50b8", "s-cnc": "#b5470f", "s-prod": "#1d7a46", "s-staff": "#6b4a9e", "focus": "#86590a", "shadow": "none"}, "dark": {"bg": "#0d1f19", "surface": "#122a22", "surface-2": "#0a1814", "ink": "#ece9dd", "muted": "#93a89d", "line": "#1f3a30", "line-2": "#ece9dd", "accent": "#e2b766", "on-accent": "#0d1f19", "s-design": "#93abff", "s-cnc": "#ff9466", "s-prod": "#6fd29a", "s-staff": "#c2a8f0", "focus": "#e2b766", "shadow": "none"}}}</script>
+<script id="hub-main">
+(function(){
+'use strict';
+var DATA = JSON.parse(document.getElementById('hub-data').textContent);
+var TOK = JSON.parse(document.getElementById('hub-tokens').textContent);
+var FONT_URL = (document.querySelector('link[href*="fonts.googleapis"]') || {}).href || '';
+var ROOT = document.documentElement;
+var GROUPS = [
+  {id:'design',lt:'Projektavimas',en:'Design'},
+  {id:'cnc',lt:'CNC paruošimas',en:'CNC prep'},
+  {id:'production',lt:'Gamyba',en:'Production'},
+  {id:'staff',lt:'Darbuotojams',en:'Staff'},
+  {id:'office',lt:'Biuras',en:'Office'}
+];
+var DIRS = [
+  {id:'lapas',name:'Lapas',en:'Sheet'},
+  {id:'stotis',name:'Stotis',en:'Station'},
+  {id:'zurnalas',name:'Žurnalas',en:'Journal'}
+];
+var ICONS = {
+  people:'<circle cx="9" cy="8" r="3.2"/><path d="M3.5 19.5a5.5 5.5 0 0 1 11 0"/><circle cx="17" cy="9" r="2.4"/><path d="M15.6 14.4a4.4 4.4 0 0 1 5.4 4.3"/>',
+  cabinet:'<path d="M4 3h16v18H4zM12 3v11M4 14h16M4 17.5h16M10 8.5v1.5M14 8.5v1.5M11 15.75h2M11 19.25h2"/>',
+  compass:'<circle cx="12" cy="4.5" r="1.5"/><path d="M11.3 6 6 21M12.7 6 18 21M8 16h8"/>',
+  dxf:'<path d="M5 18 10 6l9 4-3 8z"/><rect x="3.5" y="16.5" width="3" height="3"/><rect x="8.5" y="4.5" width="3" height="3"/><rect x="17.5" y="8.5" width="3" height="3"/><rect x="14.5" y="16.5" width="3" height="3"/>',
+  nest:'<rect x="3" y="4" width="18" height="16"/><path d="M3 12h9M12 4v16M12 9h9M7.5 12v8M12 15h5v5"/>',
+  code:'<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5.5l-3 13"/>',
+  track:'<path d="M4 6l1.5 1.5L8 5M11 6h9M4 12l1.5 1.5L8 11M11 12h9M11 18h9"/><circle cx="6" cy="18" r="1.6"/>',
+  doc:'<path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5"/>',
+  generic:'<rect x="4" y="4" width="16" height="16"/><path d="M8 12h8M12 8v8"/>'
+};
+var MARK = '<span class="dbl" role="img" aria-label="Dėdės Baldai"></span>';
+var ARROW = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>';
+var SEARCH = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4-4"/></svg>';
+var CABINET = '<svg viewBox="0 0 320 212" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true">'+
+  '<rect x="20" y="12" width="280" height="62"/><path d="M90 12v62M160 12v62M230 12v62"/>'+
+  '<path d="M84 58v10M96 58v10M224 58v10M236 58v10" stroke-width="2.4" stroke-linecap="round"/>'+
+  '<path d="M12 118h296v6H12z"/><rect x="20" y="124" width="280" height="62"/>'+
+  '<path d="M110 124v62M155 124v62M200 124v62M250 124v62M20 145h90M20 165h90"/>'+
+  '<path d="M55 134h20M55 155h20M55 175h20M149 130v12M161 130v12M244 130v12M256 130v12" stroke-width="2.4" stroke-linecap="round"/>'+
+  '<g style="stroke:var(--accent)"><path d="M20 200h116M184 200h116M20 195v10M300 195v10M312 12v44M312 80v38M307 12h10M307 118h10"/></g>'+
+  '<text x="160" y="204" text-anchor="middle" style="fill:var(--accent);stroke:none;font:500 11px var(--f-mono)">2800</text>'+
+  '<text x="316" y="72" text-anchor="middle" style="fill:var(--accent);stroke:none;font:500 10px var(--f-mono)" transform="rotate(-90 316 68)">720</text></svg>';
+
+var T = {
+  lt:{sub:'Dirbtuvių programos',all:'Visos',search:'Ieškoti programos…',missing:'nuoroda nepridėta',offcut:'Atraiža',open:'Atidaryti',
+      sheet:'Lapas',parts:'Detalės',week:'Savaitė',time:'Laikas',legend:'Kantas = etapas',keys:'Spauskite 1–{n}, kad atidarytumėte',
+      cover:'Viršelis',issue:'Nr.',publication:'Dirbtuvių leidinys',standfirst:'Programos nuo brėžinio iki gamybos. Spauskite skaičių arba rinkitės iš turinio.',
+      who:'dirbtuvės.',direction:'Kryptis',spec:'Specifikacija',back:'Programos',auto:'Auto',light:'Šviesi',dark:'Tamsi',
+      edit:'Redaguoti',editTitle:'Redaguoti nuorodas',editNote:'Pakeitimai matomi visiems, kai išsaugosite.',save:'Išsaugoti',cancel:'Atšaukti',
+      name:'Pavadinimas',desc:'Aprašymas',url:'Nuoroda (URL)',group:'Etapas',del:'Pašalinti',add:'+ Pridėti programą',saving:'Saugoma…',saved:'Išsaugota',
+      fail:'Nepavyko išsaugoti. Bandykite dar kartą.',ro:'Šį puslapį gali keisti tik savininkas.',conflict:'Kažkas išsaugojo tuo pačiu metu. Puslapis atnaujintas.',
+      newapp:'Nauja programa',nomatch:'Nieko nerasta pagal „{q}“',locale:'lt-LT',g:['Labanakt','Labas rytas','Laba diena','Labas vakaras']},
+  en:{sub:'Workshop apps',all:'All',search:'Find an app…',missing:'no link yet',offcut:'Offcut',open:'Open',
+      sheet:'Sheet',parts:'Parts',week:'Week',time:'Time',legend:'Edge band = stage',keys:'Press 1–{n} to open',
+      cover:'Cover',issue:'No.',publication:'Workshop edition',standfirst:'Apps from drawing to production. Press a number or pick from the contents.',
+      who:'workshop.',direction:'Direction',spec:'Spec',back:'Apps',auto:'Auto',light:'Light',dark:'Dark',
+      edit:'Edit',editTitle:'Edit links',editNote:'Everyone sees the changes once you save.',save:'Save',cancel:'Cancel',
+      name:'Name',desc:'Description',url:'Link (URL)',group:'Stage',del:'Remove',add:'+ Add app',saving:'Saving…',saved:'Saved',
+      fail:'Could not save. Try again.',ro:'Only the owner can change this page.',conflict:'Someone saved at the same time. The page has been refreshed.',
+      newapp:'New app',nomatch:'Nothing matches “{q}”',locale:'en-GB',g:['Good night','Good morning','Good afternoon','Good evening']}
+};
+
+var lang='lt', q='', filter='all', view='hub', dir=ROOT.getAttribute('data-dir')||'lapas', specDir=null;
+var LOCK=window.HUB_LOCK||null; if(LOCK) dir=LOCK;
+var editing=false, draft=null, canEdit=false, artifactNs=null, themePref='auto', lastGreet='';
+try{
+  var l=localStorage.getItem('hub-lang'); if(l==='en'||l==='lt') lang=l;
+  var f=localStorage.getItem('hub-filter'); if(f) filter=f;
+  var tp=localStorage.getItem('hub-theme'); if(tp==='light'||tp==='dark') themePref=tp;
+}catch(e){}
+if(filter!=='all' && !GROUPS.some(function(g){return g.id===filter;})) filter='all';
+var app=document.getElementById('app');
+var reduced=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function svg(n){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="square" stroke-linejoin="miter" aria-hidden="true">'+(ICONS[n]||ICONS.generic)+'</svg>';}
+function txt(o){return o?(o[lang]||o.lt||o.en||''):'';}
+function t(k){return T[lang][k];}
+function pad(n){return String(n).padStart(2,'0');}
+function gname(id){var g=GROUPS.filter(function(x){return x.id===id;})[0];return g?g[lang]:'';}
+function gindex(id){for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].id===id)return i;return 99;}
+function ordered(list){return list.map(function(a,i){return [a,i];}).sort(function(x,y){return (gindex(x[0].group)-gindex(y[0].group))||(x[1]-y[1]);}).map(function(p){return p[0];});}
+function visible(){
+  var n=q.trim().toLowerCase();
+  return ordered(DATA.apps).filter(function(a){
+    if(filter!=='all'&&a.group!==filter) return false;
+    if(!n) return true;
+    return (txt(a.name)+' '+(a.name&&a.name.en||'')+' '+txt(a.desc)+' '+(a.url||'')+' '+(a.code||'')).toLowerCase().indexOf(n)>=0;
+  });
+}
+function keyed(list){var n=0;return list.map(function(a){return {a:a,k:a.url?++n:0};});}
+function kbd(k){return k&&k<=9?'<span class="kbd" aria-hidden="true">'+k+'</span>':'';}
+function link(x,cls,inner,attrs){
+  var a=x.a, at=' data-g="'+esc(a.group)+'"'+(attrs||'');
+  if(!a.url) return '<div class="'+cls+' off"'+at+'>'+inner+'</div>';
+  return '<a class="'+cls+'"'+at+' href="'+esc(a.url)+'" target="_blank" rel="noopener" data-key="'+x.k+'">'+inner+'</a>';
+}
+function isoWeek(d){var x=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var day=x.getUTCDay()||7;x.setUTCDate(x.getUTCDate()+4-day);var y0=new Date(Date.UTC(x.getUTCFullYear(),0,1));return Math.ceil(((x-y0)/864e5+1)/7);}
+function now(){
+  var d=new Date(), h=d.getHours();
+  var date=d.toLocaleDateString(t('locale'),{weekday:'long',month:'long',day:'numeric'});
+  return {time:d.toLocaleTimeString(t('locale'),{hour:'2-digit',minute:'2-digit'}),date:date.charAt(0).toUpperCase()+date.slice(1),
+          week:isoWeek(d),year:d.getFullYear(),greet:T[lang].g[h<5?0:h<12?1:h<18?2:3]};
+}
+function effTheme(){var a=ROOT.getAttribute('data-theme');if(a==='dark'||a==='light')return a;return window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+function counts(){var c={all:DATA.apps.length};DATA.apps.forEach(function(a){c[a.group]=(c[a.group]||0)+1;});return c;}
+function filtersHTML(cls){
+  var c=counts();
+  return '<div class="'+cls+'" role="group" aria-label="'+(lang==='lt'?'Etapas':'Stage')+'">'+
+    '<button type="button" data-filter="all" aria-pressed="'+(filter==='all')+'"><i></i>'+t('all')+' <b>'+c.all+'</b></button>'+
+    GROUPS.filter(function(g){return c[g.id];}).map(function(g){
+      return '<button type="button" data-filter="'+g.id+'" data-g="'+g.id+'" aria-pressed="'+(filter===g.id)+'"><i></i>'+esc(g[lang])+' <b>'+c[g.id]+'</b></button>';
+    }).join('')+'</div>';
+}
+function searchHTML(cls){
+  return '<div class="'+cls+'"><label class="sr" for="hub-search">'+t('search')+'</label>'+SEARCH+
+    '<input id="hub-search" type="search" autocomplete="off" placeholder="'+t('search')+'" value="'+esc(q)+'"><span class="kbd" aria-hidden="true">/</span></div>';
+}
+function controlsHTML(){
+  var ico={auto:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M12 4a8 8 0 0 1 0 16z" fill="currentColor"/></svg>',
+           light:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+           dark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>'};
+  return '<div class="ctl">'+
+    '<div class="seg" role="group" aria-label="Language"><button type="button" data-lang="lt" aria-pressed="'+(lang==='lt')+'">LT</button><button type="button" data-lang="en" aria-pressed="'+(lang==='en')+'">EN</button></div>'+
+    '<button type="button" class="ib" id="btn-theme" title="Theme">'+ico[themePref]+t(themePref)+'</button>'+
+    (canEdit?'<button type="button" class="ib" id="btn-edit"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>'+t('edit')+'</button>':'')+
+    '</div>';
+}
+function emptyHTML(){return '<div class="empty">'+esc(t('nomatch').replace('{q}',q))+'</div>';}
+function keysHint(list){var n=list.filter(function(x){return x.k&&x.k<=9;}).length;return n?esc(t('keys').replace('{n}',n)):'';}
+
+/* ---------- LAPAS: apps as parts nested on a 2800×2070 sheet ---------- */
+var LSPANS={7:[[7,2],[5,1],[5,1],[5,1],[4,1],[3,1],[12,1]],6:[[7,2],[5,1],[5,1],[5,1],[4,1],[3,1]],5:[[7,2],[5,1],[5,1],[6,1],[6,1]],4:[[7,2],[5,1],[5,1],[12,1]],3:[[7,2],[5,1],[5,1]],2:[[7,1],[5,1]],1:[[12,1]]};
+function renderL(){
+  var N=now(), list=keyed(visible()), pat=LSPANS[Math.min(list.length,7)]||[];
+  var parts=list.map(function(x,i){
+    var a=x.a, sp=pat[i]||[4,1], c=sp[0], r=sp[1], big=i===0&&r===2;
+    var w=Math.round(c/12*2800-4), h=r*690-4;
+    var inner='<span class="L-edge"></span>'+
+      '<div class="L-top"><span class="L-code">'+esc(a.code||'')+'</span>'+(a.tag?'<span class="L-tag">'+esc(txt(a.tag))+'</span>':'')+kbd(x.k)+'</div>'+
+      '<div class="L-ico">'+svg(a.icon)+'</div>'+
+      '<div><h3>'+esc(txt(a.name))+'</h3><p>'+esc(txt(a.desc))+'</p></div>'+
+      '<div class="L-dim"><i></i><span>'+(a.url?w+' × '+h:t('offcut')+' · '+t('missing'))+'</span><i></i></div>';
+    return link(x,'L-part rv'+(big?' big':''),inner,' style="--c:'+c+';--r:'+r+';--i:'+(i+2)+'" title="'+esc(txt(a.name))+'"');
+  }).join('');
+  return '<div class="L">'+
+    '<header class="L-head rv" style="--i:0"><div class="brand"><div class="mark">'+MARK+'</div><div><h1>Dėdės Baldai</h1><p class="sub">'+t('sub')+'</p></div></div>'+
+      '<dl class="L-meta"><div><dt>'+t('sheet')+'</dt><dd>2800 × 2070 × 18</dd></div><div><dt>'+t('parts')+'</dt><dd>'+pad(DATA.apps.length)+'</dd></div>'+
+      '<div><dt>'+t('week')+'</dt><dd>'+N.week+'</dd></div><div><dt>'+t('time')+'</dt><dd data-clock>'+esc(N.time)+'</dd></div></dl>'+
+      controlsHTML()+'</header>'+
+    '<div class="L-bar rv" style="--i:1">'+filtersHTML('L-filters')+searchHTML('L-search')+'</div>'+
+    (list.length?'<div class="L-ruler" aria-hidden="true"><span>0</span><span>700</span><span>1400</span><span>2100</span><span>2800 mm</span></div><div class="L-sheet">'+parts+'</div>':emptyHTML())+
+    '<footer class="L-foot"><span class="L-legend">'+t('legend')+':'+GROUPS.map(function(g){return '<span data-g="'+g.id+'"><i></i>'+esc(g[lang])+'</span>';}).join('')+'</span><span>'+keysHint(list)+'</span></footer>'+
+  '</div>';
+}
+
+/* ---------- STOTIS: wall-screen station board ---------- */
+function renderS(){
+  var N=now(), list=keyed(visible()), i=0;
+  var groups=GROUPS.map(function(g,gi){
+    var rows=list.filter(function(x){return x.a.group===g.id;});
+    if(!rows.length) return '';
+    return '<section class="S-group rv" style="--i:'+(gi+1)+'"><h2 data-g="'+g.id+'"><i></i><span>'+pad(gi+1)+'</span>'+esc(g[lang])+'</h2><div class="S-list">'+
+      rows.map(function(x){
+        var a=x.a;
+        var inner='<span class="S-key">'+(x.k?(x.k<=9?x.k:'·'):'–')+'</span>'+
+          '<span><span class="S-name">'+esc(txt(a.name))+'</span><span class="S-desc">'+esc(txt(a.desc))+(a.url?'':' · '+t('missing'))+'</span></span>'+
+          (a.tag?'<span class="S-tag">'+esc(txt(a.tag))+'</span>':'<span class="S-tag none"></span>')+'<span class="S-go">'+(a.url?ARROW:'')+'</span>';
+        return link(x,'S-row',inner);
+      }).join('')+'</div></section>';
+  }).join('');
+  return '<div class="S">'+
+    '<aside class="S-side rv" style="--i:0">'+
+      '<div class="S-brand"><span class="S-mark">'+MARK+'</span><span>Dėdės Baldai</span></div>'+
+      '<div class="S-clock" data-clock>'+esc(N.time)+'</div>'+
+      '<div class="S-when"><span class="S-week">'+t('week')+' '+N.week+'</span><span data-date>'+esc(N.date)+'</span></div>'+
+      '<p class="S-greet">'+esc(N.greet)+' · '+esc(t('sub'))+'</p>'+
+      filtersHTML('S-filters')+searchHTML('S-search')+controlsHTML()+
+    '</aside>'+
+    '<main class="S-board">'+(list.length?groups:emptyHTML())+'</main>'+
+  '</div>';
+}
+
+/* ---------- ŽURNALAS: the day's edition ---------- */
+function renderZ(){
+  var N=now(), list=keyed(visible()), lead=list.filter(function(x){return x.a.url;})[0], n=0;
+  var cover='';
+  if(lead){
+    var a=lead.a;
+    cover='<a class="Z-cover rv" style="--i:2" data-g="'+esc(a.group)+'" href="'+esc(a.url)+'" target="_blank" rel="noopener" data-key="'+lead.k+'">'+
+      '<div class="Z-cover-k"><span>'+t('cover')+' · '+esc(gname(a.group))+'</span>'+kbd(lead.k)+'</div>'+
+      '<div class="Z-art">'+(a.icon==='cabinet'?CABINET:'<div class="big">'+svg(a.icon)+'</div>')+'</div>'+
+      '<h3>'+esc(txt(a.name))+'</h3><p>'+esc(txt(a.desc))+'</p><span class="Z-open">'+t('open')+ARROW+'</span></a>';
+  }
+  var groups=GROUPS.map(function(g,gi){
+    var rows=list.filter(function(x){return x.a.group===g.id;});
+    if(!rows.length) return '';
+    return '<div class="Z-group rv" style="--i:'+(gi+3)+'"><h2><span data-g="'+g.id+'"><i></i>'+esc(g[lang])+'</span><span>'+pad(rows.length)+'</span></h2><ol>'+
+      rows.map(function(x){
+        n++; var a=x.a;
+        var inner='<span class="Z-no">'+pad(n)+'</span><span><span class="Z-name">'+esc(txt(a.name))+'</span><span class="Z-desc">'+esc(txt(a.desc))+(a.url?'':' — '+t('missing'))+'</span></span>'+
+          '<span class="Z-lead" aria-hidden="true"></span><span class="Z-k">'+(x.k&&x.k<=9?x.k:'—')+'</span>';
+        return '<li>'+link(x,'Z-entry',inner)+'</li>';
+      }).join('')+'</ol></div>';
+  }).join('');
+  return '<div class="Z">'+
+    '<header class="Z-mast rv" style="--i:0"><div class="Z-title"><b>Dėdės Baldai</b><span>'+t('publication')+'</span></div>'+
+      '<div class="Z-issue">'+t('issue')+' '+N.week+' · '+N.year+'</div>'+controlsHTML()+'</header>'+
+    '<div class="Z-spread">'+
+      '<section class="Z-lead-col rv" style="--i:1">'+
+        '<p class="Z-dateline"><span data-date>'+esc(N.date)+'</span> · Vilnius · <span data-clock>'+esc(N.time)+'</span></p>'+
+        '<h1 class="Z-greet"><em>'+esc(N.greet)+',</em> '+t('who')+'</h1>'+
+        '<p class="Z-stand">'+t('standfirst')+'</p>'+cover+
+      '</section>'+
+      '<section class="Z-index"><div class="Z-tools rv" style="--i:2">'+filtersHTML('Z-tabs')+searchHTML('Z-search')+'</div>'+(list.length?groups:emptyHTML())+'</section>'+
+    '</div></div>';
+}
+
+/* ---------- SPEC ---------- */
+function lum(hex){var c=hex.replace('#','');var v=[0,2,4].map(function(i){var x=parseInt(c.substr(i,2),16)/255;return x<=.03928?x/12.92:Math.pow((x+.055)/1.055,2.4);});return .2126*v[0]+.7152*v[1]+.0722*v[2];}
+function cr(a,b){var x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);}
+function ratio(a,b,min){var r=cr(a,b);return '<span class="'+(r>=(min||4.5)?'ok':'warn')+'">'+r.toFixed(1)+':1</span>';}
+function codeBlock(s){return '<div class="code"><button type="button" data-copy>Copy</button><pre>'+esc(s)+'</pre></div>';}
+function sec(n,title,body){return '<section class="sp-sec rv" style="--i:'+Math.min(n+1,9)+'"><div class="sp-h"><span>§'+n+'</span><h2>'+title+'</h2></div><div class="sp-b">'+body+'</div></section>';}
+function wireframe(id){
+  var P=TOK[id][effTheme()], s='background:'+P.surface+';', l='background:'+P.line+';', ink='background:'+P.ink+';';
+  var stage=[P['s-design'],P['s-cnc'],P['s-prod']];
+  if(id==='lapas'){
+    var spans=[[7,2],[5,1],[5,1],[5,1],[4,1],[3,1]], st=[0,0,0,1,1,2];
+    return '<div class="wf" style="background:'+P['surface-2']+';grid-template-columns:repeat(12,1fr);grid-template-rows:12% repeat(3,1fr)"><div style="grid-column:1/-1;'+l+'"></div>'+
+      spans.map(function(p,i){return '<div style="grid-column:span '+p[0]+';grid-row:span '+p[1]+';'+s+'border-left:3px solid '+stage[st[i]]+(i===0?';outline:1.5px solid '+P.accent+';outline-offset:-1.5px':'')+'"></div>';}).join('')+'</div>';
+  }
+  if(id==='stotis'){
+    var rows=[0,0,0,1,1,2].map(function(g,i){return '<div style="height:12%;border-bottom:1px solid '+P.line+';display:flex;gap:6%;align-items:center;'+(i===1?'background:'+P.accent:'')+'"><span style="width:9%;height:70%;border:1.5px solid '+P.ink+'"></span><span style="width:'+(60-i*6)+'%;height:38%;'+ink+'"></span></div>';}).join('');
+    return '<div class="wf" style="background:'+P.bg+';grid-template-columns:5fr 8fr;gap:8%"><div style="display:flex;flex-direction:column;gap:6%"><span style="height:10%;width:50%;'+ink+'"></span><span style="height:32%;'+ink+'"></span><span style="height:7%;width:60%;background:'+P.accent+'"></span><span style="height:28%;border-top:2px solid '+P.ink+'"></span></div><div style="border-top:2px solid '+P.ink+';display:flex;flex-direction:column">'+rows+'</div></div>';
+  }
+  var entries=[1,2,3,4,5].map(function(i){return '<div style="display:flex;align-items:end;gap:5%;height:13%;border-bottom:1px solid '+P.line+'"><span style="width:'+(28+i*5)+'%;height:42%;'+ink+'"></span><span style="flex:1;border-bottom:1.5px dotted '+P.muted+';margin-bottom:12%"></span><span style="width:5%;height:30%;background:'+P.accent+'"></span></div>';}).join('');
+  return '<div class="wf" style="background:'+P.bg+';grid-template-columns:5fr 7fr;grid-template-rows:9% 1fr;gap:4% 8%"><div style="grid-column:1/-1;border-bottom:3px double '+P.ink+'"></div>'+
+    '<div style="display:flex;flex-direction:column;gap:5%"><span style="height:14%;width:90%;background:'+P.accent+'"></span><span style="height:14%;width:70%;'+ink+'"></span><span style="flex:1;border-top:1px solid '+P.ink+';margin-top:8%;'+s+'"></span></div>'+
+    '<div style="display:flex;flex-direction:column;padding-top:18%">'+entries+'</div></div>';
+}
+function swatches(id){var P=TOK[id][effTheme()];return '<div class="sw-row">'+['bg','surface','ink','muted','accent','s-design','s-cnc','s-prod'].map(function(k){return '<span class="sw" title="--'+k+' '+P[k]+'" style="background:'+P[k]+'"></span>';}).join('')+'</div>';}
+var DIRINFO={
+  lapas:{concept:'The screen is a 2800 × 2070 mm chipboard sheet and every app is a part nested on it. Size follows importance, the left edge band carries the stage colour, and a router toolpath traces the part on hover. Real sheet size, part codes, dimension lines and a millimetre ruler make it read like the nesting report the shop already prints.',
+    type:'Schibsted Grotesk 800 / 700 · IBM Plex Mono for codes, dimensions, ruler',sig:'Toolpath trace on hover · hatched offcut for apps without a link · edge band = stage',best:'Workshop PC, the engineer’s desk'},
+  stotis:{concept:'A machine-station board for a wall screen. A giant clock and the week number hold the left third. The right two thirds are full-width rows with 68 px key caps and names in condensed capitals you can read from the machine. Hover or a key press floods the row with signal yellow from the left.',
+    type:'Big Shoulders Display 800 · Archivo 400/500 · IBM Plex Mono for counts',sig:'Signal fill sweep · 3 px ink rule opens each stage · clock you can read at 5 m',best:'Wall screen by the CNC, touch screens, gloves'},
+  zurnalas:{concept:'The workshop’s daily edition. The week number is the issue number, the greeting is set in serif italic, the main tool gets a cover story with an elevation drawing, and the contents list gives every app a leader line with its key as the page number. Calm, for the start of the day.',
+    type:'Newsreader 400 + italic · Hanken Grotesk 400/600 · IBM Plex Mono for numbers',sig:'Ink underline draws on hover · dotted leaders · contents column drops below the greeting',best:'Office start screen, phones, reviewing the week'}
+};
+var ROLES={bg:'Page ground','surface':'Raised parts, panels','surface-2':'Sheet, inset areas',ink:'Primary text, rules',muted:'Secondary text',line:'Hairlines','line-2':'Strong rules, sheet edge',accent:'Signal: hover, active, focus','on-accent':'Text on accent','s-design':'Stage: Design','s-cnc':'Stage: CNC prep','s-prod':'Stage: Production','s-staff':'Stage: Staff',focus:'Focus ring'};
+var TYPE={
+  lapas:[['Brand','display','800','clamp(30px, 3.4vw, 46px)','-0.035em','Dėdės Baldai'],['Feature part','display','800','clamp(36px, 4.2vw, 62px)','-0.045em','Spintelių kūrėjas'],['Part title','display','700','clamp(20px, 1.75vw, 25px)','-0.025em','XXL Fix'],['Body','body','400','14.5–16px','0','Plokščių optimizavimas ir etikečių spausdinimas'],['Data','mono','500','10.5–15px, tabular','+0.1em caps','DB-04 · 1629 × 1376 · 2800 MM']],
+  stotis:[['Clock','display','800','clamp(96px, 11.5vw, 176px)','-0.01em','21:24'],['App name','display','800','clamp(34px, 4.3vw, 62px) caps','+0.005em','SPINTELIŲ KŪRĖJAS'],['Stage label','display','800','16px caps','+0.16em','CNC PARUOŠIMAS'],['Body','body','400 / 500','16–18px','0','Gamybos sekimas dirbtuvėse'],['Data','mono','500','12–14px','+0.06em','SAVAITĖ 45 · 3']],
+  zurnalas:[['Greeting','display','400 italic','clamp(52px, 6.8vw, 108px)','-0.025em','Labas vakaras,'],['Entry','display','400','clamp(27px, 2.7vw, 36px)','-0.02em','DXF redaktorius'],['Body','body','400','15–18px','0','Brėžinių braižymas naršyklėje'],['Section label','body','600','12px caps','+0.16em','PROJEKTAVIMAS'],['Numbers','mono','400','12–13px','+0.06em','Nr. 45 · 2026 · 03']]
+};
+function renderSpec(){
+  var th=effTheme(), sd=specDir||dir, P=TOK[sd], N=now();
+  var h='<article class="spec">';
+  h+='<header class="sp-hero rv" style="--i:0"><div><p class="sp-eyebrow">Design spec · v1 · '+new Date().toISOString().slice(0,10)+'</p><h1>Dėdės Baldai Hub</h1>'+
+     '<p class="sp-lede">A launcher for the shopfloor. One screen opens the right workshop tool in one action, whether it’s on a wall screen by the machines, the workshop PC or a phone.</p></div>'+
+     '<dl class="sp-facts"><div><dt>Apps</dt><dd>'+DATA.apps.length+' across 3 stages</dd></div><div><dt>Directions</dt><dd>Lapas · Stotis · Žurnalas</dd></div><div><dt>Themes</dt><dd>Light · Dark · Auto</dd></div><div><dt>Languages</dt><dd>LT first · EN</dd></div></dl></header>';
+
+  h+=sec(1,'Brief',
+    '<p>The people using this are CNC operators, assemblers and the engineer, often in gloves with dust about and a machine running. It runs on a wall-mounted screen, the workshop PC and phones. Its one job is to open Nesting, XXL Fix, ShopFlow or the design tools without anyone hunting through bookmarks.</p>'+
+    '<ul class="sp-rules">'+
+    '<li><b>Targets</b><span>Every launch target is at least 56 px tall and the whole tile or row is clickable. Stotis rows are 112 px.</span></li>'+
+    '<li><b>Distance</b><span>On Stotis, app names are set at 34–62 px condensed caps so they can be read from a machine 3–5 m away.</span></li>'+
+    '<li><b>Keys</b><span>Keys 1–9 open apps in the order they appear. / focuses search. Enter opens the first match and Esc clears it.</span></li>'+
+    '<li><b>Language</b><span>Lithuanian first with an English toggle. Every string comes from one table.</span></li>'+
+    '<li><b>Shipping</b><span>One self-contained HTML file. App list in a JSON block. No login on the hub itself.</span></li>'+
+    '<li><b>Avoid</b><span>Uniform card grids, gradient heroes, emoji markers and the same radius and shadow on everything.</span></li></ul>'+
+    '<p class="sp-note"><b>Recommendation:</b> use Stotis on the wall screen by the CNC and Lapas on the workshop PC. They share the data and the number keys, so staff learn one map. Žurnalas works best as the start-of-day screen in the office.</p>');
+
+  h+=sec(2,'Directions',DIRS.map(function(d){
+    var I=DIRINFO[d.id];
+    return '<div class="sp-dir">'+wireframe(d.id)+'<div><h3>'+d.name+'<small>'+d.en+'</small></h3><p>'+I.concept+'</p>'+
+      '<dl><dt>Type</dt><dd>'+I.type+'</dd><dt>Signature</dt><dd>'+I.sig+'</dd><dt>Best for</dt><dd>'+I.best+'</dd></dl>'+swatches(d.id)+
+      '<a class="btn'+(d.id===dir?'':' ghost')+'" href="#'+d.id+'">'+(d.id===dir?'Current · open':'Preview '+d.name)+ARROW+'</a></div></div>';
+  }).join(''));
+
+  var keys=Object.keys(P.light).filter(function(k){return /^#/.test(P.light[k]);});
+  h+=sec(3,'Colour tokens',
+    '<div class="spec-seg"><div class="seg" role="group" aria-label="Token direction">'+DIRS.map(function(d){return '<button type="button" data-specdir="'+d.id+'" aria-pressed="'+(d.id===sd)+'">'+d.name+'</button>';}).join('')+'</div></div>'+
+    '<p>Each direction restates every token for light and dark. Components only read tokens, so switching direction or theme never leaves a hard-coded colour behind. The contrast column is worked out live against <code class="mono">--bg</code>. Stage colours and accent are used for marks and large type, where 3:1 is the bar.</p>'+
+    '<div class="tbl"><table><thead><tr><th>Token</th><th>Role</th><th>Light</th><th>Dark</th><th>Contrast L / D</th></tr></thead><tbody>'+
+    keys.map(function(k){
+      var mark=/^(ink|muted)$/.test(k)?4.5:3, show=!/^(bg|surface|surface-2|line|on-accent)$/.test(k);
+      return '<tr><td><code>--'+k+'</code></td><td>'+ROLES[k]+'</td><td><span class="chipc"><i style="background:'+P.light[k]+'"></i>'+P.light[k]+'</span></td><td><span class="chipc"><i style="background:'+P.dark[k]+'"></i>'+P.dark[k]+'</span></td><td class="mono">'+
+        (show?ratio(P.light[k],P.light.bg,mark)+' / '+ratio(P.dark[k],P.dark.bg,mark):(k==='on-accent'?ratio(P.light[k],P.light.accent)+' / '+ratio(P.dark[k],P.dark.accent)+' on accent':'—'))+'</td></tr>';
+    }).join('')+'</tbody></table></div>'+
+    '<h3>Theme structure</h3><p>Light values sit on bare <code class="mono">:root</code>. Dark values follow the OS setting unless the viewer has chosen light, and an explicit choice overrides in both directions. Direction selectors add one attribute, so they always beat the default set at the same theme.</p>'+
+    codeBlock(':root { /* Lapas light + fonts, ease */ --bg:'+TOK.lapas.light.bg+'; --ink:'+TOK.lapas.light.ink+'; --accent:'+TOK.lapas.light.accent+'; … }\n'+
+      ':root[data-dir="stotis"]   { --bg:'+TOK.stotis.light.bg+'; --accent:'+TOK.stotis.light.accent+'; --f-display:\'Big Shoulders Display\'…; }\n'+
+      ':root[data-dir="zurnalas"] { --bg:'+TOK.zurnalas.light.bg+'; --accent:'+TOK.zurnalas.light.accent+'; --f-display:\'Newsreader\'…; }\n\n'+
+      '@media (prefers-color-scheme: dark) {\n  :root:not([data-theme="light"])                    { /* Lapas dark */ color-scheme: dark; }\n  :root[data-dir="stotis"]:not([data-theme="light"])  { --bg:'+TOK.stotis.dark.bg+'; … }\n  :root[data-dir="zurnalas"]:not([data-theme="light"]){ --bg:'+TOK.zurnalas.dark.bg+'; … }\n}\n'+
+      ':root[data-theme="dark"]                     { /* Lapas dark */ }\n:root[data-theme="dark"][data-dir="stotis"]   { … }\n:root[data-theme="dark"][data-dir="zurnalas"] { … }\n\n'+
+      'body { background: var(--bg); color: var(--ink); }  /* never transparent */'));
+
+  h+=sec(4,'Typography',
+    '<p>Each direction pairs two families with distinct jobs, and IBM Plex Mono carries every number that should line up: sheet sizes, part codes, counts and the week. Every family covers Lithuanian (ą č ę ė į š ų ū ž).</p>'+
+    DIRS.map(function(d){
+      var F=TOK[d.id].fonts;
+      return '<h3>'+d.name+'</h3><div class="tbl"><table><thead><tr><th>Role</th><th>Family · weight</th><th>Size</th><th>Tracking</th></tr></thead><tbody>'+
+        TYPE[d.id].map(function(r){return '<tr><td>'+r[0]+'</td><td><span style="font-family:'+esc(F[r[1]])+';font-weight:'+parseInt(r[2],10)+(/italic/.test(r[2])?';font-style:italic':'')+';font-size:19px'+(d.id==='stotis'&&r[1]==='display'?';text-transform:uppercase':'')+'">'+esc(r[5])+'</span><br><span class="mono" style="color:var(--muted)">'+esc(F[r[1]].split(',')[0].replace(/'/g,''))+' '+r[2]+'</span></td><td class="mono">'+r[3]+'</td><td class="mono">'+r[4]+'</td></tr>';}).join('')+
+        '</tbody></table></div>';
+    }).join(''));
+
+  h+=sec(5,'Layout',
+    '<p>Spacing scale: <span class="mono">4 · 8 · 12 · 16 · 22 · 28 · 40 · 56 · 80</span>. Page max-width is 1320 px, with a gutter of max(20px, safe-area) on each side. None of the directions uses a uniform card grid. Visual weight follows what the shopfloor opens most.</p>'+
+    '<ul class="sp-rules">'+
+    '<li><b>Lapas</b><span>A 12-column sheet with an 8 px kerf gap and rows at least 158 px tall. Spans for six parts are 7×2, 5, 5, 5, 4 and 3, so no two rows split the same way. Below 900 px it becomes 6 columns, with the feature part at 6 and the rest at 3. Below 560 px it is one column. A ruler sits above the sheet and the header carries real sheet data (size, part count, week, time).</span></li>'+
+    '<li><b>Stotis</b><span>A 5fr / 8fr split with a 56 px gutter. The clock column is sticky. Rows are at least 112 px with 68 px key caps, and each stage opens with a 3 px ink rule. Below 900 px it stacks and the stage filters turn into a horizontal row of large buttons.</span></li>'+
+    '<li><b>Žurnalas</b><span>A 5fr / 7fr spread with an 80 px gutter. The contents column starts 132 px lower so the greeting leads. Each entry is a 4-track grid: number 44 px / title / dotted leader 1fr / key. Below 960 px it is one column, with the cover following the greeting.</span></li></ul>');
+
+  h+=sec(6,'Motion',
+    '<p>Everything is a transform, opacity or custom-property transition, so it stays on the compositor. Nothing waits on scroll. The page is complete at rest, and reveals start from 35% opacity, not zero.</p>'+
+    '<div class="tbl"><table><thead><tr><th>Moment</th><th>Trigger</th><th>Change</th><th>Time</th><th>Easing</th></tr></thead><tbody>'+
+    [['Reveal','Load, direction switch','translateY 10→0, opacity .35→1, stagger 45 ms (cap 9)','520 ms','cubic-bezier(.2,.8,.2,1)'],
+     ['Direction switch','Dock, #hash','View Transitions cross-fade of the root; instant fallback','280 ms','same'],
+     ['Toolpath trace','Lapas: hover, focus, key','@property --sweep 0→100% on a conic border mask','550 ms','same'],
+     ['Signal fill','Stotis: hover, focus, key','::before scaleX 0→1 from left, text flips to on-accent, row nudges 12 px','240 ms','cubic-bezier(.3,.7,.1,1)'],
+     ['Ink underline','Žurnalas: hover, focus, key','background-size 0→100% 1px under the title; key shifts 4 px, turns accent','300 ms','cubic-bezier(.2,.8,.2,1)'],
+     ['Key press','1–9, pointer down','key cap drops 1 px, border 2→1; target shows its hover state 160 ms, then opens','90 + 160 ms','linear'],
+     ['Theme','Toggle, OS change','background-color and color on body','300 ms','same'],
+     ['Reduced motion','prefers-reduced-motion','All animation and transition off; state colours kept','0','—']]
+     .map(function(r){return '<tr>'+r.map(function(c,i){return '<td'+(i>=3?' class="mono"':'')+'>'+esc(c)+'</td>';}).join('')+'</tr>';}).join('')+'</tbody></table></div>'+
+    codeBlock('/* Lapas — toolpath trace */\n@property --sweep { syntax: "<percentage>"; inherits: false; initial-value: 0%; }\n.part::before {\n  content: ""; position: absolute; inset: -2px; padding: 2px;\n  background: conic-gradient(var(--accent) var(--sweep), transparent 0);\n  mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);\n  transition: --sweep .55s var(--ease);\n}\n.part:hover::before, .part:focus-visible::before { --sweep: 100%; }\n\n/* Stotis — signal fill */\n.row { position: relative; isolation: isolate; }\n.row::before { content: ""; position: absolute; inset: 0; z-index: -1; background: var(--accent);\n  transform: scaleX(0); transform-origin: left; transition: transform .24s var(--ease-snap); }\n.row:hover::before { transform: scaleX(1); }\n\n/* Reveal — starts visible, releases after so hover transforms still work */\n@keyframes rv { from { opacity: .35; transform: translateY(10px); } }\n.rv { animation: rv .52s var(--ease) backwards; animation-delay: calc(min(var(--i), 9) * 45ms); }')+
+    '<h3>React equivalent</h3>'+
+    codeBlock('import { motion } from "framer-motion";\n\nconst list = { in: { transition: { staggerChildren: 0.045 } } };\nconst item = {\n  rest: { y: 10, opacity: 0.35 },\n  in:   { y: 0,  opacity: 1, transition: { duration: 0.52, ease: [0.2, 0.8, 0.2, 1] } },\n};\n\n<motion.ul initial="rest" animate="in" variants={list}>\n  {apps.map(a => <motion.li key={a.id} variants={item}><AppPart app={a} /></motion.li>)}\n</motion.ul>\n\n// Direction switch\ndocument.startViewTransition?.(() => flushSync(() => setDirection(next)));'));
+
+  h+=sec(7,'Interaction',
+    '<div class="tbl"><table><thead><tr><th>Input</th><th>Result</th></tr></thead><tbody>'+
+    [['1 – 9','Opens the app with that key in a new tab after a 160 ms press state'],['/','Focuses search'],['Enter (in search)','Opens the first match'],['Esc','Clears search; closes the editor'],['Tab','Visible 3 px focus ring in --focus; tiles and rows show their hover state on focus'],['Stage filter','Remembered per device; the count shows next to each stage'],['Dock','Switches direction (remembered per device, linkable as #lapas, #stotis, #zurnalas) and opens this spec (#spec)'],['Theme button','Auto → Light → Dark, remembered per device'],['Edit (owner only)','Side drawer to change names, links and stages; saving republishes the page for everyone']]
+      .map(function(r){return '<tr><td class="mono">'+esc(r[0])+'</td><td>'+esc(r[1])+'</td></tr>';}).join('')+'</tbody></table></div>'+
+    '<h3>Accessibility</h3><ul class="sp-rules">'+
+    '<li><b>Contrast</b><span>Body text (ink on bg) in '+DIRS.map(function(d){return d.name+' '+ratio(TOK[d.id].light.ink,TOK[d.id].light.bg)+' / '+ratio(TOK[d.id].dark.ink,TOK[d.id].dark.bg);}).join(', ')+' (light / dark).</span></li>'+
+    '<li><b>Semantics</b><span>Apps are real links. Filters are buttons with aria-pressed. The search field has a label. The page language follows the LT/EN toggle.</span></li>'+
+    '<li><b>Colour</b><span>Stage is never shown by colour alone: it is always named in a label, heading or legend.</span></li></ul>');
+
+  h+=sec(8,'Build and ship',
+    '<ul class="sp-rules">'+
+    '<li><b>File</b><span>One HTML file: a style block, a JSON block with the apps, a JSON block with tokens, and one script. No build step and no framework.</span></li>'+
+    '<li><b>Add an app</b><span>Add an object to the apps array (id, group: design | cnc | production, icon, url, name/desc in lt and en, optional tag). Order inside a stage is the order in the file.</span></li>'+
+    '<li><b>Deploy</b><span>Copy the chosen direction as the default into hub/shopfloor/index.html → app.dedesbaldai.lt/hub/shopfloor/. The dock can stay, or you can lock a direction per screen with #stotis in the URL.</span></li>'+
+    '<li><b>Fonts</b><span>Google Fonts with Lithuanian coverage, each with a named fallback, so the layout holds if the network is slow.</span></li></ul>');
+  return h+'</article>';
+}
+
+/* ---------- dock, editor ---------- */
+function dockHTML(){
+  if(LOCK) return '';
+  return '<nav class="dock" aria-label="'+t('direction')+'"><span class="lbl">'+t('direction')+'</span>'+
+    DIRS.map(function(d){return '<a href="#'+d.id+'" aria-current="'+(view==='hub'&&dir===d.id)+'">'+d.name+'</a>';}).join('')+
+    '<span class="sep"></span><a href="#spec" data-view="spec" aria-current="'+(view==='spec')+'">'+t('spec')+'</a></nav>';
+}
+function editHTML(){
+  var opts=function(sel){return GROUPS.map(function(g){return '<option value="'+g.id+'"'+(g.id===sel?' selected':'')+'>'+esc(g[lang])+'</option>';}).join('');};
+  return '<div class="ed-wrap" id="ed-wrap"><div class="ed" role="dialog" aria-modal="true" aria-labelledby="ed-title"><h2 id="ed-title">'+t('editTitle')+'</h2><p class="note">'+t('editNote')+'</p>'+
+    draft.map(function(a,i){return '<div class="ed-row" data-i="'+i+'">'+
+      '<label>'+t('name')+'<input id="n-'+esc(a.id)+'" data-f="name" value="'+esc(txt(a.name))+'"></label>'+
+      '<label>'+t('group')+'<select id="g-'+esc(a.id)+'" data-f="group">'+opts(a.group)+'</select></label>'+
+      '<label class="w">'+t('desc')+'<input id="d-'+esc(a.id)+'" data-f="desc" value="'+esc(txt(a.desc))+'"></label>'+
+      '<label class="w">'+t('url')+'<input class="url" id="u-'+esc(a.id)+'" data-f="url" type="url" placeholder="https://…" value="'+esc(a.url)+'"></label>'+
+      '<button type="button" class="del" data-del="'+i+'">'+t('del')+'</button></div>';}).join('')+
+    '<button type="button" class="btn ghost" data-add="1">'+t('add')+'</button>'+
+    '<div class="ed-foot"><button type="button" class="btn ghost" id="btn-cancel">'+t('cancel')+'</button><button type="button" class="btn" id="btn-save">'+t('save')+'</button></div></div></div>';
+}
+
+/* ---------- render ---------- */
+function render(anim){
+  ROOT.setAttribute('data-dir',dir); ROOT.lang=lang;
+  var body=view==='spec'?renderSpec():(dir==='stotis'?renderS():dir==='zurnalas'?renderZ():renderL());
+  app.innerHTML='<div class="page'+(anim&&!reduced?' anim':'')+'">'+body+'</div>'+dockHTML()+(editing?editHTML():'');
+  lastGreet=now().greet;
+}
+function go(fn){ if(document.startViewTransition&&!reduced){document.startViewTransition(fn);} else fn(); }
+function applyHash(anim){
+  if(LOCK){view='hub';render(anim);return;}
+  var h=location.hash.slice(1);
+  if(h==='spec'){view='spec';}
+  else if(DIRS.some(function(d){return d.id===h;})){view='hub';dir=h;specDir=null;try{localStorage.setItem('hub-dir',dir);}catch(e){}}
+  else view='hub';
+  render(anim);
+  if(anim!==false) window.scrollTo(0,0);
+}
+function toast(msg,ms){var el=document.createElement('div');el.className='toast';el.setAttribute('role','status');el.textContent=msg;document.body.appendChild(el);setTimeout(function(){el.remove();},ms||2600);}
+function readDraft(){
+  app.querySelectorAll('.ed-row').forEach(function(row){
+    var a=draft[+row.getAttribute('data-i')]; if(!a) return;
+    row.querySelectorAll('[data-f]').forEach(function(inp){
+      var f=inp.getAttribute('data-f'), v=inp.value.trim();
+      if(f==='name'||f==='desc'){a[f]=a[f]||{};a[f][lang]=v;if(!a[f].lt)a[f].lt=v;if(!a[f].en)a[f].en=v;}
+      else if(f==='url'){a.url=v&&!/^https?:\/\//i.test(v)?'https://'+v:v;}
+      else a[f]=v;
+    });
+  });
+}
+function buildDocument(state){
+  var reset=(document.head.querySelector('style')||{}).textContent||'';
+  var S='script', json=JSON.stringify(state).replace(/</g,'\\u003c');
+  return '<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>'+reset+'</style></head><body>'+
+    '<title>Dėdės Baldai Hub</title>\n<meta name="claude:viewport-fit-sides" content="cover">\n<link rel="stylesheet" href="'+FONT_URL+'">\n'+
+    document.getElementById('hub-css').outerHTML+'\n'+document.getElementById('hub-boot').outerHTML+'\n<div id="app"></div>\n'+
+    '<'+S+' type="application/json" id="hub-data">'+json+'</'+S+'>\n'+
+    document.getElementById('hub-tokens').outerHTML+'\n'+document.getElementById('hub-main').outerHTML+'\n</body></html>';
+}
+async function save(){
+  readDraft();
+  var btn=document.getElementById('btn-save'); if(btn){btn.disabled=true;btn.textContent=t('saving');}
+  var next={base:DATA.base,apps:draft.filter(function(a){return txt(a.name);})};
+  try{
+    if(!artifactNs) throw {code:'not_granted'};
+    await artifactNs.publish(buildDocument(next));
+    DATA=next;editing=false;draft=null;render();toast(t('saved'));
+  }catch(e){
+    var code=e&&e.code;
+    if(code==='conflict'){toast(t('conflict'),4000);return;}
+    toast(code==='not_granted'||code==='not_writer'?t('ro'):t('fail'),4000);
+    if(btn){btn.disabled=false;btn.textContent=t('save');}
+  }
+}
+function openKey(k){
+  var a=app.querySelector('a[data-key="'+k+'"]'); if(!a) return;
+  a.classList.add('hit');
+  setTimeout(function(){a.click();a.classList.remove('hit');},reduced?0:160);
+}
+
+app.addEventListener('click',function(e){
+  var d=e.target.closest('a[href^="#"]');
+  if(d){e.preventDefault();var target=d.getAttribute('href');if(location.hash===target){applyHash(true);return;}go(function(){location.hash=target;});return;}
+  var cp=e.target.closest('[data-copy]');
+  if(cp){var pre=cp.parentNode.querySelector('pre');var done=function(){cp.textContent='Copied';setTimeout(function(){cp.textContent='Copy';},1400);};
+    try{navigator.clipboard.writeText(pre.textContent).then(done,function(){selectText(pre);});}catch(_){selectText(pre);}return;}
+  var el=e.target.closest('button');
+  if(!el){ if(e.target.id==='ed-wrap'){editing=false;draft=null;render();} return; }
+  if(el.dataset.lang){if(editing)readDraft();lang=el.dataset.lang;try{localStorage.setItem('hub-lang',lang);}catch(_){}render();return;}
+  if(el.dataset.filter){filter=el.dataset.filter;try{localStorage.setItem('hub-filter',filter);}catch(_){}render();return;}
+  if(el.dataset.specdir){specDir=el.dataset.specdir;var y=window.scrollY;render();window.scrollTo(0,y);return;}
+  if(el.id==='btn-theme'){themePref=themePref==='auto'?'light':themePref==='light'?'dark':'auto';
+    if(themePref==='auto')ROOT.removeAttribute('data-theme');else ROOT.setAttribute('data-theme',themePref);
+    try{localStorage.setItem('hub-theme',themePref);}catch(_){} render(); var b=document.getElementById('btn-theme'); if(b) b.focus(); return;}
+  if(el.id==='btn-edit'){editing=true;draft=JSON.parse(JSON.stringify(DATA.apps));render();return;}
+  if(el.id==='btn-cancel'){editing=false;draft=null;render();return;}
+  if(el.id==='btn-save'){save();return;}
+  if(el.dataset.del!=null){readDraft();draft.splice(+el.dataset.del,1);render();return;}
+  if(el.dataset.add){readDraft();var n=1;draft.forEach(function(a){var m=/DB-(\d+)/.exec(a.code||'');if(m)n=Math.max(n,+m[1]+1);});
+    var id='app'+Date.now().toString(36);
+    draft.push({id:id,code:'DB-'+pad(n),group:filter!=='all'?filter:'production',icon:'generic',url:'',name:{lt:T.lt.newapp,en:T.en.newapp},desc:{lt:'',en:''}});
+    render();var inp=document.getElementById('n-'+id);if(inp){inp.focus();inp.select();}}
+});
+function selectText(el){try{var r=document.createRange();r.selectNodeContents(el);var s=getSelection();s.removeAllRanges();s.addRange(r);}catch(_){}}
+app.addEventListener('input',function(e){
+  if(e.target.id==='hub-search'){q=e.target.value;var pos=e.target.selectionStart;render();var s=document.getElementById('hub-search');s.focus();try{s.setSelectionRange(pos,pos);}catch(_){}}
+});
+app.addEventListener('keydown',function(e){
+  if(e.target.id==='hub-search'&&e.key==='Enter'){var first=app.querySelector('a[data-key="1"]');if(first)first.click();}
+  if(e.target.id==='hub-search'&&e.key==='Escape'){q='';render();document.getElementById('hub-search').focus();}
+});
+document.addEventListener('keydown',function(e){
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
+  if(editing){if(e.key==='Escape'){editing=false;draft=null;render();}return;}
+  var tag=document.activeElement&&document.activeElement.tagName;
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(tag)) return;
+  if(view!=='hub') return;
+  if(e.key==='/'){e.preventDefault();var s=document.getElementById('hub-search');if(s)s.focus();return;}
+  if(/^[1-9]$/.test(e.key)){e.preventDefault();openKey(e.key);}
+});
+window.addEventListener('hashchange',function(){applyHash(true);});
+setInterval(function(){
+  var N=now();
+  if(N.greet!==lastGreet&&!editing&&!(document.activeElement&&/^(INPUT|SELECT)$/.test(document.activeElement.tagName))){render();return;}
+  app.querySelectorAll('[data-clock]').forEach(function(el){el.textContent=N.time;});
+  app.querySelectorAll('[data-date]').forEach(function(el){el.textContent=N.date;});
+},15000);
+try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',function(){if(view==='spec')render();});}catch(_){}
+try{new MutationObserver(function(){if(view==='spec')render();}).observe(ROOT,{attributes:true,attributeFilter:['data-theme']});}catch(_){}
+
+applyHash(true);
+
+if(window.claude&&window.claude.use){
+  Promise.all([window.claude.use('user'),window.claude.use('artifact')]).then(function(r){
+    var user=r[0]; artifactNs=r[1];
+    if(!user||!artifactNs) return;
+    return Promise.resolve(user.canEdit()).then(function(ok){canEdit=!!ok;if(canEdit&&!editing)render();});
+  }).catch(function(){});
+}
+})();
+</script>
+<!-- Office tiles: locked until the office sign-in is open on this computer (workshop-auth.js, slot "office").
+     Read-only here: the hub never signs anyone in and never keeps the office sign-in alive. -->
+<style>
+[data-g="office"]{--stage:#4d5b6a}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) [data-g="office"]{--stage:#9aa8b6}}
+:root[data-theme="dark"] [data-g="office"]{--stage:#9aa8b6}
+
+/* lock badge — same box, type and line weight as the number badge (.kbd) */
+.lk{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 8px 0 7px;margin-left:auto;
+  font:500 10.5px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.07em;text-transform:uppercase;white-space:nowrap;
+  color:var(--muted);background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2);
+  transition:color .15s,box-shadow .15s,background .15s}
+.lk svg{width:12px;height:12px;flex:none;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:square;stroke-linejoin:miter}
+.lk + .kbd{margin-left:6px !important}
+.lk .lk-hover{display:none}
+.lk.float{position:absolute;top:12px;right:12px;z-index:2}
+a[data-locked]{position:relative}
+a[data-locked] .L-ico,a[data-locked] [class*="-ico"]{opacity:.45;transition:opacity .15s}
+a[data-locked]:hover .lk,a[data-locked]:focus-visible .lk{color:var(--surface);background:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+a[data-locked]:hover .lk .lk-rest,a[data-locked]:focus-visible .lk .lk-rest{display:none}
+a[data-locked]:hover .lk .lk-hover,a[data-locked]:focus-visible .lk .lk-hover{display:inline}
+a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"]{opacity:.8}
+/* open: quiet, with the time left before it locks again */
+.lk.open{color:var(--stage);box-shadow:inset 0 0 0 1px currentColor}
+.lk.open.soon{color:#b4541e}
+@media (prefers-reduced-motion:reduce){.lk,a[data-locked] [class*="-ico"]{transition:none}}
+
+#office-pc{position:static;width:max-content;margin:4px auto 28px;display:flex;align-items:center;gap:7px;padding:6px 11px 6px 9px;
+  font:500 10.5px/1.2 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;
+  background:var(--surface);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-2);cursor:pointer}
+#office-pc input{margin:0;accent-color:var(--ink)}
+#office-pc:hover{color:var(--ink)}
+@media print{#office-pc,.lk{display:none}}
+</style>
+<script>
+(function(){
+  var KEY='sb-niveinyzkkwtreeeaziv-auth-token-office', IDLE='workshop.office.lastActive', PC='workshop.officeComputer', MIN=10;
+  var OFFICE=['https://app.dedesbaldai.lt/offer/','https://app.dedesbaldai.lt/hub/crm/'];   // Prašymai is open to everyone: workers fill in, office keeps the registry
+  var SHUT='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5h7v5h-7zM4 5.5V3.8a2 2 0 0 1 4 0v1.7"/></svg>';
+  var OPEN='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5h7v5h-7zM4 5.5V3.8a2 2 0 0 1 3.9-.6"/></svg>';
+  function ls(k){try{return localStorage.getItem(k);}catch(e){return null;}}
+  function state(){
+    var s=null;try{s=JSON.parse(ls(KEY)||'null');}catch(e){}
+    if(ls(PC)==='1')return {pc:true};
+    if(!s||!s.access_token)return {locked:true};
+    var left=MIN-(Date.now()-(+ls(IDLE)||0))/60000;
+    return left>0?{left:Math.max(1,Math.ceil(left))}:{locked:true};
+  }
+  function badge(a,html,cls,label){
+    var b=a.querySelector('.lk');
+    if(!b){b=document.createElement('span');var k=a.querySelector('.kbd');
+      if(k&&k.parentNode){k.parentNode.insertBefore(b,k);}else{b.classList.add('float');a.appendChild(b);}}
+    b.className='lk'+(b.classList.contains('float')?' float':'')+(cls?' '+cls:'');
+    if(b.innerHTML!==html)b.innerHTML=html;
+    a.setAttribute('aria-label',(a.querySelector('h3,h2')||a).textContent.trim()+' — '+label);
+  }
+  function decorate(){
+    var st=state();
+    document.querySelectorAll('a[href]').forEach(function(a){
+      if(OFFICE.indexOf(a.href.split('?')[0])<0)return;
+      var b=a.querySelector('.lk');
+      if(st.pc){if(b)b.remove();a.removeAttribute('data-locked');a.removeAttribute('aria-label');a.removeAttribute('title');return;}
+      if(st.locked){
+        a.setAttribute('data-locked','');a.title='Atsidarys įvedus biuro PIN';
+        badge(a,SHUT+'<span class="lk-rest">Biuro PIN</span><span class="lk-hover">Atrakinti</span>','', 'užrakinta, reikia biuro PIN');
+      }else{
+        a.removeAttribute('data-locked');a.title='Užsirakins po '+st.left+' min. be veiklos';
+        badge(a,OPEN+'<span>Atrakinta · '+st.left+' min</span>',st.left<=2?'open soon':'open','atrakinta, užsirakins po '+st.left+' min.');
+      }
+    });
+    var cb=document.querySelector('#office-pc input');if(cb)cb.checked=!!st.pc;
+  }
+  var t=null;new MutationObserver(function(m){
+    if(m.every(function(x){return x.target.closest&&x.target.closest('.lk');}))return;   // ignore our own badge updates
+    clearTimeout(t);t=setTimeout(decorate,30);
+  }).observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('storage',decorate);window.addEventListener('focus',decorate);setInterval(decorate,15000);
+  var lbl=document.createElement('label');lbl.id='office-pc';
+  lbl.innerHTML='<input type="checkbox"> Biuro kompiuteris';
+  lbl.title='Pažymėkite tik biuro kompiuteryje: biuro programos čia neužsirakins. Dirbtuvėse palikite nepažymėtą — tada užsirakina po 10 min. be veiklos.';
+  lbl.querySelector('input').addEventListener('change',function(e){
+    try{if(e.target.checked){localStorage.setItem(PC,'1');}else{localStorage.removeItem(PC);}localStorage.setItem(IDLE,String(Date.now()));}catch(_){}
+    decorate();
+  });
+  function add(){document.body.appendChild(lbl);decorate();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add);else add();
+})();
+</script>
+<!-- Notices (bell + popups). The hub never signs anyone in: it uses the workshop
+     sign-in already open on this computer. The office sign-in is used only on a
+     computer ticked "Biuro kompiuteris" — so the hub can't keep an office sign-in
+     awake on a workshop computer. -->
+<script>(function(){function has(k){try{var s=JSON.parse(localStorage.getItem(k)||"null");return!!(s&&s.access_token);}catch(e){return false;}}
+var d="sb-niveinyzkkwtreeeaziv-auth-token",pc=false;try{pc=localStorage.getItem("workshop.officeComputer")==="1";}catch(e){}
+window.WORKSHOP_CLOUD={slot:(!has(d)&&pc&&has(d+"-office"))?"office":""};})();</script>
+<script src="../workers/workshop-auth.js"></script>
+<script src="/hub/shared/notices.js" defer></script>
+</body>
+</html>

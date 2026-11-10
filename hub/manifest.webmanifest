@@ -1,0 +1,31 @@
+{
+ "name": "Dėdės Baldai",
+ "short_name": "Dėdės Baldai",
+ "description": "Dirbtuvių ir biuro programos, pranešimai",
+ "start_url": "/hub/shopfloor/",
+ "scope": "/hub/",
+ "display": "standalone",
+ "background_color": "#e6e8e3",
+ "theme_color": "#e6e8e3",
+ "lang": "lt",
+ "icons": [
+  {
+   "src": "/hub/shared/icon-192.png",
+   "sizes": "192x192",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/hub/shared/icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "any"
+  },
+  {
+   "src": "/hub/shared/icon-maskable-512.png",
+   "sizes": "512x512",
+   "type": "image/png",
+   "purpose": "maskable"
+  }
+ ]
+}

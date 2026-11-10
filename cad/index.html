@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<script src="/hub/shared/gate.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Braižyklė · 2.5D CAD</title>
+<style>
+  :root{
+    --bench:#eceef2;--paper:#ffffff;--ink:#1b1e26;--ink2:#667085;
+    --line:#e6e8ed;--line2:#d2d7df;--acc:#2563eb;--acc-d:#1d4ed8;
+    --good:#15803d;--bad:#dc2626;--warn:#b45309;--cons:#a855f7;
+    --chip:#eef1f6;--shadow:0 1px 2px rgba(20,24,33,.06),0 1px 1px rgba(20,24,33,.04);
+    --mono:ui-monospace,"SF Mono","Cascadia Mono","Roboto Mono",Menlo,Consolas,monospace;
+    --sans:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --hh:46px;--sh:26px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden}
+  body{font-family:var(--sans);background:var(--bench);color:var(--ink);font-size:13px;line-height:1.4}
+  h1,h2,h3{margin:0;font-weight:650;letter-spacing:-.01em}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  header{height:var(--hh);background:var(--ink);color:#e8ebf0;display:flex;align-items:center;gap:14px;padding:0 12px;border-bottom:2px solid var(--acc)}
+  .brand{display:flex;align-items:center;gap:9px}
+  .brand .logo{display:grid;place-items:center;width:30px;height:30px;background:var(--acc);color:#fff;border-radius:5px;flex:none}
+  .brand .logo .dbl{display:block;width:78%;height:78%;background:currentColor;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat}
+  .brand h1{font-size:14px}
+  .brand .sub{color:#9aa3b2;font-size:10.5px;font-family:var(--mono)}
+  .hspace{flex:1}
+  .hbtns{display:flex;gap:5px;align-items:center;flex-wrap:wrap}
+  .hbtns button{font:inherit;cursor:pointer;border:1px solid #2c3340;background:#232a36;color:#e8ebf0;border-radius:6px;padding:5px 9px;font-size:12px}
+  .hbtns button:hover{background:#353d4b}
+  .lang{display:inline-flex;border:1px solid #2c3340;border-radius:6px;overflow:hidden}
+  .lang button{border:0;border-radius:0;padding:5px 8px}
+  .lang button.on{background:var(--acc);color:#fff;font-weight:650}
+
+  .app{height:calc(100% - var(--hh) - var(--sh));display:grid;grid-template-columns:52px minmax(0,1fr) 296px}
+  .tools{background:var(--paper);border-right:1px solid var(--line);padding:6px 0;overflow-y:auto;display:flex;flex-direction:column;gap:2px;align-items:center}
+  .tools button{width:40px;height:34px;border:1px solid transparent;background:transparent;border-radius:7px;cursor:pointer;
+    color:var(--ink2);display:flex;align-items:center;justify-content:center;position:relative}
+  .tools button svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .tools button:hover{background:var(--chip);color:var(--ink)}
+  .tools button.on{background:var(--acc);border-color:var(--acc-d);color:#fff}
+  .tools .sep{width:28px;height:1px;background:var(--line);margin:5px 0;flex:none}
+  .tools button .kk{position:absolute;right:2px;bottom:0;font:9px var(--mono);opacity:.5}
+
+  .stage{position:relative;background:#f7f8fa;overflow:hidden}
+  .stage canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #c3d{background:#eef1f5}
+  .stage.split #c2d{width:50%}
+  .stage.split #c3d{left:50%;width:50%;border-left:1px solid var(--line2)}
+  .stage.m2 #c3d{display:none}
+  .stage.m3 #c2d{display:none}
+  .stage.m3 #c3d{width:100%;left:0}
+  .vbar{position:absolute;top:8px;right:10px;z-index:6;display:flex;gap:5px}
+  .vbar button,.zbar button{font:inherit;cursor:pointer;border:1px solid var(--line2);background:#fff;color:var(--ink2);
+    border-radius:6px;padding:3px 9px;font-size:11px;box-shadow:var(--shadow)}
+  .vbar button.on{background:var(--acc);border-color:var(--acc-d);color:#fff}
+  .zbar{position:absolute;bottom:10px;right:10px;z-index:6;display:flex;gap:5px}
+  .hintbar{position:absolute;top:8px;left:10px;z-index:6;background:rgba(255,255,255,.94);border:1px solid var(--line);
+    border-radius:7px;padding:5px 10px;font-size:11.5px;color:var(--ink2);box-shadow:var(--shadow);max-width:60%}
+  .hintbar b{color:var(--acc-d)}
+  #tipbox{position:absolute;z-index:8;display:none;background:var(--ink);color:#fff;border-radius:6px;padding:3px 7px;
+    font:11.5px var(--mono);pointer-events:none;white-space:nowrap}
+  #entry{position:absolute;z-index:9;display:none;background:#fff;border:1px solid var(--acc);border-radius:7px;
+    padding:3px 5px;box-shadow:0 4px 14px rgba(20,24,33,.18);display:none;gap:3px;align-items:center}
+  #entry input{width:74px;font:12px var(--mono);border:0;outline:0;text-align:right;padding:2px 3px}
+  #entry span{font:10px var(--mono);color:var(--ink2);padding:0 2px}
+  #entry.on{display:flex}
+
+  .side{background:var(--paper);border-left:1px solid var(--line);overflow-y:auto}
+  .pan{border-bottom:1px solid var(--line)}
+  .pan>.h{display:flex;align-items:center;gap:8px;padding:8px 11px;background:#fbfcfd;border-bottom:1px solid var(--line)}
+  .pan>.h .t{font-family:var(--mono);font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:var(--acc-d);font-weight:600}
+  .pan>.h .sp{flex:1}
+  .pan>.b{padding:10px 11px}
+  label.f{display:flex;flex-direction:column;gap:3px;font-size:11.5px;color:var(--ink2)}
+  label.f>span{font-weight:550}
+  input,select{min-width:0;font:inherit;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:6px;padding:5px 7px;width:100%;font-size:12px}
+  input[type=number]{font-family:var(--mono);font-variant-numeric:tabular-nums;text-align:right}
+  input[type=color]{padding:2px;height:27px;cursor:pointer}
+  input:focus,select:focus{outline:2px solid #bfdbfe;outline-offset:-1px;border-color:var(--acc)}
+  .row{display:grid;gap:7px;margin-bottom:8px}
+  .row.c2{grid-template-columns:1fr 1fr}.row.c3{grid-template-columns:1fr 1fr 1fr}
+  .row>*{min-width:0}
+  .row:last-child{margin-bottom:0}
+  .chk{display:flex;align-items:center;gap:6px;font-size:11.5px;cursor:pointer;padding:2px 0}
+  .chk input{width:auto}
+  .btn{font:inherit;cursor:pointer;border:1px solid var(--line2);background:#fff;color:var(--ink);border-radius:6px;
+    padding:5px 9px;font-weight:550;font-size:12px;display:inline-flex;align-items:center;gap:6px;justify-content:center}
+  .btn:hover{border-color:var(--acc);color:var(--acc-d)}
+  .btn.p{background:var(--acc);border-color:var(--acc-d);color:#fff}
+  .btn.p:hover{background:var(--acc-d);color:#fff}
+  .btn.w{width:100%}
+  .lst{max-height:190px;overflow-y:auto}
+  .it{display:flex;align-items:center;gap:7px;padding:5px 11px;border-bottom:1px solid var(--line);font-size:12px;cursor:pointer}
+  .it:hover{background:#fafbfc}
+  .it.on{background:#eff6ff}
+  .it .sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.2);flex:none}
+  .it .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .it .sm{font:10.5px var(--mono);color:var(--ink2)}
+  .it .x{border:0;background:0;color:var(--ink2);cursor:pointer;font:12px var(--mono);padding:0 3px;border-radius:4px}
+  .it .x:hover{background:var(--chip);color:var(--bad)}
+  .empty{padding:10px 11px;font-size:11.5px;color:var(--ink2)}
+  .kv{display:grid;grid-template-columns:auto 1fr;gap:4px 9px;font-size:11.5px;align-items:center}
+  .kv .k{color:var(--ink2)}
+  .kv .v{font-family:var(--mono);text-align:right}
+  .status{height:var(--sh);background:var(--paper);border-top:1px solid var(--line);display:flex;align-items:center;
+    gap:14px;padding:0 11px;font:11px var(--mono);color:var(--ink2)}
+  .status b{color:var(--ink);font-weight:600}
+  .status .sp{flex:1}
+  .status .sn{color:var(--acc-d)}
+  .tag{font-family:var(--mono);font-size:10px;background:var(--chip);border-radius:4px;padding:1px 5px;color:var(--ink2)}
+  .warn{color:var(--bad)}
+  @media(max-width:900px){.app{grid-template-columns:46px minmax(0,1fr)}.side{display:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><span class="logo" role="img" aria-label="Dėdės Baldai"><span class="dbl"></span></span>
+    <div><h1 data-i="title">Braižyklė</h1><div class="sub">2.5D CAD · DXF</div></div></div>
+  <div class="hspace"></div>
+  <div class="hbtns">
+    <button id="bNew" data-i="new">Naujas</button>
+    <button id="bOpen" data-i="open">Atidaryti</button>
+    <button id="bSave" data-i="save">Išsaugoti</button>
+    <button id="bDxf">DXF</button>
+    <button id="bSvg">SVG</button>
+    <button id="bPng">PNG</button>
+    <span class="lang"><button id="lLT" class="on">LT</button><button id="lEN">EN</button></span>
+  </div>
+</header>
+
+<div class="app">
+  <div class="tools" id="tools"></div>
+
+  <div class="stage m2" id="stage">
+    <canvas id="c2d"></canvas>
+    <canvas id="c3d"></canvas>
+    <div class="hintbar" id="hint"></div>
+    <div class="vbar">
+      <button id="v2" class="on">2D</button><button id="v3">3D</button><button id="vs" data-i="both">Abu</button>
+    </div>
+    <div class="zbar">
+      <button id="zFit" data-i="fit">Sutalpinti</button><button id="zIn">+</button><button id="zOut">−</button>
+    </div>
+    <div id="tipbox"></div>
+    <div id="entry"><span id="eL1">L</span><input id="eV1" type="text"><span id="eL2">∠</span><input id="eV2" type="text"></div>
+  </div>
+
+  <div class="side">
+    <div class="pan"><div class="h"><span class="t" data-i="p_prop">Savybės</span><div class="sp"></div>
+      <span class="sm mono" id="selInfo"></span></div>
+      <div class="b" id="props"><div class="empty" data-i="nosel">Nieko nepažymėta. Pažymėk objektą arba braižyk.</div></div></div>
+
+    <div class="pan"><div class="h"><span class="t" data-i="p_bodies">Detalės (išpjovos)</span><div class="sp"></div>
+      <button class="btn" id="bRescan" style="padding:3px 7px;font-size:11px" data-i="rescan">Perskaičiuoti</button></div>
+      <div class="lst" id="bodies"></div>
+      <div class="b">
+        <div class="row c2">
+          <label class="f"><span data-i="l_th">Storis mm</span><input type="number" id="thick" value="18" min="0.5" step="0.5"></label>
+          <label class="f"><span data-i="l_mat">Medžiaga</span><input type="text" id="matName" value="Fanera 18"></label>
+        </div>
+        <div class="kv" id="sums"></div>
+      </div></div>
+
+    <div class="pan"><div class="h"><span class="t" data-i="p_layers">Sluoksniai</span><div class="sp"></div>
+      <button class="btn" id="bAddLay" style="padding:3px 7px;font-size:11px">+</button></div>
+      <div class="lst" id="layers"></div></div>
+
+    <div class="pan"><div class="h"><span class="t" data-i="p_set">Nustatymai</span></div>
+      <div class="b">
+        <div class="row c2">
+          <label class="f"><span data-i="l_grid">Tinklelis mm</span><input type="number" id="gridS" value="10" min="0.1" step="1"></label>
+          <label class="f"><span data-i="l_fill">Suapvalinimas R</span><input type="number" id="filletR" value="5" min="0" step="1"></label>
+        </div>
+        <label class="chk"><input type="checkbox" id="snapGrid" checked><span data-i="s_grid">Tinklelio trauka</span></label>
+        <label class="chk"><input type="checkbox" id="snapObj" checked><span data-i="s_obj">Objektų trauka (galai, vidurys, centras)</span></label>
+        <label class="chk"><input type="checkbox" id="snapOrtho" checked><span data-i="s_ortho">Statmenai / 45° (Shift)</span></label>
+        <label class="chk"><input type="checkbox" id="showDims" checked><span data-i="s_dims">Rodyti matmenis</span></label>
+      </div></div>
+  </div>
+</div>
+<div class="status">
+  <span id="stPos" class="mono">0.00, 0.00</span>
+  <span id="stSnap" class="sn"></span>
+  <span class="sp"></span>
+  <span id="stMsg"></span>
+  <span id="stCount" class="tag"></span>
+</div>
+<script>
+"use strict";
+/* =============================================== bendra ============== */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const TAU=Math.PI*2, EPS=1e-9, TOL=5e-3;         // 0.005 mm – taškų sutapimo tolerancija
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const P=(x,y)=>({x,y});
+const add=(a,b)=>P(a.x+b.x,a.y+b.y), sub=(a,b)=>P(a.x-b.x,a.y-b.y);
+const mul=(a,k)=>P(a.x*k,a.y*k), dot=(a,b)=>a.x*b.x+a.y*b.y, crs=(a,b)=>a.x*b.y-a.y*b.x;
+const len=a=>Math.hypot(a.x,a.y), dist=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+const nrm=a=>{const L=len(a)||1;return P(a.x/L,a.y/L);};
+const rot90=a=>P(-a.y,a.x);
+const lerp=(a,b,t)=>P(a.x+(b.x-a.x)*t,a.y+(b.y-a.y)*t);
+const deg=r=>r*180/Math.PI, rad=d=>d*Math.PI/180;
+const eqp=(a,b,t)=>dist(a,b)<=(t||TOL);
+const fmt=(v,d=2)=>(Math.abs(v)<1e-9?0:v).toFixed(d).replace(/\.?0+$/,"")||"0";
+function normAng(a){a%=TAU;return a<0?a+TAU:a;}
+let UID=1; const uid=()=>UID++;
+
+/* =============================================== objektai ============ */
+const mkLine=(a,b,o={})=>Object.assign({id:uid(),t:"line",a:P(a.x,a.y),b:P(b.x,b.y),lay:0,cons:false},o);
+const mkCircle=(c,r,o={})=>Object.assign({id:uid(),t:"circle",c:P(c.x,c.y),r:Math.abs(r),lay:0,cons:false},o);
+function mkArc(c,r,a0,a1,o={}){                    // visada prieš laikrodį nuo a0 iki a1
+  a0=normAng(a0);a1=normAng(a1);
+  let sw=a1-a0; if(sw<=EPS)sw+=TAU;
+  return Object.assign({id:uid(),t:"arc",c:P(c.x,c.y),r:Math.abs(r),a0,a1:a0+sw,lay:0,cons:false},o);
+}
+const arcSweep=e=>e.a1-e.a0;
+const onArc=(e,a)=>{let d=normAng(a)-normAng(e.a0); if(d<-EPS)d+=TAU; return d<=arcSweep(e)+1e-7;};
+const arcPt=(e,a)=>P(e.c.x+e.r*Math.cos(a), e.c.y+e.r*Math.sin(a));
+
+function entEnds(e){
+  if(e.t==="line")return[e.a,e.b];
+  if(e.t==="arc")return[arcPt(e,e.a0),arcPt(e,e.a1)];
+  return null;                                     // apskritimas – uždaras
+}
+function entPt(e,t){                               // t∈[0,1]
+  if(e.t==="line")return lerp(e.a,e.b,t);
+  if(e.t==="arc")return arcPt(e,e.a0+arcSweep(e)*t);
+  return arcPt({c:e.c,r:e.r},t*TAU);
+}
+function entMid(e){return entPt(e,0.5);}
+function entLen(e){
+  if(e.t==="line")return dist(e.a,e.b);
+  if(e.t==="arc")return e.r*arcSweep(e);
+  return TAU*e.r;
+}
+function entBBox(e){
+  if(e.t==="line")return{x0:Math.min(e.a.x,e.b.x),y0:Math.min(e.a.y,e.b.y),x1:Math.max(e.a.x,e.b.x),y1:Math.max(e.a.y,e.b.y)};
+  if(e.t==="circle")return{x0:e.c.x-e.r,y0:e.c.y-e.r,x1:e.c.x+e.r,y1:e.c.y+e.r};
+  const pts=[arcPt(e,e.a0),arcPt(e,e.a1)];
+  for(let k=0;k<4;k++){const a=k*Math.PI/2; if(onArc(e,a))pts.push(arcPt(e,a));}
+  return pts.reduce((b,p)=>({x0:Math.min(b.x0,p.x),y0:Math.min(b.y0,p.y),x1:Math.max(b.x1,p.x),y1:Math.max(b.y1,p.y)}),
+    {x0:1e18,y0:1e18,x1:-1e18,y1:-1e18});
+}
+function bboxOf(list){
+  if(!list.length)return null;
+  return list.map(entBBox).reduce((b,q)=>({x0:Math.min(b.x0,q.x0),y0:Math.min(b.y0,q.y0),x1:Math.max(b.x1,q.x1),y1:Math.max(b.y1,q.y1)}));
+}
+/* atstumas iki objekto + parametras */
+function nearOn(e,p){
+  if(e.t==="line"){
+    const d=sub(e.b,e.a), L2=dot(d,d)||1;
+    let t=clamp(dot(sub(p,e.a),d)/L2,0,1);
+    const q=lerp(e.a,e.b,t);return{d:dist(p,q),q,t};
+  }
+  const v=sub(p,e.c), a=Math.atan2(v.y,v.x);
+  if(e.t==="circle"){const q=arcPt(e,a);return{d:Math.abs(len(v)-e.r),q,t:normAng(a)/TAU};}
+  if(onArc(e,a)){const q=arcPt(e,a);let t=(normAng(a)-normAng(e.a0));if(t<0)t+=TAU;
+    return{d:Math.abs(len(v)-e.r),q,t:t/arcSweep(e)};}
+  const e0=arcPt(e,e.a0),e1=arcPt(e,e.a1);
+  return dist(p,e0)<dist(p,e1)?{d:dist(p,e0),q:e0,t:0}:{d:dist(p,e1),q:e1,t:1};
+}
+/* =============================================== sankirtos =========== */
+function llInf(p1,p2,p3,p4){                       // begalinių tiesių sankirta
+  const d1=sub(p2,p1), d2=sub(p4,p3), den=crs(d1,d2);
+  if(Math.abs(den)<1e-12)return null;
+  const t=crs(sub(p3,p1),d2)/den;
+  return add(p1,mul(d1,t));
+}
+function segSeg(A,B,C,D){
+  const d1=sub(B,A), d2=sub(D,C), den=crs(d1,d2);
+  if(Math.abs(den)<1e-12)return[];
+  const t=crs(sub(C,A),d2)/den, u=crs(sub(C,A),d1)/den;
+  if(t<-1e-9||t>1+1e-9||u<-1e-9||u>1+1e-9)return[];
+  return[add(A,mul(d1,t))];
+}
+function segCircle(A,B,c,r){
+  const d=sub(B,A), f=sub(A,c);
+  const a=dot(d,d), b=2*dot(f,d), cc=dot(f,f)-r*r, disc=b*b-4*a*cc;
+  if(a<1e-15||disc<-1e-9)return[];
+  const s=Math.sqrt(Math.max(0,disc)), out=[];
+  for(const t of [(-b-s)/(2*a),(-b+s)/(2*a)])
+    if(t>=-1e-9&&t<=1+1e-9)out.push(add(A,mul(d,t)));
+  return out.filter((p,i,ar)=>ar.findIndex(q=>eqp(q,p,1e-7))===i);
+}
+function circCirc(c1,r1,c2,r2){
+  const d=dist(c1,c2);
+  if(d<1e-12||d>r1+r2+1e-9||d<Math.abs(r1-r2)-1e-9)return[];
+  const a=(r1*r1-r2*r2+d*d)/(2*d), h2=r1*r1-a*a;
+  const h=Math.sqrt(Math.max(0,h2)), m=add(c1,mul(nrm(sub(c2,c1)),a)), n=rot90(nrm(sub(c2,c1)));
+  return h<1e-9?[m]:[add(m,mul(n,h)),sub(m,mul(n,h))];
+}
+function xEnt(e1,e2){                               // sankirtos tarp dviejų objektų
+  const keep=(p,e)=>{
+    if(e.t==="line"){const r=nearOn(e,p);return r.d<1e-6;}
+    if(e.t==="circle")return true;
+    return onArc(e,Math.atan2(p.y-e.c.y,p.x-e.c.x));
+  };
+  let pts=[];
+  const cir=e=>({c:e.c,r:e.r});
+  if(e1.t==="line"&&e2.t==="line")pts=segSeg(e1.a,e1.b,e2.a,e2.b);
+  else if(e1.t==="line")pts=segCircle(e1.a,e1.b,e2.c,e2.r);
+  else if(e2.t==="line")pts=segCircle(e2.a,e2.b,e1.c,e1.r);
+  else pts=circCirc(e1.c,e1.r,e2.c,e2.r);
+  return pts.filter(p=>keep(p,e1)&&keep(p,e2));
+}
+/* liestinės kryptis objekto taške (į priekį pagal parametrą) */
+function tanAt(e,p){
+  if(e.t==="line")return nrm(sub(e.b,e.a));
+  const a=Math.atan2(p.y-e.c.y,p.x-e.c.x);
+  return P(-Math.sin(a),Math.cos(a));               // prieš laikrodį
+}
+/* =============================================== dalijimas =========== */
+function splitEnt(e,pts){                           // grąžina naujus objektus
+  const all=pts.map(p=>({p,t:nearOn(e,p).t})).sort((a,b)=>a.t-b.t);
+  const ps=e.t==="circle"?all.filter((o,i,ar)=>!i||o.t-ar[i-1].t>1e-6)
+                         :all.filter(o=>o.t>1e-6&&o.t<1-1e-6);
+  if(!ps.length)return[e];
+  const out=[];
+  if(e.t==="circle"){
+    if(ps.length<2)return[e];
+    for(let i=0;i<ps.length;i++){
+      const A=ps[i].p,B=ps[(i+1)%ps.length].p;
+      out.push(mkArc(e.c,e.r,Math.atan2(A.y-e.c.y,A.x-e.c.x),Math.atan2(B.y-e.c.y,B.x-e.c.x),{lay:e.lay,cons:e.cons}));
+    }
+    return out;
+  }
+  let prev=0;
+  const mk=(t0,t1)=>{
+    if(t1-t0<1e-7)return;
+    if(e.t==="line")out.push(mkLine(entPt(e,t0),entPt(e,t1),{lay:e.lay,cons:e.cons}));
+    else out.push(mkArc(e.c,e.r,e.a0+arcSweep(e)*t0,e.a0+arcSweep(e)*t1,{lay:e.lay,cons:e.cons}));
+  };
+  for(const o of ps){mk(prev,o.t);prev=o.t;}
+  mk(prev,1);
+  return out;
+}
+/* =============================================== kontūrai ============ */
+function keyOf(p){return Math.round(p.x/TOL)+"_"+Math.round(p.y/TOL);}
+function vGet(map,p){                               // paieška su kaimyniniais langeliais
+  const kx=Math.round(p.x/TOL), ky=Math.round(p.y/TOL);
+  for(let i=-1;i<=1;i++)for(let j=-1;j<=1;j++){
+    const v=map.get((kx+i)+"_"+(ky+j));
+    if(v&&eqp(v.p,p))return v;
+  }
+  return null;
+}
+function vertMap(segs){
+  const m=new Map();
+  segs.forEach(e=>entEnds(e).forEach(p=>{
+    let v=vGet(m,p);
+    if(!v){v={p,ids:[]};m.set(keyOf(p),v);}
+    v.ids.push(e.id);
+  }));
+  return m;
+}
+function loopSegs(ents){
+  return ents.filter(e=>!e.cons&&(e.t==="line"||e.t==="arc")&&entLen(e)>TOL);
+}
+function findLoops(ents){
+  const segs=loopSegs(ents), vm=vertMap(segs), byId=new Map(segs.map(e=>[e.id,e]));
+  const used=new Set(), loops=[];
+  for(const e of segs){
+    if(used.has(e.id))continue;
+    const ends0=entEnds(e), start=ends0[0], chain=[{e,rev:false}];
+    let cur=e, at=ends0[1], ok=true;
+    used.add(e.id);
+    for(let guard=0;guard<20000;guard++){
+      if(eqp(at,start))break;
+      const v=vGet(vm,at);
+      const cand=v?v.ids.filter(id=>id!==cur.id&&!used.has(id)):[];
+      if(cand.length!==1){ok=false;break;}
+      const nx=byId.get(cand[0]), en=entEnds(nx), rev=!eqp(en[0],at);
+      chain.push({e:nx,rev});used.add(nx.id);
+      at=rev?en[0]:en[1];cur=nx;
+    }
+    if(ok&&eqp(at,start))loops.push({segs:chain,closed:true});
+  }
+  ents.filter(e=>e.t==="circle"&&!e.cons&&e.r>TOL)
+      .forEach(e=>loops.push({segs:[{e,rev:false}],closed:true,circle:true}));
+  loops.forEach(L=>{
+    if(loopArea(L)<0){L.segs.reverse();L.segs.forEach(sg=>sg.rev=!sg.rev);}   // visi kontūrai – prieš laikrodį
+    L.area=loopArea(L);L.poly=polyOf(L);L.ids=L.segs.map(sg=>sg.e.id);});
+  return loops.filter(L=>Math.abs(L.area)>1e-6);
+}
+function openEnds(ents){                            // laisvi galai – neuždaryti kontūrai
+  const segs=loopSegs(ents), vm=vertMap(segs);
+  return[...vm.values()].filter(v=>v.ids.length===1).map(v=>v.p);
+}
+function loopArea(L){                               // tikslus plotas: styga + lanko segmentai
+  const e0=L.segs[0].e;
+  if(L.segs.length===1&&e0.t==="circle")return Math.PI*e0.r*e0.r;
+  const pts=L.segs.map(s=>{const en=entEnds(s.e);return s.rev?en[1]:en[0];});
+  let a=polyArea(pts);
+  for(const s of L.segs){
+    const e=s.e;if(e.t!=="arc")continue;
+    const th=arcSweep(e), seg=e.r*e.r/2*(th-Math.sin(th));
+    a+=s.rev?-seg:seg;
+  }
+  return a;
+}
+function polyOf(L,step){                            // kontūras → taškų grandinė
+  const out=[];
+  for(const s of L.segs){
+    const e=s.e;
+    if(e.t==="line"){const p=s.rev?[e.b,e.a]:[e.a,e.b];out.push(p[0]);}
+    else{
+      const sw=e.t==="circle"?TAU:arcSweep(e);
+      const n=Math.max(e.t==="circle"?28:6,Math.ceil(sw/(step||0.12)));
+      for(let i=0;i<n;i++){const t=s.rev?1-i/n:i/n;out.push(entPt(e,t));}
+    }
+  }
+  return out;
+}
+function polyArea(p){let a=0;for(let i=0;i<p.length;i++){const q=p[(i+1)%p.length];a+=p[i].x*q.y-q.x*p[i].y;}return a/2;}
+function polyIn(pt,poly){
+  let c=false;
+  for(let i=0,j=poly.length-1;i<poly.length;j=i++){
+    const a=poly[i],b=poly[j];
+    if((a.y>pt.y)!==(b.y>pt.y)&&pt.x<(b.x-a.x)*(pt.y-a.y)/(b.y-a.y)+a.x)c=!c;
+  }
+  return c;
+}
+function buildRegions(ents){
+  const loops=findLoops(ents);
+  loops.forEach(L=>{if(L.area<0){L.poly.reverse();L.area=-L.area;}});
+  loops.sort((a,b)=>b.area-a.area);
+  const reg=[];
+  loops.forEach((L,i)=>{
+    let depth=0,parent=null;
+    for(let j=0;j<i;j++){
+      if(polyIn(L.poly[0],loops[j].poly)){depth++;if(!parent||loops[j].area<parent.area)parent=loops[j];}
+    }
+    L.depth=depth;L.parent=parent;
+    if(depth%2===0)reg.push({outer:L,holes:[]});
+  });
+  loops.forEach(L=>{if(L.depth%2===1&&L.parent){const r=reg.find(r=>r.outer===L.parent);if(r)r.holes.push(L);}});
+  reg.forEach(r=>{r.area=r.outer.area-r.holes.reduce((a,h)=>a+h.area,0);
+    r.per=r.outer.segs.reduce((a,s)=>a+entLen(s.e),0);
+    r.cut=r.holes.reduce((a,h)=>a+h.segs.reduce((b,s)=>b+entLen(s.e),0),0);
+    r.bbox=bboxOf(r.outer.segs.map(s=>s.e));});
+  return reg;
+}
+function openEnds(ents){                            // laisvi galai – atviri kontūrai
+  const segs=ents.filter(e=>!e.cons&&(e.t==="line"||e.t==="arc")&&entLen(e)>TOL);
+  const m=new Map();
+  segs.forEach(e=>entEnds(e).forEach(p=>{const k=keyOf(p);m.set(k,(m.get(k)||{n:0,p}).n!==undefined?{n:(m.get(k)?m.get(k).n:0)+1,p}:{n:1,p});}));
+  return[...m.values()].filter(v=>v.n===1).map(v=>v.p);
+}
+
+/* =============================================== dokumentas ========== */
+const LAYC=["#1b1e26","#dc2626","#2563eb","#15803d","#b45309","#a855f7"];
+const DOC={units:"mm",layers:[{name:"Kontūras",color:"#1b1e26",vis:true}],ents:[]};
+let SEL=new Set(), CURLAY=0, REG=[], OPEN=[];
+const VIEW={s:1,ox:0,oy:0};
+const w2s=p=>P(p.x*VIEW.s+VIEW.ox, VIEW.oy-p.y*VIEW.s);
+const s2w=q=>P((q.x-VIEW.ox)/VIEW.s, (VIEW.oy-q.y)/VIEW.s);
+const px=n=>n/VIEW.s;                                // px → mm
+const ents=()=>DOC.ents;
+const byId=id=>DOC.ents.find(e=>e.id===id);
+const selEnts=()=>DOC.ents.filter(e=>SEL.has(e.id));
+
+/* atšaukimas */
+const UNDO=[],REDO=[];
+const snap=()=>JSON.stringify({e:DOC.ents,l:DOC.layers,u:UID});
+function push(){UNDO.push(snap());if(UNDO.length>80)UNDO.shift();REDO.length=0;}
+function apply(js){const o=JSON.parse(js);DOC.ents=o.e;DOC.layers=o.l;UID=o.u;
+  SEL=new Set([...SEL].filter(id=>byId(id)));rebuild();}
+function undo(){if(!UNDO.length)return;REDO.push(snap());apply(UNDO.pop());msg(T("m_undo"));}
+function redo(){if(!REDO.length)return;UNDO.push(snap());apply(REDO.pop());msg(T("m_redo"));}
+
+/* =============================================== transformacijos ===== */
+function xfEnt(e,f,mirror){
+  const o=JSON.parse(JSON.stringify(e));o.id=uid();
+  if(e.t==="line"){o.a=f(e.a);o.b=f(e.b);return o;}
+  o.c=f(e.c);
+  if(e.t==="circle")return o;
+  const p0=f(arcPt(e,e.a0)), p1=f(arcPt(e,e.a1));
+  const A0=Math.atan2(p0.y-o.c.y,p0.x-o.c.x), A1=Math.atan2(p1.y-o.c.y,p1.x-o.c.x);
+  const n=mirror?mkArc(o.c,e.r,A1,A0):mkArc(o.c,e.r,A0,A1);
+  o.a0=n.a0;o.a1=n.a1;return o;
+}
+const mvF=d=>p=>add(p,d);
+const rotF=(c,a)=>p=>{const v=sub(p,c),ca=Math.cos(a),sa=Math.sin(a);
+  return P(c.x+v.x*ca-v.y*sa, c.y+v.x*sa+v.y*ca);};
+const mirF=(A,B)=>p=>{const d=nrm(sub(B,A)), v=sub(p,A), t=dot(v,d);
+  const q=add(A,mul(d,t));return add(q,sub(q,p));};
+const sclF=(c,k)=>p=>add(c,mul(sub(p,c),k));
+
+function opMove(ids,d,copy){
+  const src=DOC.ents.filter(e=>ids.has(e.id));
+  if(copy)src.forEach(e=>DOC.ents.push(xfEnt(e,mvF(d),false)));
+  else src.forEach(e=>{const n=xfEnt(e,mvF(d),false);n.id=e.id;Object.assign(e,n);});
+}
+function opRotate(ids,c,a,copy){
+  const src=DOC.ents.filter(e=>ids.has(e.id));
+  if(copy)src.forEach(e=>DOC.ents.push(xfEnt(e,rotF(c,a),false)));
+  else src.forEach(e=>{const n=xfEnt(e,rotF(c,a),false);n.id=e.id;Object.assign(e,n);});
+}
+function opMirror(ids,A,B,copy){
+  const src=DOC.ents.filter(e=>ids.has(e.id));
+  if(copy)src.forEach(e=>DOC.ents.push(xfEnt(e,mirF(A,B),true)));
+  else src.forEach(e=>{const n=xfEnt(e,mirF(A,B),true);n.id=e.id;Object.assign(e,n);});
+}
+function opArray(ids,nx,ny,dx,dy){
+  const src=DOC.ents.filter(e=>ids.has(e.id));let n=0;
+  for(let i=0;i<nx;i++)for(let j=0;j<ny;j++){
+    if(!i&&!j)continue;
+    src.forEach(e=>{DOC.ents.push(xfEnt(e,mvF(P(i*dx,j*dy)),false));n++;});
+  }
+  return n;
+}
+function opArrayPolar(ids,c,count,total){
+  const src=DOC.ents.filter(e=>ids.has(e.id));let n=0;
+  for(let i=1;i<count;i++){const a=total*i/(Math.abs(total-TAU)<1e-6?count:count-1||1);
+    src.forEach(e=>{DOC.ents.push(xfEnt(e,rotF(c,a),false));n++;});}
+  return n;
+}
+/* =============================================== suapvalinimas ======= */
+function filletPair(e1,c1,e2,c2,r,chamfer){
+  if(e1.t!=="line"||e2.t!=="line")return null;
+  const X=llInf(e1.a,e1.b,e2.a,e2.b);
+  if(!X)return null;
+  const keep=(e,cp)=>{                              // paliekam tą galą, kurioje pusėje spustelėta
+    const q=nearOn(e,cp).q, v=sub(q,X);
+    if(len(v)<1e-9)return dist(e.a,X)>dist(e.b,X)?e.a:e.b;
+    return dot(v,sub(e.a,X))>0?e.a:e.b;};
+  const f1=keep(e1,c1), f2=keep(e2,c2);
+  const d1=nrm(sub(f1,X)), d2=nrm(sub(f2,X));
+  const cosT=clamp(dot(d1,d2),-1,1), th=Math.acos(cosT);
+  if(th<0.02||th>Math.PI-0.02)return null;
+  const td=chamfer?r:r/Math.tan(th/2);
+  if(td>dist(f1,X)-1e-6||td>dist(f2,X)-1e-6)return null;
+  const T1=add(X,mul(d1,td)), T2=add(X,mul(d2,td));
+  const out=[mkLine(f1,T1,{lay:e1.lay,cons:e1.cons})];
+  if(chamfer)out.push(mkLine(T1,T2,{lay:e1.lay,cons:e1.cons}));
+  else{
+    const bis=nrm(add(d1,d2)), C=add(X,mul(bis,r/Math.sin(th/2)));
+    const A1=Math.atan2(T1.y-C.y,T1.x-C.x), A2=Math.atan2(T2.y-C.y,T2.x-C.x);
+    let sw=normAng(A2-A1);
+    out.push(sw<=Math.PI?mkArc(C,r,A1,A2,{lay:e1.lay}):mkArc(C,r,A2,A1,{lay:e1.lay}));
+  }
+  out.push(mkLine(T2,f2,{lay:e2.lay,cons:e2.cons}));
+  return out;
+}
+function opFillet(id1,c1,id2,c2,r,chamfer){
+  const e1=byId(id1), e2=byId(id2);
+  if(!e1||!e2||e1===e2)return false;
+  const res=filletPair(e1,c1,e2,c2,r,chamfer);
+  if(!res)return false;
+  DOC.ents=DOC.ents.filter(e=>e!==e1&&e!==e2).concat(res);
+  return true;
+}
+/* =============================================== apkirpimas ========== */
+function opTrim(id,cp){
+  const e=byId(id);if(!e)return false;
+  const xs=[];
+  DOC.ents.forEach(o=>{if(o.id!==id)xEnt(e,o).forEach(p=>xs.push(p));});
+  if(!xs.length)return false;
+  const parts=splitEnt(e,xs);
+  if(parts.length<2)return false;
+  let best=0,bd=1e18;
+  parts.forEach((p,i)=>{const d=nearOn(p,cp).d;if(d<bd){bd=d;best=i;}});
+  DOC.ents=DOC.ents.filter(x=>x!==e).concat(parts.filter((p,i)=>i!==best));
+  return true;
+}
+/* =============================================== ekvidistantė ======== */
+function offsetLoop(L,d){
+  const segs=L.segs.map(s=>{
+    const e=s.e;
+    if(e.t==="circle")return{t:"circle",c:e.c,r:Math.max(1e-6,e.r+d)};
+    if(e.t==="line"){
+      const A=s.rev?e.b:e.a, B=s.rev?e.a:e.b;
+      const dir=nrm(sub(B,A)), n=P(dir.y,-dir.x);   // CCW kontūrui – į išorę
+      return{t:"line",a:add(A,mul(n,d)),b:add(B,mul(n,d)),A,B};
+    }
+    const A=s.rev?arcPt(e,e.a1):arcPt(e,e.a0), B=s.rev?arcPt(e,e.a0):arcPt(e,e.a1);
+    const r2=s.rev?e.r+d:e.r-d;                      // rev → centras dešinėje
+    if(r2<1e-6)return null;
+    return{t:"arc",c:e.c,r:r2,rev:s.rev,A,B,
+      a0:Math.atan2(A.y-e.c.y,A.x-e.c.x),a1:Math.atan2(B.y-e.c.y,B.x-e.c.x)};
+  });
+  if(segs.some(s=>!s))return null;
+  if(L.circle||segs.length===1){
+    const s=segs[0];
+    return s.t==="circle"?[mkCircle(s.c,s.r)]:null;
+  }
+  const ptOf=(s,which)=>{
+    if(s.t==="line")return which?s.b:s.a;
+    return which?P(s.c.x+s.r*Math.cos(s.a1),s.c.y+s.r*Math.sin(s.a1))
+                :P(s.c.x+s.r*Math.cos(s.a0),s.c.y+s.r*Math.sin(s.a0));
+  };
+  const out=[], n=segs.length;
+  const cur=segs.map(s=>({...s,p0:ptOf(s,0),p1:ptOf(s,1)}));
+  for(let i=0;i<n;i++){
+    const a=cur[i], b=cur[(i+1)%n], V=a.B;           // originalus bendras taškas
+    let X=null;
+    if(a.t==="line"&&b.t==="line")X=llInf(a.p0,a.p1,b.p0,b.p1);
+    else{
+      const c1=a.t==="line"?null:{c:a.c,r:a.r}, c2=b.t==="line"?null:{c:b.c,r:b.r};
+      let cands=[];
+      if(c1&&c2)cands=circCirc(c1.c,c1.r,c2.c,c2.r);
+      else if(c1)cands=segCircle(add(b.p0,mul(sub(b.p0,b.p1),3)),add(b.p1,mul(sub(b.p1,b.p0),3)),c1.c,c1.r);
+      else cands=segCircle(add(a.p0,mul(sub(a.p0,a.p1),3)),add(a.p1,mul(sub(a.p1,a.p0),3)),c2.c,c2.r);
+      cands.forEach(p=>{if(!X||dist(p,V)<dist(X,V))X=p;});
+    }
+    if(X&&dist(X,V)<Math.abs(d)*3+1e-6){a.p1=X;b.p0=X;a.join=null;}
+    else a.join=V;
+  }
+  for(let i=0;i<n;i++){
+    const a=cur[i];
+    if(a.t==="line")out.push(mkLine(a.p0,a.p1,{lay:L.segs[i].e.lay}));
+    else{
+      const A0=Math.atan2(a.p0.y-a.c.y,a.p0.x-a.c.x), A1=Math.atan2(a.p1.y-a.c.y,a.p1.x-a.c.x);
+      out.push(a.rev?mkArc(a.c,a.r,A1,A0):mkArc(a.c,a.r,A0,A1));
+    }
+    if(a.join){
+      const b=cur[(i+1)%n];
+      const A0=Math.atan2(a.p1.y-a.join.y,a.p1.x-a.join.x), A1=Math.atan2(b.p0.y-a.join.y,b.p0.x-a.join.x);
+      let sw=normAng(A1-A0);
+      if(sw>1e-6&&sw<Math.PI)out.push(mkArc(a.join,Math.abs(d),A0,A1));
+      else out.push(mkLine(a.p1,b.p0));
+    }
+  }
+  return out;
+}
+
+/* =============================================== trauka (snap) ======= */
+const SNAPN={end:["galas","endpoint"],mid:["vidurys","midpoint"],cen:["centras","centre"],
+  quad:["ketvirtis","quadrant"],int:["sankirta","intersection"],on:["ant linijos","on entity"],
+  grid:["tinklelis","grid"],ortho:["statmenai","ortho"],ang:["kampas","angle"]};
+let SNAPI=null;
+function visEnts(){return DOC.ents.filter(e=>e.t!=="dim"&&DOC.layers[e.lay]&&DOC.layers[e.lay].vis);}
+function doSnap(w,anchor,shift){
+  const R=px(11);let best=null;
+  const cand=(p,type,pri)=>{if(!p)return;const d=dist(p,w);
+    if(d<=R&&(!best||pri<best.pri||(pri===best.pri&&d<best.d)))best={p,type,pri,d};};
+  if(shift&&anchor){                                  // ortho / 45°
+    const v=sub(w,anchor), a=Math.atan2(v.y,v.x), q=Math.round(a/(Math.PI/4))*(Math.PI/4);
+    const L=len(v)*Math.cos(a-q);
+    w=add(anchor,P(Math.cos(q)*L,Math.sin(q)*L));
+    best={p:w,type:"ortho",pri:0,d:0};
+  }
+  const near=visEnts().filter(e=>{const b=entBBox(e);
+    return w.x>b.x0-R&&w.x<b.x1+R&&w.y>b.y0-R&&w.y<b.y1+R;});
+  if($("#snapObj").checked){
+    for(const e of near){
+      const en=entEnds(e);if(en)en.forEach(p=>cand(p,"end",1));
+      cand(entMid(e),"mid",3);
+      if(e.t!=="line"){cand(e.c,"cen",2);
+        for(let k=0;k<4;k++){const a=k*Math.PI/2;
+          if(e.t==="circle"||onArc(e,a))cand(arcPt(e,a),"quad",3);}}
+    }
+    for(let i=0;i<near.length;i++)for(let j=i+1;j<near.length;j++)
+      xEnt(near[i],near[j]).forEach(p=>cand(p,"int",2));
+    for(const e of near)cand(nearOn(e,w).q,"on",5);
+  }
+  if($("#snapGrid").checked&&(!best||best.pri>=4)){
+    const g=Math.max(0.01,+$("#gridS").value||10);
+    cand(P(Math.round(w.x/g)*g,Math.round(w.y/g)*g),"grid",4);
+  }
+  SNAPI=best;
+  return best?best.p:w;
+}
+function hitEnt(w,r){
+  const R=px(r||7);let best=null;
+  for(const e of DOC.ents){
+    if(e.t==="dim"){const q=dimPts(e);if(q&&dist(w,q.tp)<R*1.6){if(!best)best={e,d:0};}continue;}
+    if(!DOC.layers[e.lay]||!DOC.layers[e.lay].vis)continue;
+    const d=nearOn(e,w).d;
+    if(d<=R&&(!best||d<best.d))best={e,d};
+  }
+  return best?best.e:null;
+}
+/* =============================================== įrankiai ============ */
+let TOOL="sel", STP=[], HOVER=null, PICKS=[], LASTPT=null, MEAS=null, DRAG=null, BAND=null;
+const CHAIN={on:false};
+const TDEF={
+  sel:{n:0},
+  line:{n:2,entry:"la",chain:true,make:p=>[mkLine(p[0],p[1])]},
+  rect:{n:2,entry:"wh",make:p=>rectEnts(p[0],p[1])},
+  circle:{n:2,entry:"r",make:p=>[mkCircle(p[0],dist(p[0],p[1]))]},
+  arc:{n:3,entry:"r",make:p=>{const r=dist(p[0],p[1]);
+    return[mkArc(p[0],r,Math.atan2(p[1].y-p[0].y,p[1].x-p[0].x),Math.atan2(p[2].y-p[0].y,p[2].x-p[0].x))];}},
+  dim:{n:3},
+  fillet:{pick:2},chamfer:{pick:2},trim:{pick:1},offset:{pick:1,entry:"d"},
+  move:{n:2,sel:true},copy:{n:2,sel:true},mirror:{n:2,sel:true},rotate:{n:2,sel:true},
+  meas:{n:2}
+};
+function rectEnts(a,b){
+  const p=[P(a.x,a.y),P(b.x,a.y),P(b.x,b.y),P(a.x,b.y)];
+  return[0,1,2,3].map(i=>mkLine(p[i],p[(i+1)%4]));
+}
+function setTool(t){
+  TOOL=t;STP=[];PICKS=[];BAND=null;MEAS=null;entryHide();
+  $$("#tools button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  hint();draw();
+}
+function cancelTool(){
+  if(STP.length||PICKS.length){STP=[];PICKS=[];DIMC=null;entryHide();hint();draw();return;}
+  if(TOOL!=="sel"){setTool("sel");return;}
+  SEL.clear();rebuildSel();draw();
+}
+function commitPts(pts){
+  const d=TDEF[TOOL];
+  if(d.make){
+    push();const ne=d.make(pts);
+    ne.forEach(e=>{e.lay=CURLAY;e.cons=CONS;DOC.ents.push(e);});
+    rebuild();
+    if(d.chain&&CHAIN.on!==false){STP=[pts[pts.length-1]];}else STP=[];
+    return;
+  }
+  if(TOOL==="dim"){push();addDim(pts);rebuild();STP=[];return;}
+  if(TOOL==="meas"){MEAS={a:pts[0],b:pts[1]};STP=[];draw();return;}
+  const ids=new Set(SEL);
+  if(!ids.size){msg(T("m_nosel"));STP=[];return;}
+  push();
+  if(TOOL==="move")opMove(ids,sub(pts[1],pts[0]),false);
+  if(TOOL==="copy")opMove(ids,sub(pts[1],pts[0]),true);
+  if(TOOL==="mirror")opMirror(ids,pts[0],pts[1],true);
+  if(TOOL==="rotate"){const a=Math.atan2(pts[1].y-pts[0].y,pts[1].x-pts[0].x);opRotate(ids,pts[0],a,false);}
+  rebuild();STP=[];
+}
+function toolDown(w,ev){
+  const d=TDEF[TOOL];
+  if(TOOL==="sel"){
+    const e=hitEnt(w);
+    if(e){
+      if(ev.shiftKey){SEL.has(e.id)?SEL.delete(e.id):SEL.add(e.id);}
+      else if(!SEL.has(e.id)){SEL.clear();SEL.add(e.id);}
+      DRAG={from:w,moved:false};
+    }else{if(!ev.shiftKey)SEL.clear();BAND={a:w,b:w};}
+    rebuildSel();draw();return;
+  }
+  if(d.pick){
+    const e=hitEnt(w);
+    if(!e){msg(T("m_pickent"));return;}
+    PICKS.push({id:e.id,p:w});
+    if(TOOL==="trim"){push();if(opTrim(e.id,w))rebuild();else msg(T("m_notrim"));PICKS=[];return;}
+    if(TOOL==="offset"){if(PICKS.length===1){entryShow("d");return;}}
+    if(PICKS.length>=d.pick){
+      if(TOOL==="fillet"||TOOL==="chamfer"){
+        push();const r=+$("#filletR").value||5;
+        if(opFillet(PICKS[0].id,PICKS[0].p,PICKS[1].id,PICKS[1].p,r,TOOL==="chamfer"))rebuild();
+        else{UNDO.pop();msg(T("m_nofillet"));}
+      }
+      PICKS=[];
+    }
+    hint();draw();return;
+  }
+  if(d.sel&&!SEL.size){msg(T("m_nosel"));return;}
+  if(TOOL==="dim"){
+    STP.push(w);
+    if(STP.length===1){
+      const h=hitEnt(w,9);
+      DIMC=(h&&(h.t==="circle"||h.t==="arc"))?h                       // spustelėta ant lanko
+        :(DOC.ents.find(e=>(e.t==="circle"||e.t==="arc")&&dist(w,e.c)<px(9))||null);  // arba centre
+    }
+    if((DIMC&&STP.length>=2)||STP.length>=3){push();addDim(STP,DIMC);rebuild();STP=[];DIMC=null;}
+    hint();draw();return;
+  }
+  STP.push(w);
+  if(STP.length>=d.n)commitPts(STP.slice());
+  else if(d.entry)entryShow(d.entry);
+  hint();draw();
+}
+function toolMove(w,ev){
+  if(TOOL==="offset"&&PICKS.length===1){
+    const e=byId(PICKS[0].id), L=curLoops.find(L=>L.ids.includes(PICKS[0].id));
+    OFFPRE=null;
+    if(L){const dd=+$("#eV1").value||10;
+      const inside=polyIn(w,L.poly);
+      OFFPRE={L,d:inside?-Math.abs(dd):Math.abs(dd)};}
+  }
+  if(DRAG&&TOOL==="sel"){
+    const dv=sub(w,DRAG.from);
+    if(!DRAG.moved&&len(dv)>px(3)){DRAG.moved=true;push();}
+    if(DRAG.moved){opMove(new Set(SEL),dv,false);DRAG.from=w;rebuild(true);}
+  }
+  if(BAND)BAND.b=w;
+}
+function toolUp(w,ev){
+  if(BAND){
+    const a=BAND.a,b=BAND.b,x0=Math.min(a.x,b.x),x1=Math.max(a.x,b.x),y0=Math.min(a.y,b.y),y1=Math.max(a.y,b.y);
+    if(Math.abs(a.x-b.x)>px(3)||Math.abs(a.y-b.y)>px(3)){
+      const cross=b.x<a.x;
+      visEnts().forEach(e=>{
+        const bb=entBBox(e);
+        const inside=bb.x0>=x0&&bb.x1<=x1&&bb.y0>=y0&&bb.y1<=y1;
+        const over=!(bb.x1<x0||bb.x0>x1||bb.y1<y0||bb.y0>y1);
+        if(cross?over:inside)SEL.add(e.id);
+      });
+      rebuildSel();
+    }
+    BAND=null;draw();
+  }
+  if(DRAG){if(DRAG.moved)rebuild();DRAG=null;}
+}
+let OFFPRE=null, curLoops=[], CONS=false;
+/* ------- skaitinė įvestis ------- */
+const ENTRY={kind:null,lock:[false,false]};
+function entryShow(kind){
+  ENTRY.kind=kind;ENTRY.lock=[false,false];
+  const L={la:["L","∠"],wh:["W","H"],r:["R",""],d:["d",""]}[kind]||["",""];
+  $("#eL1").textContent=L[0];$("#eL2").textContent=L[1];
+  $("#eL2").style.display=L[1]?"":"none";$("#eV2").style.display=L[1]?"":"none";
+  $("#entry").classList.add("on");
+  if(kind==="d")$("#eV1").value=$("#eV1").value||"10";
+}
+function entryHide(){ENTRY.kind=null;$("#entry").classList.remove("on");}
+function entryLive(w){
+  if(!ENTRY.kind)return;
+  const a=STP[STP.length-1];
+  const set=(i,v)=>{if(!ENTRY.lock[i])$(i?"#eV2":"#eV1").value=v;};
+  if(ENTRY.kind==="la"&&a){const v=sub(w,a);
+    set(0,fmt(len(v),2));set(1,fmt(normAng(Math.atan2(v.y,v.x))*180/Math.PI,1));}
+  if(ENTRY.kind==="wh"&&a){set(0,fmt(Math.abs(w.x-a.x),2));set(1,fmt(Math.abs(w.y-a.y),2));}
+  if(ENTRY.kind==="r"&&a)set(0,fmt(dist(a,w),2));
+  const q=w2s(w);
+  $("#entry").style.left=(q.x+16)+"px";$("#entry").style.top=(q.y+14)+"px";
+}
+function entryCommit(){
+  const a=STP[STP.length-1], v1=parseFloat($("#eV1").value), v2=parseFloat($("#eV2").value);
+  if(ENTRY.kind==="d"&&TOOL==="offset"&&PICKS.length===1){
+    const L=curLoops.find(L=>L.ids.includes(PICKS[0].id));
+    if(L&&isFinite(v1)){applyOffset(L,OFFPRE?Math.sign(OFFPRE.d)*Math.abs(v1):Math.abs(v1));}
+    PICKS=[];entryHide();draw();return;
+  }
+  if(!a)return;
+  let p=null;
+  if(ENTRY.kind==="la"){
+    const cur=sub(CUR,a), L=isFinite(v1)?v1:len(cur);
+    const A=isFinite(v2)?rad(v2):Math.atan2(cur.y,cur.x);
+    p=add(a,P(Math.cos(A)*L,Math.sin(A)*L));
+  }else if(ENTRY.kind==="wh"){
+    const sx=CUR.x<a.x?-1:1, sy=CUR.y<a.y?-1:1;
+    p=P(a.x+(isFinite(v1)?v1*sx:CUR.x-a.x), a.y+(isFinite(v2)?v2*sy:CUR.y-a.y));
+  }else if(ENTRY.kind==="r"){
+    const cur=sub(CUR,a), A=Math.atan2(cur.y,cur.x), R=isFinite(v1)?v1:len(cur);
+    p=add(a,P(Math.cos(A)*R,Math.sin(A)*R));
+  }
+  if(!p)return;
+  STP.push(p);
+  const d=TDEF[TOOL];
+  if(STP.length>=d.n){commitPts(STP.slice());if(!STP.length)entryHide();else{ENTRY.lock=[false,false];}}
+  hint();draw();
+}
+function applyOffset(L,d){
+  push();
+  const res=offsetLoop(L,d);
+  if(!res){UNDO.pop();msg(T("m_nooff"));return;}
+  res.forEach(e=>{e.lay=CURLAY;DOC.ents.push(e);});
+  rebuild();
+}
+/* ------- matmenys ------- */
+let DIMC=null;
+function addDim(pts,circ){
+  const e=circ||null, last=pts[pts.length-1];
+  if(e)DOC.ents.push({id:uid(),t:"dim",k:e.t==="circle"?"dia":"rad",ref:e.id,
+    p1:P(e.c.x,e.c.y),p2:P(last.x,last.y),lay:CURLAY});
+  else DOC.ents.push({id:uid(),t:"dim",k:"lin",p1:P(pts[0].x,pts[0].y),p2:P(pts[1].x,pts[1].y),
+    p3:P(pts[2].x,pts[2].y),lay:CURLAY});
+}
+function dimPts(d){
+  if(d.k==="lin"){
+    const v=sub(d.p2,d.p1);if(len(v)<1e-9)return null;
+    const n=nrm(rot90(v)), off=dot(sub(d.p3,d.p1),n);
+    const a=add(d.p1,mul(n,off)), b=add(d.p2,mul(n,off));
+    return{a,b,tp:lerp(a,b,0.5),val:dist(d.p1,d.p2),n,off};
+  }
+  const e=byId(d.ref);if(!e)return null;
+  const a=Math.atan2(d.p2.y-e.c.y,d.p2.x-e.c.x);
+  const on=arcPt(e,a);
+  return{a:d.k==="dia"?arcPt(e,a+Math.PI):e.c,b:on,tp:d.p2,val:d.k==="dia"?e.r*2:e.r,ref:e};
+}
+
+/* =============================================== piešimas 2D ========= */
+const C2=$("#c2d"), C3=$("#c3d");
+let CUR=P(0,0), VW=0, VH=0;
+function fitCv(cv){
+  const r=cv.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  if(cv.width!==Math.round(r.width*dpr)||cv.height!==Math.round(r.height*dpr)){
+    cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);}
+  const g=cv.getContext("2d");g.setTransform(dpr,0,0,dpr,0,0);
+  return{g,w:r.width,h:r.height};
+}
+function pathEnt(g,e){
+  if(e.t==="line"){const a=w2s(e.a),b=w2s(e.b);g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);return;}
+  const c=w2s(e.c), r=e.r*VIEW.s;
+  if(e.t==="circle")g.arc(c.x,c.y,r,0,TAU);
+  else g.arc(c.x,c.y,r,-e.a0,-e.a1,true);
+}
+function strokeEnt(g,e,col,wd,dash){
+  g.save();g.beginPath();g.strokeStyle=col;g.lineWidth=wd;
+  if(dash)g.setLineDash(dash);
+  pathEnt(g,e);g.stroke();g.restore();
+}
+function drawGrid(g,w,h){
+  let s=Math.max(0.01,+$("#gridS").value||10);
+  while(s*VIEW.s<7)s*=(s*VIEW.s<2?10:5);
+  const o=P(0,0), so=w2s(o);
+  const x0=Math.floor(s2w(P(0,0)).x/s)*s, x1=s2w(P(w,0)).x;
+  const y0=Math.floor(s2w(P(0,h)).y/s)*s, y1=s2w(P(0,0)).y;
+  g.save();g.lineWidth=1;
+  for(let i=0;i<2;i++){
+    g.beginPath();g.strokeStyle=i?"#dfe3ea":"#edf0f4";
+    const step=i?s*10:s;
+    for(let x=Math.floor(x0/step)*step;x<=x1;x+=step){
+      if(i===0&&Math.abs(x/(step*10)-Math.round(x/(step*10)))<1e-9)continue;
+      const q=w2s(P(x,0));g.moveTo(Math.round(q.x)+.5,0);g.lineTo(Math.round(q.x)+.5,h);}
+    for(let y=Math.floor(y0/step)*step;y<=y1;y+=step){
+      if(i===0&&Math.abs(y/(step*10)-Math.round(y/(step*10)))<1e-9)continue;
+      const q=w2s(P(0,y));g.moveTo(0,Math.round(q.y)+.5);g.lineTo(w,Math.round(q.y)+.5);}
+    g.stroke();
+  }
+  g.beginPath();g.strokeStyle="#c3cbd6";g.lineWidth=1.2;
+  g.moveTo(0,Math.round(so.y)+.5);g.lineTo(w,Math.round(so.y)+.5);
+  g.moveTo(Math.round(so.x)+.5,0);g.lineTo(Math.round(so.x)+.5,h);g.stroke();
+  g.restore();
+}
+function drawSnapMark(g){
+  if(!SNAPI)return;
+  const q=w2s(SNAPI.p);g.save();g.strokeStyle="#0d9488";g.lineWidth=1.6;g.beginPath();
+  const t=SNAPI.type, r=5;
+  if(t==="end")g.rect(q.x-r,q.y-r,2*r,2*r);
+  else if(t==="mid"){g.moveTo(q.x-r,q.y+r);g.lineTo(q.x+r,q.y+r);g.lineTo(q.x,q.y-r);g.closePath();}
+  else if(t==="cen"||t==="quad")g.arc(q.x,q.y,r,0,TAU);
+  else if(t==="int"){g.moveTo(q.x-r,q.y-r);g.lineTo(q.x+r,q.y+r);g.moveTo(q.x+r,q.y-r);g.lineTo(q.x-r,q.y+r);}
+  else{g.arc(q.x,q.y,3,0,TAU);}
+  g.stroke();g.restore();
+}
+function drawDim(g,d){
+  const q=dimPts(d);if(!q)return;
+  const sel=SEL.has(d.id), col=sel?"#2563eb":"#b45309";
+  g.save();g.strokeStyle=col;g.fillStyle=col;g.lineWidth=sel?1.6:1;
+  g.font="11px ui-monospace,Menlo,monospace";g.textAlign="center";g.textBaseline="middle";
+  const A=w2s(q.a),B=w2s(q.b),Tp=w2s(q.tp);
+  g.beginPath();g.moveTo(A.x,A.y);g.lineTo(B.x,B.y);g.stroke();
+  if(d.k==="lin"){
+    const p1=w2s(d.p1),p2=w2s(d.p2);
+    g.beginPath();g.setLineDash([3,3]);g.moveTo(p1.x,p1.y);g.lineTo(A.x,A.y);
+    g.moveTo(p2.x,p2.y);g.lineTo(B.x,B.y);g.stroke();g.setLineDash([]);
+    const u=nrm(sub(B,A));
+    [[A,1],[B,-1]].forEach(([p,s])=>{g.beginPath();
+      g.moveTo(p.x,p.y);g.lineTo(p.x+u.x*8*s-u.y*2.6,p.y+u.y*8*s+u.x*2.6);
+      g.lineTo(p.x+u.x*8*s+u.y*2.6,p.y+u.y*8*s-u.x*2.6);g.closePath();g.fill();});
+  }
+  const txt=(d.k==="dia"?"Ø":d.k==="rad"?"R":"")+fmt(q.val,2);
+  const tw=g.measureText(txt).width;
+  g.fillStyle="#fff";g.fillRect(Tp.x-tw/2-3,Tp.y-8,tw+6,16);
+  g.fillStyle=col;g.fillText(txt,Tp.x,Tp.y);
+  g.restore();
+}
+function draw(){
+  if($("#stage").classList.contains("m3")){draw3D();return;}
+  const{g,w,h}=fitCv(C2);VW=w;VH=h;
+  g.clearRect(0,0,w,h);g.fillStyle="#f7f8fa";g.fillRect(0,0,w,h);
+  drawGrid(g,w,h);
+  // uždaros sritys
+  g.save();
+  REG.forEach(r=>{
+    g.beginPath();
+    const put=L=>{L.poly.forEach((p,i)=>{const q=w2s(p);i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y);});g.closePath();};
+    put(r.outer);r.holes.forEach(put);
+    g.fillStyle=r.sel?"rgba(37,99,235,.13)":"rgba(37,99,235,.06)";g.fill("evenodd");
+  });
+  g.restore();
+  // objektai
+  const ord=[...DOC.ents].sort((a,b)=>(SEL.has(a.id)?1:0)-(SEL.has(b.id)?1:0));
+  for(const e of ord){
+    if(e.t==="dim"){if($("#showDims").checked)drawDim(g,e);continue;}
+    const lay=DOC.layers[e.lay];if(!lay||!lay.vis)continue;
+    const sel=SEL.has(e.id), hov=HOVER===e.id;
+    strokeEnt(g,e,sel?"#2563eb":hov?"#60a5fa":(e.cons?"#a855f7":lay.color),
+      sel?2.2:1.4, e.cons?[5,4]:null);
+    if(sel){g.save();g.fillStyle="#2563eb";
+      const en=entEnds(e)||[];en.concat(e.t!=="line"?[e.c]:[]).forEach(p=>{const q=w2s(p);
+        g.fillRect(q.x-2.5,q.y-2.5,5,5);});g.restore();}
+  }
+  // laisvi galai
+  if(OPEN.length){g.save();g.strokeStyle="#dc2626";g.lineWidth=1.4;
+    OPEN.forEach(p=>{const q=w2s(p);g.beginPath();g.arc(q.x,q.y,4,0,TAU);g.stroke();});g.restore();}
+  drawPreview(g);
+  if(BAND){const a=w2s(BAND.a),b=w2s(BAND.b);g.save();
+    g.strokeStyle="#2563eb";g.fillStyle="rgba(37,99,235,.07)";g.lineWidth=1;
+    if(BAND.b.x<BAND.a.x)g.setLineDash([5,4]);
+    g.fillRect(a.x,a.y,b.x-a.x,b.y-a.y);g.strokeRect(a.x,a.y,b.x-a.x,b.y-a.y);g.restore();}
+  if(MEAS){const a=w2s(MEAS.a),b=w2s(MEAS.b);g.save();g.strokeStyle="#0d9488";g.lineWidth=1.6;
+    g.setLineDash([6,3]);g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();g.setLineDash([]);
+    const m=P((a.x+b.x)/2,(a.y+b.y)/2), t=fmt(dist(MEAS.a,MEAS.b),2)+" mm";
+    g.font="600 12px ui-monospace,Menlo,monospace";const tw=g.measureText(t).width;
+    g.fillStyle="#0d9488";g.fillRect(m.x-tw/2-5,m.y-10,tw+10,20);
+    g.fillStyle="#fff";g.textAlign="center";g.textBaseline="middle";g.fillText(t,m.x,m.y);g.restore();}
+  drawSnapMark(g);
+  // kryžiukas
+  if(TOOL!=="sel"){const q=w2s(CUR);g.save();g.strokeStyle="rgba(37,99,235,.45)";g.lineWidth=1;
+    g.beginPath();g.moveTo(q.x-11,q.y);g.lineTo(q.x+11,q.y);g.moveTo(q.x,q.y-11);g.lineTo(q.x,q.y+11);g.stroke();g.restore();}
+  if($("#stage").classList.contains("split"))draw3D();
+}
+function drawPreview(g){
+  const d=TDEF[TOOL];
+  g.save();g.strokeStyle="#2563eb";g.lineWidth=1.3;g.setLineDash([5,4]);
+  if(OFFPRE&&TOOL==="offset"){
+    const res=offsetLoop(OFFPRE.L,OFFPRE.d);
+    if(res){g.setLineDash([]);g.strokeStyle="#0d9488";g.lineWidth=1.8;
+      res.forEach(e=>{g.beginPath();pathEnt(g,e);g.stroke();});}
+  }
+  if(STP.length&&d&&(d.make||TOOL==="dim"||TOOL==="meas"||d.sel)){
+    const pts=STP.concat([CUR]);
+    if(d.make&&pts.length>=d.n){
+      try{d.make(pts.slice(0,d.n)).forEach(e=>{g.beginPath();pathEnt(g,e);g.stroke();});}catch(e){}
+    }else if(TOOL==="arc"&&pts.length===2){
+      const r=dist(pts[0],pts[1]);g.beginPath();const c=w2s(pts[0]);g.arc(c.x,c.y,r*VIEW.s,0,TAU);g.stroke();
+    }else{
+      const a=w2s(pts[0]),b=w2s(pts[pts.length-1]);
+      g.beginPath();g.moveTo(a.x,a.y);g.lineTo(b.x,b.y);g.stroke();
+    }
+    if(d.sel&&SEL.size&&pts.length>=2){
+      const dv=sub(pts[1],pts[0]);g.setLineDash([]);g.globalAlpha=.5;
+      selEnts().forEach(e=>{const n=TOOL==="mirror"?xfEnt(e,mirF(pts[0],pts[1]),true):
+        TOOL==="rotate"?xfEnt(e,rotF(pts[0],Math.atan2(dv.y,dv.x)),false):xfEnt(e,mvF(dv),false);
+        g.beginPath();pathEnt(g,n);g.stroke();});
+    }
+  }
+  if(PICKS.length){g.setLineDash([]);g.strokeStyle="#f59e0b";g.lineWidth=2.4;
+    PICKS.forEach(p=>{const e=byId(p.id);if(e){g.beginPath();pathEnt(g,e);g.stroke();}});}
+  g.restore();
+}
+/* =============================================== 3D peržiūra ========= */
+const V3={yaw:-0.62,pitch:0.42};
+const rot3=(p,y,pt)=>{
+  const cy=Math.cos(y),sy=Math.sin(y),x=p[0]*cy-p[2]*sy,z=p[0]*sy+p[2]*cy;
+  const cp=Math.cos(pt),sp=Math.sin(pt);
+  return[x,p[1]*cp-z*sp,p[1]*sp+z*cp];
+};
+function draw3D(){
+  const{g,w,h}=fitCv(C3);
+  g.clearRect(0,0,w,h);g.fillStyle="#eef1f5";g.fillRect(0,0,w,h);
+  if(!REG.length){g.fillStyle="#94a3b8";g.font="12px system-ui";g.textAlign="center";
+    g.fillText(T("m_noreg"),w/2,h/2);return;}
+  const bb=REG.reduce((b,r)=>({x0:Math.min(b.x0,r.bbox.x0),y0:Math.min(b.y0,r.bbox.y0),
+    x1:Math.max(b.x1,r.bbox.x1),y1:Math.max(b.y1,r.bbox.y1)}),{x0:1e18,y0:1e18,x1:-1e18,y1:-1e18});
+  const cx=(bb.x0+bb.x1)/2, cy=(bb.y0+bb.y1)/2;
+  const M=p=>[p.x-cx,0,-(p.y-cy)];
+  const faces=[];
+  REG.forEach((r,ri)=>{
+    const th=bodyTh(r), col=r.sel?[96,140,220]:[190,160,110];
+    const loops=[r.outer,...r.holes].map(L=>L.poly);
+    [0,th].forEach((z,k)=>{
+      const pts3=loops.map(po=>po.map(p=>{const m=M(p);return[m[0],z,m[2]];}));
+      faces.push({multi:pts3,n:[0,k?1:-1,0],col,cap:true});
+    });
+    loops.forEach((po,li)=>{
+      const sg=li>0?-1:1;                            // skylės sienelė atsukta į vidų
+      for(let i=0;i<po.length;i++){
+        const a=po[i],b=po[(i+1)%po.length];
+        const A=M(a),B=M(b), dx=b.x-a.x, dy=b.y-a.y;
+        faces.push({pts:[[A[0],0,A[2]],[B[0],0,B[2]],[B[0],th,B[2]],[A[0],th,A[2]]],
+          n:[sg*dy,0,sg*dx],col,side:true,hole:li>0});
+      }
+    });
+  });
+  let x0=1e18,x1=-1e18,y0=1e18,y1=-1e18;
+  const allp=[];faces.forEach(f=>{(f.multi?f.multi.flat():f.pts).forEach(p=>allp.push(p));});
+  allp.forEach(p=>{const q=rot3(p,V3.yaw,V3.pitch);
+    x0=Math.min(x0,q[0]);x1=Math.max(x1,q[0]);y0=Math.min(y0,q[1]);y1=Math.max(y1,q[1]);});
+  const sc=Math.min((w-60)/Math.max(1,x1-x0),(h-60)/Math.max(1,y1-y0));
+  const ox=w/2-(x0+x1)/2*sc, oy=h/2+(y0+y1)/2*sc;
+  const PR=p=>{const q=rot3(p,V3.yaw,V3.pitch);return[ox+q[0]*sc,oy-q[1]*sc,q[2]];};
+  const LI=[-0.4,0.82,0.42];
+  const lit=n=>{if(!n)return .85;
+    const q=rot3(n,V3.yaw,V3.pitch), L=Math.hypot(...q)||1;
+    return 0.55+0.45*Math.max(0,(q[0]*LI[0]+q[1]*LI[1]+q[2]*LI[2])/L);};
+  const list=faces.map(f=>{
+    const pr=(f.multi?f.multi.flat():f.pts).map(PR);
+    const d=pr.reduce((a,p)=>a+p[2],0)/pr.length;
+    let n=f.n;
+    if(!n&&f.pts){const A=f.pts[0],B=f.pts[1],C=f.pts[2];
+      const u=[B[0]-A[0],B[1]-A[1],B[2]-A[2]], v=[C[0]-A[0],C[1]-A[1],C[2]-A[2]];
+      n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];}
+    const nz=n?rot3(n,V3.yaw,V3.pitch)[2]:1;
+    return{...f,pr,d,k:lit(n),back:nz<-0.02};
+  }).filter(f=>!f.back).sort((a,b)=>a.d-b.d);
+  g.save();
+  list.forEach(f=>{
+    g.beginPath();
+    if(f.multi){f.multi.forEach(po=>{po.map(PR).forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));g.closePath();});}
+    else f.pr.forEach((p,i)=>i?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]));
+    const col="rgb("+f.col.map(c=>clamp(Math.round(c*f.k),0,255)).join(",")+")";
+    g.fillStyle=col;
+    f.multi?g.fill("evenodd"):g.fill();
+    if(f.side){g.strokeStyle=col;g.lineWidth=1;g.stroke();}   // užglaistom AA siūles tarp briaunelių
+    else{g.strokeStyle="rgba(15,23,42,.18)";g.lineWidth=.7;g.stroke();}
+  });
+  g.restore();
+  g.fillStyle="#64748b";g.font="11px ui-monospace,Menlo,monospace";g.textAlign="left";
+  g.fillText(T("m_drag3d"),12,h-12);
+}
+
+/* =============================================== kalbos ============== */
+let LANG="lt";
+const D2={
+ title:["Braižyklė","Drafter"],new:["Naujas","New"],open:["Atidaryti","Open"],save:["Išsaugoti","Save"],
+ both:["Abu","Both"],fit:["Sutalpinti","Fit"],p_prop:["Savybės","Properties"],p_bodies:["Detalės (išpjovos)","Parts (cut-outs)"],
+ p_layers:["Sluoksniai","Layers"],p_set:["Nustatymai","Settings"],rescan:["Perskaičiuoti","Rescan"],
+ nosel:["Nieko nepažymėta. Pažymėk objektą arba braižyk.","Nothing selected. Pick an object or draw."],
+ l_th:["Storis mm","Thickness mm"],l_mat:["Medžiaga","Material"],l_grid:["Tinklelis mm","Grid mm"],
+ l_fill:["Suapvalinimas R","Fillet R"],s_grid:["Tinklelio trauka","Snap to grid"],
+ s_obj:["Objektų trauka (galai, vidurys, centras)","Object snap (ends, mid, centre)"],
+ s_ortho:["Statmenai / 45° (Shift)","Ortho / 45° (Shift)"],s_dims:["Rodyti matmenis","Show dimensions"],
+ t_sel:["Žymėti","Select"],t_line:["Linija","Line"],t_rect:["Stačiakampis","Rectangle"],t_circle:["Apskritimas","Circle"],
+ t_arc:["Lankas (centras→pradžia→pabaiga)","Arc (centre→start→end)"],t_dim:["Matmuo","Dimension"],
+ t_fillet:["Suapvalinti kampą","Fillet"],t_chamfer:["Nuožulna","Chamfer"],t_trim:["Apkirpti","Trim"],
+ t_offset:["Ekvidistantė","Offset"],t_move:["Perkelti","Move"],t_copy:["Kopijuoti","Copy"],
+ t_mirror:["Veidrodis","Mirror"],t_rotate:["Sukti","Rotate"],t_meas:["Matuoti","Measure"],
+ t_cons:["Pagalbinė linija","Construction line"],t_del:["Trinti","Delete"],
+ h_sel:["Spausk objektą; tempk – rėmelis; Shift – pridėti","Click an object; drag for a box; Shift adds"],
+ h_line:["Pradžios taškas","Start point"],h_line2:["Pabaiga (įvesk ilgį/kampą, Enter)","End (type length/angle, Enter)"],
+ h_rect:["Pirmas kampas","First corner"],h_rect2:["Antras kampas (įvesk W/H)","Second corner (type W/H)"],
+ h_circle:["Centras","Centre"],h_circle2:["Spindulys (įvesk R)","Radius (type R)"],
+ h_arc:["Centras","Centre"],h_arc2:["Pradžios taškas","Start point"],h_arc3:["Pabaiga (prieš laikrodį)","End (CCW)"],
+ h_dim:["Pirmas taškas (arba apskritimas)","First point (or a circle)"],h_dim2:["Antras taškas","Second point"],
+ h_dim3:["Kur padėti matmenį","Where to place it"],
+ h_fillet:["Spausk pirmą liniją","Click the first line"],h_fillet2:["Spausk antrą liniją","Click the second line"],
+ h_trim:["Spausk atkarpą, kurią pjauname","Click the piece to cut away"],
+ h_offset:["Spausk kontūrą","Click a contour"],h_offset2:["Įvesk atstumą, spausk pusę","Type the distance, click a side"],
+ h_move:["Bazinis taškas","Base point"],h_move2:["Kur perkelti","Destination"],
+ h_mirror:["Ašies pradžia","Axis start"],h_mirror2:["Ašies pabaiga","Axis end"],
+ h_rotate:["Sukimo centras","Rotation centre"],h_rotate2:["Kampas","Angle"],
+ h_meas:["Pirmas taškas","First point"],h_meas2:["Antras taškas","Second point"],
+ m_undo:["Atšaukta","Undone"],m_redo:["Grąžinta","Redone"],m_nosel:["Pirma pažymėk objektus","Select objects first"],
+ m_pickent:["Nepataikei į objektą","No object there"],m_notrim:["Nėra ką kirpti (nėra sankirtų)","Nothing to trim (no intersections)"],
+ m_nofillet:["Suapvalinti nepavyko – per didelis R arba linijos lygiagrečios","Fillet failed – R too big or lines parallel"],
+ m_nooff:["Ekvidistantė nepavyko","Offset failed"],m_noreg:["Nėra uždarų kontūrų","No closed contours"],
+ m_drag3d:["tempk pele – pasukti","drag to rotate"],m_del:["Ištrinta","Deleted"],
+ b_body:["Detalė","Part"],b_open:["atvirų galų","open ends"],
+ k_area:["Plotas","Area"],k_per:["Perimetras","Perimeter"],k_cut:["Pjovimo ilgis","Cut length"],
+ k_size:["Gabaritas","Bounding box"],k_vol:["Tūris","Volume"],k_parts:["Detalių","Parts"],
+ pr_line:["Linija","Line"],pr_circle:["Apskritimas","Circle"],pr_arc:["Lankas","Arc"],pr_dim:["Matmuo","Dimension"],
+ pr_len:["Ilgis","Length"],pr_ang:["Kampas°","Angle°"],pr_r:["Spindulys","Radius"],pr_d:["Skersmuo","Diameter"],
+ pr_sw:["Kampas°","Sweep°"],pr_multi:["Pažymėta objektų","Objects selected"],pr_lay:["Sluoksnis","Layer"],
+ pr_cons:["Pagalbinė","Construction"],pr_arr:["Masyvas","Array"],pr_apply:["Taikyti","Apply"],
+ pr_pol:["Apskritas masyvas","Polar array"],pr_cnt:["Kiekis","Count"],pr_val:["Reikšmė","Value"],
+ dxfhint:["DXF: linijos, lankai, apskritimai. Matmenys ir pagalbinės linijos neeksportuojamos.",
+          "DXF: lines, arcs, circles. Dimensions and construction lines are not exported."]
+};
+const T=k=>D2[k]?D2[k][LANG==="lt"?0:1]:k;
+function applyLang(){
+  $$("[data-i]").forEach(e=>{const v=D2[e.dataset.i];if(v)e.textContent=v[LANG==="lt"?0:1];});
+  $("#lLT").classList.toggle("on",LANG==="lt");$("#lEN").classList.toggle("on",LANG==="en");
+  document.documentElement.lang=LANG;buildTools();hint();rebuild();
+}
+let MSGT=0;
+function msg(s){$("#stMsg").textContent=s;clearTimeout(MSGT);MSGT=setTimeout(()=>{$("#stMsg").textContent="";},3500);}
+function hint(){
+  const n=(STP.length||PICKS.length)+1;
+  const key="h_"+TOOL+(n>1?n:"");
+  $("#hint").innerHTML="<b>"+T("t_"+TOOL)+"</b> — "+(D2[key]?T(key):T("h_"+TOOL));
+}
+/* =============================================== perskaičiavimas ===== */
+const BTH={};
+function bodyKey(r){return Math.min(...r.outer.ids);}
+function bodyTh(r){const k=bodyKey(r);return BTH[k]!==undefined?BTH[k]:(+$("#thick").value||18);}
+function rebuild(soft){
+  curLoops=findLoops(DOC.ents);
+  REG=buildRegions(DOC.ents);
+  OPEN=openEnds(DOC.ents);
+  rebuildSel();
+  if(!soft){renderBodies();renderLayers();}
+  renderProps();renderSums();
+  $("#stCount").textContent=DOC.ents.length+" obj · "+REG.length+" "+T("k_parts").toLowerCase();
+  draw();
+  try{localStorage.setItem("cad",JSON.stringify(dumpDoc()));}catch(e){}
+}
+function rebuildSel(){
+  REG.forEach(r=>{r.sel=r.outer.ids.every(id=>SEL.has(id))&&SEL.size>0;});
+  $("#selInfo").textContent=SEL.size?SEL.size+" ×":"";
+  renderProps();
+}
+function renderSums(){
+  const A=REG.reduce((a,r)=>a+r.area,0)/1e6, per=REG.reduce((a,r)=>a+r.per+r.cut,0)/1e3;
+  const vol=REG.reduce((a,r)=>a+r.area*bodyTh(r),0)/1e9;
+  $("#sums").innerHTML=
+    `<span class="k">${T("k_parts")}</span><span class="v">${REG.length}</span>
+     <span class="k">${T("k_area")}</span><span class="v">${A.toFixed(3)} m²</span>
+     <span class="k">${T("k_cut")}</span><span class="v">${per.toFixed(2)} m</span>
+     <span class="k">${T("k_vol")}</span><span class="v">${(vol*1000).toFixed(2)} l</span>`
+   +(OPEN.length?`<span class="k warn">⚠ ${T("b_open")}</span><span class="v warn">${OPEN.length}</span>`:"");
+}
+function renderBodies(){
+  const el=$("#bodies");
+  if(!REG.length){el.innerHTML=`<div class="empty">${T("m_noreg")}</div>`;return;}
+  el.innerHTML=REG.map((r,i)=>{
+    const b=r.bbox, w=b.x1-b.x0, h=b.y1-b.y0;
+    return `<div class="it ${r.sel?"on":""}" data-b="${i}">
+      <span class="sw" style="background:${r.sel?"#2563eb":"#bea56e"}"></span>
+      <span class="nm">${T("b_body")} ${i+1} <span class="sm">${fmt(w,1)}×${fmt(h,1)}</span></span>
+      <span class="sm">${(r.area/100).toFixed(1)} cm²${r.holes.length?" · "+r.holes.length+"◯":""}</span></div>`;
+  }).join("");
+  $$("#bodies .it").forEach(d=>d.onclick=()=>{
+    const r=REG[+d.dataset.b];SEL.clear();
+    r.outer.ids.forEach(id=>SEL.add(id));r.holes.forEach(h=>h.ids.forEach(id=>SEL.add(id)));
+    $("#thick").value=bodyTh(r);rebuild(true);renderBodies();draw();
+  });
+}
+function renderLayers(){
+  $("#layers").innerHTML=DOC.layers.map((L,i)=>
+    `<div class="it ${i===CURLAY?"on":""}" data-l="${i}">
+      <input type="color" value="${L.color}" data-c="${i}" style="width:20px;height:18px;padding:0;border:0;background:0">
+      <span class="nm">${L.name}</span>
+      <span class="sm">${DOC.ents.filter(e=>e.lay===i).length}</span>
+      <button class="x" data-v="${i}">${L.vis?"👁":"—"}</button></div>`).join("");
+  $$("#layers .it").forEach(d=>d.onclick=e=>{
+    if(e.target.dataset.v!==undefined||e.target.dataset.c!==undefined)return;
+    CURLAY=+d.dataset.l;renderLayers();});
+  $$("#layers [data-v]").forEach(b=>b.onclick=e=>{e.stopPropagation();
+    DOC.layers[+b.dataset.v].vis=!DOC.layers[+b.dataset.v].vis;renderLayers();draw();});
+  $$("#layers [data-c]").forEach(b=>b.oninput=e=>{e.stopPropagation();
+    DOC.layers[+b.dataset.c].color=b.value;draw();});
+}
+/* ------- savybės ------- */
+function numRow(lab,val,cb,step){
+  return`<label class="f"><span>${lab}</span><input type="number" step="${step||0.1}" value="${fmt(val,3)}" data-p="${lab}"></label>`;
+}
+function renderProps(){
+  const el=$("#props"), sel=selEnts();
+  if(!sel.length){el.innerHTML=`<div class="empty">${T("nosel")}</div>`;return;}
+  let h="";
+  if(sel.length===1){
+    const e=sel[0];
+    if(e.t==="line"){
+      const L=entLen(e), A=deg(normAng(Math.atan2(e.b.y-e.a.y,e.b.x-e.a.x)));
+      h=`<div class="row c2">${numRow("X1",e.a.x)}${numRow("Y1",e.a.y)}</div>
+         <div class="row c2">${numRow("X2",e.b.x)}${numRow("Y2",e.b.y)}</div>
+         <div class="row c2">${numRow(T("pr_len"),L)}${numRow(T("pr_ang"),A)}</div>`;
+    }else if(e.t==="circle"){
+      h=`<div class="row c2">${numRow("X",e.c.x)}${numRow("Y",e.c.y)}</div>
+         <div class="row c2">${numRow(T("pr_r"),e.r)}${numRow(T("pr_d"),e.r*2)}</div>`;
+    }else if(e.t==="arc"){
+      h=`<div class="row c2">${numRow("X",e.c.x)}${numRow("Y",e.c.y)}</div>
+         <div class="row c2">${numRow(T("pr_r"),e.r)}${numRow(T("pr_sw"),deg(arcSweep(e)))}</div>`;
+    }else if(e.t==="dim"){
+      const q=dimPts(e);
+      h=`<div class="row">${numRow(T("pr_val"),q?q.val:0)}</div>`;
+    }
+  }else h=`<div class="row"><b>${sel.length}</b> ${T("pr_multi").toLowerCase()}</div>`;
+  h+=`<div class="row c2">
+      <label class="f"><span>${T("pr_lay")}</span><select id="pLay">${DOC.layers.map((L,i)=>
+        `<option value="${i}" ${sel[0].lay===i?"selected":""}>${L.name}</option>`).join("")}</select></label>
+      <label class="f" style="justify-content:flex-end"><span>&nbsp;</span>
+      <label class="chk"><input type="checkbox" id="pCons" ${sel[0].cons?"checked":""}><span>${T("pr_cons")}</span></label></label></div>
+    <div class="row c2" style="margin-top:2px">
+      <button class="btn" id="pDel">${T("t_del")}</button>
+      <button class="btn" id="pDup">${T("t_copy")}</button></div>
+    <details style="margin-top:9px"><summary style="cursor:pointer;font-size:11.5px;color:var(--ink2)">${T("pr_arr")}</summary>
+      <div class="row c2" style="margin-top:8px">
+        <label class="f"><span>nX</span><input type="number" id="aNX" value="2" min="1"></label>
+        <label class="f"><span>nY</span><input type="number" id="aNY" value="1" min="1"></label></div>
+      <div class="row c2">
+        <label class="f"><span>dX</span><input type="number" id="aDX" value="50"></label>
+        <label class="f"><span>dY</span><input type="number" id="aDY" value="50"></label></div>
+      <button class="btn w" id="aGo">${T("pr_apply")}</button>
+      <div class="row c2" style="margin-top:8px">
+        <label class="f"><span>${T("pr_cnt")}</span><input type="number" id="pN" value="6" min="2"></label>
+        <label class="f"><span>°</span><input type="number" id="pA" value="360"></label></div>
+      <button class="btn w" id="pGo">${T("pr_pol")}</button>
+    </details>`;
+  el.innerHTML=h;
+  $$("#props input[data-p]").forEach(inp=>inp.onchange=()=>applyProp(sel[0],inp.dataset.p,parseFloat(inp.value)));
+  $("#pLay").onchange=e=>{push();sel.forEach(x=>x.lay=+e.target.value);rebuild();};
+  $("#pCons").onchange=e=>{push();sel.forEach(x=>x.cons=e.target.checked);rebuild();};
+  $("#pDel").onclick=delSel;
+  $("#pDup").onclick=()=>{push();opMove(new Set(SEL),P(20,-20),true);rebuild();};
+  $("#aGo").onclick=()=>{push();const n=opArray(new Set(SEL),+$("#aNX").value,+$("#aNY").value,+$("#aDX").value,+$("#aDY").value);
+    rebuild();msg("+"+n);};
+  $("#pGo").onclick=()=>{
+    const bb=bboxOf(sel);const c=P((bb.x0+bb.x1)/2,(bb.y0+bb.y1)/2);
+    push();opArrayPolar(new Set(SEL),c,+$("#pN").value,rad(+$("#pA").value));rebuild();};
+}
+function applyProp(e,key,v){
+  if(!isFinite(v))return;push();
+  const L=T("pr_len"),A=T("pr_ang"),R=T("pr_r"),D=T("pr_d"),S=T("pr_sw"),VA=T("pr_val");
+  if(e.t==="line"){
+    if(key==="X1")e.a.x=v; else if(key==="Y1")e.a.y=v;
+    else if(key==="X2")e.b.x=v; else if(key==="Y2")e.b.y=v;
+    else if(key===L){const d=nrm(sub(e.b,e.a));e.b=add(e.a,mul(d,v));}
+    else if(key===A){const l=entLen(e);e.b=add(e.a,P(Math.cos(rad(v))*l,Math.sin(rad(v))*l));}
+  }else if(e.t==="circle"){
+    if(key==="X")e.c.x=v;else if(key==="Y")e.c.y=v;
+    else if(key===R)e.r=Math.abs(v);else if(key===D)e.r=Math.abs(v)/2;
+  }else if(e.t==="arc"){
+    if(key==="X")e.c.x=v;else if(key==="Y")e.c.y=v;
+    else if(key===R)e.r=Math.abs(v);
+    else if(key===S){const n=mkArc(e.c,e.r,e.a0,e.a0+rad(clamp(v,0.01,359.99)));e.a1=n.a1;}
+  }else if(e.t==="dim"&&key===VA){
+    const d=nrm(sub(e.p2,e.p1));e.p2=add(e.p1,mul(d,v));
+  }
+  rebuild();
+}
+function delSel(){
+  if(!SEL.size)return;push();
+  DOC.ents=DOC.ents.filter(e=>!SEL.has(e.id));SEL.clear();rebuild();msg(T("m_del"));
+}
+
+/* =============================================== įrankių juosta ====== */
+const IC={
+ sel:'<path d="M4 3l12 5.6-5 1.7L13.6 16l-2 .9-2.4-5.4L4 15.5z"/>',
+ line:'<path d="M4 16L16 4"/><circle cx="4" cy="16" r="1.6"/><circle cx="16" cy="4" r="1.6"/>',
+ rect:'<rect x="3.5" y="5.5" width="13" height="9"/>',
+ circle:'<circle cx="10" cy="10" r="6.2"/>',
+ arc:'<path d="M3.5 15a6.5 6.5 0 0113 0"/><circle cx="3.5" cy="15" r="1.4"/><circle cx="16.5" cy="15" r="1.4"/>',
+ dim:'<path d="M4 5.5v9M16 5.5v9M4 10h12M6 8l-2 2 2 2M14 8l2 2-2 2"/>',
+ fillet:'<path d="M4 16.5V10a5.5 5.5 0 015.5-5.5H16"/><path d="M4 4.5h5.5" stroke-dasharray="2 2"/><path d="M4 4.5v5.5" stroke-dasharray="2 2"/>',
+ chamfer:'<path d="M4 16.5V10l5.5-5.5H16"/>',
+ trim:'<path d="M4 4l12 12M16 4L4 16" stroke-dasharray="3 2"/><circle cx="10" cy="10" r="2"/>',
+ offset:'<rect x="2.5" y="4.5" width="15" height="11"/><rect x="5.5" y="7" width="9" height="6"/>',
+ move:'<path d="M10 3v14M3 10h14M10 3L8 5.5M10 3l2 2.5M10 17l-2-2.5M10 17l2-2.5M3 10l2.5-2M3 10l2.5 2M17 10l-2.5-2M17 10l-2.5 2"/>',
+ copy:'<rect x="3" y="6" width="9" height="9"/><path d="M7 4h9v9"/>',
+ mirror:'<path d="M10 2.5v15" stroke-dasharray="3 2"/><path d="M7.5 6L4 10l3.5 4zM12.5 6L16 10l-3.5 4z"/>',
+ rotate:'<path d="M15.5 7a6.5 6.5 0 10-1.2 7"/><path d="M16.5 3.5V7.5h-4"/>',
+ meas:'<path d="M2.5 12.5l10-10 5 5-10 10zM6 6l2 2M9 9l2 2M11 4l2 2"/>',
+ cons:'<path d="M3 15L17 5" stroke-dasharray="3 3"/>',
+ del:'<path d="M4 6h12M8 6V4h4v2M6 6l1 11h6l1-11"/>'};
+const TOOLBAR=[["sel","S"],["line","L"],["rect","R"],["circle","C"],["arc","A"],["dim","D"],"-",
+ ["fillet","F"],["chamfer","H"],["trim","T"],["offset","O"],"-",
+ ["move","M"],["copy","K"],["mirror","X"],["rotate","W"],["meas","E"],"-",["cons","N"],["del","⌫"]];
+function buildTools(){
+  $("#tools").innerHTML=TOOLBAR.map(t=>t==="-"?'<div class="sep"></div>':
+    `<button data-t="${t[0]}" title="${T("t_"+t[0])} (${t[1]})">
+       <svg viewBox="0 0 20 20">${IC[t[0]]}</svg><span class="kk">${t[1]}</span></button>`).join("");
+  $$("#tools button").forEach(b=>b.onclick=()=>{
+    const t=b.dataset.t;
+    if(t==="del"){delSel();return;}
+    if(t==="cons"){CONS=!CONS;b.classList.toggle("on",CONS);
+      if(SEL.size){push();selEnts().forEach(e=>e.cons=CONS);rebuild();}return;}
+    setTool(t);});
+  $$("#tools button").forEach(b=>b.classList.toggle("on",b.dataset.t===TOOL||(b.dataset.t==="cons"&&CONS)));
+}
+/* =============================================== įvykiai ============= */
+let PAN=null, SPACE=false;
+function evW(ev){
+  const r=C2.getBoundingClientRect();
+  return s2w(P(ev.clientX-r.left, ev.clientY-r.top));
+}
+C2.addEventListener("pointerdown",ev=>{
+  try{C2.setPointerCapture(ev.pointerId);}catch(e){}
+  if(ev.button===1||SPACE||ev.button===2){PAN={x:ev.clientX,y:ev.clientY,ox:VIEW.ox,oy:VIEW.oy};return;}
+  if(ev.button!==0)return;
+  const raw=evW(ev), w=doSnap(raw,STP[STP.length-1],ev.shiftKey);
+  CUR=w;toolDown(w,ev);
+});
+C2.addEventListener("pointermove",ev=>{
+  if(PAN){VIEW.ox=PAN.ox+(ev.clientX-PAN.x);VIEW.oy=PAN.oy+(ev.clientY-PAN.y);draw();return;}
+  const raw=evW(ev), w=doSnap(raw,STP[STP.length-1],ev.shiftKey);
+  CUR=w;
+  $("#stPos").textContent=fmt(w.x,2)+", "+fmt(w.y,2);
+  $("#stSnap").textContent=SNAPI?(SNAPN[SNAPI.type]?SNAPN[SNAPI.type][LANG==="lt"?0:1]:""):"";
+  if(TOOL==="sel"&&!DRAG&&!BAND){const e=hitEnt(w);const h=e?e.id:null;if(h!==HOVER){HOVER=h;}}
+  toolMove(w,ev);entryLive(w);draw();
+});
+C2.addEventListener("pointerup",ev=>{
+  if(PAN){PAN=null;return;}
+  toolUp(doSnap(evW(ev),STP[STP.length-1],ev.shiftKey),ev);
+});
+C2.addEventListener("contextmenu",ev=>ev.preventDefault());
+C2.addEventListener("dblclick",()=>{if(STP.length){STP=[];entryHide();hint();draw();}});
+function zoomAt(q,f){
+  const before=s2w(q);
+  VIEW.s=clamp(VIEW.s*f,0.02,400);
+  const after=s2w(q);
+  VIEW.ox+=(after.x-before.x)*VIEW.s;VIEW.oy-=(after.y-before.y)*VIEW.s;
+  draw();
+}
+C2.addEventListener("wheel",ev=>{
+  ev.preventDefault();
+  const r=C2.getBoundingClientRect(), q=P(ev.clientX-r.left,ev.clientY-r.top);
+  if(ev.shiftKey&&!ev.ctrlKey){VIEW.ox-=ev.deltaY;draw();return;}
+  zoomAt(q,ev.deltaY<0?1.13:1/1.13);
+},{passive:false});
+/* 3D orbitavimas */
+(function(){let d=null;
+  C3.addEventListener("pointerdown",e=>{try{C3.setPointerCapture(e.pointerId);}catch(_){}d={x:e.clientX,y:e.clientY,...V3};});
+  C3.addEventListener("pointermove",e=>{if(!d)return;
+    V3.yaw=d.yaw+(e.clientX-d.x)*0.008;V3.pitch=clamp(d.pitch+(e.clientY-d.y)*0.006,-1.4,1.4);draw3D();});
+  C3.addEventListener("pointerup",()=>d=null);
+})();
+document.addEventListener("keydown",ev=>{
+  const tg=ev.target, inEntry=tg.closest&&tg.closest("#entry");
+  if(inEntry){
+    if(ev.key==="Enter"){ev.preventDefault();ENTRY.lock[tg.id==="eV1"?0:1]=true;entryCommit();}
+    else if(ev.key==="Escape"){entryHide();cancelTool();}
+    else if(ev.key==="Tab"){ENTRY.lock[0]=true;}
+    else ENTRY.lock[tg.id==="eV1"?0:1]=true;
+    return;
+  }
+  if(tg.tagName==="INPUT"||tg.tagName==="SELECT"||tg.tagName==="TEXTAREA")return;
+  const k=ev.key.toLowerCase();
+  if(ev.metaKey||ev.ctrlKey){
+    if(k==="z"){ev.preventDefault();ev.shiftKey?redo():undo();}
+    if(k==="y"){ev.preventDefault();redo();}
+    if(k==="a"){ev.preventDefault();DOC.ents.forEach(e=>SEL.add(e.id));rebuildSel();draw();}
+    if(k==="s"){ev.preventDefault();saveFile();}
+    return;
+  }
+  if(ev.key===" "){SPACE=true;return;}
+  if(ev.key==="Escape"){cancelTool();return;}
+  if(ev.key==="Delete"||ev.key==="Backspace"){ev.preventDefault();delSel();return;}
+  if(ev.key==="Enter"){if(STP.length){STP=[];entryHide();hint();draw();}return;}
+  if(/^[0-9.\-]$/.test(ev.key)&&ENTRY.kind){
+    $("#eV1").value=ev.key;ENTRY.lock[0]=true;$("#eV1").focus();
+    setTimeout(()=>$("#eV1").setSelectionRange(1,1),0);ev.preventDefault();return;
+  }
+  const map={s:"sel",l:"line",r:"rect",c:"circle",a:"arc",d:"dim",f:"fillet",h:"chamfer",
+             t:"trim",o:"offset",m:"move",k:"copy",x:"mirror",w:"rotate",e:"meas"};
+  if(map[k]){setTool(map[k]);buildTools();}
+  if(k==="n"){CONS=!CONS;buildTools();msg("cons "+(CONS?"on":"off"));}
+  if(k==="g"){$("#snapGrid").checked=!$("#snapGrid").checked;}
+});
+document.addEventListener("keyup",ev=>{if(ev.key===" ")SPACE=false;});
+$("#eV1").addEventListener("keydown",e=>{if(e.key==="Tab"){e.preventDefault();$("#eV2").focus();ENTRY.lock[1]=true;}});
+/* =============================================== eksportas =========== */
+function bbAll(){const b=bboxOf(DOC.ents.filter(e=>e.t!=="dim"));return b||{x0:0,y0:0,x1:100,y1:100};}
+function dxfColor(hex){
+  const m={"#dc2626":1,"#b45309":2,"#15803d":3,"#0d9488":4,"#2563eb":5,"#a855f7":6,"#1b1e26":7};
+  return m[hex.toLowerCase()]||7;
+}
+function toDXF(){
+  const L=[], g=(c,v)=>{L.push(String(c));L.push(String(v));};
+  const LT={"ą":"a","č":"c","ę":"e","ė":"e","į":"i","š":"s","ų":"u","ū":"u","ž":"z",
+            "Ą":"A","Č":"C","Ę":"E","Ė":"E","Į":"I","Š":"S","Ų":"U","Ū":"U","Ž":"Z"};
+  const lname=n=>((n||"0").replace(/[ąčęėįšųūžĄČĘĖĮŠŲŪŽ]/g,c=>LT[c])
+                  .replace(/[^A-Za-z0-9_\-]/g,"_").slice(0,31))||"0";
+  const b=bbAll(), used=DOC.layers;
+  g(0,"SECTION");g(2,"HEADER");
+  g(9,"$ACADVER");g(1,"AC1009");g(9,"$INSUNITS");g(70,4);
+  g(9,"$EXTMIN");g(10,fmt(b.x0,4));g(20,fmt(b.y0,4));g(30,"0.0");
+  g(9,"$EXTMAX");g(10,fmt(b.x1,4));g(20,fmt(b.y1,4));g(30,"0.0");
+  g(0,"ENDSEC");
+  g(0,"SECTION");g(2,"TABLES");g(0,"TABLE");g(2,"LAYER");g(70,used.length);
+  used.forEach(La=>{g(0,"LAYER");g(2,lname(La.name));g(70,0);g(62,dxfColor(La.color));g(6,"CONTINUOUS");});
+  g(0,"ENDTAB");g(0,"ENDSEC");
+  g(0,"SECTION");g(2,"ENTITIES");
+  DOC.ents.forEach(e=>{
+    if(e.cons||e.t==="dim")return;
+    const la=lname((DOC.layers[e.lay]||{}).name);
+    if(e.t==="line"){g(0,"LINE");g(8,la);
+      g(10,fmt(e.a.x,4));g(20,fmt(e.a.y,4));g(30,"0.0");
+      g(11,fmt(e.b.x,4));g(21,fmt(e.b.y,4));g(31,"0.0");}
+    else if(e.t==="circle"){g(0,"CIRCLE");g(8,la);
+      g(10,fmt(e.c.x,4));g(20,fmt(e.c.y,4));g(30,"0.0");g(40,fmt(e.r,4));}
+    else if(e.t==="arc"){g(0,"ARC");g(8,la);
+      g(10,fmt(e.c.x,4));g(20,fmt(e.c.y,4));g(30,"0.0");g(40,fmt(e.r,4));
+      g(50,fmt(deg(normAng(e.a0)),4));g(51,fmt(deg(normAng(e.a1)),4));}
+  });
+  g(0,"ENDSEC");g(0,"EOF");
+  return L.join("\r\n")+"\r\n";
+}
+function toSVG(){
+  const b=bbAll(), m=10, w=b.x1-b.x0+2*m, h=b.y1-b.y0+2*m;
+  const X=x=>fmt(x-b.x0+m,3), Y=y=>fmt(b.y1-y+m,3);
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${fmt(w,2)}mm" height="${fmt(h,2)}mm" viewBox="0 0 ${fmt(w,3)} ${fmt(h,3)}">`;
+  DOC.ents.forEach(e=>{
+    const La=DOC.layers[e.lay]||{color:"#000"}, st=`stroke="${e.cons?"#a855f7":La.color}" fill="none" stroke-width="0.35"${e.cons?' stroke-dasharray="2 1.5"':""}`;
+    if(e.t==="line")s+=`<line x1="${X(e.a.x)}" y1="${Y(e.a.y)}" x2="${X(e.b.x)}" y2="${Y(e.b.y)}" ${st}/>`;
+    else if(e.t==="circle")s+=`<circle cx="${X(e.c.x)}" cy="${Y(e.c.y)}" r="${fmt(e.r,3)}" ${st}/>`;
+    else if(e.t==="arc"){
+      const p0=arcPt(e,e.a0),p1=arcPt(e,e.a1), big=arcSweep(e)>Math.PI?1:0;
+      s+=`<path d="M ${X(p0.x)} ${Y(p0.y)} A ${fmt(e.r,3)} ${fmt(e.r,3)} 0 ${big} 0 ${X(p1.x)} ${Y(p1.y)}" ${st}/>`;
+    }else if(e.t==="dim"){
+      const q=dimPts(e);if(!q)return;
+      s+=`<line x1="${X(q.a.x)}" y1="${Y(q.a.y)}" x2="${X(q.b.x)}" y2="${Y(q.b.y)}" stroke="#b45309" stroke-width="0.25"/>`;
+      s+=`<text x="${X(q.tp.x)}" y="${Y(q.tp.y)}" font-size="4" fill="#b45309" text-anchor="middle">${(e.k==="dia"?"Ø":e.k==="rad"?"R":"")+fmt(q.val,2)}</text>`;
+    }
+  });
+  return s+"</svg>";
+}
+function dl(name,data,type){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([data],{type:type||"text/plain"}));
+  a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+}
+const dumpDoc=()=>({v:1,layers:DOC.layers,ents:DOC.ents,uid:UID,bth:BTH,th:+$("#thick").value,mat:$("#matName").value});
+function loadDoc(o){
+  if(!o||!o.ents)return;
+  DOC.layers=o.layers||DOC.layers;DOC.ents=o.ents;UID=o.uid||(Math.max(0,...o.ents.map(e=>e.id))+1);
+  Object.keys(BTH).forEach(k=>delete BTH[k]);Object.assign(BTH,o.bth||{});
+  if(o.th)$("#thick").value=o.th;if(o.mat)$("#matName").value=o.mat;
+  SEL.clear();UNDO.length=0;REDO.length=0;rebuild();
+}
+function saveFile(){dl("braizinys.json",JSON.stringify(dumpDoc()),"application/json");}
+$("#bSave").onclick=saveFile;
+$("#bDxf").onclick=()=>{dl("braizinys.dxf",toDXF(),"application/dxf");msg(T("dxfhint"));};
+$("#bSvg").onclick=()=>dl("braizinys.svg",toSVG(),"image/svg+xml");
+$("#bPng").onclick=()=>{const c=$("#stage").classList.contains("m3")?C3:C2;c.toBlob(b=>dl("braizinys.png",b,"image/png"));};
+$("#bOpen").onclick=()=>{const i=document.createElement("input");i.type="file";i.accept=".json";
+  i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{loadDoc(JSON.parse(r.result));zoomFit();}catch(e){alert("?");}};r.readAsText(f);};i.click();};
+$("#bNew").onclick=()=>{if(DOC.ents.length&&!confirm("Naujas brėžinys?"))return;
+  DOC.ents=[];SEL.clear();UNDO.length=0;rebuild();zoomFit();};
+$("#lLT").onclick=()=>{LANG="lt";applyLang();};
+$("#lEN").onclick=()=>{LANG="en";applyLang();};
+$("#bRescan").onclick=()=>rebuild();
+$("#thick").oninput=()=>{const r=REG.find(r=>r.sel);if(r)BTH[bodyKey(r)]=+$("#thick").value;renderSums();draw();};
+$("#bAddLay").onclick=()=>{DOC.layers.push({name:"Sluoksnis "+(DOC.layers.length+1),
+  color:LAYC[DOC.layers.length%LAYC.length],vis:true});CURLAY=DOC.layers.length-1;renderLayers();};
+["gridS","snapGrid","snapObj","showDims"].forEach(id=>$("#"+id).addEventListener("input",()=>draw()));
+/* vaizdo režimai */
+const setMode=m=>{const st=$("#stage");st.classList.remove("m2","m3","split");st.classList.add(m);
+  $("#v2").classList.toggle("on",m==="m2");$("#v3").classList.toggle("on",m==="m3");$("#vs").classList.toggle("on",m==="split");
+  requestAnimationFrame(()=>{draw();draw3D();});};
+$("#v2").onclick=()=>setMode("m2");$("#v3").onclick=()=>setMode("m3");$("#vs").onclick=()=>setMode("split");
+$("#zIn").onclick=()=>zoomAt(P(VW/2,VH/2),1.25);
+$("#zOut").onclick=()=>zoomAt(P(VW/2,VH/2),1/1.25);
+$("#zFit").onclick=()=>zoomFit();
+function zoomFit(){
+  const r=C2.getBoundingClientRect();VW=r.width;VH=r.height;
+  const b=DOC.ents.length?bbAll():{x0:-50,y0:-50,x1:250,y1:150};
+  const w=Math.max(1,b.x1-b.x0), h=Math.max(1,b.y1-b.y0);
+  VIEW.s=clamp(Math.min((r.width-70)/w,(r.height-70)/h),0.02,400);
+  VIEW.ox=r.width/2-(b.x0+b.x1)/2*VIEW.s;VIEW.oy=r.height/2+(b.y0+b.y1)/2*VIEW.s;
+  draw();
+}
+window.addEventListener("resize",()=>{draw();draw3D();});
+/* =============================================== startas ============= */
+function demo(){
+  rectEnts(P(0,0),P(240,140)).forEach(e=>DOC.ents.push(e));
+  [P(0,0),P(240,0),P(240,140),P(0,140)].forEach(c=>{
+    const ls=DOC.ents.filter(e=>e.t==="line"&&entEnds(e).some(p=>eqp(p,c,0.01)));
+    if(ls.length===2)opFillet(ls[0].id,entMid(ls[0]),ls[1].id,entMid(ls[1]),15,false);
+  });
+  [[40,40],[200,40],[40,100],[200,100]].forEach(([x,y])=>DOC.ents.push(mkCircle(P(x,y),9)));
+  DOC.ents.push(mkCircle(P(120,70),26));
+}
+buildTools();
+let restored=false;
+try{const s=localStorage.getItem("cad");const o=s?JSON.parse(s):null;
+  if(o&&o.ents&&o.ents.length){loadDoc(o);restored=true;}}catch(e){}
+if(!restored)demo();
+applyLang();rebuild();setTimeout(zoomFit,30);
+window.CAD={DOC,VIEW,P,loopArea,w2s,s2w,doSnap,hitEnt,mkLine,mkCircle,mkArc,rectEnts,entMid,entPt,arcPt,entEnds,eqp,dist,segSeg,segCircle,circCirc,arcSweep,deg,rad,filletPair,findLoops,buildRegions,openEnds,offsetLoop,opFillet,
+  opTrim,opMove,opMirror,opArray,opRotate,xEnt,nearOn,splitEnt,entLen,entBBox,polyArea,polyIn,toDXF,toSVG,
+  rebuild,zoomFit,setTool,draw,loadDoc,dumpDoc,push,undo,redo,delSel,
+  get SEL(){return SEL;},set SEL(v){SEL=v;},get REG(){return REG;},get OPEN(){return OPEN;},
+  add(e){DOC.ents.push(e);return e;},clear(){DOC.ents=[];SEL.clear();rebuild();}};
+</script>
+</body>
+</html>

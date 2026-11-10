@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="lt"><head><meta charset="utf-8"><title>Braižyklė · testai</title>
+<style>
+ body{font:13px/1.55 ui-monospace,Menlo,monospace;background:#0f1115;color:#d6dae1;margin:0;padding:20px}
+ h1{font-size:15px;margin:0 0 14px}
+ .t{padding:3px 0;border-bottom:1px solid #1e2229}
+ .g{margin:16px 0 4px;color:#93c5fd;font-weight:700}
+ .ok{color:#4ade80}.no{color:#f87171}.sk{color:#fbbf24}
+ #sum{margin:14px 0;padding:10px 14px;border-radius:8px;background:#171a21;font-size:14px}
+ iframe{position:absolute;left:-9999px;width:1400px;height:900px}
+</style></head><body>
+<h1>Braižyklė — testai</h1><div id="sum">…</div><div id="out"></div>
+<iframe id="f" src="index.html"></iframe>
+<script>
+let pass=0,fail=0;const out=document.getElementById("out");
+function ck(n,c,i){const d=document.createElement("div");d.className="t";
+  d.innerHTML=(c?'<span class="ok">PASS</span> ':'<span class="no">FAIL</span> ')+n+(i?' <span class="sk">'+i+'</span>':'');
+  out.appendChild(d);c?pass++:fail++;}
+function grp(t){const d=document.createElement("div");d.className="g";d.textContent="— "+t;out.appendChild(d);}
+const near=(a,b,t)=>Math.abs(a-b)<=(t===undefined?1e-6:t);
+
+function run(){
+  const w=document.getElementById("f").contentWindow, d=document.getElementById("f").contentDocument, C=w.CAD, P=C.P;
+  const fresh=()=>{C.clear();C.DOC.ents.length=0;};
+  const rect=(x0,y0,x1,y1)=>{C.rectEnts(P(x0,y0),P(x1,y1)).forEach(e=>C.add(e));C.rebuild();};
+
+  grp("Sankirtos ir bazinė geometrija");
+  ck("segSeg: kertasi viduryje", (()=>{const r=C.segSeg(P(0,0),P(10,10),P(0,10),P(10,0));
+    return r.length===1&&near(r[0].x,5)&&near(r[0].y,5);})());
+  ck("segSeg: lygiagrečios nesikerta", C.segSeg(P(0,0),P(10,0),P(0,5),P(10,5)).length===0);
+  ck("segSeg: nesiekia – nėra sankirtos", C.segSeg(P(0,0),P(4,0),P(6,-5),P(6,5)).length===0);
+  ck("segCircle: per centrą – 2 taškai", (()=>{const r=C.segCircle(P(-20,0),P(20,0),P(0,0),10);
+    return r.length===2&&near(Math.abs(r[0].x),10)&&near(Math.abs(r[1].x),10);})());
+  ck("segCircle: liestinė – 1 taškas", C.segCircle(P(-20,10),P(20,10),P(0,0),10).length===1);
+  ck("circCirc: du apskritimai – 2 taškai", C.circCirc(P(0,0),10,P(12,0),10).length===2);
+  ck("circCirc: per toli – nėra", C.circCirc(P(0,0),5,P(100,0),5).length===0);
+  ck("xEnt gerbia lanko ribas", (()=>{
+    const arc=C.mkArc(P(0,0),10,0,Math.PI/2), ln=C.mkLine(P(0,-20),P(0,-5));
+    return C.xEnt(arc,ln).length===0;})());
+  ck("nearOn: atstumas iki linijos", near(C.nearOn(C.mkLine(P(0,0),P(10,0)),P(5,3)).d,3));
+  ck("entLen: lankas = r·φ", near(C.entLen(C.mkArc(P(0,0),10,0,Math.PI/2)),10*Math.PI/2,1e-9));
+  ck("entBBox: lankas per viršų", (()=>{const b=C.entBBox(C.mkArc(P(0,0),10,Math.PI/4,Math.PI*3/4));
+    return near(b.y1,10,1e-9)&&near(b.x1,7.0710678,1e-6);})());
+
+  grp("Dalijimas");
+  ck("splitEnt: linija į 2 dalis", (()=>{const p=C.splitEnt(C.mkLine(P(0,0),P(10,0)),[P(4,0)]);
+    return p.length===2&&near(C.entLen(p[0]),4)&&near(C.entLen(p[1]),6);})());
+  ck("splitEnt: apskritimas į 2 lankus", (()=>{const c=C.mkCircle(P(0,0),10);
+    const p=C.splitEnt(c,[P(10,0),P(-10,0)]);
+    return p.length===2&&near(C.entLen(p[0])+C.entLen(p[1]),2*Math.PI*10,1e-6);})());
+  ck("splitEnt: be taškų – nekeičia", C.splitEnt(C.mkLine(P(0,0),P(10,0)),[]).length===1);
+
+  grp("Kontūrai ir sritys");
+  fresh();rect(0,0,200,100);
+  ck("stačiakampis → 1 sritis", C.REG.length===1, String(C.REG.length));
+  ck("plotas = 200×100", near(C.REG[0].area,20000,1e-6), String(C.REG[0].area));
+  ck("perimetras = 600", near(C.REG[0].per,600,1e-9));
+  ck("nėra laisvų galų", C.OPEN.length===0);
+  C.add(C.mkCircle(P(100,50),20));C.rebuild();
+  ck("skylė atpažinta", C.REG.length===1&&C.REG[0].holes.length===1);
+  ck("plotas be skylės (tikslus)", near(C.REG[0].area,20000-Math.PI*400,1e-9), C.REG[0].area.toFixed(1));
+  fresh();rect(0,0,100,100);rect(200,0,300,100);
+  ck("dvi atskiros detalės", C.REG.length===2, String(C.REG.length));
+  fresh();
+  [C.mkLine(P(0,0),P(100,0)),C.mkLine(P(100,0),P(100,50)),C.mkLine(P(100,50),P(0,50))].forEach(e=>C.add(e));
+  C.rebuild();
+  ck("atviras kontūras → 0 sričių", C.REG.length===0, String(C.REG.length));
+  ck("rodo 2 laisvus galus", C.OPEN.length===2, String(C.OPEN.length));
+  fresh();C.add(C.mkCircle(P(0,0),25));C.rebuild();
+  ck("vien apskritimas → sritis πr²", C.REG.length===1&&near(C.REG[0].area,Math.PI*625,1e-9),
+     C.REG.length?C.REG[0].area.toFixed(1):"-");
+  fresh();rect(0,0,200,200);rect(50,50,150,150);
+  ck("stačiakampis stačiakampyje = skylė", C.REG.length===1&&C.REG[0].holes.length===1&&near(C.REG[0].area,30000,1e-6),
+     C.REG.length?C.REG[0].area:"-");
+
+  grp("Suapvalinimas ir nuožulna");
+  fresh();
+  const l1=C.add(C.mkLine(P(0,0),P(100,0))), l2=C.add(C.mkLine(P(100,0),P(100,80)));C.rebuild();
+  ck("fillet: 2 linijos → 2 linijos + lankas", (()=>{
+    const okk=C.opFillet(l1.id,P(20,0),l2.id,P(100,40),10,false);C.rebuild();
+    const arcs=C.DOC.ents.filter(e=>e.t==="arc");
+    return okk&&arcs.length===1&&near(arcs[0].r,10);})());
+  ck("fillet lanko kampas = 90°", near(C.deg(C.arcSweep(C.DOC.ents.find(e=>e.t==="arc"))),90,1e-6));
+  ck("fillet: linijos sutrumpėjo iki liestinės", (()=>{
+    const ls=C.DOC.ents.filter(e=>e.t==="line");
+    return ls.length===2&&near(Math.max(...ls.map(C.entLen)),90,1e-6);})());
+  fresh();rect(0,0,200,100);
+  [P(0,0),P(200,0),P(200,100),P(0,100)].forEach(c=>{
+    const ls=C.DOC.ents.filter(e=>e.t==="line"&&C.entEnds(e).some(p=>C.eqp(p,c,0.01)));
+    if(ls.length===2)C.opFillet(ls[0].id,C.entMid(ls[0]),ls[1].id,C.entMid(ls[1]),15,false);});
+  C.rebuild();
+  ck("4 suapvalinti kampai → 4 linijos + 4 lankai",
+     C.DOC.ents.filter(e=>e.t==="arc").length===4&&C.DOC.ents.filter(e=>e.t==="line").length===4);
+  ck("suapvalinto stačiakampio plotas (tikslus)", near(C.REG[0].area,20000-4*(225-Math.PI*225/4),1e-9), C.REG[0].area.toFixed(1));
+  ck("po suapvalinimo kontūras uždaras", C.OPEN.length===0&&C.REG.length===1);
+  fresh();
+  const m1=C.add(C.mkLine(P(0,0),P(100,0))), m2=C.add(C.mkLine(P(100,0),P(100,80)));C.rebuild();
+  ck("per didelis R – atmetama", !C.opFillet(m1.id,P(20,0),m2.id,P(100,40),500,false));
+  ck("nepavykus brėžinys nepakito", C.DOC.ents.length===2);
+  ck("nuožulna → 3 linijos", (()=>{C.opFillet(m1.id,P(20,0),m2.id,P(100,40),10,true);C.rebuild();
+    return C.DOC.ents.filter(e=>e.t==="line").length===3&&C.DOC.ents.filter(e=>e.t==="arc").length===0;})());
+  ck("nuožulnos ilgis = d·√2", (()=>{const L=C.DOC.ents.map(C.entLen).sort((a,b)=>a-b)[0];
+    return near(L,10*Math.SQRT2,1e-6);})(), "");
+
+  grp("Apkirpimas");
+  fresh();
+  const t1=C.add(C.mkLine(P(0,0),P(100,0))), t2=C.add(C.mkLine(P(50,-50),P(50,50)));C.rebuild();
+  ck("apkerpa spustelėtą atkarpą", (()=>{const okk=C.opTrim(t1.id,P(10,0));C.rebuild();
+    const ls=C.DOC.ents.filter(e=>e.t==="line");
+    return okk&&ls.length===2&&!ls.some(e=>C.nearOn(e,P(10,0)).d<0.01);})());
+  ck("lieka kita pusė", C.DOC.ents.some(e=>C.nearOn(e,P(80,0)).d<0.01));
+  fresh();const t3=C.add(C.mkLine(P(0,0),P(10,0)));C.rebuild();
+  ck("be sankirtų – neapkerpa", !C.opTrim(t3.id,P(5,0)));
+
+  grp("Ekvidistantė");
+  fresh();rect(0,0,200,100);
+  ck("į išorę +10: 4 linijos, aštrūs kampai", (()=>{
+    const L=C.findLoops(C.DOC.ents)[0], r=C.offsetLoop(L,10);
+    return r&&r.length===4&&r.every(e=>e.t==="line");})());
+  ck("į išorę: plotas 220×120", (()=>{
+    const L=C.findLoops(C.DOC.ents)[0], r=C.offsetLoop(L,10);
+    C.DOC.ents=r;C.rebuild();
+    return near(C.REG[0].area,220*120,1e-6);})(), "");
+  fresh();rect(0,0,200,100);
+  ck("į vidų −10: vien linijos, plotas 180×80", (()=>{
+    const L=C.findLoops(C.DOC.ents)[0], r=C.offsetLoop(L,-10);
+    if(!r||r.some(e=>e.t==="arc"))return false;
+    C.DOC.ents=r;C.rebuild();
+    return near(C.REG[0].area,180*80,1e-6);})());
+  fresh();C.add(C.mkCircle(P(0,0),50));C.rebuild();
+  ck("apskritimo ekvidistantė = r+d", (()=>{const L=C.findLoops(C.DOC.ents)[0];
+    const r=C.offsetLoop(L,5);return r&&r.length===1&&near(r[0].r,55);})());
+
+  grp("Transformacijos");
+  fresh();rect(0,0,100,50);
+  C.SEL=new Set(C.DOC.ents.map(e=>e.id));
+  C.opMove(new Set(C.SEL),P(30,20),false);C.rebuild();
+  ck("perkėlimas pastumia gabaritą", (()=>{const b=C.REG[0].bbox;return near(b.x0,30)&&near(b.y0,20);})());
+  fresh();rect(0,0,100,50);
+  C.SEL=new Set(C.DOC.ents.map(e=>e.id));
+  const n0=C.DOC.ents.length;
+  C.opArray(new Set(C.SEL),3,2,150,80);C.rebuild();
+  ck("masyvas 3×2 → 6 detalės", C.REG.length===6, String(C.REG.length));
+  ck("masyvas: objektų 6×", C.DOC.ents.length===n0*6, C.DOC.ents.length+" / "+n0*6);
+  fresh();
+  const ar=C.add(C.mkArc(P(0,0),10,0,Math.PI/2));C.rebuild();
+  C.SEL=new Set([ar.id]);
+  C.opMirror(new Set(C.SEL),P(0,0),P(0,10),true);C.rebuild();
+  ck("veidrodinis lankas lieka toje pačioje pusėje", (()=>{
+    const nw=C.DOC.ents.find(e=>e.id!==ar.id);
+    const m=C.entMid(nw);
+    return near(m.x,-7.0710678,1e-4)&&near(m.y,7.0710678,1e-4);})(),
+    (()=>{const nw=C.DOC.ents.find(e=>e.id!==ar.id);const m=C.entMid(nw);
+      return m.x.toFixed(2)+","+m.y.toFixed(2);})());
+  fresh();rect(0,0,100,40);
+  C.SEL=new Set(C.DOC.ents.map(e=>e.id));
+  C.opRotate(new Set(C.SEL),P(0,0),Math.PI/2,false);C.rebuild();
+  ck("pasukus 90° gabaritas apsiverčia", (()=>{const b=C.REG[0].bbox;
+    return near(b.x1-b.x0,40,1e-6)&&near(b.y1-b.y0,100,1e-6);})());
+
+  grp("Sąsaja: įrankiai, trauka, skaitinė įvestis");
+  const c2=d.querySelector("#c2d");
+  const R=()=>c2.getBoundingClientRect();
+  const S=p=>{const r=R();return{x:r.left+p.x*C.VIEW.s+C.VIEW.ox, y:r.top+C.VIEW.oy-p.y*C.VIEW.s};};
+  const ev=(t,p,o)=>{const q=S(p);
+    c2.dispatchEvent(new w.PointerEvent(t,Object.assign({clientX:q.x,clientY:q.y,button:0,bubbles:true,pointerId:1},o||{})));};
+  const clickAt=p=>{ev("pointermove",p);ev("pointerdown",p);ev("pointerup",p);};
+  const key=(k,el)=>(el||d).dispatchEvent(new w.KeyboardEvent("keydown",{key:k,bubbles:true}));
+
+  fresh();C.zoomFit();
+  C.setTool("line");clickAt(P(0,0));clickAt(P(100,0));key("Escape");
+  ck("linijos įrankis nubrėžia liniją", C.DOC.ents.length===1&&near(C.entLen(C.DOC.ents[0]),100,0.01),
+     C.DOC.ents.length+" obj");
+  ck("linija prilipo prie tinklelio", (()=>{const e=C.DOC.ents[0];
+    return e&&near(e.a.x,0,1e-9)&&near(e.b.x,100,1e-9);})());
+
+  fresh();C.setTool("rect");clickAt(P(0,0));clickAt(P(50,30));
+  ck("stačiakampio įrankis → 4 linijos + sritis", C.DOC.ents.length===4&&C.REG.length===1&&near(C.REG[0].area,1500,1e-9),
+     C.REG.length?C.REG[0].area:"-");
+  C.setTool("circle");clickAt(P(20,10));clickAt(P(40,10));
+  ck("apskritimo įrankis → r=20", (()=>{const c=C.DOC.ents.find(e=>e.t==="circle");
+    return c&&near(c.r,20,0.01);})());
+  ck("apskritimas tapo skyle", C.REG.length===1&&C.REG[0].holes.length===1);
+
+  fresh();C.setTool("line");clickAt(P(0,0));ev("pointermove",P(50,0));
+  const f1=d.querySelector("#eV1");
+  ck("skaitinės įvesties langelis atsidarė", d.querySelector("#entry").classList.contains("on"));
+  f1.value="123";key("Enter",f1);
+  ck("įvedus 123 – linija 123 mm", (()=>{const e=C.DOC.ents[0];
+    return e&&near(C.entLen(e),123,1e-6);})(), C.DOC.ents[0]?C.entLen(C.DOC.ents[0]).toFixed(3):"-");
+  key("Escape");
+
+  fresh();rect(0,0,100,60);
+  C.setTool("sel");clickAt(P(50,0));
+  ck("žymėjimas pagauna liniją", C.SEL.size===1, String(C.SEL.size));
+  key("Delete");
+  ck("Delete ištrina pažymėtą", C.DOC.ents.length===3, String(C.DOC.ents.length));
+  ck("likęs kontūras atviras", C.REG.length===0&&C.OPEN.length===2);
+
+  fresh();rect(0,0,100,60);
+  C.setTool("fillet");clickAt(P(50,0));clickAt(P(100,30));
+  ck("fillet įrankis veikia pele", C.DOC.ents.filter(e=>e.t==="arc").length===1,
+     C.DOC.ents.filter(e=>e.t==="arc").length+" lank.");
+  C.setTool("sel");
+
+  fresh();rect(0,0,100,60);C.add(C.mkLine(P(50,-20),P(50,80)));C.rebuild();
+  C.setTool("trim");clickAt(P(50,-10));
+  ck("trim įrankis nukerta atkarpą", C.DOC.ents.length===6, String(C.DOC.ents.length));
+  C.setTool("sel");
+
+  fresh();rect(0,0,100,60);C.add(C.mkCircle(P(50,30),12));C.rebuild();
+  C.setTool("dim");clickAt(P(62,30));clickAt(P(80,55));
+  ck("apskritimo matmuo nuo briaunos – 2 spustelėjimai (Ø)", (()=>{const dm=C.DOC.ents.find(e=>e.t==="dim");
+    return dm&&dm.k==="dia";})(), (C.DOC.ents.find(e=>e.t==="dim")||{}).k||"nėra");
+  C.setTool("dim");clickAt(P(0,0));clickAt(P(100,0));clickAt(P(50,-25));
+  ck("linijinis matmuo – 3 spustelėjimai", C.DOC.ents.filter(e=>e.t==="dim").length===2&&
+     C.DOC.ents.filter(e=>e.t==="dim")[1].k==="lin");
+  ck("matmenys nekeičia sričių", C.REG.length===1&&C.REG[0].holes.length===1);
+  C.setTool("dim");clickAt(P(50,30));clickAt(P(20,55));
+  ck("matmuo nuo apskritimo centro irgi veikia", C.DOC.ents.filter(e=>e.t==="dim").length===3,
+     String(C.DOC.ents.filter(e=>e.t==="dim").length));
+  C.setTool("sel");
+
+  fresh();rect(0,0,100,60);
+  const snapped=C.doSnap(P(99.6,0.3),null,false);
+  ck("trauka prie galo (100,0)", near(snapped.x,100,1e-9)&&near(snapped.y,0,1e-9),
+     snapped.x.toFixed(2)+","+snapped.y.toFixed(2));
+  const smid=C.doSnap(P(50.4,60.2),null,false);
+  ck("trauka prie vidurio taško", near(smid.x,50,1e-9)&&near(smid.y,60,1e-9));
+
+  grp("Eksportas");
+  fresh();rect(0,0,100,50);C.add(C.mkCircle(P(50,25),10));
+  const cons=C.add(C.mkLine(P(-50,-50),P(150,150)));cons.cons=true;C.rebuild();
+  const dxf=C.toDXF();
+  ck("DXF turi SECTION/ENTITIES/EOF", /SECTION/.test(dxf)&&/ENTITIES/.test(dxf)&&/EOF\s*$/.test(dxf));
+  ck("DXF: 4 LINE ir 1 CIRCLE", (dxf.match(/\nLINE\r?\n/g)||[]).length===4&&(dxf.match(/\nCIRCLE\r?\n/g)||[]).length===1,
+     (dxf.match(/\nLINE\r?\n/g)||[]).length+" / "+(dxf.match(/\nCIRCLE\r?\n/g)||[]).length);
+  ck("DXF: pagalbinė linija neeksportuota", (dxf.match(/\nLINE\r?\n/g)||[]).length===4);
+  ck("DXF: yra LAYER lentelė", /TABLE\r?\n\s*2\r?\nLAYER/.test(dxf)||/LAYER/.test(dxf));
+  ck("DXF: skaičiai be eksponentės", !/[0-9]e[+-]/i.test(dxf));
+  fresh();C.add(C.mkArc(P(0,0),10,0,Math.PI/2));C.rebuild();
+  const d2=C.toDXF();
+  ck("DXF: ARC kampai laipsniais 0→90", /\n50\r?\n0\r?\n/.test(d2)&&/\n51\r?\n90\r?\n/.test(d2));
+  const svg=C.toSVG();
+  ck("SVG: prasideda <svg ir turi mm", /^<svg/.test(svg)&&/mm"/.test(svg));
+
+  grp("Dokumentas");
+  fresh();rect(0,0,100,50);
+  const before=C.DOC.ents.length;
+  C.push();C.add(C.mkCircle(P(50,25),5));C.rebuild();
+  C.undo();
+  ck("undo grąžina objektų kiekį", C.DOC.ents.length===before, C.DOC.ents.length+" / "+before);
+  C.redo();
+  ck("redo vėl prideda", C.DOC.ents.length===before+1);
+  C.SEL=new Set([C.DOC.ents[0].id]);C.delSel();
+  ck("trynimas pašalina", C.DOC.ents.length===before);
+  const dump=C.dumpDoc(), a0=C.REG.length;
+  fresh();C.loadDoc(JSON.parse(JSON.stringify(dump)));
+  ck("išsaugoti/įkelti išlaiko geometriją", C.DOC.ents.length===before&&C.REG.length===a0,
+     C.DOC.ents.length+" obj");
+
+  document.getElementById("sum").innerHTML=
+    `<b>${pass+fail}</b> testai · <span class="ok">${pass} PASS</span> · <span class="${fail?"no":"ok"}">${fail} FAIL</span>`;
+  document.title=(fail?"✗ ":"✓ ")+pass+"/"+(pass+fail);
+}
+document.getElementById("f").onload=()=>setTimeout(()=>{try{run();}catch(e){
+  ck("VYKDYMO KLAIDA",false,e.message+" @ "+(e.stack||"").split("\n")[1]);
+  document.getElementById("sum").innerHTML='<span class="no">klaida: '+e.message+'</span>';}},400);
+</script></body></html>
