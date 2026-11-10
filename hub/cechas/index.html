@@ -185,6 +185,14 @@ body.tv h1{font-size:32px}.tv .counts{font-size:24px}.tv .clock{font-size:34px}
 }
 
 a.btn{text-decoration:none;display:inline-block}
+#auth{position:fixed;inset:0;z-index:30;background:rgba(20,24,22,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.authbox{background:#fff;color:#161a17;border-radius:14px;padding:26px 26px 20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.3);font-family:var(--body)}
+.authbox .logo{width:52px;height:52px;background:#161a17;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat}
+.authbox h2{margin:4px 0 0;font-size:22px}.authbox label{display:flex;flex-direction:column;gap:4px;font-size:14px;color:#5b625d}
+.authbox input,.authbox select{font:inherit;font-size:17px;color:#161a17;background:#fff;border:1px solid #cfd3cf;border-radius:8px;padding:9px 11px}
+.authbox .err{color:#b3261e;font-size:14px;min-height:1em}.authbox .note{font-size:13px;color:#5b625d}
+.authbox .go{background:#161a17;color:#fff;border:0;border-radius:8px;padding:11px;font-size:16px;font-weight:600;cursor:pointer}
+.authbox .lk{background:none;border:0;color:#5b625d;font-size:13px;text-decoration:underline;cursor:pointer;padding:4px}
 </style>
 </head>
 <body>
@@ -209,6 +217,17 @@ a.btn{text-decoration:none;display:inline-block}
   <aside class="rail" id="rail"></aside>
 </main>
 <div id="toast" hidden></div>
+<div id="auth" hidden><form class="authbox" id="authForm" autocomplete="on">
+  <span class="logo" role="img" aria-label="Dėdės Baldai"></span>
+  <h2 id="au-h"></h2><div class="note" id="au-sub"></div>
+  <label id="au-nl"><span id="au-nt"></span><select id="au-ns" hidden></select><input id="au-n" autocomplete="username"></label>
+  <label><span id="au-pt"></span><input id="au-p" type="password" inputmode="numeric" autocomplete="current-password"></label>
+  <label id="au-sl" hidden><span id="au-st"></span><input id="au-s" type="password" autocomplete="off"></label>
+  <div class="note" id="au-sn" hidden></div>
+  <div class="err" id="au-err" role="alert"></div>
+  <button class="go" type="submit" id="au-go"></button>
+  <button class="lk" type="button" id="au-skip"></button>
+</form></div>
 
 <script src="../workers/workshop-auth.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -229,14 +248,14 @@ const L={
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Spausk vietą plane, kur jis dabar dirba.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
-  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
+  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Vietą pasirink sąraše šalia vardo, arba tempk vardą tiesiai į planą. Paspaudęs stakles ar stalą gali pridėti darbuotojus vienu paspaudimu. Paspausk vardą – projektas ir detalės.',assignHere:'Pridėti čia',grpM:'Staklės',grpD:'Stalai ir patalpos',grpZ:'Zonos',dropOn:'Paleisk ant staklių ar stalo',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Tap the place on the plan where they work now.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
-  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
+  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Pick the place in the list next to the name, or drag the name straight onto the plan. Tap a machine or desk to add workers with one tap. Tap a name for project and parts.',assignHere:'Add here',grpM:'Machines',grpD:'Desks and rooms',grpZ:'Zones',dropOn:'Drop on a machine or desk',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
 };
@@ -438,6 +457,7 @@ function normalize(){
 }
 function canWrite(){
   if(readOnly){toast(t('ro'));return false}
+  if(mode==='db'&&!person){authOpen({why:t('auWho')}).then(()=>render());return false}
   if(mode==='loading'||(mode==='db'&&!docs.layout.loaded)){toast(t('wait'));return false}
   return true;
 }
@@ -510,13 +530,71 @@ async function loadShopflow(manual){
   const a=document.activeElement;
   if(manual||!(a&&$('#rail').contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)))renderRail();else railDirty=true;
 }
+/* ---------- sign-in ----------
+   People sign in with their name and PIN from the ShopFlow team, checked the same way ShopFlow checks
+   them. The device itself needs a ShopFlow session (shared with ShopFlow on this site); a device that
+   has none asks once for the ShopFlow password. A personal workshop account (name + PIN) works too. */
+const SHOP_EMAIL='shopflow@dedesbaldai.lt';
+let person=null;try{person=JSON.parse(lsGet('cp.who')||'null')}catch(e){}
+function setPerson(p){person=p;who=p&&p.name?String(p.name).slice(0,40):'cechas';lsSet('cp.who',JSON.stringify(p));renderHeader()}
+const normN=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
+async function sha256hex(str){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+let TEAM=null;
+async function loadTeam(){
+  const r=await WA.rest('workspaces?id=eq.'+SF_ROW+'&select=members:data->members,salt:data->pinSalt'),x=r&&r[0];
+  TEAM=x?{list:(Array.isArray(x.members)?x.members:[]).filter(m=>m&&m.name&&m.active!==false&&!m.archived),salt:x.salt||''}:null;return TEAM;
+}
+async function pinMatches(m,pin){if(m.pinHash)return m.pinHash===await sha256hex((TEAM.salt||'')+'$'+String(pin));if(m.pin!=null)return String(m.pin)===String(pin);return false}
+async function shopLogin(pw){
+  const r=await fetch(WA.cfg.url+'/auth/v1/token?grant_type=password',{method:'POST',headers:{apikey:WA.cfg.key,'Content-Type':'application/json'},body:JSON.stringify({email:SHOP_EMAIL,password:pw})});
+  const d=await r.json().catch(()=>({}));if(!r.ok||!d.access_token)return false;
+  lsSet(WA.storageKey,JSON.stringify({access_token:d.access_token,token_type:'bearer',expires_in:d.expires_in||3600,expires_at:d.expires_at||(Math.floor(Date.now()/1000)+(d.expires_in||3600)),refresh_token:d.refresh_token,user:d.user||null}));
+  return WA.signedIn();
+}
+let authWait=null;
+function authOpen(opt){
+  opt=opt||{};const box=$('#auth'),needShop=!WA.signedIn();
+  $('#au-h').textContent=t('auH');$('#au-sub').textContent=opt.why||t('ttl');$('#au-nt').textContent=t('auName');$('#au-pt').textContent=t('auPin');
+  $('#au-st').textContent=t('auShop');$('#au-sn').textContent=t('auShopNote');$('#au-go').textContent=t('signIn');$('#au-skip').textContent=t('auSkip');
+  $('#au-sl').hidden=true;$('#au-sn').hidden=true;$('#au-err').textContent='';$('#au-p').value='';box.dataset.shop=needShop?'ask':'';
+  const sel=$('#au-ns'),inp=$('#au-n');
+  if(TEAM&&TEAM.list.length){sel.innerHTML=TEAM.list.slice().sort((a,b)=>String(a.name).localeCompare(String(b.name),'lt')).map(m=>'<option value="'+esc(m.name)+'"'+(person&&person.name===m.name?' selected':'')+'>'+esc(m.name)+'</option>').join('');sel.hidden=false;inp.hidden=true}
+  else{sel.hidden=true;inp.hidden=false;if(person)inp.value=person.name}
+  box.hidden=false;setTimeout(()=>{(sel.hidden?(inp.value?$('#au-p'):inp):$('#au-p')).focus()},30);
+  return new Promise(res=>{authWait=res});
+}
+function authClose(ok){$('#auth').hidden=true;const r=authWait;authWait=null;if(r)r(ok)}
+$('#au-skip').addEventListener('click',()=>authClose(false));
+$('#authForm').addEventListener('submit',async e=>{
+  e.preventDefault();const err=$('#au-err'),go=$('#au-go');err.textContent='';
+  const name=($('#au-ns').hidden?$('#au-n').value:$('#au-ns').value).trim(),pin=$('#au-p').value.trim();
+  if(!name||!pin){err.textContent=t('auBad');return}
+  go.disabled=true;
+  try{
+    if(!WA.signedIn()){
+      /* 1) a personal workshop account, if this person has one */
+      try{const me=await WA.login(name,pin);if(WA.signedIn()){setPerson({name:(me&&me.display_name)||name});authClose(true);return}}catch(x){}
+      /* 2) otherwise this device needs the ShopFlow session first */
+      const shopBox=$('#au-sl');
+      if(shopBox.hidden){shopBox.hidden=false;$('#au-sn').hidden=false;$('#au-s').focus();return}
+      if(!await shopLogin($('#au-s').value)){err.textContent=t('auBadShop');return}
+    }
+    /* 3) check the name and PIN against the ShopFlow team */
+    if(!TEAM)await loadTeam().catch(()=>null);
+    const m=TEAM&&TEAM.list.find(x=>normN(x.name)===normN(name));
+    if(!m||!await pinMatches(m,pin)){err.textContent=t('auBad');return}
+    setPerson({id:m.id||null,name:m.name});authClose(true);
+  }catch(x){err.textContent=t('auNet')}
+  finally{go.disabled=false}
+});
 async function boot(){
   for(const k in docs){try{const v=JSON.parse(lsGet('cp.'+k)||'null');if(isObj(v))docs[k].data=v}catch(e){}}
   normalize();mode='local';render();
   if(!WA)return;
-  if(!WA.signedIn()){try{await WA.gate({lang:lang,title:t('ttl'),allowSkip:true})}catch(e){}}
+  if(!WA.signedIn()||!person){await authOpen()}
   if(!WA.signedIn()){render();return}
-  try{const me=await WA.me();if(me&&me.display_name)who=String(me.display_name).slice(0,40)}catch(e){}
+  if(person)who=String(person.name).slice(0,40);
+  loadTeam().catch(()=>{});
   mode='db';render();
   const timer=setTimeout(()=>{if(!docs.layout.loaded){stale=true;renderHeader()}},10000);
   await poll();clearTimeout(timer);
@@ -656,7 +734,7 @@ function renderHeader(){
   const ni=Object.keys(ST().people).filter(k=>ST().people[k]&&instOf(k)).length;
   if(ni)$('#counts').innerHTML+='<span><i class="dot d-inst"></i>'+ni+' '+esc(t('instCount'))+'</span>';
   $('#sync').textContent=saveErr?saveErr:mode==='local'?t('local'):stale?t('stale'):(mode==='db'&&docs.layout.loaded)?t('synced'):t('loading');
-  const ba=$('#btnAuth');ba.hidden=!(mode==='local'&&WA&&!saveErr);ba.textContent=t('signIn');
+  const ba=$('#btnAuth');ba.hidden=!WA||!!saveErr||(mode!=='local'&&mode!=='db');ba.textContent=mode==='db'&&person?'👤 '+person.name:t('signIn');ba.title=mode==='db'&&person?t('auOut'):'';
   $('#btnLang').textContent=lang==='lt'?'EN':'LT';
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
@@ -1428,7 +1506,9 @@ $('#rail').addEventListener('focusout',()=>{setTimeout(()=>{const a=document.act
 $('#rail').addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.sec)openSec[d.dataset.sec]=d.open},true);
 $('#rail').addEventListener('input',e=>{const el=e.target;if(!instForm||!el.dataset)return;if(el.dataset.d)instForm[el.dataset.d]=el.value;else if(el.dataset.dw)instForm.w[el.dataset.dw]=el.checked});
 
-$('#btnAuth').addEventListener('click',()=>{boot()});
+$('#btnAuth').addEventListener('click',async()=>{
+  if(mode==='db'){if(person){person=null;try{localStorage.removeItem('cp.who')}catch(e){}who='cechas';renderHeader();toast(t('auOut'))}else{await authOpen();render()}return}
+  if(!WA.signedIn()||!person){await authOpen()}if(WA.signedIn())boot()});
 $('#btnLang').addEventListener('click',()=>{lang=lang==='lt'?'en':'lt';lsSet('cp.lang',lang);railDirty=false;render();renderRail();tick()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')stopWall()});
 $('#btnEdit').addEventListener('click',()=>{if(drawWall){drawWall=null;document.body.classList.remove('drawing')}editing=!editing;selPerson=null;pendDel=null;railDirty=false;render();renderRail()});
