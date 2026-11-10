@@ -513,6 +513,8 @@ function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>S
 const anyRun=()=>Object.entries(LAY().items).some(e=>e[1]&&TYPES[e[1].t]&&TYPES[e[1].t].kind==='machine'&&shown(e[0])==='run');
 /* how many upright sheets to draw in a board rack: the real count once stock is entered, a typical ten before that */
 const rackN=id=>{const r=ST().stock[id];return r&&Array.isArray(r.rows)&&r.rows.length?Math.min(18,stockTotal(id)):10};
+/* a machine or desk shows its name only while something is happening there (or while editing, or when selected) */
+function showLbl(id,T){if(editing||selItem===id)return true;if(T.kind==='machine')return shown(id)!=='idle'||peopleAtRaw(id).length>0;if(T.kind==='desk')return peopleAtRaw(id).length>0;return true}
 const stockTotal=id=>{const s=ST().stock[id];return s&&Array.isArray(s.rows)?s.rows.reduce((a,r)=>a+(+r.q||0),0):0};
 function hallPts(){const h=LAY().hall;if(Array.isArray(h.pts)&&h.pts.length>=3)return h.pts.map(p=>({x:+p.x||0,y:+p.y||0}));const W=+h.w||2400,H=+h.h||1350;return[{x:0,y:0},{x:W,y:0},{x:W,y:H},{x:0,y:H}]}
 function hallBox(P){let a=1e9,b=1e9,c=-1e9,d=-1e9;for(const p of P){a=Math.min(a,p.x);b=Math.min(b,p.y);c=Math.max(c,p.x);d=Math.max(d,p.y)}return{x0:a,y0:b,x1:c,y1:d}}
@@ -548,8 +550,9 @@ function itemSVG(id,it){
   s+='<rect class="hit" x="'+(-sw/2-10)+'" y="'+(-sh/2-10)+'" width="'+(sw+20)+'" height="'+(sh+20)+'" rx="10"/>';
   s+='<g'+(T.kind==='zone'||T.kind==='gate'||T.kind==='wall'?'':' filter="url(#sh)"')+'>'+(T.room?'<g class="draw" transform="rotate('+rot+')">'+T.draw(it,W,H):'<g class="draw" transform="rotate('+rot+') scale('+(W/T.w)+','+(H/T.h)+')">'+T.draw(it,W,H,{busy:peopleAtRaw(id).length>0,n:rackN(id)}))+'</g></g>';
   const ly=sh/2+40;
-  if((T.kind!=='wall'&&T.kind!=='aux')||selItem===id)s+='<text class="lbl" y="'+ly+'">'+esc(itemName(id,it))+'</text>';
-  if(stTxt){
+  const lab=showLbl(id,T);
+  if(lab&&((T.kind!=='wall'&&T.kind!=='aux')||selItem===id))s+='<text class="lbl" y="'+ly+'">'+esc(itemName(id,it))+'</text>';
+  if(stTxt&&lab){
     const col=T.kind==='rack'?'':' s-'+stCls;
     const half=stTxt.length*7.5+(T.kind==='rack'?0:14);
     if(T.kind!=='rack')s+='<circle class="beacon s-'+stCls+'" cx="'+(-half)+'" cy="'+(ly+25)+'" r="10"/>';
@@ -938,7 +941,7 @@ function build3D(){
       if(stK==='run')T3.pulsers.push(gl);
     }
     const lines=[{t:itemName(id,it),c:ink}];if(stT)lines.push({t:stT.toUpperCase(),c:stK?stc[stK]:muted,w:600});
-    if(T.kind!=='wall'&&T.kind!=='aux'){const lb=sprite(lines);lb.position.set(0,top+(stK?78:52),0);g.add(lb)}
+    if(T.kind!=='wall'&&T.kind!=='aux'&&showLbl(id,T)){const lb=sprite(lines);lb.position.set(0,top+(stK?78:52),0);g.add(lb)}
     ppl.forEach((e,i)=>{
       const pg=new THREE.Group();pg.userData.pid=e[0];{const o=standAt(it,T,Wd,Dp,e[1],i);pg.position.set(o[0],0,o[1]);pg.rotation.y=Math.atan2(-o[0],-o[1])}
       const c=new THREE.Color(selPerson===e[0]?mark:'#2f67b3');
