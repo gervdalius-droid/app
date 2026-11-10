@@ -206,6 +206,42 @@ body.tv h1{font-size:32px}.tv .counts{font-size:24px}.tv .clock{font-size:34px}
   body.tv main{display:flex}
 }
 
+/* TV display: everything sized from the screen height, so a 960×540 TV box and a 1920×1080 PC look the same */
+body.tv{height:100vh;overflow:hidden;gap:1vh;padding-block:1.2vh;padding-left:max(1.6vh, env(safe-area-inset-left, 0px));padding-right:max(1.6vh, env(safe-area-inset-right, 0px))}
+body.tv header{flex-wrap:nowrap;gap:2vh;min-width:0}
+body.tv h1{font-size:3.6vh;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+body.tv .counts{font-size:3.4vh;flex-wrap:nowrap;white-space:nowrap;gap:2vh}
+body.tv .dot{width:1.8vh;height:1.8vh}
+body.tv .clock{font-size:4.6vh;order:-1}
+body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang{display:none}
+body.tv .tools{flex-wrap:nowrap;gap:1vh}
+body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
+body.tv main{display:grid;grid-template-columns:minmax(0,1fr) 30vw;gap:1.4vh}
+body.tv .rail{font-size:2.6vh;gap:1.4vh}
+body.tv .pbtn{font-size:2.9vh}
+body.tv .where{font-size:2.3vh}
+body.tv #brk{font-size:5vh}
+body.tv #ctl3{right:1.2vh;bottom:1.2vh;gap:.8vh}
+body.tv #ctl3 button{min-width:6.4vh;height:6.4vh;font-size:3vh;padding:0 1.2vh;border-radius:1vh}
+body.tv #ctl3 button[data-c=u],body.tv #ctl3 button[data-c=d],body.tv #ctl3 button[data-c=in],body.tv #ctl3 button[data-c=out]{display:none}
+#tvhint{position:absolute;left:1.2vh;top:1.2vh;z-index:2;font-size:2.2vh;color:var(--muted);background:var(--panel);border:1px solid var(--line);border-radius:.8vh;padding:.5vh 1.2vh;pointer-events:none;max-width:60%}
+body:not(.tv) #tvhint{display:none}
+body.tv #radio{top:1.2vh;bottom:1.2vh;max-height:none;right:max(1.6vh, env(safe-area-inset-right, 0px));width:min(40vw,640px);min-width:300px;font-size:2.8vh;padding:2vh;gap:1.4vh;border-radius:1.6vh}
+body.tv #radio .rh h2{font-size:3.6vh}
+body.tv #radio .rplay{width:8vh;height:8vh;font-size:3.6vh}
+body.tv #radio .rname{font-size:3.4vh}
+body.tv #radio .rname small,body.tv #radio .rsec,body.tv #radio .note{font-size:2.2vh}
+body.tv #radio .rgo{padding:1.5vh 1vh;border-radius:.8vh}
+body.tv #radio .rgo small{font-size:2.2vh}
+body.tv #radio .rstar{font-size:3.4vh}
+body.tv #radio input[type=search]{font-size:2.6vh;padding:1vh 1.2vh}
+#radio .rgo:focus-visible,#radio .rgo:focus{outline:none;background:var(--mark);color:var(--mark-ink)}
+#radio .rgo:focus small{color:inherit}
+#radio .rpage{display:none;gap:1vh}
+body.tv #radio .rpage{display:flex}
+#radio .rpage button{flex:1;border:1px solid var(--line);background:var(--bg);border-radius:.8vh;padding:1vh;font-size:3vh;line-height:1}
+@media (max-width:820px){body.tv main{display:grid}body.tv #map{min-width:0;height:100%}body.tv .mapwrap{overflow:hidden}body.tv .mapwrap.v3{height:auto}}
+
 a.btn{text-decoration:none;display:inline-block}
 #auth{position:fixed;inset:0;z-index:30;background:rgba(20,24,22,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .authbox{background:#fff;color:#161a17;border-radius:14px;padding:26px 26px 20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.3);font-family:var(--body)}
@@ -236,7 +272,7 @@ a.btn{text-decoration:none;display:inline-block}
   <span class="clock" id="clock"></span>
 </header>
 <main>
-  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div><div id="ctl3" hidden><button type="button" class="tv-only" data-c="rot"></button><button type="button" data-c="l">⟲</button><button type="button" data-c="r">⟳</button><button type="button" data-c="u">↑</button><button type="button" data-c="d">↓</button><button type="button" data-c="in">+</button><button type="button" data-c="out">−</button><button type="button" data-c="fit"></button></div></div>
+  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div><div id="tvhint"></div><div id="ctl3" hidden><button type="button" class="tv-only" data-c="rot"></button><button type="button" data-c="l">⟲</button><button type="button" data-c="r">⟳</button><button type="button" data-c="u">↑</button><button type="button" data-c="d">↓</button><button type="button" data-c="in">+</button><button type="button" data-c="out">−</button><button type="button" data-c="fit"></button></div></div>
   <aside class="rail" id="rail"></aside>
 </main>
 <div id="toast" hidden></div>
@@ -272,14 +308,14 @@ const L={
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Vietą keisk sąraše šalia vardo arba tempk žmogų plane.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',noOp:'Prie staklių nėra operatoriaus, todėl plane jos rodomos kaip laisvos. Priskyrus žmogų jos vėl rodomos kaip dirbančios.',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
-  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',radio:'Radijas',rPick:'Pasirink stotį',rFav:'Mėgstamos',rLt:'Lietuvos stotys',rRes:'Paieškos rezultatai',rFind:'Ieškoti stoties (bet kurios šalies)…',rLoading:'Kraunamos stotys…',rNone:'Stočių nerasta.',rFail:'Ši stotis dabar negroja. Pabandyk kitą.',rNet:'Nepavyko gauti stočių sąrašo. Patikrink internetą.',rStar:'Pridėti prie mėgstamų',rVol:'Garsas',rConn:'Jungiamasi…',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
+  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',radio:'Radijas',rPick:'Pasirink stotį',rFav:'Mėgstamos',rLt:'Lietuvos stotys',rRes:'Paieškos rezultatai',rFind:'Ieškoti stoties (bet kurios šalies)…',rLoading:'Kraunamos stotys…',rNone:'Stočių nerasta.',rFail:'Ši stotis dabar negroja. Pabandyk kitą.',rNet:'Nepavyko gauti stočių sąrašo. Patikrink internetą.',rStar:'Pridėti prie mėgstamų',rVol:'Garsas',rConn:'Jungiamasi…',tvHint3:'Pultelis: ◀ ▶ ▲ ▼ – sukti · OK – radijas · ⏯ – groti / stabdyti',tvHint2:'Pultelis: OK – radijas · ⏯ – groti / stabdyti · 3 – 3D vaizdas',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Vietą pasirink sąraše šalia vardo, arba tempk vardą tiesiai į planą. Paspaudęs stakles ar stalą gali pridėti darbuotojus vienu paspaudimu. Paspausk vardą – projektas ir detalės.',assignHere:'Pridėti čia',grpM:'Staklės',grpD:'Stalai ir patalpos',grpZ:'Zonos',dropOn:'Paleisk ant staklių ar stalo',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Change the place in the list next to the name, or drag the person on the plan.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',noOp:'Nobody is at this machine, so the plan shows it as idle. It shows as running again once someone is assigned.',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
-  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',radio:'Radio',rPick:'Pick a station',rFav:'Favourites',rLt:'Lithuanian stations',rRes:'Search results',rFind:'Search stations (any country)…',rLoading:'Loading stations…',rNone:'No stations found.',rFail:'This station is not playing right now. Try another one.',rNet:'Could not get the station list. Check the internet connection.',rStar:'Add to favourites',rVol:'Volume',rConn:'Connecting…',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
+  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',radio:'Radio',rPick:'Pick a station',rFav:'Favourites',rLt:'Lithuanian stations',rRes:'Search results',rFind:'Search stations (any country)…',rLoading:'Loading stations…',rNone:'No stations found.',rFail:'This station is not playing right now. Try another one.',rNet:'Could not get the station list. Check the internet connection.',rStar:'Add to favourites',rVol:'Volume',rConn:'Connecting…',tvHint3:'Remote: ◀ ▶ ▲ ▼ – turn · OK – radio · ⏯ – play / stop',tvHint2:'Remote: OK – radio · ⏯ – play / stop · 3 – 3D view',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Pick the place in the list next to the name, or drag the name straight onto the plan. Tap a machine or desk to add workers with one tap. Tap a name for project and parts.',assignHere:'Add here',grpM:'Machines',grpD:'Desks and rooms',grpZ:'Zones',dropOn:'Drop on a machine or desk',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
 };
@@ -617,7 +653,7 @@ async function boot(){
   for(const k in docs){try{const v=JSON.parse(lsGet('cp.'+k)||'null');if(isObj(v))docs[k].data=v}catch(e){}}
   normalize();mode='local';render();
   if(!WA)return;
-  if(!WA.signedIn()||!person){await authOpen()}
+  if(!WA.signedIn()||(!person&&!tvOn())){await authOpen()}
   if(!WA.signedIn()){render();return}
   if(person)who=String(person.name).slice(0,40);
   loadTeam().catch(()=>{});
@@ -807,7 +843,7 @@ function renderRadio(){
     box.innerHTML='<div class="rh"><h2 id="r-h"></h2><button type="button" class="x" data-r="close" aria-label="✕">✕</button></div>'+
       '<div class="rnow"><button type="button" class="rplay" data-r="play"></button><div class="rname" id="r-name"></div></div>'+
       '<label class="note" for="r-vol" id="r-voll"></label><input type="range" id="r-vol" min="0" max="1" step="0.05">'+
-      '<input type="search" id="r-q" autocomplete="off"><div class="rlist" id="r-list"></div>';
+      '<input type="search" id="r-q" autocomplete="off"><div class="rlist" id="r-list"></div><div class="rpage"><button type="button" data-r="pgup" aria-label="▲">▲</button><button type="button" data-r="pgdn" aria-label="▼">▼</button></div>';
   }
   $('#r-h').textContent='📻 '+t('radio');$('#r-voll').textContent=t('rVol');$('#r-vol').value=AU.volume;
   const pb=box.querySelector('.rplay');pb.disabled=!RS.cur;pb.textContent=RS.playing?'❚❚':'▶';pb.setAttribute('aria-label',RS.playing?'Stop':'Play');
@@ -821,11 +857,18 @@ function renderRadio(){
     if(RS.lt)h+=RS.lt.filter(x=>!fav.some(f=>f.u===x.u)).map(rRow).join('')||'<div class="sub">'+esc(t('rNone'))+'</div>';
     else h+='<div class="sub">'+esc(RS.err||t('rLoading'))+'</div>';
   }
+  const fa=document.activeElement,fu=fa&&fa.dataset&&fa.dataset.r==='go'&&$('#radio').contains(fa)?fa.dataset.u:null;
   $('#r-list').innerHTML=h;
+  if(fu){const nb=[...document.querySelectorAll('#radio .rgo')].find(b=>b.dataset.u===fu);if(nb)nb.focus({preventScroll:true})}
 }
-$('#btnRadio').addEventListener('click',()=>{RS.open=!RS.open;renderRadio();if(RS.open)loadLt()});
+function radioOpen(on){RS.open=on;renderRadio();if(on){loadLt().then(focusStation);focusStation()}}
+/* put the remote's cursor on the station playing now, else the first one */
+function focusStation(){if(!RS.open||!tvOn())return;const a=document.activeElement;if(a&&$('#radio').contains(a)&&a.dataset.r==='go')return;
+  const rows=[...document.querySelectorAll('#radio .rgo')];const el=rows.find(b=>RS.cur&&b.dataset.u===RS.cur.u)||rows[0];if(el){el.focus({preventScroll:true});el.scrollIntoView({block:'nearest'})}}
+$('#btnRadio').addEventListener('click',()=>radioOpen(!RS.open));
 $('#radio').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if(!b)return;const k=b.dataset.r;
   if(k==='close'){RS.open=false;renderRadio();$('#btnRadio').focus()}
+  else if(k==='pgup'||k==='pgdn'){const l=$('#r-list');l.scrollBy(0,(k==='pgup'?-1:1)*l.clientHeight*.8)}
   else if(k==='play')togglePlay();
   else if(k==='go')playSt({n:b.dataset.n,u:b.dataset.u});
   else if(k==='star')toggleFav({n:b.dataset.n,u:b.dataset.u})});
@@ -833,7 +876,7 @@ $('#radio').addEventListener('input',e=>{if(e.target.id==='r-vol'){AU.volume=+e.
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RS.open){RS.open=false;renderRadio()}});
 function renderHeader(){
   document.documentElement.lang=lang;
-  $('#ttl').textContent='Dėdės Baldai · '+t('ttl');
+  $('#ttl').textContent=(tvOn()?'':'Dėdės Baldai · ')+t('ttl');
   if(typeof renderRadio==='function')renderRadio();
   const c={run:0,idle:0,down:0,pause:0},brk=onBreak();
   for(const [id,it] of Object.entries(LAY().items))if(it&&TYPES[it.t]&&TYPES[it.t].kind==='machine')c[shown(id)]++;
@@ -847,6 +890,7 @@ function renderHeader(){
   const ba=$('#btnAuth');ba.hidden=!WA||!!saveErr||(mode!=='local'&&mode!=='db');ba.textContent=mode==='db'&&person?'👤 '+person.name:t('signIn');ba.title=mode==='db'&&person?t('auOut'):'';
   $('#btnLang').textContent=lang==='lt'?'EN':'LT';
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
+  $('#tvhint').textContent=view==='3d'?t('tvHint3'):t('tvHint2');
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
@@ -1626,6 +1670,31 @@ $('#btnAuth').addEventListener('click',async()=>{
 $('#btnLang').addEventListener('click',()=>{lang=lang==='lt'?'en':'lt';lsSet('cp.lang',lang);railDirty=false;render();renderRail();tick()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')stopWall()});
 $('#btnEdit').addEventListener('click',()=>{if(drawWall){drawWall=null;document.body.classList.remove('drawing')}editing=!editing;selPerson=null;pendDel=null;railDirty=false;render();renderRail()});
+/* TV remote: ▲▼◀▶ turn the 3D view, OK opens the radio; in the radio ▲▼ pick a station, OK plays it,
+   ◀▶ change the volume, Back closes. Play/pause key starts or stops the radio. */
+const KEY_BACK=e=>e.key==='Escape'||e.key==='GoBack'||e.key==='BrowserBack'||e.keyCode===4;
+window.addEventListener('keydown',e=>{
+  if(!tvOn()||e.ctrlKey||e.metaKey||e.altKey||!$('#auth').hidden)return;
+  goFull();
+  const k=e.key,a=document.activeElement,typing=a&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName)&&a.type!=='range';
+  if(k==='MediaPlayPause'||k==='MediaPlay'||k==='MediaStop'||k==='MediaPause'){e.preventDefault();if(k==='MediaStop'||k==='MediaPause'){if(RS.playing)togglePlay()}else if(RS.cur)togglePlay();else radioOpen(true);return}
+  if(RS.open){
+    if(KEY_BACK(e)){e.preventDefault();e.stopPropagation();radioOpen(false);$('#btnRadio').focus();return}
+    if(typing&&k!=='ArrowDown'&&k!=='ArrowUp')return;
+    if(k==='ArrowDown'||k==='ArrowUp'){
+      e.preventDefault();e.stopPropagation();
+      const list=[...document.querySelectorAll('#radio .rplay,#radio #r-q,#radio .rgo')].filter(x=>!x.disabled);
+      let i=list.indexOf(a);i=i<0?list.findIndex(x=>x.classList.contains('rgo')):i+(k==='ArrowDown'?1:-1);
+      i=Math.max(0,Math.min(list.length-1,i));if(list[i]){list[i].focus({preventScroll:true});list[i].scrollIntoView({block:'nearest'})}return}
+    if(k==='ArrowLeft'||k==='ArrowRight'){e.preventDefault();e.stopPropagation();AU.volume=Math.max(0,Math.min(1,Math.round((AU.volume+(k==='ArrowRight'?.1:-.1))*10)/10));lsSet('cp.vol',String(AU.volume));$('#r-vol').value=AU.volume;toast(t('rVol')+' '+Math.round(AU.volume*100)+' %');return}
+    if(k==='Enter'&&!(a&&$('#radio').contains(a))){e.preventDefault();focusStation();return}
+    return}
+  if(k==='Enter'&&(!a||a===document.body||$('#mapwrap').contains(a))){e.preventDefault();radioOpen(true);return}
+  if(k==='2'||k==='3'){const want=k==='3'?'3d':'2d';if(view!==want)$('#btnView').click();return}
+},true);
+let fullTried=false;
+function goFull(){if(fullTried||!tvOn())return;fullTried=true;try{if(!document.fullscreenElement&&document.documentElement.requestFullscreen){const p=document.documentElement.requestFullscreen();if(p&&p.catch)p.catch(()=>{})}}catch(e){}}
+document.addEventListener('pointerdown',()=>{if(tvOn())goFull()},true);
 function wake(){try{if(navigator.wakeLock)navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}}
 function setTv(on,gesture){
   document.body.classList.toggle('tv',on);
