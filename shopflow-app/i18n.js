@@ -457,7 +457,7 @@ var LT = {
   "No notifications yet": "Kol kas nėra pranešimų",
   "Enable desktop alerts": "Įjungti darbalaukio pranešimus",
   // ---- Order create / edit / drawer ----
-  "Standard articles": "Standartiniai gaminiai",
+  "Standard articles": "Standartiniai darbai",
   "Custom job": "Individualus darbas",
   "Product / job": "Produktas / darbas",
   "Client name": "Kliento vardas",
@@ -792,5 +792,22 @@ var LT = {
   "similar name": "panašus pavadinimas",
   "same files folder": "tas pats failų aplankas",
   "same portfolio": "tas pats portfelis",
-  "open design steps": "neatlikti etapai"
+  "open design steps": "neatlikti etapai",
+  /* standard jobs in New order */
+  "Articles & quantities — tap a step to leave it out": "Darbai ir kiekiai — paspauskite etapą, kad jo nebūtų",
+  "＋ New standard job": "＋ Naujas standartinis darbas",
+  "No standard jobs yet.": "Standartinių darbų dar nėra.",
+  "Edit standard job": "Redaguoti standartinį darbą",
+  "New standard job": "Naujas standartinis darbas",
+  "Work that isn't a whole project — e.g. cutting for a partner, edging only, a repair. Pick the steps it needs; each becomes a task at that station.": "Darbas, kuris nėra visas projektas — pvz., pjovimas partneriui, tik briaunavimas, remontas. Pasirinkite reikalingus etapus — kiekvienas taps užduotimi tame poste.",
+  "e.g. Board cutting for a partner": "pvz., Plokščių pjovimas partneriui",
+  "e.g. PJOV": "pvz., PJOV",
+  "Steps — minutes per unit": "Etapai — minutės vienetui",
+  "Delete standard job": "Ištrinti standartinį darbą",
+  "Create standard job": "Sukurti standartinį darbą",
+  "Pick at least one step": "Pasirinkite bent vieną etapą",
+  "Keep at least one step": "Palikite bent vieną etapą",
+  "Deleted — existing orders keep their tasks": "Ištrinta — esami užsakymai savo užduotis išlaiko",
+  "New order": "Naujas užsakymas",
+  "+ Add another article": "+ Pridėti dar vieną darbą"
 };

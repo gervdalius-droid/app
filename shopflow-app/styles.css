@@ -3054,3 +3054,12 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .englink-list { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; max-height: 50vh; overflow: auto; }
 .englink-check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 12px 0 6px; }
 @media (max-width: 560px) { .englink-row { flex-wrap: wrap; } }
+
+/* New order — standard job lines with step chips */
+.no-line { display: flex; flex-direction: column; gap: 6px; padding: 8px 0 10px; border-bottom: 1px solid var(--border); }
+.no-line:last-child { border-bottom: 0; }
+.no-steps { display: flex; flex-wrap: wrap; gap: 5px; }
+.step-chip { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 980px; font: inherit; font-size: 12px; font-weight: 600; border: 1px solid var(--border); background: var(--surface); color: var(--text-3); cursor: pointer; text-decoration: line-through; }
+.step-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); text-decoration: none; }
+.no-line-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
+.no-empty-jobs { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); }

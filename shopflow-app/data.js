@@ -6333,7 +6333,8 @@ var M = {
           if (line.articleId) {
             var art = D.article(line.articleId);
             _item2.name = art.name;
-            ops.push(...opsFromArticle(art, _item2));
+            var _skip = line.skip || [];
+            ops.push(...opsFromArticle(art, _item2).filter(op => _skip.indexOf(op.stationId) < 0));
           } else {
             var _iterator83 = _createForOfIteratorHelper(line.route || []),
               _step83;

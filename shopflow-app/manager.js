@@ -3540,7 +3540,8 @@ var Warehouse = {
     if (App.can("warehouse.edit")) $$("tr[data-article]", root).forEach(tr => tr.onclick = () => this.articleModal(tr.dataset.article));
   },
   /* ---------- Article editor (lanes + routes) ---------- */
-  articleModal(articleId) {
+  articleModal(articleId, opts) {
+    opts = opts || {};
     var a = articleId ? D.article(articleId) : null;
     // working copy of lanes
     var lanes = a ? JSON.parse(JSON.stringify(a.lanes)) : [{
@@ -3609,7 +3610,10 @@ var Warehouse = {
         <button class="btn primary" id="art-save">${a ? "Save article" : "Create article"}</button>
       </footer>
     `, modal => {
-      $$("[data-close]", modal).forEach(b => b.onclick = () => Modal.close());
+      $$("[data-close]", modal).forEach(b => b.onclick = () => {
+        Modal.close();
+        if (opts.onCancel) setTimeout(opts.onCancel, 0);
+      });
       var rerenderLanes = () => {
         $("#art-lanes", modal).innerHTML = lanesHtml();
         bindLanes();
@@ -3691,9 +3695,10 @@ var Warehouse = {
           unit: $("#art-unit", modal).value.trim() || "pcs",
           lanes: cleaned
         };
-        if (a) M.updateArticle(a.id, payload, App.me.id);else M.addArticle(payload, App.me.id);
+        var saved = a ? (M.updateArticle(a.id, payload, App.me.id), a) : M.addArticle(payload, App.me.id);
         Modal.close();
         App.render();
+        if (opts.onDone) setTimeout(() => opts.onDone(saved), 0);
         Toast.show(a ? "Article updated" : `Article “${name}” created`, {
           emoji: "📦"
         });
@@ -6095,8 +6100,143 @@ var NewOrder = {
       portfolio: (_v3 = v("#no-portfolio")) !== null && _v3 !== void 0 ? _v3 : this.draft.portfolio,
       due: (_v4 = v("#no-due")) !== null && _v4 !== void 0 ? _v4 : this.draft.due,
       prio: (_v5 = v("#no-prio")) !== null && _v5 !== void 0 ? _v5 : this.draft.prio,
-      notes: (_v6 = v("#no-notes")) !== null && _v6 !== void 0 ? _v6 : this.draft.notes
+      notes: (_v6 = v("#no-notes")) !== null && _v6 !== void 0 ? _v6 : this.draft.notes,
+      lines: $$(".no-line", modal).length ? this._readLines(modal) : this.draft.lines
     };
+  },
+  /* ---- standard job lines: article + qty + which of its steps to run ---- */
+  _readLines(modal) {
+    return $$(".no-line", modal).map(row => ({
+      articleId: $("[data-line-art]", row).value,
+      qty: parseInt($("[data-line-qty]", row).value) || 1,
+      skip: row.dataset.skip ? row.dataset.skip.split(",") : []
+    }));
+  },
+  _artStations(art) {
+    var ids = [];
+    if (!art) return ids;
+    for (var i = 0; i < art.lanes.length; i++) {
+      var r = art.lanes[i].route;
+      for (var j = 0; j < r.length; j++) if (ids.indexOf(r[j].stationId) < 0) ids.push(r[j].stationId);
+    }
+    return ids;
+  },
+  _stepsHtml(art, skip) {
+    if (!art) return "";
+    skip = skip || [];
+    return this._artStations(art).map(id => {
+      var st = D.station(id);
+      if (!st) return "";
+      return `<button type="button" class="step-chip ${skip.indexOf(id) < 0 ? "on" : ""}" data-step="${id}">${stIcon(st, 13)}<span>${esc(st.name)}</span></button>`;
+    }).join("");
+  },
+  _lineHtml(l, i) {
+    var arts = Store.state.articles;
+    var art = D.article(l.articleId);
+    return `<div class="no-line" data-skip="${esc((l.skip || []).join(","))}">
+      <div class="mat-add-row">
+        <select class="select" data-line-art>
+          ${arts.map(a => `<option value="${a.id}" ${a.id === l.articleId ? "selected" : ""}>${esc(a.name)} (${esc(a.sku)})</option>`).join("")}
+        </select>
+        <input class="input" data-line-qty type="number" min="1" value="${l.qty || 1}">
+        ${this._canJobs() ? `<button class="mini-btn" data-line-edit title="Edit standard job">${icon("pencil", 13)}</button>` : ""}
+        <button class="mini-btn danger" data-line-del ${i === 0 ? 'style="visibility:hidden"' : ""}>✕</button>
+      </div>
+      <div class="no-steps">${this._stepsHtml(art, l.skip)}</div>
+    </div>`;
+  },
+  _canJobs() {
+    return App.can("orders.create") || App.can("warehouse.edit");
+  },
+  /* New / edit standard job — a name and the steps it goes through.
+     Jobs with part groups (facades / carcass…) open the full article editor. */
+  jobModal(articleId, modalBefore) {
+    var self = this;
+    if (modalBefore) this.captureDraft(modalBefore);
+    var a = articleId ? D.article(articleId) : null;
+    var back = newId => {
+      if (newId) {
+        var ls = self.draft.lines || [];
+        var only = ls.length === 1 && ls[0].qty === 1 && !(ls[0].skip || []).length;
+        if (!ls.length || only) ls = [{ articleId: newId, qty: 1, skip: [] }];
+        else ls.push({ articleId: newId, qty: 1, skip: [] });
+        self.draft.lines = ls;
+      }
+      self.render();
+    };
+    if (a && (a.lanes.length > 1 || a.lanes[0].group !== null)) {
+      Warehouse.articleModal(a.id, { onDone: () => back(null), onCancel: () => back(null) });
+      return;
+    }
+    var route = a ? a.lanes[0].route : [];
+    var mpuOf = id => {
+      for (var i = 0; i < route.length; i++) if (route[i].stationId === id) return route[i].mpu;
+      return null;
+    };
+    var stations = D.stationsOf("prod");
+    Modal.open(`
+      <header><h2>${a ? "Edit standard job" : "New standard job"}</h2><button class="icon-btn" data-close>✕</button></header>
+      <div class="modal-body">
+        <div class="t-caption">Work that isn't a whole project — e.g. cutting for a partner, edging only, a repair. Pick the steps it needs; each becomes a task at that station.</div>
+        <div class="field"><label>Name</label><input class="input" id="sj-name" value="${esc(a ? a.name : "")}" placeholder="e.g. Board cutting for a partner"></div>
+        <div class="form-row">
+          <div class="field"><label>Code</label><input class="input" id="sj-sku" value="${esc(a ? a.sku : "")}" placeholder="e.g. PJOV"></div>
+          <div class="field"><label>Unit</label><input class="input" id="sj-unit" value="${esc(a ? a.unit : "pcs")}"></div>
+        </div>
+        <div class="field"><label>Steps — minutes per unit</label>
+          <div class="route-picker">
+            ${stations.map(st => {
+              var m = mpuOf(st.id);
+              return `<div class="route-pick ${m != null ? "on" : ""}" data-st="${st.id}">
+                <span class="chk">✓</span>
+                <span class="ico" style="color:var(--text-2)">${stIcon(st, 16)}</span><b>${esc(st.name)}</b>
+                <input type="number" min="1" value="${m != null ? m : 10}" data-mpu onclick="event.stopPropagation()"><span class="unit">min</span>
+              </div>`;
+            }).join("")}
+          </div>
+        </div>
+        ${a ? `<button class="btn danger" id="sj-del" style="align-self:flex-start">Delete standard job</button>` : ""}
+      </div>
+      <footer>
+        <button class="btn ghost" data-close>Cancel</button>
+        <button class="btn primary" id="sj-save">${a ? "Save" : "Create standard job"}</button>
+      </footer>
+    `, modal => {
+      $$("[data-close]", modal).forEach(b => b.onclick = () => back(null));
+      $$(".route-pick", modal).forEach(rp => rp.onclick = () => rp.classList.toggle("on"));
+      setTimeout(() => { var n = $("#sj-name", modal); if (n && !a) n.focus(); }, 30);
+      $("#sj-save", modal).onclick = () => {
+        var name = $("#sj-name", modal).value.trim();
+        if (!name) { $("#sj-name", modal).focus(); return; }
+        var steps = $$(".route-pick.on", modal).map(rp => ({
+          stationId: rp.dataset.st,
+          mpu: Math.max(1, parseInt($("[data-mpu]", rp).value) || 1)
+        }));
+        if (!steps.length) { Toast.show("Pick at least one step", { emoji: "⚠️" }); return; }
+        var payload = {
+          name: name,
+          sku: $("#sj-sku", modal).value.trim() || name.slice(0, 6).toUpperCase(),
+          unit: $("#sj-unit", modal).value.trim() || "pcs",
+          lanes: [{ group: null, route: steps }]
+        };
+        if (a) {
+          M.updateArticle(a.id, payload, App.me.id);
+          Toast.show(`${name} ✓`, { emoji: "📦" });
+          back(null);
+        } else {
+          var na = M.addArticle(payload, App.me.id);
+          Toast.show(`${name} ✓`, { emoji: "📦" });
+          back(na.id);
+        }
+      };
+      var del = $("#sj-del", modal);
+      if (del) del.onclick = () => {
+        M.deleteArticle(a.id, App.me.id);
+        self.draft.lines = (self.draft.lines || []).filter(l => l.articleId !== a.id);
+        Toast.show("Deleted — existing orders keep their tasks", { emoji: "🗑" });
+        back(null);
+      };
+    });
   },
   render() {
     var _this2 = this;
@@ -6137,17 +6277,15 @@ var NewOrder = {
         </div>
 
         ${mode === "articles" ? `
-        <div class="field"><label>Articles & quantities — routing tasks are created automatically per part group</label>
-          <div id="no-lines">
-            <div class="mat-add-row no-line" style="margin-bottom:7px">
-              <select class="select" data-line-art>
-                ${s.articles.map(a => `<option value="${a.id}">${esc(a.name)} (${esc(a.sku)})</option>`).join("")}
-              </select>
-              <input class="input" data-line-qty type="number" min="1" value="1">
-              <button class="mini-btn danger" data-line-del style="visibility:hidden">✕</button>
-            </div>
+        <div class="field"><label>Articles & quantities — tap a step to leave it out</label>
+          ${s.articles.length ? `<div id="no-lines">
+            ${(d.lines && d.lines.length ? d.lines.filter(l => D.article(l.articleId)) : [{ articleId: s.articles[0].id, qty: 1, skip: [] }]).map((l, i) => this._lineHtml(l, i)).join("")}
           </div>
-          <button class="add-inline" id="no-add-line" style="align-self:flex-start">+ Add another article</button>
+          <div class="no-line-actions">
+            <button class="add-inline" id="no-add-line">+ Add another article</button>
+            ${this._canJobs() ? `<button class="add-inline" id="no-new-job">＋ New standard job</button>` : ""}
+          </div>` : `<div class="no-empty-jobs"><span class="t-caption">No standard jobs yet.</span>
+            ${this._canJobs() ? `<button class="btn" id="no-new-job">＋ New standard job</button>` : ""}</div>`}
           <div class="t-caption" id="no-task-preview" style="margin-top:6px"></div>
         </div>` : ""}
 
@@ -6211,28 +6349,58 @@ var NewOrder = {
         $$(".no-line", modal).forEach(row => {
           var art = D.article($("[data-line-art]", row).value);
           var q = parseInt($("[data-line-qty]", row).value) || 0;
+          var skip = row.dataset.skip ? row.dataset.skip.split(",") : [];
           if (art && q > 0) {
-            tasks += art.lanes.reduce((n, l) => n + l.route.length, 0);
+            tasks += art.lanes.reduce((n, l) => n + l.route.filter(r => skip.indexOf(r.stationId) < 0).length, 0);
             pcs += q;
           }
         });
         pv.textContent = tasks ? `Will create ${tasks} tasks across part groups for ${pcs} pcs — e.g. Cutting runs separately for facades and carcass.` : "";
       };
+      var newJob = $("#no-new-job", modal);
+      if (newJob) newJob.onclick = () => this.jobModal(null, modal);
       if (linesEl) {
+        var self = this;
+        var bindSteps = row => {
+          $$("[data-step]", row).forEach(chip => chip.onclick = () => {
+            var skip = row.dataset.skip ? row.dataset.skip.split(",") : [];
+            var id = chip.dataset.step;
+            var k = skip.indexOf(id);
+            if (k >= 0) skip.splice(k, 1);
+            else {
+              var total = $$("[data-step]", row).length;
+              if (skip.length + 1 >= total) { Toast.show("Keep at least one step", { emoji: "⚠️" }); return; }
+              skip.push(id);
+            }
+            row.dataset.skip = skip.join(",");
+            chip.classList.toggle("on", k >= 0);
+            preview();
+          });
+        };
         var bindLine = row => {
-          $("[data-line-art]", row).onchange = preview;
+          $("[data-line-art]", row).onchange = () => {
+            row.dataset.skip = "";
+            $(".no-steps", row).innerHTML = self._stepsHtml(D.article($("[data-line-art]", row).value), []);
+            if (typeof I18N !== "undefined") I18N.translate($(".no-steps", row));
+            bindSteps(row);
+            preview();
+          };
           $("[data-line-qty]", row).oninput = preview;
           $("[data-line-del]", row).onclick = () => {
             row.remove();
             preview();
           };
+          var ed = $("[data-line-edit]", row);
+          if (ed) ed.onclick = () => self.jobModal($("[data-line-art]", row).value, modal);
+          bindSteps(row);
         };
         $$(".no-line", linesEl).forEach(bindLine);
         $("#no-add-line", modal).onclick = () => {
-          var row = $(".no-line", linesEl).cloneNode(true);
-          $("[data-line-qty]", row).value = 1;
-          $("[data-line-del]", row).style.visibility = "visible";
+          var tmp = document.createElement("div");
+          tmp.innerHTML = self._lineHtml({ articleId: Store.state.articles[0].id, qty: 1, skip: [] }, 1);
+          var row = tmp.firstElementChild;
           linesEl.appendChild(row);
+          if (typeof I18N !== "undefined") I18N.translate(row);
           bindLine(row);
           preview();
         };
@@ -6324,10 +6492,7 @@ var NewOrder = {
         };
         var order;
         if (mode2 === "articles") {
-          var lines = $$(".no-line", modal).map(row => ({
-            articleId: $("[data-line-art]", row).value,
-            qty: parseInt($("[data-line-qty]", row).value) || 1
-          })).filter(l => l.qty > 0 && l.articleId && D.article(l.articleId));
+          var lines = this._readLines(modal).filter(l => l.qty > 0 && l.articleId && D.article(l.articleId));
           if (!lines.length) {
             Toast.show(Store.state.articles.length ? "Add at least one article" : "No articles yet — define them in Warehouse → Articles, or use Custom job", {
               emoji: "⚠️",
