@@ -1157,43 +1157,6 @@ body.print-mode{background:#fff}
   </div>
 </div>
 
-<!-- LOGIN GATE — shared account with the GVS warehouse / db app -->
-<div class="startup-overlay" id="auth-overlay" style="z-index:600">
-  <div class="startup-box" style="width:380px">
-    <div class="startup-brand">
-      <div class="startup-logo"><span role="img" aria-label="Dėdės Baldai" style="display:block;width:34px;height:34px;background:#fff;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat"></span></div>
-      <div>
-        <div class="startup-title">Dėdės Baldai</div>
-        <div class="startup-sub">Prisijunkite, kad tęstumėte</div>
-      </div>
-    </div>
-    <form onsubmit="return submitLogin(event)" autocomplete="off" style="padding:4px 24px 22px;display:flex;flex-direction:column;gap:10px">
-      <div><label class="fl">Vardas</label><input id="auth-name" autocomplete="off" placeholder="pvz. Jonas"></div>
-      <div>
-        <label class="fl">PIN</label>
-        <div class="pin-dots" id="pin-dots"></div>
-        <div class="kpad">
-          <button type="button" onclick="pinPush(1)">1</button>
-          <button type="button" onclick="pinPush(2)">2</button>
-          <button type="button" onclick="pinPush(3)">3</button>
-          <button type="button" onclick="pinPush(4)">4</button>
-          <button type="button" onclick="pinPush(5)">5</button>
-          <button type="button" onclick="pinPush(6)">6</button>
-          <button type="button" onclick="pinPush(7)">7</button>
-          <button type="button" onclick="pinPush(8)">8</button>
-          <button type="button" onclick="pinPush(9)">9</button>
-          <button type="button" class="kpad-sec" onclick="pinClear()">C</button>
-          <button type="button" onclick="pinPush(0)">0</button>
-          <button type="button" class="kpad-sec" onclick="pinBack()">⌫</button>
-        </div>
-      </div>
-      <div id="auth-err" style="display:none;color:#B84040;font-size:11px;background:#fdf0f0;border:1px solid #e0b0b0;border-radius:6px;padding:6px 9px"></div>
-      <button id="auth-btn" type="submit" class="btn bp" style="width:100%;padding:11px;margin-top:2px;font-size:14px">Prisijungti</button>
-      <div style="font-size:10px;color:#8A8472;text-align:center;line-height:1.5">Tas pats prisijungimas kaip GVS sandėlio sistemoje.</div>
-    </form>
-  </div>
-</div>
-
 <!-- SCRAP / OFFCUT EXPORT DIALOG -->
 <div class="ga-panel" id="scrap-panel" onclick="if(event.target===this)closeScrapDialog()">
 <div class="ga-box" style="max-width:720px">
@@ -2671,10 +2634,17 @@ async function authLogout(){
   try{if(WH_AUTH&&WH_AUTH.access_token)await fetch(WH_SB_URL+'/auth/v1/logout',{method:'POST',headers:{'apikey':WH_SB_KEY,'Authorization':'Bearer '+WH_AUTH.access_token}});}catch(e){}
   authClear();location.reload();
 }
+// Sign-in: the shared workshop screen (workshop-auth.js) — pick your name,
+// then your ShopFlow PIN. Same look and the same people as every other app.
+var _gateOpen=false,_booted=false;
 function showAuthOverlay(){
-  var o=document.getElementById('auth-overlay');if(o)o.classList.add('open');
-  _pin='';pinRender();
-  var c=document.getElementById('auth-name');if(c)c.focus();
+  if(_gateOpen)return; _gateOpen=true;
+  WorkshopAuth.gate({title:'Nesting',opaque:true}).then(function(me){
+    _gateOpen=false; if(!me)return showAuthOverlay();
+    authStore((me&&me.display_name)||'');
+    authRenderUser();authStartRefreshTimer();
+    if(!_booted){_booted=true;bootApp();}
+  });
 }
 function hideAuthOverlay(){var o=document.getElementById('auth-overlay');if(o)o.classList.remove('open');}
 // Physical keyboard: digits/Backspace/Enter work too (handy on a desktop).
@@ -3755,10 +3725,10 @@ function builderHandoff(){
 // On load: require a valid shared login before the app boots.
 document.addEventListener('DOMContentLoaded',function(){
   authLoad();
-  if(authValid()){ authStartRefreshTimer(); authRenderUser(); bootApp(); return; }
+  if(authValid()){ authStartRefreshTimer(); authRenderUser(); _booted=true; bootApp(); return; }
   // A stored session may just be expired — try a silent refresh before asking.
   authRefresh().then(function(ok){
-    if(ok){ authStartRefreshTimer(); authRenderUser(); bootApp(); }
+    if(ok){ authStartRefreshTimer(); authRenderUser(); _booted=true; bootApp(); }
     else { showAuthOverlay(); }
   });
 });

@@ -19,24 +19,31 @@
   if (window.__hubGate) return; window.__hubGate = true;
 
   var css = document.createElement("style");
+  var DARK = "--g-bg:#0f1211;--g-surface:#171b19;--g-ink:#e9ede8;--g-muted:#97a19a;--g-line:#2a302c;--g-line2:#454e48;--g-field:#1e2320;--g-accent:#ff6b3d;--g-err:#ff8a6b;--g-shadow:0 1px 0 rgba(0,0,0,.4),0 24px 48px -20px rgba(0,0,0,.9);color-scheme:dark";
   css.textContent =
     "html.hg-wait body{visibility:hidden}" +
-    "html.hg-locked body>*:not(#hub-gate){display:none!important}" +
+    "html.hg-locked body>*:not(#hub-gate):not(.hg-own){display:none!important}" +
     "html.hg-locked,html.hg-locked body{overflow:hidden;background:#e6e8e3}" +
-    "#hub-gate{position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:20px;background:#e6e8e3;color:#131715;" +
-    "font:16px/1.45 'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;visibility:visible}" +
-    "#hub-gate form{width:100%;max-width:340px;display:flex;flex-direction:column;gap:12px}" +
-    "#hub-gate .lg{width:84px;height:84px;background:#131715;-webkit-mask:url(" + LOGO + ") center/contain no-repeat;mask:url(" + LOGO + ") center/contain no-repeat;margin:0 0 6px}" +
-    "#hub-gate h1{margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.1}" +
-    "#hub-gate p{margin:0;color:#59615b;font-size:14.5px}" +
-    "#hub-gate input{width:100%;box-sizing:border-box;min-height:48px;padding:10px 14px;border:1px solid #b4bbb1;border-radius:6px;background:#fff;color:#131715;font:inherit;font-size:17px}" +
-    "#hub-gate input:focus{outline:3px solid #ff4a1c;outline-offset:1px;border-color:#131715}" +
-    "#hub-gate button{min-height:48px;border:0;border-radius:6px;background:#131715;color:#f8f9f6;font:inherit;font-weight:700;font-size:16px;cursor:pointer}" +
-    "#hub-gate button:disabled{opacity:.6;cursor:default}" +
-    "#hub-gate .err{color:#c4321c;font-size:14px;font-weight:500;min-height:20px}" +
-    "#hub-gate .note{font-size:12.5px;color:#8a918b}" +
-    "@media (prefers-color-scheme:dark){#hub-gate,html.hg-locked,html.hg-locked body{background:#0f1211}#hub-gate{color:#e9ede8}#hub-gate .lg{background:#e9ede8}" +
-    "#hub-gate p{color:#8e9890}#hub-gate input{background:#191d1b;color:#e9ede8;border-color:#3d4540}#hub-gate button{background:#e9ede8;color:#0f1211}}";
+    "#hub-gate{--g-bg:#e6e8e3;--g-surface:#f8f9f6;--g-ink:#131715;--g-muted:#59615b;--g-line:#d2d7cf;--g-line2:#b4bbb1;--g-field:#fff;--g-accent:#ff4a1c;--g-err:#b7321a;" +
+    "--g-shadow:0 1px 0 rgba(19,23,21,.05),0 24px 48px -24px rgba(19,23,21,.45);color-scheme:light;" +
+    "position:fixed;inset:0;z-index:2147483600;display:flex;align-items:center;justify-content:center;padding:16px;overflow:auto;background:var(--g-bg);color:var(--g-ink);" +
+    "font:15px/1.45 'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;-webkit-font-smoothing:antialiased;visibility:visible}" +
+    "#hub-gate *{box-sizing:border-box}" +
+    "#hub-gate form{width:100%;max-width:380px;margin:auto;display:flex;flex-direction:column;gap:14px;background:var(--g-surface);border:1px solid var(--g-line);border-radius:14px;padding:24px;box-shadow:var(--g-shadow)}" +
+    "#hub-gate .br{display:flex;align-items:center;gap:12px}#hub-gate .br b{font-size:16px;font-weight:700;letter-spacing:-.01em}" +
+    "#hub-gate .lg{width:40px;height:40px;flex:none;background:var(--g-ink);-webkit-mask:url(" + LOGO + ") center/contain no-repeat;mask:url(" + LOGO + ") center/contain no-repeat}" +
+    "#hub-gate h1{margin:4px 0 0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.15}" +
+    "#hub-gate p{margin:0;color:var(--g-muted);font-size:14px}" +
+    "#hub-gate input{width:100%;min-height:48px;padding:10px 14px;border:1px solid var(--g-line2);border-radius:8px;background:var(--g-field);color:var(--g-ink);font:inherit;font-size:17px}" +
+    "#hub-gate input:focus{outline:3px solid var(--g-accent);outline-offset:1px;border-color:var(--g-ink)}" +
+    "#hub-gate button{min-height:50px;border:0;border-radius:8px;background:var(--g-ink);color:var(--g-surface);font:inherit;font-weight:700;font-size:16px;cursor:pointer}" +
+    "#hub-gate button:disabled{opacity:.6;cursor:default}#hub-gate button:focus-visible,#hub-gate .alt:focus-visible{outline:3px solid var(--g-accent);outline-offset:2px}" +
+    "#hub-gate .err{color:var(--g-err);font-size:14px;font-weight:500}#hub-gate .err:empty{display:none}" +
+    "#hub-gate .sep{display:flex;align-items:center;gap:10px;color:var(--g-muted);font-size:12.5px;margin:2px 0 -2px}#hub-gate .sep:before,#hub-gate .sep:after{content:'';flex:1;height:1px;background:var(--g-line)}" +
+    "#hub-gate .alt{min-height:48px;background:transparent;color:var(--g-ink);border:1px solid var(--g-line2);font-weight:600;font-size:15px}#hub-gate .alt:hover{background:var(--g-field)}" +
+    "#hub-gate .note{font-size:12.5px;color:var(--g-muted)}" +
+    "@media (prefers-color-scheme:dark){:root:not([data-theme=light]) #hub-gate{" + DARK + "}:root:not([data-theme=light]).hg-locked,:root:not([data-theme=light]).hg-locked body{background:#0f1211}}" +
+    ":root[data-theme=dark] #hub-gate{" + DARK + "}:root[data-theme=dark].hg-locked,:root[data-theme=dark].hg-locked body{background:#0f1211}";
   (document.head || html).appendChild(css);
 
   function get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
@@ -62,15 +69,17 @@
     var build = function () {
       if (document.getElementById("hub-gate")) { var e0 = document.querySelector("#hub-gate .err"); if (e0 && msg) e0.textContent = msg; return; }
       var d = document.createElement("div"); d.id = "hub-gate"; d.setAttribute("role", "dialog"); d.setAttribute("aria-modal", "true"); d.setAttribute("aria-labelledby", "hg-t");
-      d.innerHTML = '<form autocomplete="on" novalidate><span class="lg" role="img" aria-label="Dėdės Baldai"></span><h1 id="hg-t">Dėdės Baldai</h1>' +
-        '<p>Vidinės programos. Įveskite slaptažodį.</p>' +
+      d.innerHTML = '<form autocomplete="on" novalidate><div class="br"><span class="lg" role="img" aria-label="Dėdės Baldai"></span><b>Dėdės Baldai</b></div>' +
+        '<h1 id="hg-t">Vidinės programos</h1><p>Įveskite bendrą slaptažodį.</p>' +
         '<input type="text" name="username" value="dedes-baldai" autocomplete="username" hidden aria-hidden="true">' +
         '<input type="password" name="p" placeholder="Slaptažodis" autocomplete="current-password" aria-label="Slaptažodis" required>' +
-        '<button type="submit">Atidaryti</button><div class="err" role="alert">' + (msg || "") + '</div>' +
-        '<div class="note">Šiame įrenginyje bus atsiminta. Darbuotojai, prisijungę vardu ir PIN, slaptažodžio neveda.</div></form>';
+        '<div class="err" role="alert">' + (msg || "") + '</div><button type="submit">Atidaryti</button>' +
+        '<div class="sep">arba</div><button type="button" class="alt">Prisijungti vardu ir PIN</button>' +
+        '<div class="note">Šiame įrenginyje bus atsiminta. Vardas ir PIN — tie patys kaip ShopFlow.</div></form>';
       document.body.appendChild(d);
       var f = d.querySelector("form"), inp = f.elements.p, btn = f.querySelector("button"), err = f.querySelector(".err");
       setTimeout(function () { inp.focus(); }, 30);
+      f.querySelector(".alt").onclick = function () { pinSignIn(d); };
       f.onsubmit = function (ev) {
         ev.preventDefault();
         if (!inp.value) { inp.focus(); return; }
@@ -86,6 +95,30 @@
       };
     };
     if (document.body) build(); else document.addEventListener("DOMContentLoaded", build);
+  }
+
+  // Worker sign-in instead of the shared password: the same name + PIN as in
+  // ShopFlow (workshop-auth.js). A signed-in worker passes this gate anyway.
+  function withAuth(cb) {
+    if (window.WorkshopAuth) return cb();
+    var sc = document.createElement("script");
+    sc.src = "/hub/workers/workshop-auth.js";
+    sc.onload = cb;
+    sc.onerror = function () { lock("Nėra ryšio su serveriu."); };
+    document.head.appendChild(sc);
+  }
+  function pinSignIn(g) {
+    withAuth(function () {
+      g.style.display = "none";
+      var waiting = document.querySelector(".wa");            // the app's own sign-in, if it asked already
+      var p = window.WorkshopAuth.gate({ opaque: true, allowSkip: true, skipLabel: "Atgal — bendras slaptažodis", managers: false });
+      var all = document.querySelectorAll(".wa"), mine = all[all.length - 1];
+      if (mine) mine.className += " hg-own";
+      p.then(function (me) {
+        if (!me) { g.style.display = ""; var i = g.querySelector("input[name=p]"); if (i) i.focus(); return; }
+        if (waiting) location.reload(); else open();
+      });
+    });
   }
 
   var tok = get(LS);
