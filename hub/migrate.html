@@ -14,7 +14,7 @@
    Sign-ins, keys and passwords are never carried — people sign in again. */
 (function () {
   "use strict";
-  var ALLOW = /^(dbKurejas\.|dbRR\.|dedesBaldai\.(calc|baseline|history)|ncSettings$|nestDefaults$|fabflow_xlsm_|fabflow_lang$|pwColWidths$|ebLastName$|dxfed\.|cad$|xxlfix\.|dedes\.prasymai\.|hub-|shopflow\.(lang|theme)$|workshop\.lastName$|notices\.people\.v1$)/;
+  var ALLOW = /^(dbKurejas\.|dbRR\.|dedesBaldai\.(calc|baseline|history)|ncSettings$|nestDefaults$|fabflow_xlsm_|fabflow_lang$|pwColWidths$|ebLastName$|dxfed\.|cad$|xxlfix\.|dedes\.prasymai\.|hub-|shopflow\.(lang|theme)$|workshop\.lastName$|notices\.people\.v1$|cp\.)/;
   var h = location.hash.slice(1), p = {}, i, kv;
   h.split("&").forEach(function (x) { i = x.indexOf("="); if (i > 0) p[x.slice(0, i)] = x.slice(i + 1); });
   var to = decodeURIComponent(p.to || "/hub/shopfloor/");
