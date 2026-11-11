@@ -4809,6 +4809,31 @@ var D = {
             ordered — on its way; `due` is when it was promised
             here    — arrived, nothing left to chase */
   DETAIL_STATES: ["info", "need", "ordered", "here"],
+  /* ---------- appliances (buitinė technika) ----------
+     Usually the client buys them and only tells us the model, so this is a list
+     of facts to build around (model, niche, spec), not things we order. The
+     old "Appliances" rows in Details are moved here the first time a project
+     is opened. */
+  APPLIANCE_TYPES: ["Oven", "Hob", "Hood", "Microwave", "Steam oven", "Coffee machine", "Fridge", "Freezer", "Wine cooler", "Dishwasher", "Washing machine", "Dryer", "Sink", "Tap", "Warming drawer", "Other"],
+  appliances(o) {
+    if (!o) return [];
+    if (!o.appliancesMoved && Array.isArray(o.details) && o.details.some(d => d.cat === "appliances")) {
+      if (!Array.isArray(o.appliances)) o.appliances = [];
+      var keep = [];
+      for (var i = 0; i < o.details.length; i++) {
+        var d = o.details[i];
+        if (d.cat !== "appliances") { keep.push(d); continue; }
+        o.appliances.push({ id: uid("ap"), type: d.label, model: d.value || "", by: d.state === "ordered" || d.state === "here" ? "us" : "client", note: "", link: "", at: d.at || Date.now() });
+      }
+      o.details = keep;
+      o.appliancesMoved = true;
+    }
+    return o.appliances || [];
+  },
+  applianceSummary(o) {
+    var l = this.appliances(o);
+    return { total: l.length, missing: l.filter(a => !String(a.model || "").trim()).length };
+  },
   DETAIL_LABEL: {
     info: "Note",
     need: "Needed",
@@ -4819,10 +4844,6 @@ var D = {
      Offered as a list, not enforced as one — a shop will always have a kind of
      thing nobody anticipated, and typing it should not be a fight. */
   DETAIL_CATS: [{
-    id: "appliances",
-    label: "Appliances",
-    ic: "cpu"
-  }, {
     id: "handles",
     label: "Handles",
     ic: "wrench"
@@ -5905,6 +5926,43 @@ var M = {
     Store.save();
   },
   /* ---------- project details ---------- */
+  addAppliance(orderId, a, byId) {
+    var o = D.order(orderId);
+    if (!o) return null;
+    D.appliances(o);
+    if (!Array.isArray(o.appliances)) o.appliances = [];
+    var row = {
+      id: uid("ap"),
+      type: String(a && a.type || "").trim() || "Other",
+      model: String(a && a.model || "").trim(),
+      by: a && a.by === "us" ? "us" : "client",
+      note: String(a && a.note || "").trim(),
+      link: String(a && a.link || "").trim(),
+      at: Date.now()
+    };
+    o.appliances.push(row);
+    this.log(byId, `added appliance **${esc0(row.type)}**${row.model ? " " + esc0(row.model) : ""} to ${o.num}`, { orderId: orderId });
+    Store.save();
+    return row;
+  },
+  updateAppliance(orderId, id, patch, byId) {
+    var o = D.order(orderId);
+    var a = o && D.appliances(o).find(x => x.id === id);
+    if (!a) return null;
+    var before = a.model;
+    Object.assign(a, patch);
+    if (patch.model != null && patch.model !== before && patch.model) this.log(byId, `set **${esc0(a.type)}** model on ${o.num}: ${esc0(patch.model)}`, { orderId: orderId });
+    Store.save();
+    return a;
+  },
+  removeAppliance(orderId, id, byId) {
+    var o = D.order(orderId);
+    if (!o) return;
+    var a = D.appliances(o).find(x => x.id === id);
+    o.appliances = D.appliances(o).filter(x => x.id !== id);
+    if (a) this.log(byId, `removed appliance **${esc0(a.type)}** from ${o.num}`, { orderId: orderId });
+    Store.save();
+  },
   addDetail(orderId, {
     label,
     value,

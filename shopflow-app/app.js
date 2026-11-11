@@ -1317,9 +1317,10 @@ var Offline = {
    Modal
    ============================================================ */
 var Modal = {
-  open(html, bindFn) {
+  open(html, bindFn, opts) {
     var root = $("#modal-root");
-    root.innerHTML = `<div class="modal-scrim"><div class="modal">${html}</div></div>`;
+    var quiet = !!(opts && opts.quiet);
+    root.innerHTML = `<div class="modal-scrim${quiet ? " quiet" : ""}"><div class="modal">${html}</div></div>`;
     /* Clicking the backdrop deliberately does NOT close. These dialogs hold
        work in progress — a corrected SWOOD material list, a half-filled order,
        a route being edited — and a stray click beside the dialog threw all of
@@ -1328,7 +1329,7 @@ var Modal = {
     $$("[data-close]", root).forEach(b => b.onclick = () => this.close()); // every modal marks its own close buttons
     if (bindFn) bindFn($(".modal", root));
     var firstInput = $(".modal input, .modal select", root);
-    if (firstInput) setTimeout(() => firstInput.focus(), 60);
+    if (firstInput && !quiet) setTimeout(() => firstInput.focus(), 60);
   },
   close(instant) {
     var root = $("#modal-root");
@@ -1366,6 +1367,17 @@ var Drawer = {
     }, 1200);
   },
   refresh(fresh) {
+    /* the project sheet (a modal) shows the same project — keep it current,
+       unless someone is typing in it */
+    if (typeof OrderDetail !== "undefined" && OrderDetail._sheetId && !this._sheetBusy) {
+      var sm = $("#modal-root .sheet-modal");
+      var ae = document.activeElement;
+      var typing = sm && ae && sm.contains(ae) && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) && !/^(ap-new-model|dt-new)$/.test(ae.id);
+      if (sm && !typing) {
+        this._sheetBusy = true;
+        try { OrderDetail.refreshSheet(); } finally { this._sheetBusy = false; }
+      }
+    }
     if (!this.orderId) return;
     var o = D.order(this.orderId);
     if (!o) {

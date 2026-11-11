@@ -2020,6 +2020,28 @@ var Mgr = {
             <div class="t-caption" id="set-od-preview" style="word-break:break-all"></div>
           </div>
         </div>
+        ${typeof OneDrive !== "undefined" ? `<div class="settings-row" style="align-items:flex-start">
+          <span class="grow"><b>Copy of the project sheet in OneDrive</b><span>ShopFlow keeps a “Projekto kortelė” folder inside each project's OneDrive folder — the PDF, the .xlsx and every email and attachment — and rewrites it shortly after the project changes. One computer signed in to Microsoft is enough; keep ShopFlow open on it.</span></span>
+          <div style="display:flex;flex-direction:column;gap:8px;width:340px">
+            <label class="t-caption">Microsoft app ID (client ID)</label>
+            <input class="input" id="set-od-cid" value="${esc(s.oneDrive && s.oneDrive.clientId || "")}" placeholder="00000000-0000-0000-0000-000000000000" style="font-family:var(--font-mono);font-size:12px">
+            <label class="t-caption">Shared “Projektai” folder link (optional — for projects without their own link)</label>
+            <input class="input" id="set-od-share" value="${esc(s.oneDrive && s.oneDrive.baseShare || "")}" placeholder="https://1drv.ms/f/…">
+            <label class="row" style="gap:8px;font-size:13px"><input type="checkbox" id="set-od-auto" ${s.oneDrive && s.oneDrive.auto === false ? "" : "checked"}> <span>Update automatically when a project changes</span></label>
+            <div class="row" style="gap:8px;flex-wrap:wrap">
+              ${OneDrive.signedIn() ? `<span class="t-caption" style="flex:1">${icon("check", 12)} <span>This computer:</span> ${esc(OneDrive.accountName())}</span><button class="btn subtle" id="set-od-out">Sign out</button>` : `<button class="btn primary" id="set-od-in" ${s.oneDrive && s.oneDrive.clientId ? "" : "disabled"}>${icon("cloud", 13)} Sign in with Microsoft</button>`}
+            </div>
+            <details class="t-caption od-howto"><summary>How to get the app ID (once, ~5 min)</summary>
+              <ol>
+                <li>Open <a href="https://entra.microsoft.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade" target="_blank" rel="noopener">Microsoft Entra → App registrations</a> (sign in with the Microsoft account that owns the OneDrive) → <b>New registration</b>.</li>
+                <li>Name: <b>ShopFlow</b>. Account types: <b>Accounts in any organizational directory and personal Microsoft accounts</b>.</li>
+                <li>Redirect URI: platform <b>Single-page application (SPA)</b>, address <span class="mono">${esc(location.origin + location.pathname.replace(/[^/]*$/, "") + "ms-auth.html")}</span> → <b>Register</b>.</li>
+                <li>Copy <b>Application (client) ID</b> from the overview page and paste it above.</li>
+                <li>API permissions → Add → Microsoft Graph → Delegated → <b>Files.ReadWrite.All</b> (User.Read is already there).</li>
+              </ol>
+            </details>
+          </div>
+        </div>` : ""}
       </div>
 
       <div class="panel">
@@ -2335,6 +2357,19 @@ var Mgr = {
     odBase.onchange = saveOd;
     odTpl.onchange = saveOd;
     renderPreview();
+    var odCid = $("#set-od-cid", root),
+      odShare = $("#set-od-share", root),
+      odAuto = $("#set-od-auto", root);
+    if (odCid) odCid.onchange = () => { M.setOneDrive({ clientId: odCid.value.trim() }, App.me.id); OneDrive._app = null; App.render(); };
+    if (odShare) odShare.onchange = () => M.setOneDrive({ baseShare: odShare.value.trim() }, App.me.id);
+    if (odAuto) odAuto.onchange = () => M.setOneDrive({ auto: odAuto.checked }, App.me.id);
+    var odIn = $("#set-od-in", root);
+    if (odIn) odIn.onclick = () => OneDrive.signIn().then(a => {
+      Toast.show(a.username || a.name || "Microsoft ✓", { emoji: "check" });
+      App.render();
+    }).catch(e => Toast.show(e && e.message || String(e), { emoji: "alert", ms: 8000 }));
+    var odOut = $("#set-od-out", root);
+    if (odOut) odOut.onclick = () => OneDrive.signOut().then(() => App.render());
 
     /* Scan stations */
     $$("[data-scan-prefix]", root).forEach(inp => inp.onchange = () => {
@@ -4408,10 +4443,11 @@ var OrderDetail = {
      next to anything. This is the same panels side by side on one screen —
      composed from the very same methods, so there is no second version of any
      of it to drift. */
-  sheetModal(orderId) {
+  sheetModal(orderId, sheetOpts) {
     var _this = this;
     var o = D.order(orderId);
     if (!o) return;
+    this._sheetId = orderId;
     var canEdit = App.can("orders.edit");
     var isEng = o.type === "eng";
     var st = D.orderStatus(o);
@@ -4440,24 +4476,12 @@ var OrderDetail = {
             <b class="${sum.late ? "bad" : ""}">${sum.late ? `${sum.late} <span>overdue</span>` : sum.open ? `${sum.open} <span>outstanding</span>` : "nothing"}</b></div>` : ""}
         </div>
 
+        ${typeof OneDrive !== "undefined" ? OneDrive.sheetHtml(o) : ""}
         <div class="sheet-cols">
-          <div class="sheet-col">${this.detailsHtml(o, canEdit)}</div>
+          <div class="sheet-col">${this.appliancesHtml(o, canEdit)}${this.detailsHtml(o, canEdit)}</div>
           <div class="sheet-col">
             ${this.remarksHtml(o)}
-            <div style="margin-top:18px">
-              <div class="t-label" style="margin-bottom:8px">Drawings &amp; photos</div>
-              ${(() => {
-      var fs = D.filesFor({
-        orderId: o.id
-      });
-      return `<div class="od-files">
-                  ${fs.length ? Files.chipsHtml(fs, {
-        canEdit
-      }) : `<span class="t-caption">Nothing attached</span>`}
-                  ${canEdit ? Files.dropHtml("sheet-files-in", fs.length ? "Add another" : "Add a drawing or photo") : ""}
-                </div>`;
-    })()}
-            </div>
+            <div style="margin-top:18px">${typeof ProjectFiles !== "undefined" ? ProjectFiles.html(o, canEdit) : ""}</div>
             <div style="margin-top:18px">
               <div class="t-label" style="margin-bottom:8px">History — every change, by whom</div>
               <div class="sheet-hist">
@@ -4481,6 +4505,7 @@ var OrderDetail = {
       </div>
       <footer>
         <button class="btn ghost" id="sheet-open">${icon("arrow-right", 13)} Open the full project</button>
+        <button class="btn subtle" id="sheet-pdf">${icon("quote", 13)} Document (PDF)</button>
         <button class="btn subtle" id="sheet-xlsx">${icon("table", 13)} Export .xlsx</button>
         ${D.projectLink(o) ? `<button class="btn subtle" id="sheet-od">${icon("cloud", 13)} Project folder</button>` : ""}
         <div class="grow"></div>
@@ -4500,65 +4525,8 @@ var OrderDetail = {
         }, App.me.id);
         App.render();
       };
-      if (canEdit) Files.bindDrop(m, "sheet-files-in", /*#__PURE__*/function () {
-        var _ref5 = _asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee5(picked) {
-          var _iterator7, _step7, f;
-          return _regeneratorRuntime().wrap(function _callee5$(_context5) {
-            while (1) switch (_context5.prev = _context5.next) {
-              case 0:
-                _iterator7 = _createForOfIteratorHelper(picked);
-                _context5.prev = 1;
-                _iterator7.s();
-              case 3:
-                if ((_step7 = _iterator7.n()).done) {
-                  _context5.next = 15;
-                  break;
-                }
-                f = _step7.value;
-                _context5.prev = 5;
-                _context5.next = 8;
-                return Files.attach(f, {
-                  orderId: o.id
-                }, App.me.id);
-              case 8:
-                _context5.next = 13;
-                break;
-              case 10:
-                _context5.prev = 10;
-                _context5.t0 = _context5["catch"](5);
-                Toast.show(_context5.t0.message, {
-                  emoji: "alert",
-                  ms: 5000
-                });
-              case 13:
-                _context5.next = 3;
-                break;
-              case 15:
-                _context5.next = 20;
-                break;
-              case 17:
-                _context5.prev = 17;
-                _context5.t1 = _context5["catch"](1);
-                _iterator7.e(_context5.t1);
-              case 20:
-                _context5.prev = 20;
-                _iterator7.f();
-                return _context5.finish(20);
-              case 23:
-                App.render();
-                Drawer.refresh();
-                Modal.close();
-                _this.sheetModal(o.id); // redraw the sheet with them on it
-              case 27:
-              case "end":
-                return _context5.stop();
-            }
-          }, _callee5, null, [[1, 17, 20, 23], [5, 10]]);
-        }));
-        return function (_x) {
-          return _ref5.apply(this, arguments);
-        };
-      }());
+      if (typeof ProjectFiles !== "undefined") ProjectFiles.bind(m, o, () => this.refreshSheet());
+      if (typeof OneDrive !== "undefined") OneDrive.bindSheet(m, o);
       Files.bindChips(m, {
         onRemove: () => {
           Modal.close();
@@ -4590,7 +4558,9 @@ var OrderDetail = {
       };
       var od = $("#sheet-od", m);
       if (od) od.onclick = () => window.open(D.projectLink(o), "_blank", "noopener");
-    });
+      var pdfB = $("#sheet-pdf", m);
+      if (pdfB) pdfB.onclick = () => ProjectDoc.show(o.id, () => this.sheetModal(o.id));
+    }, { quiet: !!(sheetOpts && sheetOpts.quiet) });
   },
   /* ---------- remarks ----------
      A thread, not a field. Notes are one block somebody overwrites; this
@@ -4617,6 +4587,90 @@ var OrderDetail = {
         <button class="btn subtle" id="od-c-add" title="Post remark">${icon("send", 13)}</button>
       </div>
     </div>`;
+  },
+  /* ---------- appliances (buitinė technika) ---------- */
+  appliancesHtml(o, canEdit) {
+    var list = D.appliances(o);
+    var sum = D.applianceSummary(o);
+    if (!list.length && !canEdit) return "";
+    var types = D.APPLIANCE_TYPES;
+    return `<div class="ap-panel">
+      <div class="t-label" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
+        <span class="grow">Appliances — models from the client</span>
+        ${sum.missing ? `<span class="due-chip">${sum.missing} <span>model missing</span></span>` : list.length ? `<span class="t-caption">${list.length}</span>` : ""}
+      </div>
+      ${list.length ? `<div class="ap-list">${list.map(a => `<div class="ap-row ${String(a.model || "").trim() ? "" : "missing"}">
+        <span class="ap-ico">${icon("cpu", 14)}</span>
+        <div class="ap-main">
+          <div class="ap-top">
+            ${canEdit ? `<input class="dt-in ap-type" data-ap-f="type" data-ap="${a.id}" value="${esc(a.type)}" list="ap-types" title="Type">` : `<b>${esc(a.type)}</b>`}
+            ${canEdit ? `<input class="dt-in ap-model" data-ap-f="model" data-ap="${a.id}" value="${esc(a.model)}" placeholder="Brand and model, e.g. Bosch HBG7741B1">` : `<span class="ap-model-ro">${esc(a.model) || "<i>model not known yet</i>"}</span>`}
+          </div>
+          <div class="ap-sub">
+            ${canEdit ? `<input class="dt-in ap-note" data-ap-f="note" data-ap="${a.id}" value="${esc(a.note)}" placeholder="Niche, dimensions, built-in or freestanding…">` : a.note ? `<span>${esc(a.note)}</span>` : ""}
+            ${canEdit ? `<input class="dt-in ap-link" data-ap-f="link" data-ap="${a.id}" value="${esc(a.link)}" placeholder="Spec / manual link">` : ""}
+            ${a.link ? `<a class="mini-act" href="${esc(a.link)}" target="_blank" rel="noopener">${icon("external", 12)} Spec</a>` : ""}
+          </div>
+        </div>
+        <button class="ap-by ${a.by === "us" ? "us" : ""}" ${canEdit ? `data-ap-by="${a.id}"` : "disabled"} title="Who supplies it — click to switch">${a.by === "us" ? "We order" : "Client's"}</button>
+        ${canEdit ? `<button class="mini-btn danger" data-ap-del="${a.id}" title="Remove">✕</button>` : ""}
+      </div>`).join("")}</div>` : `<div class="t-caption" style="margin-bottom:8px">No appliances noted — add the oven, hob, hood… with the models the client gives.</div>`}
+      ${canEdit ? `<datalist id="ap-types">${types.map(t => `<option value="${esc(typeof I18N !== "undefined" ? I18N.t(t) : t)}">`).join("")}</datalist>
+      <div class="dt-add ap-add">
+        <select class="select" id="ap-new-type">${types.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join("")}</select>
+        <input class="input" id="ap-new-model" placeholder="Brand and model (can be added later)">
+        <button class="btn subtle" id="ap-add">${icon("plus", 13)} Add</button>
+      </div>` : ""}
+    </div>`;
+  },
+  bindAppliances(el, o) {
+    var add = $("#ap-add", el),
+      model = $("#ap-new-model", el),
+      type = $("#ap-new-type", el);
+    var doAdd = () => {
+      var t = type.value;
+      M.addAppliance(o.id, { type: typeof I18N !== "undefined" ? I18N.t(t) : t, model: model.value }, App.me.id);
+      App.render();
+      Drawer.refresh();
+      this.refreshSheet();
+      setTimeout(() => { var n = $("#modal-root #ap-new-model") || $("#ap-new-model"); if (n) n.focus(); }, 60);
+    };
+    if (add) add.onclick = doAdd;
+    if (model) model.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); doAdd(); } };
+    $$("[data-ap-f]", el).forEach(inp => inp.onchange = () => {
+      var patch = {};
+      patch[inp.dataset.apF] = inp.value.trim();
+      M.updateAppliance(o.id, inp.dataset.ap, patch, App.me.id);
+      App.render();
+      this.refreshSheet();
+    });
+    $$("[data-ap-by]", el).forEach(b => b.onclick = () => {
+      var a = D.appliances(o).find(x => x.id === b.dataset.apBy);
+      if (!a) return;
+      M.updateAppliance(o.id, a.id, { by: a.by === "us" ? "client" : "us" }, App.me.id);
+      App.render();
+      Drawer.refresh();
+      this.refreshSheet();
+    });
+    $$("[data-ap-del]", el).forEach(b => b.onclick = () => {
+      M.removeAppliance(o.id, b.dataset.apDel, App.me.id);
+      App.render();
+      Drawer.refresh();
+      this.refreshSheet();
+    });
+  },
+  /* the sheet is a modal; the drawer's handlers only redraw the drawer */
+  refreshSheet() {
+    var id = this._sheetId;
+    var box = $("#modal-root .sheet-modal");
+    if (!id || !box) return;
+    var body = $(".modal-body", box);
+    var top = body ? body.scrollTop : 0;
+    var act = document.activeElement && document.activeElement.id;
+    this.sheetModal(id, { quiet: true });
+    var nb = $("#modal-root .sheet-modal .modal-body");
+    if (nb) nb.scrollTop = top;
+    if (act) { var a = $("#modal-root #" + act); if (a) a.focus(); }
   },
   /* ---------- project details ----------
      One row per thing being waited on, because "rankenos užsakytos" was a fact
@@ -4917,6 +4971,8 @@ var OrderDetail = {
 
         ${isEng ? this.remarksHtml(o) : ""}
 
+        ${this.appliancesHtml(o, canEdit)}
+
         ${this.detailsHtml(o, canEdit)}
 
         <div>
@@ -5189,6 +5245,7 @@ var OrderDetail = {
       App.render();
       Drawer.refresh();
     };
+    this.bindAppliances(el, o);
     /* ---- project details ---- */
     var dtAdd = $("#dt-add", el),
       dtNew = $("#dt-new", el);

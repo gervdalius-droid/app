@@ -30,7 +30,7 @@ var Files = {
   DB: "shopflow.files",
   STORE: "blobs",
   VERSION: 1,
-  MAX_BYTES: 12 * 1024 * 1024,
+  MAX_BYTES: 30 * 1024 * 1024,
   // a phone photo, not a CAD archive
   FULL_PX: 2000,
   // plenty to read a dimension off a drawing
@@ -457,7 +457,7 @@ var Files = {
     return `<div class="file-chips">
       ${files.map(f => `<button class="file-chip ${this.isImage(f.type) ? "img" : "doc"}" data-file="${f.id}" title="${esc(f.name)}">
         ${f.thumb ? `<img src="${f.thumb}" alt="${esc(f.name)}">` : `<span class="ico">${icon(/pdf/.test(f.type) ? "quote" : "box", 18)}</span>`}
-        <span class="nm">${esc(f.name)}</span>
+        <span class="nm">${esc(f.kind === "email" && f.email ? "✉ " + f.email.subject : f.name)}</span>
         ${this.stateHtml(f)}
         ${canEdit ? `<span class="rm" data-file-rm="${f.id}" title="Remove">${icon("x", 11)}</span>` : ""}
       </button>`).join("")}
@@ -505,6 +505,8 @@ var Files = {
   } = {}) {
     $$("[data-file]", root).forEach(b => b.onclick = e => {
       if (e.target.closest("[data-file-rm]")) return;
+      var ff = D.file(b.dataset.file);
+      if (ff && ff.kind === "email" && typeof Mail !== "undefined") return Mail.view(ff.id);
       this.viewer(b.dataset.file);
     });
     $$("[data-file-rm]", root).forEach(b => b.onclick = e => {
