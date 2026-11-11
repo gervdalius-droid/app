@@ -3138,3 +3138,5 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .pdrop-box { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 30px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-3); color: var(--accent-text); }
 .pdrop-box b { font-size: 16px; color: var(--text); }
 .pdrop-box span { font-size: 13px; color: var(--text-2); }
+.ap-sub .mini-act { text-decoration: none; color: var(--accent-text); font-size: 12px; font-weight: 640; display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; border-radius: 7px; background: var(--accent-soft); }
+.ap-model-ro a { color: var(--accent-text); }

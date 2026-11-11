@@ -4578,7 +4578,7 @@ var OrderDetail = {
       var od = $("#sheet-od", m);
       if (od) od.onclick = () => window.open(D.projectLink(o), "_blank", "noopener");
       var pdfB = $("#sheet-pdf", m);
-      if (pdfB) pdfB.onclick = () => ProjectDoc.show(o.id, () => this.sheetModal(o.id));
+      if (pdfB) pdfB.onclick = () => ProjectDoc.show(o.id);
     }, { quiet: !!(sheetOpts && sheetOpts.quiet) });
   },
   /* ---------- remarks ----------
@@ -4623,12 +4623,13 @@ var OrderDetail = {
         <div class="ap-main">
           <div class="ap-top">
             ${canEdit ? `<input class="dt-in ap-type" data-ap-f="type" data-ap="${a.id}" value="${esc(a.type)}" list="ap-types" title="Type">` : `<b>${esc(a.type)}</b>`}
-            ${canEdit ? `<input class="dt-in ap-model" data-ap-f="model" data-ap="${a.id}" value="${esc(a.model)}" placeholder="Brand and model, e.g. Bosch HBG7741B1">` : `<span class="ap-model-ro">${esc(a.model) || "<i>model not known yet</i>"}</span>`}
+            ${canEdit ? `<input class="dt-in ap-model" data-ap-f="model" data-ap="${a.id}" value="${esc(a.model)}" placeholder="Brand and model, e.g. Bosch HBG7741B1">` : `<span class="ap-model-ro">${_pfIsUrl(a.model) ? `<a href="${esc(_pfHref(a.model))}" target="_blank" rel="noopener">${esc(_pfShortUrl(a.model))}</a>` : esc(a.model) || "<i>model not known yet</i>"}</span>`}
           </div>
           <div class="ap-sub">
             ${canEdit ? `<input class="dt-in ap-note" data-ap-f="note" data-ap="${a.id}" value="${esc(a.note)}" placeholder="Niche, dimensions, built-in or freestanding…">` : a.note ? `<span>${esc(a.note)}</span>` : ""}
             ${canEdit ? `<input class="dt-in ap-link" data-ap-f="link" data-ap="${a.id}" value="${esc(a.link)}" placeholder="Spec / manual link">` : ""}
-            ${a.link ? `<a class="mini-act" href="${esc(a.link)}" target="_blank" rel="noopener">${icon("external", 12)} Spec</a>` : ""}
+            ${a.link ? `<a class="mini-act" href="${esc(_pfHref(a.link))}" target="_blank" rel="noopener">${icon("external", 12)} Spec</a>` : ""}
+            ${_pfIsUrl(a.model) ? `<a class="mini-act" href="${esc(_pfHref(a.model))}" target="_blank" rel="noopener">${icon("external", 12)} ${esc(_pfShortUrl(a.model).split(" › ")[0])}</a>` : ""}
           </div>
         </div>
         <button class="ap-by ${a.by === "us" ? "us" : ""}" ${canEdit ? `data-ap-by="${a.id}"` : "disabled"} title="Who supplies it — click to switch">${a.by === "us" ? "We order" : "Client's"}</button>

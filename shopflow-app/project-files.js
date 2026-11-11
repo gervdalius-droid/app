@@ -58,6 +58,22 @@ function _pfFmtDateTime(ts) {
 function _pfFmtDate(ts) {
   return ts ? _pfFmtDateTime(ts).slice(0, 10) : "—";
 }
+function _pfIsUrl(s) {
+  return /^(https?:\/\/|www\.)\S+$/i.test(String(s || "").trim());
+}
+function _pfHref(s) {
+  s = String(s || "").trim();
+  return /^www\./i.test(s) ? "https://" + s : s;
+}
+/* imperija.lt › smeg-dujine-virykle-su-elektrine-orkaite-33 */
+function _pfShortUrl(s) {
+  try {
+    var u = new URL(_pfHref(s));
+    var parts = u.pathname.split("/").filter(Boolean);
+    var tail = parts.length ? decodeURIComponent(parts[parts.length - 1]) : "";
+    return u.hostname.replace(/^www\./, "") + (tail ? " › " + tail : "");
+  } catch (e) { return s; }
+}
 function _pfSize(n) {
   if (!n && n !== 0) return "";
   if (n < 1024) return n + " B";
@@ -587,16 +603,16 @@ var ProjectDoc = {
       fbody.push(row);
     }
     c.push({ table: { widths: ["*", "*"], body: fbody }, layout: { hLineWidth: () => 2, vLineWidth: () => 2, hLineColor: () => "#ffffff", vLineColor: () => "#ffffff", paddingTop: () => 6, paddingBottom: () => 6, paddingLeft: () => 9 } });
-    if (link) c.push({ text: [{ text: "OneDrive: ", color: gray }, { text: link, link: link, color: A, decoration: "underline" }], fontSize: 8.5, margin: [0, 6, 0, 0] });
+    if (link) c.push({ text: [{ text: "OneDrive: ", color: gray }, { text: L("open the project folder", "atidaryti projekto aplanką"), link: link, color: A, decoration: "underline" }], fontSize: 9, margin: [0, 6, 0, 0] });
 
     /* ---- appliances ---- */
     var aps = D.appliances(o);
     section(L("Appliances", "Buitinė technika"), aps.length || null);
     if (aps.length) table([95, "*", 62, "*"], [L("Type", "Tipas"), L("Model", "Modelis"), L("Supplied by", "Tiekia"), L("Notes", "Pastaba")], aps.map(a => [
       { text: a.type, bold: true },
-      a.model ? (a.link ? { text: a.model, link: a.link, color: A } : a.model) : { text: L("model not known yet", "modelis dar nežinomas"), color: "#c25e00", italics: true },
+      a.model ? (_pfIsUrl(a.model) ? { text: _pfShortUrl(a.model), link: _pfHref(a.model), color: A, decoration: "underline" } : a.link ? { text: a.model, link: _pfHref(a.link), color: A } : a.model) : { text: L("model not known yet", "modelis dar nežinomas"), color: "#c25e00", italics: true },
       a.by === "us" ? L("We order", "Užsakome mes") : L("Client", "Klientas"),
-      { text: a.note || "", color: "#3a3a3c" }
+      { stack: [a.note ? { text: a.note, color: "#3a3a3c" } : { text: "" }, a.link && !_pfIsUrl(a.model) ? { text: _pfShortUrl(a.link), link: _pfHref(a.link), color: A, decoration: "underline", fontSize: 8.5 } : { text: "" }] }
     ]));
     else empty(L("No appliances noted", "Buitinė technika neįrašyta"));
 
@@ -719,32 +735,37 @@ var ProjectDoc = {
       try { r[0].createPdf(r[1]).getBlob(b => resolve(b)); } catch (e) { reject(e); }
     }));
   },
-  /* the document, on screen, with Download / Print */
+  /* The document opens in its own browser tab. Links in a PDF open where
+     the PDF is, so shown inside ShopFlow they replaced the app and lost the
+     open card. The tab is opened at the click (before the PDF is built) so
+     the browser does not treat it as a pop-up. */
   show(orderId, onClose) {
     var o = D.order(orderId);
     if (!o) return;
-    var root = $("#modal-root");
-    var close = () => { root.innerHTML = ""; if (onClose) onClose(); };
-    root.innerHTML = `<div class="file-view" id="file-view">
-      <div class="fv-bar">
-        <b>${esc(this.fileName(o))}</b>
-        <span class="grow"></span>
-        <a class="btn ghost" id="fv-dl" download="${esc(this.fileName(o))}">${icon("import", 13)} <span>Download</span></a>
-        <button class="icon-btn" id="fv-close">${icon("x", 17)}</button>
-      </div>
-      <div class="fv-body" id="fv-body"><div class="sync-spinner"></div></div>
-    </div>`;
-    if (typeof I18N !== "undefined") I18N.translate(root);
-    $("#fv-close", root).onclick = close;
+    var w = null;
+    try { w = window.open("", "_blank"); } catch (e) {}
+    if (w) {
+      try {
+        w.document.title = this.fileName(o);
+        w.document.body.innerHTML = '<p style="font:15px system-ui,sans-serif;color:#6e6e73;padding:40px">' + esc(_pfLt("Preparing the document…", "Ruošiamas dokumentas…")) + "</p>";
+      } catch (e) {}
+    }
+    Toast.show(_pfLt("Preparing the document…", "Ruošiamas dokumentas…"), { emoji: "quote", ms: 2500 });
     this.blob(orderId).then(b => {
-      var body = $("#fv-body", root);
-      if (!body) return;
       var u = URL.createObjectURL(b);
-      $("#fv-dl", root).href = u;
-      body.innerHTML = `<iframe src="${u}" title="PDF"></iframe>`;
+      if (w && !w.closed) {
+        w.location.href = u;
+        return;
+      }
+      /* pop-ups blocked: download it instead */
+      var l = document.createElement("a");
+      l.href = u;
+      l.download = this.fileName(o);
+      l.click();
+      Toast.show(_pfLt("The browser blocked the new tab — the PDF was downloaded instead", "Naršyklė užblokavo naują skirtuką — PDF atsisiųstas"), { emoji: "import", ms: 6000 });
     }).catch(e => {
-      var body = $("#fv-body", root);
-      if (body) body.innerHTML = `<div class="fv-missing">${icon("alert", 26)}<b>${esc(e && e.message || "Could not build the document")}</b></div>`;
+      if (w && !w.closed) w.close();
+      Toast.show(e && e.message || "Could not build the document", { emoji: "alert", ms: 6000 });
     });
   }
 };
