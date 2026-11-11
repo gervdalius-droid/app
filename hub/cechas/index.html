@@ -793,6 +793,9 @@ function normalize(){
   /* New day, clean board: a place set before today no longer counts, so every morning nobody is at a station
      until someone puts them there. Only this screen's copy changes; the next placing saves the new day. */
   {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0)){if(!p.pz)p.pat=p.at;p.at=null;p.pz=null}}
+  /* after 17:00 the working day is over: places set during the day no longer count (someone who checks in after
+     17:00 is working overtime and does show) */
+  {const e=dayEndOf(dayStart());if(Date.now()>=e)for(const p of Object.values(s.people))if(p&&p.at&&+p.ts<e){if(!p.pz)p.pat=p.at;p.at=null;p.pz=null}}
   for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
   for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
@@ -1702,7 +1705,7 @@ function instSess(iid,i,end){
   return out}
 function sessOf(pid,p){
   const at=p&&(p.at||p.pat);if(!at||!(+p.ts>0)||p.pz)return null;
-  const a=+p.ts,now=Date.now(),b=a>=dayStart()?now:Math.min(now,dayEndOf(a)),it=LAY().items[at];
+  const a=+p.ts,now=Date.now(),e=new Date(a).setHours(WD_END_H,0,0,0),b=a<e?Math.min(now,e):Math.min(now,new Date(a).setHours(23,59,59,0)),it=LAY().items[at];
   return{id:pid+'_'+a,w:pid,n:String(p.n||''),s:at,sn:it?itemName(at,it):at,pr:String(p.pr||''),nt:String(p.nt||''),a,b:Math.max(a,b),by:who};
 }
 /* the start time a move should get: unchanged while it is the same place, project and part today, otherwise now,
@@ -2407,8 +2410,8 @@ window.addEventListener('hashchange',()=>{const want=location.hash==='#tv';if(wa
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.body.classList.contains('tv'))wake()});
 
 let brkKey=null;
-let dayKey=dayStart();
-function tick(){shoutTick();if(dayStart()!==dayKey){dayKey=dayStart();normalize();railDirty=false;render();renderRail()}const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+let dayKey=dayStart(),eodKey=Date.now()>=dayEndOf(dayStart());
+function tick(){shoutTick();{const eod=Date.now()>=dayEndOf(dayStart());if(eod!==eodKey){eodKey=eod;normalize();railDirty=false;render();renderRail()}}if(dayStart()!==dayKey){dayKey=dayStart();normalize();railDirty=false;render();renderRail()}const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 setInterval(tick,10000);tick();
 if(location.hash==='#tv')document.body.classList.add('tv');
 normalize();applyView();render();boot();

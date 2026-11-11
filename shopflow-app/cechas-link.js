@@ -38,6 +38,8 @@ var Cechas = {
   tx(lt, en) { return this.lt() ? lt : en; },
   allowed() { return typeof App !== "undefined" && App.me && (App.isManager() || App.isEngineer()); },
   dayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); },
+  /* a place counts today if set today, and after 17:00 only if set after 17:00 (overtime) — same rule as the plan */
+  counts(p) { var d0 = this.dayStart(), e = d0 + 17 * 36e5; return +p.ts >= d0 && (Date.now() < e || +p.ts >= e); },
   norm(v) { return String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[_\s]+/g, " ").trim(); },
   hhmm(ms) { var d = new Date(ms), p = function (x) { return String(x).padStart(2, "0"); }; return p(d.getHours()) + ":" + p(d.getMinutes()); },
 
@@ -54,7 +56,7 @@ var Cechas = {
     var ppl = this.state().people || {}, d0 = this.dayStart(), items = this.layout().items || {}, out = [];
     Object.keys(ppl).forEach(k => {
       var p = ppl[k];
-      if (p && p.at && items[p.at] && +p.ts >= d0) out.push({ n: p.n || "", place: this.placeName(p.at, p), pr: p.pr || "", nt: p.nt || "", ts: +p.ts });
+      if (p && p.at && items[p.at] && this.counts(p)) out.push({ n: p.n || "", place: this.placeName(p.at, p), pr: p.pr || "", nt: p.nt || "", ts: +p.ts });
     });
     return out.sort((a, b) => a.place.localeCompare(b.place, "lt") || a.n.localeCompare(b.n, "lt"));
   },
@@ -109,7 +111,7 @@ var Cechas = {
     var ppl = this.state().people || {}, items = this.layout().items || {}, d0 = this.dayStart(), want = {}, did = 0;
     Object.keys(ppl).forEach(k => {
       var p = ppl[k];
-      if (!p || !p.at || !items[p.at] || p.pz || !(+p.ts >= d0) || !p.pr) return;
+      if (!p || !p.at || !items[p.at] || p.pz || !this.counts(p) || !p.pr) return;
       var o = this.orderFor(p.pr), step = this.stepFor(p.at), m = this.memberFor(p.n);
       if (!o || !step || !m || !Array.isArray(o.ops)) return;
       var ops = o.ops.filter(x => x.stationId === step && x.status !== "done");
