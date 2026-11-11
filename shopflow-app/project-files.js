@@ -240,20 +240,21 @@ var Mail = {
   },
   /* ---------- attach to a project ---------- */
   attach(file, orderId, byId) {
+    return Files.attach(file, { orderId: orderId }, byId); // Files.attach reads emails itself (below)
+  },
+  /* fills in the email summary on a file that has just been attached */
+  _describe(meta, file) {
     var self = this;
-    return Files.attach(file, { orderId: orderId }, byId).then(meta => {
-      if (!meta) return meta;
-      return self.parse(file, file.name).then(m => {
-        meta.email = self.summary(m);
-        meta.kind = "email";
-        Store.save();
-        return meta;
-      }).catch(() => {
-        meta.kind = "email";
-        meta.email = { subject: file.name, from: "", date: null, snippet: _pfLt("Could not read this email — it can still be downloaded.", "Nepavyko perskaityti laiško — jį vis tiek galima atsisiųsti."), atts: [] };
-        Store.save();
-        return meta;
-      });
+    return self.parse(file, file.name).then(m => {
+      meta.email = self.summary(m);
+      meta.kind = "email";
+      Store.save();
+      return meta;
+    }).catch(() => {
+      meta.kind = "email";
+      meta.email = { subject: file.name.replace(/\.(eml|msg)$/i, ""), from: "", date: null, snippet: _pfLt("Could not read this email — it can still be downloaded.", "Nepavyko perskaityti laiško — jį vis tiek galima atsisiųsti."), atts: [] };
+      Store.save();
+      return meta;
     });
   },
   pasteModal(orderId, onDone) {
@@ -368,7 +369,7 @@ var Mail = {
           var a = shown[+b.dataset.maAdd];
           b.disabled = true;
           var file = new File([a.blob], a.name, { type: a.type });
-          (this.isMailFile(file) ? this.attach(file, f.orderId, App.me.id) : Files.attach(file, { orderId: f.orderId }, App.me.id)).then(() => {
+          Files.attach(file, { orderId: f.orderId }, App.me.id).then(() => {
             b.textContent = "✓";
             Toast.show(`${a.name} ✓`, { emoji: "check" });
           }).catch(err => { b.disabled = false; Toast.show(err.message, { emoji: "alert", ms: 5000 }); });
@@ -427,7 +428,7 @@ var ProjectFiles = {
     var next = () => {
       if (!list.length) return Promise.resolve();
       var f = list.shift();
-      var p = Mail.isMailFile(f) ? Mail.attach(f, o.id, App.me.id) : Files.attach(f, { orderId: o.id }, App.me.id);
+      var p = Files.attach(f, { orderId: o.id }, App.me.id);
       return p.then(() => { done++; }).catch(e => { errs.push(e.message || String(e)); }).then(next);
     };
     return next().then(() => {
@@ -455,9 +456,10 @@ var ProjectFiles = {
       zone.ondragover = e => { e.preventDefault(); zone.classList.add("over"); };
       zone.ondragleave = () => zone.classList.remove("over");
       zone.ondrop = e => {
-        e.preventDefault();
         zone.classList.remove("over");
-        if (e.dataTransfer.files.length) self.add(o, e.dataTransfer.files).then(() => { App.render(); Drawer.refresh(); redraw(); });
+        if (!e.dataTransfer.files.length) return; // an Outlook-web drop: the page-wide handler builds the email
+        e.preventDefault();
+        self.add(o, e.dataTransfer.files).then(() => { App.render(); Drawer.refresh(); redraw(); });
       };
       input.onchange = () => {
         var fl = [].slice.call(input.files);
@@ -466,7 +468,7 @@ var ProjectFiles = {
       };
     }
     var paste = $("#pf-paste", root);
-    if (paste) paste.onclick = () => Mail.pasteModal(o.id, () => { App.render(); redraw(); });
+    if (paste) paste.onclick = () => Mail.pasteModal(o.id, () => { App.render(); OrderDetail.sheetModal(o.id); });
   }
 };
 
@@ -1062,3 +1064,141 @@ var OneDrive = {
   }
 };
 if (typeof window !== "undefined") window.addEventListener("load", () => setTimeout(() => { try { OneDrive.start(); } catch (e) {} }, 4000));
+
+
+/* ============================================================
+   Every attach goes through here, so an email dropped on ANY drop zone
+   (project panel, card, new order) is read and shown as an email.
+   ============================================================ */
+(function () {
+  if (typeof Files === "undefined" || Files._mailWrapped) return;
+  var orig = Files.attach.bind(Files);
+  Files._mailWrapped = true;
+  Files.attach = function (file, where, byId) {
+    var mail = Mail.isMailFile(file);
+    /* Outlook hands over .msg files with no type, and some with none at all */
+    if (mail && !file.type && typeof File !== "undefined") {
+      try { file = new File([file], file.name, { type: /\.msg$/i.test(file.name) ? "application/vnd.ms-outlook" : "message/rfc822" }); } catch (e) {}
+    }
+    return orig(file, where, byId).then(meta => meta && mail ? Mail._describe(meta, file) : meta);
+  };
+})();
+
+/* ============================================================
+   Drop anywhere on an open project — the panel or the card — not only on
+   the small drop box. Handles the three ways an email arrives:
+     • classic Outlook (Windows) → a real .msg file
+     • Outlook on the web / new Outlook → no file, only the message text
+     • Gmail and others → text or a link
+   ============================================================ */
+var ProjectDrop = {
+  _overlay: null,
+  _depth: 0,
+  target() {
+    if (typeof OrderDetail !== "undefined" && OrderDetail._sheetId && $("#modal-root .sheet-modal")) return D.order(OrderDetail._sheetId);
+    if (typeof Drawer !== "undefined" && Drawer.orderId && $("#drawer-root .drawer")) return D.order(Drawer.orderId);
+    return null;
+  },
+  canEdit() {
+    return typeof App !== "undefined" && App.me && (App.can("orders.edit") || App.isManager());
+  },
+  _isOurs(dt) {
+    if (!dt) return false;
+    var t = [].slice.call(dt.types || []);
+    return t.indexOf("Files") >= 0 || t.some(x => /maillistrow|messagerows|outlook|filegroupdescriptor/i.test(x)) || t.indexOf("text/html") >= 0 || t.indexOf("text/plain") >= 0;
+  },
+  _show(o) {
+    if (!this._overlay) {
+      var d = document.createElement("div");
+      d.className = "pdrop-ov";
+      document.body.appendChild(d);
+      this._overlay = d;
+    }
+    this._overlay.innerHTML = `<div class="pdrop-box">${icon("import", 30)}<b>${esc(_pfLt("Drop to add to ", "Paleiskite — bus pridėta prie ") + o.num)}</b><span>${esc(_pfLt("Outlook emails, files, photos", "Outlook laiškai, failai, nuotraukos"))}</span></div>`;
+    this._overlay.classList.add("on");
+  },
+  _hide() {
+    this._depth = 0;
+    if (this._overlay) this._overlay.classList.remove("on");
+  },
+  _done(o) {
+    if (typeof App !== "undefined") App.render();
+    if (typeof OrderDetail !== "undefined" && OrderDetail._sheetId === o.id) OrderDetail.refreshSheet();
+  },
+  /* no file came with the drop: build an email from what did */
+  _fromData(o, dt) {
+    var types = [].slice.call(dt.types || []);
+    var html = types.indexOf("text/html") >= 0 ? dt.getData("text/html") : "";
+    var text = types.indexOf("text/plain") >= 0 ? dt.getData("text/plain") : "";
+    var meta = null;
+    types.forEach(t => {
+      if (!/maillistrow|messagerows/i.test(t)) return;
+      try { var j = JSON.parse(dt.getData(t)); meta = Array.isArray(j) ? j[0] : j && (j.rows ? j.rows[0] : j); } catch (e) {}
+    });
+    if (html && !text) {
+      var tmp = document.createElement("div");
+      tmp.innerHTML = html;
+      text = tmp.innerText || tmp.textContent || "";
+    }
+    text = String(text || "").trim();
+    var subject = meta && (meta.subject || meta.Subject) || "";
+    var from = meta && (meta.sender || meta.from || meta.senderName || (meta.Sender && meta.Sender.Name)) || "";
+    if (typeof from === "object") from = from.name || from.address || "";
+    if (!subject) {
+      var m = /^(?:Subject|Tema|Dalykas):\s*(.+)$/im.exec(text);
+      if (m) subject = m[1].trim();
+    }
+    console.info("[drop] no file — types:", types.join(", "));
+    if (!text && !subject) {
+      Toast.show(_pfLt("Outlook didn't hand over the email. Drag it to the desktop first, then here — or use Paste an email.", "Outlook neperdavė laiško. Nutempkite jį į darbalaukį, tada čia — arba naudokite „Įklijuoti laišką“."), { emoji: "alert", ms: 9000 });
+      return;
+    }
+    /* a single short line is just a subject — let the person paste the body */
+    var fromSheet = !!(typeof OrderDetail !== "undefined" && OrderDetail._sheetId === o.id && $("#modal-root .sheet-modal"));
+    Mail.pasteModal(o.id, () => { this._done(o); if (fromSheet) OrderDetail.sheetModal(o.id); });
+    setTimeout(() => {
+      var root = $("#modal-root");
+      if ($("#pm-subj", root)) $("#pm-subj", root).value = subject || (text.split("\n")[0] || "").slice(0, 120);
+      if ($("#pm-from", root)) $("#pm-from", root).value = from;
+      if ($("#pm-text", root) && text && text !== subject) $("#pm-text", root).value = text;
+    }, 80);
+  },
+  init() {
+    if (this._on) return;
+    this._on = true;
+    document.addEventListener("dragenter", e => {
+      var o = this.target();
+      if (!o || !this.canEdit() || !this._isOurs(e.dataTransfer)) return;
+      this._depth++;
+      this._show(o);
+    });
+    document.addEventListener("dragover", e => {
+      var o = this.target();
+      if (!o || !this.canEdit() || !this._isOurs(e.dataTransfer)) return;
+      e.preventDefault(); // without this the browser refuses the drop
+      try { e.dataTransfer.dropEffect = "copy"; } catch (x) {}
+    });
+    document.addEventListener("dragleave", () => {
+      this._depth = Math.max(0, this._depth - 1);
+      if (!this._depth) this._hide();
+    });
+    document.addEventListener("drop", e => {
+      this._hide();
+      if (e.defaultPrevented) return; // a drop box already took it
+      var o = this.target();
+      if (!o || !this.canEdit()) return;
+      var dt = e.dataTransfer;
+      if (!dt) return;
+      /* text dragged from inside the page (a remark, a field) is not a drop */
+      if (!dt.files.length && !this._isOurs(dt)) return;
+      if (e.target && e.target.closest && e.target.closest("input, textarea") && !dt.files.length) return;
+      e.preventDefault();
+      if (dt.files && dt.files.length) {
+        ProjectFiles.add(o, dt.files).then(() => this._done(o));
+      } else {
+        this._fromData(o, dt);
+      }
+    });
+  }
+};
+if (typeof window !== "undefined") window.addEventListener("load", () => ProjectDrop.init());

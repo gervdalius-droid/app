@@ -3132,3 +3132,9 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .od-howto b, .od-howto .mono { display: inline !important; font-size: inherit !important; color: var(--text) !important; font-weight: 650; }
 .od-howto li { display: list-item; }
 .od-shortcut.od-linked { color: var(--accent); background: var(--accent-soft); }
+/* drop anywhere on an open project */
+.pdrop-ov { position: fixed; inset: 0; z-index: 400; pointer-events: none; display: none; align-items: center; justify-content: center; background: color-mix(in srgb, var(--accent) 12%, transparent); outline: 3px dashed var(--accent); outline-offset: -12px; }
+.pdrop-ov.on { display: flex; }
+.pdrop-box { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 22px 30px; border-radius: 18px; background: var(--surface); box-shadow: var(--shadow-3); color: var(--accent-text); }
+.pdrop-box b { font-size: 16px; color: var(--text); }
+.pdrop-box span { font-size: 13px; color: var(--text-2); }

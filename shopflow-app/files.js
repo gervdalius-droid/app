@@ -475,8 +475,8 @@ var Files = {
   dropHtml(id, label = "Add a drawing or photo") {
     return `<div class="file-drop" data-drop="${id}">
       <span class="ico">${icon("import", 17)}</span>
-      <span><b>${esc(label)}</b><span class="t-caption">Drop it here, or click to choose — images are shrunk to fit</span></span>
-      <input type="file" id="${id}" multiple accept="image/*,application/pdf" hidden>
+      <span><b>${esc(label)}</b><span class="t-caption">Drop files or Outlook emails here, or click to choose</span></span>
+      <input type="file" id="${id}" multiple hidden>
     </div>`;
   },
   /* Wires a drop zone. onPick receives the chosen File list. */
@@ -491,9 +491,10 @@ var Files = {
     };
     zone.ondragleave = () => zone.classList.remove("over");
     zone.ondrop = e => {
-      e.preventDefault();
       zone.classList.remove("over");
-      if (e.dataTransfer.files.length) onPick([...e.dataTransfer.files]);
+      if (!e.dataTransfer.files.length) return; // no file (Outlook on the web) — handled page-wide
+      e.preventDefault();
+      onPick([...e.dataTransfer.files]);
     };
     input.onchange = () => {
       if (input.files.length) onPick([...input.files]);
