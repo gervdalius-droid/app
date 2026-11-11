@@ -3131,3 +3131,4 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .od-howto ol { margin: 6px 0 0 18px; padding: 0; display: grid; gap: 5px; line-height: 1.45; }
 .od-howto b, .od-howto .mono { display: inline !important; font-size: inherit !important; color: var(--text) !important; font-weight: 650; }
 .od-howto li { display: list-item; }
+.od-shortcut.od-linked { color: var(--accent); background: var(--accent-soft); }
