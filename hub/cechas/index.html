@@ -443,6 +443,22 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #aw tr.awlog td{border-top:1px solid var(--line);padding:5px 6px}
 #aw .mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--muted)}
 #aw .note{font-size:13px;color:var(--muted)}
+#shout{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(13,108,102,.92),rgba(10,20,22,.96));cursor:pointer;padding:5vh 6vw}
+#shout canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#shout .shbox{position:relative;text-align:center;color:#fff;max-width:90vw;display:flex;flex-direction:column;gap:2.4vh;align-items:center}
+#shout .shk{font:600 2.4vh/1 var(--mono);letter-spacing:.3em;text-transform:uppercase;color:#bfeee8}
+#shout .shn{font:800 clamp(34px,9vh,120px)/1.02 var(--display);letter-spacing:-0.03em;text-wrap:balance;text-shadow:0 8px 40px rgba(0,0,0,.35)}
+#shout .shs{font:500 clamp(16px,3.4vh,40px)/1.25 var(--body);color:#e7f7f5}
+#shout .sha{font:500 clamp(14px,2.6vh,30px)/1.3 var(--body);color:#bfeee8}
+#shout .sht{font:500 1.8vh/1 var(--mono);color:rgba(255,255,255,.55);margin-top:2vh}
+#shout.in .shk{animation:shUp .7s .1s both}
+#shout.in .shn{animation:shPop .9s .25s both cubic-bezier(.2,1.4,.4,1)}
+#shout.in .shs{animation:shUp .7s .9s both}
+#shout.in .sha{animation:shUp .7s 1.2s both}
+#shout.in .sht{animation:shUp .7s 1.6s both}
+@keyframes shPop{0%{opacity:0;transform:scale(.6) rotate(-3deg)}100%{opacity:1;transform:none}}
+@keyframes shUp{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){#shout.in *{animation:none!important}}
 #aw th.h{font:600 11px/1.3 var(--mono);text-align:right}
 #aw td .btn{font-family:var(--body);font-size:13px}
 #aw tr.awr td:first-child{font-size:18px;width:2.2em}
@@ -506,6 +522,7 @@ body.tv .mapwrap{border-radius:1.4vh}
 <div id="ci" aria-live="polite"></div>
 <div id="rep" hidden role="dialog" aria-labelledby="rp-h"></div>
 <div id="aw" hidden role="dialog" aria-labelledby="aw-h"></div>
+<div id="shout" hidden role="status" aria-live="polite"><canvas id="sh-cv"></canvas><div class="shbox" id="sh-box"></div></div>
 <div id="qrs" hidden></div>
 <div id="auth" hidden><form class="authbox" id="authForm" autocomplete="on">
   <span class="logo" role="img" aria-label="Dėdės Baldai"></span>
@@ -543,7 +560,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -560,7 +577,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -2219,7 +2236,7 @@ function renderAw(){
   const box=$('#aw');box.hidden=!AW.open;if(!AW.open)return;
   const cur=AW.mon===monKey(Date.now()),inf=AW.info||{},p2=x=>String(x).padStart(2,'0'),tm=ms=>{const d=new Date(ms);return p2(d.getHours())+':'+p2(d.getMinutes())};
   let h='<div class="rbox"><div class="rh"><h2 id="aw-h">🏆 '+esc(t('awH'))+'</h2><button type="button" class="x" data-aw="close" aria-label="✕">✕</button></div>'+
-    '<div class="ctl"><select id="aw-mon" aria-label="'+esc(t('awH'))+'">'+awMonths().map(k=>'<option value="'+k+'"'+(k===AW.mon?' selected':'')+'>'+esc(monLabel(k))+(k===monKey(Date.now())?' · '+esc(t('awNow')):'')+'</option>').join('')+'</select></div>';
+    '<div class="ctl"><button type="button" class="btn" data-aw="shout">🎉 '+esc(t('shShow'))+'</button><select id="aw-mon" aria-label="'+esc(t('awH'))+'">'+awMonths().map(k=>'<option value="'+k+'"'+(k===AW.mon?' selected':'')+'>'+esc(monLabel(k))+(k===monKey(Date.now())?' · '+esc(t('awNow')):'')+'</option>').join('')+'</select></div>';
   h+='<div class="awp"><label for="aw-prize">'+esc(t('awPrize'))+'</label><div class="row"><input type="text" id="aw-prize" class="grow" maxlength="120" placeholder="'+esc(t('awPrizePh'))+'" value="'+esc(inf.prize||'')+'"><button type="button" class="btn" data-aw="prize">'+esc(t('awSavePrize'))+'</button></div>'+
     (inf.winner?'<div class="awwin">🏆 '+esc(t('awWinner'))+': <b>'+esc(inf.wn||inf.winner)+'</b>'+(inf.prize?' · '+esc(inf.prize):'')+' <button type="button" class="lk" data-aw="unwin">'+esc(t('awUndo'))+'</button></div>':'')+'</div>';
   if(AW.busy||!AW.rows)h+='<div class="note">'+esc(t('repLoad'))+'</div>';
@@ -2245,11 +2262,59 @@ function awOpen(on){if(on&&!isMgr()){toast(t('awOnly'));return}AW.open=on;AW.sel
 $('#btnAw').addEventListener('click',()=>awOpen(true));
 $('#aw').addEventListener('click',e=>{if(e.target.id==='aw'){awOpen(false);return}const b=e.target.closest('[data-aw]');if(!b)return;const k=b.dataset.aw;
   if(k==='close')awOpen(false);
+  else if(k==='shout'){awOpen(false);showShout(true)}
   else if(k==='prize')awSave({prize:$('#aw-prize').value.trim().slice(0,120)});
   else if(k==='win'){e.stopPropagation();awSave({winner:b.dataset.id,wn:b.dataset.n})}
   else if(k==='unwin')awSave({winner:null,wn:null});
   else if(k==='row'&&!e.target.closest('button')){AW.sel=AW.sel===b.dataset.id?null:b.dataset.id;renderAw()}});
 $('#aw').addEventListener('change',e=>{if(e.target.id==='aw-mon'){AW.mon=e.target.value;AW.sel=null;AW.rows=null;awLoad()}});
+
+/* ---------- end of the day: a shout-out on the TV ----------
+   At 16:45 and again at 16:55 on working days the TV shows who did the most today (from 2 h of marked work),
+   with confetti, for 45 s; any key or tap closes it. Managers can show it any time from the nomination window. */
+const SHOUT_AT=[[16,45],[16,55]],SHOUT_MS=45000,SHOUT_MIN=2*36e5;
+let shoutDone={},shoutT=null,shoutAnim=null;
+/* Lithuanian vocative for a first name: Nerijus → Nerijau, Mantas → Mantai, Eglė → Egle */
+function voc(n){const w=String(n||'').trim().split(/\s+/)[0]||'';
+  const R=[[/ius$/,'iau'],[/us$/,'au'],[/ys$/,'y'],[/is$/,'i'],[/as$/,'ai'],[/ė$/,'e']];
+  for(const [re,to] of R)if(re.test(w))return w.replace(re,to);return w}
+const SHOUT_LINES={lt:['{V}, šiandien gerai pavarei!','{V}, šiandienos čempionas!','Ačiū, {V} – šiandien buvai ugnis!','{V}, šaunus darbas šiandien!','{V}, šiandien tu – dienos MVP!'],
+  en:['{N}, great job today!','{N}, today’s champion!','Thanks, {N} – you were on fire today!','{N}, top work today!','{N}, MVP of the day!']};
+async function dayBest(){
+  const a=dayStart(),list=await sessionsIn(a,Date.now()),by={};
+  for(const x of list){const e=by[x.w]=by[x.w]||{id:x.w,n:x.n||(ST().people[x.w]&&ST().people[x.w].n)||'',ms:0,jobs:new Set(),places:new Set()};e.ms+=x.ms;e.jobs.add((x.pr||'')+'|'+(x.sn||x.s));e.places.add(x.sn||x.s)}
+  return Object.values(by).filter(e=>e.n&&e.ms>=SHOUT_MIN).sort((p,q)=>q.ms-p.ms||q.jobs.size-p.jobs.size);
+}
+async function showShout(manual){
+  const best=await dayBest();
+  if(!best.length){if(manual)toast(t('shNone'));return}
+  const top=best[0],d=new Date(),lines=SHOUT_LINES[lang==='en'?'en':'lt'],line=lines[(d.getDate()+d.getMonth()*31)%lines.length].replace('{V}',voc(top.n)).replace('{N}',top.n.split(' ')[0]);
+  const also=best.slice(1,4).filter(e=>e.ms>=SHOUT_MIN*1.5).map(e=>e.n);
+  $('#sh-box').innerHTML='<div class="shk">'+esc(t('shKicker'))+'</div><div class="shn">'+esc(line)+'</div><div class="shs">'+esc(fmtH(top.ms))+' · '+top.jobs.size+' '+esc(jobsWord(top.jobs.size))+' · '+esc([...top.places].slice(0,3).join(', '))+'</div>'+
+    (also.length?'<div class="sha">'+esc(t('shAlso'))+': '+esc(also.join(', '))+' 👏</div>':'')+'<div class="sht">'+esc(t('shClose'))+'</div>';
+  const box=$('#shout');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
+  confetti();clearTimeout(shoutT);shoutT=setTimeout(hideShout,SHOUT_MS);
+}
+/* 1 darbas, 2–9 darbai, 10–20 / …0 darbų, 21 darbas… */
+function jobsWord(n){if(lang==='en')return n===1?'job':'jobs';const d=n%10,dd=n%100;return d===1&&dd!==11?'darbas':d>=2&&d<=9&&!(dd>=12&&dd<=19)?'darbai':'darbų'}
+function hideShout(){const box=$('#shout');if(box.hidden)return;box.hidden=true;box.classList.remove('in');clearTimeout(shoutT);if(shoutAnim){cancelAnimationFrame(shoutAnim);shoutAnim=null}}
+function shoutTick(){
+  if(!tvOn()||mode!=='db')return;const d=new Date(),wd=d.getDay();if(wd===0||wd===6)return;
+  for(const [h,m] of SHOUT_AT){const k=today()+' '+h+':'+m,at=new Date(d).setHours(h,m,0,0);
+    if(!shoutDone[k]&&Date.now()>=at&&Date.now()<at+5*6e4){shoutDone[k]=1;showShout(false);break}}
+}
+function confetti(){
+  if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const cv=$('#sh-cv'),g=cv.getContext('2d'),W=cv.width=innerWidth,H=cv.height=innerHeight,cols=['#0D6C66','#4CC4B9','#f0b400','#ffffff','#ff7b6b','#7fb2ff'];
+  const P=[];for(let i=0;i<Math.min(260,Math.round(W*H/7000));i++)P.push({x:Math.random()*W,y:-Math.random()*H*.8,vx:(Math.random()-.5)*2.2,vy:2+Math.random()*3.5,r:Math.random()*Math.PI,vr:(Math.random()-.5)*.25,w:6+Math.random()*8,h:8+Math.random()*12,c:cols[i%cols.length]});
+  const t0=performance.now();if(shoutAnim)cancelAnimationFrame(shoutAnim);
+  (function fr(){const el=performance.now()-t0;g.clearRect(0,0,W,H);
+    for(const p of P){p.x+=p.vx+Math.sin((el/600)+p.r)*.6;p.y+=p.vy;p.r+=p.vr;if(p.y>H+20&&el<9000){p.y=-20;p.x=Math.random()*W}
+      g.save();g.translate(p.x,p.y);g.rotate(p.r);g.fillStyle=p.c;g.fillRect(-p.w/2,-p.h/2,p.w,p.h*Math.abs(Math.cos(el/180+p.r)));g.restore()}
+    if(el<14000&&!$('#shout').hidden)shoutAnim=requestAnimationFrame(fr);else{g.clearRect(0,0,W,H);shoutAnim=null}})();
+}
+$('#shout').addEventListener('click',hideShout);
+window.addEventListener('keydown',e=>{if(!$('#shout').hidden){e.preventDefault();e.stopImmediatePropagation();hideShout()}},true);
 
 /* ---------- printable QR codes, one per station ---------- */
 let qrLib=null;
@@ -2324,7 +2389,7 @@ document.addEventListener('visibilitychange',()=>{if(!document.hidden&&document.
 
 let brkKey=null;
 let dayKey=dayStart();
-function tick(){if(dayStart()!==dayKey){dayKey=dayStart();normalize();railDirty=false;render();renderRail()}const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+function tick(){shoutTick();if(dayStart()!==dayKey){dayKey=dayStart();normalize();railDirty=false;render();renderRail()}const bk=onBreak(),kk=bk?bk.f+'-'+bk.t:'';if(brkKey!==null&&kk!==brkKey){brkKey=kk;render()}brkKey=kk;const d=new Date();$('#clock').textContent=String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
 setInterval(tick,10000);tick();
 if(location.hash==='#tv')document.body.classList.add('tv');
 normalize();applyView();render();boot();
