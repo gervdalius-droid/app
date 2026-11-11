@@ -360,6 +360,8 @@ h1{font:800 22px/1 var(--display);letter-spacing:-0.02em;text-transform:none}
 .sub,.note{color:var(--muted)}
 .pbtn{font:600 15px/1.3 var(--body)}
 .where{font-size:13px}
+.btn.sm{padding:5px 10px;font-size:13px}.btn.ok{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+li.idone strong{color:var(--muted)}.badge.done{background:var(--bg);color:var(--muted)}
 .badge{background:var(--accent-soft);color:var(--accent);border-radius:99px;padding:1px 8px;font:600 10.5px/1.6 var(--mono);letter-spacing:.05em;text-transform:uppercase}
 .d-inst{background:var(--accent)}
 input[type=text],input[type=number],input[type=search],select,textarea{border-radius:8px;padding:7px 10px;border-color:var(--line)}
@@ -504,7 +506,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -521,7 +523,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -795,12 +797,13 @@ async function poll(){
 async function loadShopflow(manual){
   if(mode!=='db')return;
   try{
-    const rows=await WA.rest('workspaces?id=eq.'+SF_ROW+'&select=orders:data->orders,members:data->members'),r=rows&&rows[0];
+    const rows=await WA.rest('workspaces?id=eq.'+SF_ROW+'&select=orders:data->orders,members:data->members,stations:data->stations'),r=rows&&rows[0];
     if(!r){SF.err=true}else{
       SF.orders=(Array.isArray(r.orders)?r.orders:[]).filter(o=>o&&!o.archived&&!o.shipped).map(o=>({
         label:[o.num,o.product].filter(Boolean).join(' · ').slice(0,60),
         items:(Array.isArray(o.items)?o.items:[]).map(i=>i&&i.name).filter(Boolean).map(String)})).filter(o=>o.label);
       SF.members=(Array.isArray(r.members)?r.members:[]).map(m=>m&&m.name).filter(Boolean).map(String);
+      SF.stations=(Array.isArray(r.stations)?r.stations:[]).filter(x=>x&&x.id).map(x=>({id:String(x.id),name:String(x.name||x.id)}));
       SF.at=Date.now();SF.err=false;
     }
   }catch(e){SF.err=true}
@@ -917,8 +920,9 @@ function setHall(P){
 function inPoly(x,y,P){let c=false;for(let i=0,j=P.length-1;i<P.length;j=i++){const a=P[i],b=P[j];if((a.y>y)!==(b.y>y)&&x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x)c=!c}return c}
 const fmtM=v=>(v/100).toLocaleString(lang,{maximumFractionDigits:2});
 const today=()=>{const d=new Date(),p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
-const instList=()=>Object.entries(ST().inst).filter(e=>e[1]&&e[1].f&&e[1].t&&e[1].t>=today()).sort((a,b)=>a[1].f<b[1].f?-1:a[1].f>b[1].f?1:0);
-const instOf=pid=>{const d=today();for(const i of Object.values(ST().inst))if(i&&isObj(i.w)&&i.w[pid]&&i.f<=d&&d<=i.t)return i;return null};
+const dayOfMs=ms=>{const d=new Date(ms),p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+const instList=()=>Object.entries(ST().inst).filter(e=>e[1]&&e[1].f&&e[1].t&&(e[1].done?dayOfMs(+e[1].done)===today():e[1].t>=today())).sort((a,b)=>a[1].f<b[1].f?-1:a[1].f>b[1].f?1:0);
+const instOf=pid=>{const d=today();for(const i of Object.values(ST().inst))if(i&&!i.done&&isObj(i.w)&&i.w[pid]&&i.f<=d&&d<=i.t)return i;return null};
 const md=v=>String(v||'').slice(5);
 function addProject(n){n=String(n||'').trim();if(!n||ST().projects.includes(n)||SF.orders.some(o=>o.label===n))return null;return ST().projects.concat([n]).slice(-300)}
 let instForm=null, drawWall=null;
@@ -1010,6 +1014,10 @@ function renderMap(){
 const RB_HOSTS=['de1.api.radio-browser.info','de2.api.radio-browser.info','fi1.api.radio-browser.info','nl1.api.radio-browser.info'];
 /* Stations the directory misses or lists badly, taken from the station's own site. alt = second stream to try.
    Gold FM: the AAC stream is the one that plays here, so it goes first. */
+/* ShopFlow step for a place: set per machine/desk in the inspector; otherwise by machine type */
+const DEF_SF={altendorf:'cut',felder:'cut',olimpic:'edge',startech:'cnc',volter:'cnc',vitap:'cnc',blum:'cnc',oproom:'cnc',booth:'fin',desk:'asm'};
+const sfStepOf=it=>it?(it.sf!==undefined&&it.sf!==null?it.sf:(DEF_SF[it.t]||'')):'';
+const sfStepName=id=>{const x=(SF.stations||[]).find(s=>s.id===id);return x?x.name:id};
 const RADIO_FIX=[{n:'Gold FM',u:'https://stream.goldfm.lt/goldfm.aac',alt:'https://stream.goldfm.lt/goldfm.mp3',c:'AAC',b:0}];
 const DEF_FAV=['Gold FM','LRT Radijas','LRT Opus','LRT Klasika','M-1','Lietus','ZIP FM','Power Hit Radio','Radiocentras','Relax FM','Rock FM'];
 const AU=new Audio();AU.preload='none';
@@ -1124,6 +1132,9 @@ function inspector(id){
     s+='<div class="row"><label class="grow" for="in-iw">'+esc(t('size'))+'</label><input class="q" type="number" id="in-iw" data-chg="iw" min="20" max="3000" step="5" value="'+Math.round(+it.w||T.w)+'"><input class="q" type="number" id="in-ih" data-chg="ih" min="20" max="3000" step="5" value="'+Math.round(+it.h||T.h)+'" aria-label="'+esc(t('size'))+'"></div>';
     if(T.room)s+='<div class="row"><label class="grow" for="in-idw">'+esc(t('door'))+'</label><input class="q" type="number" id="in-idw" data-chg="idw" min="50" max="600" step="5" value="'+Math.round(+it.dw||T.dw)+'"></div><div class="note">'+esc(t('doorHint'))+'</div>';
     s+='<div class="row"><label class="grow" for="in-ir">'+esc(t('angle'))+'</label><input class="q" type="number" id="in-ir" data-chg="ir" step="5" value="'+(+it.r||0)+'"></div>';
+    if(['machine','desk','zone'].includes(T.kind)){const cur=it.sf===undefined||it.sf===null?'__def':it.sf,df=DEF_SF[it.t]||'',st=SF.stations||[];
+      s+='<div class="row"><label class="grow" for="in-isf">'+esc(t('sfStep'))+'</label><select id="in-isf" data-chg="isf"><option value="__def"'+(cur==='__def'?' selected':'')+'>'+esc(t('sfDef'))+(df?' ('+esc(sfStepName(df))+')':' (—)')+'</option>'+
+        st.map(x=>'<option value="'+esc(x.id)+'"'+(cur===x.id?' selected':'')+'>'+esc(x.name)+'</option>').join('')+'<option value=""'+(cur===''?' selected':'')+'>'+esc(t('sfNone'))+'</option></select></div><div class="note">'+esc(t('sfHint'))+'</div>'}
     s+='<div class="row"><button class="btn" type="button" data-act="rot">'+esc(t('rot'))+'</button><button class="btn" type="button" data-act="dup">'+esc(t('dup'))+'</button><button class="btn" type="button" data-act="idel">'+esc(pendDel==='i:'+id?t('sure'):t('del'))+'</button></div>';
   }
   if(T.kind==='machine'){
@@ -1194,7 +1205,8 @@ function renderRail(){
     s+='<ul class="list">';
     for(const [id,i] of il){
       const names=Object.keys(i.w||{}).filter(k=>ST().people[k]).map(k=>ST().people[k].n).join(', ');
-      s+='<li><div class="pcol"><span><strong>'+esc(i.p||t('inst'))+'</strong> '+(i.f<=td?'<span class="badge">'+esc(t('instNow'))+'</span>':'')+'</span><span class="sub">'+esc(md(i.f))+(i.t!==i.f?' – '+esc(md(i.t)):'')+' · '+esc(names||'—')+'</span></div>';
+      s+='<li'+(i.done?' class="idone"':'')+'><div class="pcol"><span><strong>'+esc(i.p||t('inst'))+'</strong> '+(i.done?'<span class="badge done">'+esc(t('instBack'))+' '+esc(hhmm(+i.done))+'</span>':i.f<=td?'<span class="badge">'+esc(t('instNow'))+'</span>':'')+'</span><span class="sub">'+esc(md(i.f))+(i.t!==i.f?' – '+esc(md(i.t)):'')+' · '+esc(names||'—')+'</span></div>';
+      if(!i.done&&i.f<=td)s+='<button class="btn sm ok" type="button" data-act="instdone" data-iid="'+esc(id)+'">'+esc(t('instDone'))+'</button>';
       s+='<button class="x edit-only" type="button" data-act="instedit" data-iid="'+esc(id)+'" aria-label="'+esc(t('edit'))+'">✎</button><button class="x edit-only" type="button" data-act="instdel" data-iid="'+esc(id)+'">'+(pendDel==='n:'+id?esc(t('sure')):'✕')+'</button></li>';
     }
     s+='</ul>';
@@ -1598,6 +1610,14 @@ const LOG_PFX=ROW+'-log-',WD_END_H=17;
 const snOf=at=>at&&LAY().items[at]?itemName(at,LAY().items[at]):null;
 const monKey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 function dayEndOf(ms){const d=new Date(ms);d.setHours(WD_END_H,0,0,0);return Math.max(d.getTime(),ms)}
+function instSess(iid,i,end){
+  const out=[];if(!i||!isObj(i.w)||!i.f)return out;const endMs=end||Date.now(),last=i.t&&i.t<dayOfMs(endMs)?i.t:dayOfMs(endMs);
+  const ws=Object.keys(i.w).filter(k=>i.w[k]&&ST().people[k]);const x=i.f.split('-').map(Number),d=new Date(x[0],x[1]-1,x[2]);
+  for(let n=0;n<60&&dayOfMs(d.getTime())<=last;n++,d.setDate(d.getDate()+1)){
+    const a=new Date(d).setHours(8,0,0,0),b=Math.min(new Date(d).setHours(WD_END_H,0,0,0),endMs);if(!(b>a))continue;
+    for(const w of ws)out.push({id:w+'_i'+iid+'_'+dayOfMs(a),w,n:String(ST().people[w].n||''),s:'inst',sn:t('inst'),pr:String(i.p||''),nt:'',a,b,by:who});
+  }
+  return out}
 function sessOf(pid,p){
   const at=p&&(p.at||p.pat);if(!at||!(+p.ts>0)||p.pz)return null;
   const a=+p.ts,now=Date.now(),b=a>=dayStart()?now:Math.min(now,dayEndOf(a)),it=LAY().items[at];
@@ -1793,6 +1813,9 @@ $('#rail').addEventListener('click',e=>{
   if(a==='instnew'){instForm={id:'n'+Date.now().toString(36),p:'',f:today(),t:today(),w:{}};renderRail();return}
   if(a==='instedit'){const i=ST().inst[iid];if(i){instForm={id:iid,p:i.p||'',f:i.f,t:i.t,w:clone(i.w||{})};renderRail()}return}
   if(a==='instcancel'){instForm=null;renderRail();return}
+  if(a==='instdone'){const i=ST().inst[iid];if(!i||i.done||!canWrite())return;const now=Date.now();
+    for(const x of instSess(iid,i,now))logAdd(x);
+    commit(docs.state,{inst:{[iid]:{done:now}}});toast((i.p||t('inst'))+' · '+t('instBack'));return}
   if(a==='drawwall'){
     if(drawWall){stopWall();return}
     if(view==='3d'){view='2d';applyView();lsSet('cp.view',view)}
@@ -1879,6 +1902,7 @@ $('#rail').addEventListener('change',e=>{
   const v=String(el.value).trim();
   if(c==='pat'){el.blur();movePerson(el.dataset.pid,v||null);return}
   if(c==='pn'){if(!v)return;const p={people:{}};p.people[el.dataset.pid]={n:v.slice(0,30)};commit(docs.state,p)}
+  else if(c==='isf'){if(!selItem)return;const p={items:{}};p.items[selItem]={sf:v==='__def'?null:v};commit(docs.layout,p)}
   else if(c==='iname'){if(!v||!selItem)return;const p={items:{}};p.items[selItem]={n:v.slice(0,40)};commit(docs.layout,p)}
   else if(['ix','iy','iw','ih','ir','idw'].includes(c)){
     if(!selItem||v===''||isNaN(+v))return;const h=LAY().hall,o={};
@@ -2061,6 +2085,7 @@ async function repLoad(){
   try{const rows=await WA.rest('workspaces?id=in.('+mons.map(m=>LOG_PFX+m).join(',')+')&select=data');for(const r of rows||[])if(r&&isObj(r.data)&&isObj(r.data.s))Object.assign(all,r.data.s)}catch(e){}
   for(const x of logQ)all[x.id]=x;
   for(const [pid,p] of Object.entries(ST().people)){const s=sessOf(pid,p);if(s&&!all[s.id])all[s.id]=s}
+  for(const [iid,i] of Object.entries(ST().inst))if(i&&!i.done&&i.f<=today())for(const x of instSess(iid,i))if(!all[x.id])all[x.id]=x;
   if(RP.key!==key)return;
   RP.data=Object.values(all).filter(x=>x&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
   RP.busy=false;renderRep();

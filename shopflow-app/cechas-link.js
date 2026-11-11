@@ -8,6 +8,14 @@
      opens, filled in, so ShopFlow saves it the usual way).
    - Link to the plan's time report (how long each project took at
      each station).
+   - Orders follow the floor: when someone is marked at a machine or
+     desk with a project, that order's step for the place (Edge Banding
+     for the Olimpic, Assembly for a desk…) is started for that person;
+     when they leave, pause or move, a step started this way is paused.
+     When an installation is marked back, its installation step is
+     completed. All of this goes through ShopFlow's own start / pause /
+     complete, so ShopFlow keeps the times and saves as usual. It only
+     runs on a ShopFlow screen that is live (in sync), never on stale data.
    Read-only towards the plan: this file never writes its data.
    ============================================================ */
 "use strict";
@@ -23,6 +31,8 @@ var Cechas = {
   TYPE_NAMES: { altendorf: "Altendorf WA 80", felder: "Felder K 940 S", startech: "SCM Startech CN Plus", olimpic: "SCM Olimpic K 360",
     volter: "Volter CNC", booth: "Dažymo kamera", oproom: "CNC operatorių kambarys", laser: "Lazerinis graviruoklis", desk: "Surinkimo stalas",
     zone: "Zona", compressor: "Kaeser kompresorius", vitap: "VITAP gręžimo staklės", blum: "Blum gręžimo staklės" },
+
+  DEF_SF: { altendorf: "cut", felder: "cut", olimpic: "edge", startech: "cnc", volter: "cnc", vitap: "cnc", blum: "cnc", oproom: "cnc", booth: "fin", desk: "asm" },
 
   lt() { return (typeof I18N !== "undefined" && I18N.lang === "lt"); },
   tx(lt, en) { return this.lt() ? lt : en; },
@@ -70,6 +80,59 @@ var Cechas = {
     } catch (e) { this.err = true; }
     this.paintBtn();
     if (document.querySelector("#cechas-panel")) this.paintPanel();
+    try { this.reconcile(); } catch (e) { console.warn("[cechas] reconcile", e); }
+  },
+
+  /* ---------- orders follow the floor ---------- */
+  stepFor(itemId) {
+    var it = (this.layout().items || {})[itemId];
+    if (!it) return null;
+    var id = it.sf !== undefined && it.sf !== null ? it.sf : this.DEF_SF[it.t];
+    if (!id) return null;
+    return (Store.state.stations || []).some(s => s.id === id) ? id : null;
+  },
+  installStep() {
+    var st = (Store.state.stations || []).find(s => /montav|install|instal/i.test(String(s.id) + " " + String(s.name || "")));
+    return st ? st.id : null;
+  },
+  orderFor(pr) {
+    var k = this.norm(pr);
+    if (!k) return null;
+    return (Store.state.orders || []).find(o => !o.archived && (this.norm([o.num, o.product].filter(Boolean).join(" · ")) === k || this.norm(o.product) === k || this.norm(o.num) === k)) || null;
+  },
+  memberFor(name) {
+    var k = this.norm(name);
+    return k ? (Store.state.members || []).find(m => this.norm(m.name) === k) || null : null;
+  },
+  reconcile() {
+    if (!this.data || typeof D === "undefined" || typeof M === "undefined" || typeof Sync === "undefined" || Sync.status !== "live" || Sync._applying) return;
+    var ppl = this.state().people || {}, items = this.layout().items || {}, d0 = this.dayStart(), want = {}, did = 0;
+    Object.keys(ppl).forEach(k => {
+      var p = ppl[k];
+      if (!p || !p.at || !items[p.at] || p.pz || !(+p.ts >= d0) || !p.pr) return;
+      var o = this.orderFor(p.pr), step = this.stepFor(p.at), m = this.memberFor(p.n);
+      if (!o || !step || !m || !Array.isArray(o.ops)) return;
+      var ops = o.ops.filter(x => x.stationId === step && x.status !== "done");
+      if (!ops.length) return;
+      var op = ops.find(x => x.status === "running" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status === "running" && x.fromPlan) || ops.find(x => x.status === "paused" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status !== "running") || ops[0];
+      want[op.id] = 1;
+      if (!(op.status === "running" && D.opAssignedTo(op, m.id))) { M.startOp(o.id, op.id, m.id); op.fromPlan = true; did++; }
+    });
+    (Store.state.orders || []).forEach(o => (o.ops || []).forEach(op => {
+      if (op.fromPlan && op.status === "running" && !want[op.id]) { M.pauseOp(o.id, op.id, (D.opAssigneeIds(op) || [])[0] || null); did++; }
+    }));
+    /* installation marked back on the plan → its installation step is done */
+    var ist = this.installStep(), inst = this.state().inst || {}, week = Date.now() - 7 * 864e5;
+    if (ist) Object.keys(inst).forEach(k => {
+      var i = inst[k];
+      if (!i || !i.done || +i.done < week || !i.p) return;
+      var o = this.orderFor(i.p);
+      if (!o) return;
+      var who = Object.keys(i.w || {}).filter(x => i.w[x]).map(x => ppl[x] && this.memberFor(ppl[x].n)).filter(Boolean)[0];
+      /* once per "back" mark: if ShopFlow can't close it yet (earlier steps still open) it is left for people to finish there */
+      (o.ops || []).filter(op => op.stationId === ist && op.status !== "done" && op.fromInst !== +i.done).forEach(op => { op.fromInst = +i.done; M.completeOp(o.id, op.id, who ? who.id : null); did++; });
+    });
+    if (did) { Store.save(); if (typeof App !== "undefined" && App.render) App.render(); }
   },
   start() {
     if (this._t) return;
