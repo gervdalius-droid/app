@@ -582,7 +582,7 @@ function roomSVG(it,T,W,H,inner,win){
 }
 function roomM(it,T,W,D,inner,op){
   const g=doorGeo(it,T,W,D),k=Math.min(W/T.w,D/T.h),fz=T.flip&&g.ds===2?-1:1,m=[];
-  const wall=(i,u1,u2,y0,h)=>{if(u2-u1<1)return;const a=g.P(i,u1),b=g.P(i,u2);m.push(i%2?B(a[0]-5,a[1],a[0]+5,b[1],y0,h,'var(--wall)',null,op):B(a[0],a[1]-5,b[0],a[1]+5,y0,h,'var(--wall)',null,op))};
+  const wall=(i,u1,u2,y0,h)=>{if(u2-u1<1)return;const a=g.P(i,u1),b=g.P(i,u2);m.push(Object.assign(i%2?B(a[0]-5,a[1],a[0]+5,b[1],y0,h,'var(--wall)',null,op):B(a[0],a[1]-5,b[0],a[1]+5,y0,h,'var(--wall)',null,op),op==null?{wl:'room'}:{}))};
   for(let i=0;i<4;i++){const L=i%2?D:W;if(i===g.ds){wall(i,-L/2,g.c-g.dw/2,0,260);wall(i,g.c+g.dw/2,L/2,0,260);wall(i,g.c-g.dw/2,g.c+g.dw/2,212,48)}else wall(i,-L/2,L/2,0,260)}
   for(const b of inner){const c=Object.assign({},b);if(b.cyl){c.x=b.x*k;c.z=b.z*k*fz;c.r=b.r*k}else{c.x0=b.x0*k;c.x1=b.x1*k;const z0=b.z0*k*fz,z1=b.z1*k*fz;c.z0=Math.min(z0,z1);c.z1=Math.max(z0,z1)}m.push(c)}
   return m;
@@ -1320,7 +1320,7 @@ const MODELS={
  wiptall:()=>{const m=[B(-50,-30,-48,30,8,212,'#ecebe4'),B(48,-30,50,30,8,212,'#ecebe4'),B(-50,-30,50,-28,8,212,'#ecebe4'),B(-50,-30,50,30,8,2,'#ecebe4'),B(-50,-30,50,30,218,2,'#ecebe4'),B(-1,-28,1,28,10,208,'#ecebe4'),B(-50,-26,50,26,0,8,'#3a3f44')];for(const y of [60,110,160])m.push(B(-48,-28,-1,26,y,2,'#ecebe4'));m.push(B(1,-26,48,-22,190,3,'#9aa1a7'));return m},
  wall:(id,it,W,D)=>{const a=(+it.r||0)*Math.PI/180,A={x:it.x-Math.cos(a)*W/2,y:it.y-Math.sin(a)*W/2},Bp={x:it.x+Math.cos(a)*W/2,y:it.y+Math.sin(a)*W/2},m=[];let u=0;
    for(const o of openingsOn(A,Bp)){if(o.u0>u)m.push(B(u-W/2,-D/2,o.u0-W/2,D/2,0,WALLH,'var(--panel)'));if(o.sill>0)m.push(B(o.u0-W/2,-D/2,o.u1-W/2,D/2,0,o.sill,'var(--panel)'));if(o.h<WALLH)m.push(B(o.u0-W/2,-D/2,o.u1-W/2,D/2,o.h,WALLH-o.h,'var(--panel)'));u=Math.max(u,o.u1)}
-   if(W-u>1)m.push(B(u-W/2,-D/2,W/2,D/2,0,WALLH,'var(--panel)'));return m},
+   if(W-u>1)m.push(B(u-W/2,-D/2,W/2,D/2,0,WALLH,'var(--panel)'));m.forEach(b=>{b.wl='line'});return m},
  window:()=>[B(-69,-3,69,3,95,140,'#a9d8f0',null,.3),B(-71,-6,71,6,91,5,'#f1f2f3'),B(-71,-6,71,6,234,5,'#f1f2f3'),B(-71,-6,-67,6,95,140,'#f1f2f3'),B(67,-6,71,6,95,140,'#f1f2f3'),B(-2,-5,2,5,95,140,'#f1f2f3')],
  door:()=>[B(-55,-12,-46,12,0,214,'#3a3f44'),B(46,-12,55,12,0,214,'#3a3f44'),B(-55,-12,55,12,210,8,'#3a3f44'),B(-46,-92,-42,0,0,206,'#8fa0ab'),B(-41,-50,-38,-42,100,4,'#23282c')],
  gate:()=>[B(-152,-24,-140,24,0,320,'#3a3f44'),B(140,-24,152,24,0,320,'#3a3f44'),B(-152,-24,152,24,320,20,'var(--mark)'),B(-140,-14,140,14,170,150,'#8fa0ab'),B(-140,-16,140,16,214,5,'#6f7f8a'),B(-140,-16,140,16,264,5,'#6f7f8a')],
@@ -1391,6 +1391,22 @@ function init3D(){
         for(const p of T3.pulsers){const k=90*(1+.28*Math.sin(tt*4.5));p.scale.set(k,k,1)}
         if(tvOn()&&autoRot&&!T3.ptrs.size)T3.cam.th+=.0007;
       }
+      if(T3.walls&&T3.walls.length){
+        /* walls that would hide what is behind them go see-through as the view turns:
+           a room's walls on the camera's side, and a drawn wall when you look across it */
+        const cp=camera.position,v=T3._wv||(T3._wv=new THREE.Vector3()),c=T3.cam;
+        let dx=c.tx-cp.x,dz=c.tz-cp.z;const dl=Math.hypot(dx,dz)||1;dx/=dl;dz/=dl;
+        for(const w of T3.walls){
+          let fade;
+          if(w.kind==='room'){w.m.getWorldPosition(v);const gp=w.g.position;fade=Math.hypot(v.x-cp.x,v.z-cp.z)<Math.hypot(gp.x-cp.x,gp.z-cp.z)-8}
+          else fade=Math.abs(dx*Math.sin(w.a)-dz*Math.cos(w.a))>.28;
+          const tgt=fade?(w.kind==='room'?.22:.3):1;if(Math.abs(w.o-tgt)<.01)continue;
+          w.o+=(tgt-w.o)*.22;if(Math.abs(w.o-tgt)<.01)w.o=tgt;
+          w.m.material.opacity=w.o;w.m.material.depthWrite=w.o>.98;w.m.castShadow=w.o>.98;
+          /* faded walls turn a grey glass tone, so they still read on the light floor */
+          w.m.material.color.copy(w.c0).lerp(w.c1,Math.min(1,(1-w.o)/.7)*.75);
+        }
+      }
       {const vh=el.clientHeight||600,tv=tvOn(),px=Math.max(tv?20:13,Math.min(tv?28:19,vh*(tv?.026:.021))),k=2*Math.tan(camera.fov*Math.PI/360)/vh;
         /* labels keep a fixed size on screen; where two would cover each other, the later one steps up clear */
         const vw=el.clientWidth||800,placed=[],v=new THREE.Vector3();
@@ -1458,7 +1474,7 @@ function cyl3(b){
 function build3D(){
   if(!T3)return;
   const {root,scene}=T3,P=hallPts(),bb=hallBox(P);
-  clear3(root);T3.movers=[];T3.pulsers=[];T3.workers=[];T3.labels=[];
+  clear3(root);T3.movers=[];T3.pulsers=[];T3.workers=[];T3.labels=[];T3.walls=[];
   scene.background=new THREE.Color(cv('--bg'));
   const key=[bb.x0,bb.y0,bb.x1,bb.y1].join(',');
   if(T3.cam.key!==key){T3.cam.key=key;let sv=null;try{sv=JSON.parse(lsGet('cp.cam')||'null')}catch(e){}
@@ -1502,6 +1518,7 @@ function build3D(){
     for(const b of MODELS[it.t](id,it,Wd,Dp)){
       const m=b.cyl?cyl3(b):box3(b);if(stK==='down'){m.material.transparent=true;m.material.opacity=Math.min(m.material.opacity,.5)}
       inner.add(m);top=Math.max(top,b.ax?b.y0+b.r:b.y0+b.h);
+      if(b.wl&&!b.cyl){m.material.transparent=true;T3.walls.push({m,kind:b.wl,g,a:(+it.r||0)*Math.PI/180,o:1,c0:m.material.color.clone(),c1:C3('#5d6b72')})}
       if(b.mv&&stK==='run')T3.movers.push({mesh:m,kind:b.mv,bx:m.position.x,bz:m.position.z});
     }
     if(selItem===id){const s=new THREE.Mesh(new THREE.PlaneGeometry(Wd+40,Dp+40),new THREE.MeshBasicMaterial({color:new THREE.Color(mark),transparent:true,opacity:.55,toneMapped:false}));s.rotation.x=-Math.PI/2;s.position.y=.6;g.add(s)}
