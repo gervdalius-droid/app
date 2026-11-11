@@ -873,5 +873,9 @@ var LT = {
   "Update automatically when a project changes": "Atnaujinti automatiškai, kai projektas pasikeičia",
   "This computer:": "Šis kompiuteris:",
   "Sign in with Microsoft": "Prisijungti su Microsoft",
-  "How to get the app ID (once, ~5 min)": "Kaip gauti programos ID (vieną kartą, ~5 min.)"
+  "How to get the app ID (once, ~5 min)": "Kaip gauti programos ID (vieną kartą, ~5 min.)",
+  "Drag up or down to change the order": "Tempkite aukštyn ar žemyn, kad pakeistumėte tvarką",
+  "Automatic order": "Automatinė tvarka",
+  "Back to: late first, then by due date": "Grąžinti: pirmiausia vėluojantys, tada pagal terminą",
+  "Client handles": "Pasirūpina klientas"
 };

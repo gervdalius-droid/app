@@ -1256,6 +1256,7 @@ var Mgr = {
           <button data-d="comfortable" class="${density === "comfortable" ? "active" : ""}">Comfortable</button>
           <button data-d="compact" class="${density === "compact" ? "active" : ""}">Compact</button>
         </div>
+        ${byJob && (Store.state.jobOrder || []).length && (App.can("orders.edit") || App.isManager()) ? `<button class="btn ghost" id="bf-order-reset" title="Back to: late first, then by due date">${icon("refresh", 13)} Automatic order</button>` : ""}
         <div class="row" style="gap:8px;font-size:12.5px;color:var(--text-2);font-weight:560">
           Group by job ${switchHtml("byJob", byJob)}
         </div>
@@ -1317,7 +1318,8 @@ var Mgr = {
         }))
       }];
       return `<div class="bg-lane ${shut ? "shut" : ""}">
-        <div class="bg-lane-head" style="--job:var(--${g.color});--job-soft:var(--${g.color}-soft)">
+        <div class="bg-lane-head" data-lane-key="${esc(g.key)}" ${(App.can("orders.edit") || App.isManager()) ? `draggable="true" title="Drag up or down to change the order"` : ""} style="--job:var(--${g.color});--job-soft:var(--${g.color}-soft)">
+          ${(App.can("orders.edit") || App.isManager()) ? `<span class="bg-lane-grip">${icon("grip", 13)}</span>` : ""}
           <button class="bg-lane-toggle" data-lane="${esc(g.key)}" title="${shut ? "Expand" : "Collapse"}">
             ${icon(shut ? "chev-right" : "chev-down", 14)}
           </button>
@@ -1450,6 +1452,45 @@ var Mgr = {
         opId = _b$dataset$cardBlock$2[1];
       OrderDetail.blockDialog(orderId, opId); // the dialog lives with the project detail
     });
+    /* ---- job rows: drag a row by its name to reorder ---- */
+    var laneKey = null;
+    var orderReset = $("#bf-order-reset", root);
+    if (orderReset) orderReset.onclick = () => { M.resetJobOrder(); App.render(); };
+    var clearMarks = () => $$(".bg-lane-head.drop-above, .bg-lane-head.drop-below", root).forEach(h => h.classList.remove("drop-above", "drop-below"));
+    $$(".bg-lane-head[draggable]", root).forEach(h => {
+      h.ondragstart = e => {
+        if (e.target.closest && e.target.closest(".order-card")) return;
+        laneKey = h.dataset.laneKey;
+        h.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/x-shopflow-lane", laneKey);
+        e.stopPropagation();
+      };
+      h.ondragend = () => { laneKey = null; h.classList.remove("dragging"); clearMarks(); };
+    });
+    $$(".bg-lane-head[data-lane-key]", root).forEach(h => {
+      h.addEventListener("dragover", e => {
+        if (!laneKey || h.dataset.laneKey === laneKey) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        var r = h.getBoundingClientRect();
+        var below = e.clientY > r.top + r.height / 2;
+        clearMarks();
+        h.classList.add(below ? "drop-below" : "drop-above");
+      });
+      h.addEventListener("drop", e => {
+        if (!laneKey) return;
+        e.preventDefault();
+        var below = h.classList.contains("drop-below");
+        clearMarks();
+        var keys = $$(".bg-lane-head[data-lane-key]", root).map(x => x.dataset.laneKey).filter(k => k !== laneKey);
+        var at = keys.indexOf(h.dataset.laneKey) + (below ? 1 : 0);
+        keys.splice(at, 0, laneKey);
+        laneKey = null;
+        M.setJobOrder(keys, App.me.id);
+        App.render();
+      });
+    });
     var dragRef = null; // {orderId, opId}
     $$(".order-card", root).forEach(card => {
       card.onclick = () => Drawer.open(card.dataset.order);
@@ -1469,6 +1510,7 @@ var Mgr = {
     });
     $$("[data-drop]", root).forEach(col => {
       col.ondragover = e => {
+        if (laneKey) return; // a row is being moved, not a card
         e.preventDefault();
         col.classList.add("drag-over");
       };
@@ -4700,22 +4742,20 @@ var OrderDetail = {
   detailsHtml(o, canEdit) {
     var list = D.details(o);
     var sum = D.detailSummary(o);
+    /* a dropdown, not a cycling chip: one choice, no re-render per click */
     var chip = d => {
       var late = D.detailLate(d);
       var cls = {
         info: "",
         need: "warn",
         ordered: late ? "bad" : "go",
-        here: "ok"
+        here: "ok",
+        client: "cl"
       }[d.state] || "";
-      return `<button class="dt-state ${cls}" ${canEdit ? `data-dt-cycle="${d.id}"` : "disabled"}
-        title="${canEdit ? "Click to move it on" : ""}">${icon({
-        info: "info",
-        need: "alert",
-        ordered: "truck",
-        here: "check-circle"
-      }[d.state] || "info", 13)}
-        <span>${D.DETAIL_LABEL[d.state]}</span></button>`;
+      if (!canEdit) return `<span class="dt-state ${cls}">${esc(D.DETAIL_LABEL[d.state] || d.state)}</span>`;
+      return `<select class="dt-state dt-state-sel ${cls}" data-dt-state="${d.id}" title="Status">
+        ${D.DETAIL_STATES.map(st => `<option value="${st}" ${d.state === st ? "selected" : ""}>${esc(D.DETAIL_LABEL[st])}</option>`).join("")}
+      </select>`;
     };
     return `<div>
       <div class="t-label" style="display:flex;align-items:center;gap:8px;margin-bottom:10px;flex-wrap:wrap">
@@ -5295,19 +5335,16 @@ var OrderDetail = {
         addDetail();
       }
     };
-    $$("[data-dt-cycle]", el).forEach(b => b.onclick = () => {
-      var d = D.detail(o, b.dataset.dtCycle);
+    $$("[data-dt-state]", el).forEach(sel => sel.onchange = () => {
+      var d = D.detail(o, sel.dataset.dtState);
       if (!d) return;
-      /* info stays where it is — it is a fact, not a thing being chased */
-      var ring = d.state === "info" ? ["info", "need"] : ["need", "ordered", "here", "need"];
-      var next = ring[Math.min(ring.indexOf(d.state) + 1, ring.length - 1)];
-      var patch = {
-        state: next
-      };
-      if (next === "ordered" && !d.due) patch.due = Date.now() + 7 * DAY; // a guess you can correct
+      var patch = { state: sel.value };
+      if (sel.value === "ordered" && !d.due) patch.due = Date.now() + 7 * DAY; // a guess you can correct
+      sel.blur();
       M.updateDetail(o.id, d.id, patch, App.me.id);
       App.render();
       Drawer.refresh();
+      this.refreshSheet();
     });
     var live = (sel, key) => $$(sel, el).forEach(inp => {
       inp.onchange = () => {

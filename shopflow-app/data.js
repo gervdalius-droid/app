@@ -4729,6 +4729,17 @@ var D = {
     });
     /* worst first: a job with something overdue is the one to look at */
     groups.sort((a, b) => b.overdue - a.overdue || (a.due || Infinity) - (b.due || Infinity) || a.label.localeCompare(b.label));
+    /* …unless someone has put the jobs in order by dragging. Jobs nobody has
+       placed yet (new ones) stay on top, where they are seen; the dragged
+       order follows. */
+    var order = Store.state.jobOrder || [];
+    if (order.length) {
+      var rank = {};
+      order.forEach((k, i) => rank[k] = i);
+      var fresh = groups.filter(g => !(g.key in rank));
+      var placed = groups.filter(g => g.key in rank).sort((a, b) => rank[a.key] - rank[b.key]);
+      groups = fresh.concat(placed);
+    }
     return groups;
   },
   /* Jobs imported before cabinets were tracked have no checklist at all. If
@@ -4808,7 +4819,7 @@ var D = {
             need    — wanted, nobody has ordered it
             ordered — on its way; `due` is when it was promised
             here    — arrived, nothing left to chase */
-  DETAIL_STATES: ["info", "need", "ordered", "here"],
+  DETAIL_STATES: ["need", "ordered", "here", "client", "info"],
   /* ---------- appliances (buitinė technika) ----------
      Usually the client buys them and only tells us the model, so this is a list
      of facts to build around (model, niche, spec), not things we order. The
@@ -4838,7 +4849,8 @@ var D = {
     info: "Note",
     need: "Needed",
     ordered: "Ordered",
-    here: "Arrived"
+    here: "Arrived",
+    client: "Client handles"
   },
   /* What a kitchen is actually made of, in the order someone thinks about it.
      Offered as a list, not enforced as one — a shop will always have a kind of
@@ -6816,6 +6828,19 @@ var M = {
       baseUrl: "",
       template: "{base}/{code}"
     }), patch);
+    Store.save();
+  },
+  /* the job rows on the project board, in the order people dragged them */
+  setJobOrder(keys, byId) {
+    var seen = {};
+    var old = Store.state.jobOrder || [];
+    var next = [];
+    keys.concat(old).forEach(k => { if (k && !seen[k]) { seen[k] = 1; next.push(k); } });
+    Store.state.jobOrder = next.slice(0, 600);
+    Store.save();
+  },
+  resetJobOrder() {
+    Store.state.jobOrder = [];
     Store.save();
   },
   /* ---------- Portfolios ---------- */

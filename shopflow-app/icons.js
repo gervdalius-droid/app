@@ -7,6 +7,8 @@
 
 var ICONS = {
   /* brand & chrome */
+  grip: '<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',
+  refresh: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3v5h5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 21v-5h-5"/>',
   logo: '<rect x="3" y="3" width="18" height="18" rx="5.5"/><path d="m8 12.5 2.8 2.8L16 9"/>',
   search: '<circle cx="11" cy="11" r="7"/><path d="m21 21-4.5-4.5"/>',
   moon: '<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>',

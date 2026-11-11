@@ -3140,3 +3140,20 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .pdrop-box span { font-size: 13px; color: var(--text-2); }
 .ap-sub .mini-act { text-decoration: none; color: var(--accent-text); font-size: 12px; font-weight: 640; display: inline-flex; gap: 4px; align-items: center; padding: 3px 8px; border-radius: 7px; background: var(--accent-soft); }
 .ap-model-ro a { color: var(--accent-text); }
+/* job rows: drag to reorder */
+.bg-lane-head[draggable="true"] { cursor: grab; }
+.bg-lane-head.dragging { opacity: 0.45; }
+.bg-lane-grip { color: var(--text-3); margin: 2px -2px 0 -20px; flex: none; opacity: 0.5; transition: opacity 0.15s; }
+.bg-lane-head:hover .bg-lane-grip { opacity: 1; }
+.bg-lane-head.drop-above { box-shadow: 0 -3px 0 0 var(--accent); }
+.bg-lane-head.drop-below { box-shadow: 0 3px 0 0 var(--accent); }
+/* detail status as a dropdown */
+.dt-state-sel { appearance: none; -webkit-appearance: none; padding-right: 22px; width: 132px; text-overflow: ellipsis;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='3'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 7px center; background-color: var(--surface-3); }
+.dt-state-sel.warn { background-color: var(--orange-soft); }
+.dt-state-sel.go { background-color: var(--blue-soft); }
+.dt-state-sel.ok { background-color: var(--green-soft); }
+.dt-state-sel.bad { background-color: var(--red-soft); }
+.dt-state.cl, .dt-state-sel.cl { background-color: var(--purple-soft, var(--surface-3)); color: var(--purple, var(--text-2)); }
+.dt-state-sel option { text-transform: none; color: var(--text); background: var(--surface); }
