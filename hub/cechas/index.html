@@ -222,7 +222,7 @@ body.tv h1{font-size:3.6vh;white-space:nowrap;overflow:hidden;text-overflow:elli
 body.tv .counts{font-size:3.4vh;flex-wrap:nowrap;white-space:nowrap;gap:2vh}
 body.tv .dot{width:1.8vh;height:1.8vh}
 body.tv .clock{font-size:4.6vh;order:-1}
-body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR{display:none!important}
+body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR,body.tv #btnAw{display:none!important}
 body.tv .tools{flex-wrap:nowrap;gap:1vh}
 body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
 body.tv main{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
@@ -418,6 +418,34 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #ci .done strong{font:800 24px/1.1 var(--display)}
 /* report and QR sheet */
 #rep .rbox{border-radius:16px}
+#aw{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+#aw .rbox{background:var(--panel);color:var(--ink);border-radius:16px;width:min(900px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#aw .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#aw h2{font:800 22px/1.1 var(--display);letter-spacing:-0.01em;margin:0}
+#aw .ctl{display:flex;flex-wrap:wrap;gap:8px}
+#aw select{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+#aw .awp{display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+#aw .awp label{font:600 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+#aw .awwin{font-size:15px}
+#aw .lk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px}
+#aw .tw{overflow-x:auto}
+#aw table{border-collapse:collapse;width:100%;font-size:15px}
+#aw th{font:600 11px/1.3 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);text-align:left;padding:6px 8px}
+#aw td{padding:8px;border-top:1px solid var(--line);vertical-align:middle}
+#aw .h{text-align:right;white-space:nowrap;font-family:var(--mono);font-size:14px}
+#aw tr.awr{cursor:pointer}
+#aw tr.awr:hover td{background:var(--bg)}
+#aw tr.top td{background:var(--accent-soft)}
+#aw tr.won td b{color:var(--accent)}
+#aw .caret{color:var(--muted);margin-left:4px}
+#aw tr.awlog>td{background:var(--bg);padding:4px 8px 10px}
+#aw tr.awlog table{font-size:13.5px}
+#aw tr.awlog td{border-top:1px solid var(--line);padding:5px 6px}
+#aw .mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--muted)}
+#aw .note{font-size:13px;color:var(--muted)}
+#aw th.h{font:600 11px/1.3 var(--mono);text-align:right}
+#aw td .btn{font-family:var(--body);font-size:13px}
+#aw tr.awr td:first-child{font-size:18px;width:2.2em}
 #rep .tot{font:600 18px/1.2 var(--mono);letter-spacing:-.01em}
 #rep tr.g td{font:700 16px/1.3 var(--display)}
 #rep td.h{font-family:var(--mono);font-size:13.5px}
@@ -460,6 +488,7 @@ body.tv .mapwrap{border-radius:1.4vh}
     <button class="btn" id="btnAuth" type="button" hidden></button>
     <button class="btn" id="btnRadio" type="button" aria-haspopup="dialog">📻</button>
     <button class="btn" id="btnTime" type="button" aria-haspopup="dialog"></button>
+    <button class="btn" id="btnAw" type="button" aria-haspopup="dialog" hidden></button>
     <button class="btn" id="btnQR" type="button" hidden></button>
     <button class="btn" id="btnView" type="button"></button>
     <button class="btn" id="btnLang" type="button"></button>
@@ -476,6 +505,7 @@ body.tv .mapwrap{border-radius:1.4vh}
 <div id="radio" hidden role="dialog" aria-labelledby="r-h"></div>
 <div id="ci" aria-live="polite"></div>
 <div id="rep" hidden role="dialog" aria-labelledby="rp-h"></div>
+<div id="aw" hidden role="dialog" aria-labelledby="aw-h"></div>
 <div id="qrs" hidden></div>
 <div id="auth" hidden><form class="authbox" id="authForm" autocomplete="on">
   <span class="logo" role="img" aria-label="Dėdės Baldai"></span>
@@ -513,7 +543,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -530,7 +560,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -823,6 +853,7 @@ async function loadShopflow(manual){
    has none asks once for the ShopFlow password. A personal workshop account (name + PIN) works too. */
 const SHOP_EMAIL='shopflow@dedesbaldai.lt';
 let person=null;try{person=JSON.parse(lsGet('cp.who')||'null')}catch(e){}
+const isMgr=()=>{if(!person||!TEAM)return false;const m=TEAM.list.find(x=>normN(x.name)===normN(person.name));return!!m&&m.role==='manager'};
 function setPerson(p){person=p;who=p&&p.name?String(p.name).slice(0,40):'cechas';lsSet('cp.who',JSON.stringify(p));renderHeader()}
 const normN=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();
 async function sha256hex(str){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(str));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
@@ -886,6 +917,7 @@ async function boot(){
   const timer=setTimeout(()=>{if(!docs.layout.loaded){stale=true;renderHeader()}},10000);
   await poll();clearTimeout(timer);
   loadShopflow().then(()=>{if(CHK)renderCI()});logFlush();
+  if(!TEAM)loadTeam().then(()=>renderHeader()).catch(()=>{});
   if(location.hash==='#laikas'&&!CHK)repOpen(true);
   if(timersOn)return;timersOn=true;
   setInterval(logFlush,60000);
@@ -1124,7 +1156,7 @@ function renderHeader(){
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#tvhint').textContent=view==='3d'?t('tvHint3'):t('tvHint2');
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
-  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
+  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnAw').textContent='🏆 '+t('awBtn');$('#btnAw').hidden=mode!=='db'||!isMgr();$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
 }
@@ -2101,18 +2133,23 @@ function netMs(a,b){if(!(b>a))return 0;let ms=b-a;const mm=v=>{const x=String(v|
   for(;d.getTime()<b;d.setDate(d.getDate()+1)){const d0=d.getTime();for(const k of breakList()){if(!k||!k.f||!k.t)continue;const s0=d0+mm(k.f)*6e4,s1=d0+mm(k.t)*6e4;ms-=Math.max(0,Math.min(b,s1)-Math.max(a,s0))}}
   return Math.max(0,ms)}
 const fmtH=ms=>{const m=Math.round(ms/6e4),h=Math.floor(m/60),r=m%60;return h?(h+' h'+(r?' '+r+' min':'')):r+' min'};
-async function repLoad(){
-  const [a,b]=repRange(RP.per),mons=[];for(const d=new Date(a);d.getTime()<b;d.setMonth(d.getMonth()+1,1)){const k=monKey(d.getTime());if(!mons.includes(k))mons.push(k)}
+async function sessionsIn(a,b){
+  const mons=[];for(const d=new Date(a);d.getTime()<b;d.setMonth(d.getMonth()+1,1)){const k=monKey(d.getTime());if(!mons.includes(k))mons.push(k)}
   const pk=monKey(a-864e5*40);if(!mons.includes(pk))mons.unshift(pk);   /* a stretch can start in the month before */
-  const key=RP.per;RP.busy=true;RP.key=key;renderRep();
   const all={};
   try{const rows=await WA.rest('workspaces?id=in.('+mons.map(m=>LOG_PFX+m).join(',')+')&select=data');for(const r of rows||[])if(r&&isObj(r.data)&&isObj(r.data.s))Object.assign(all,r.data.s)}catch(e){}
   for(const x of logQ)all[x.id]=x;
   for(const [pid,p] of Object.entries(ST().people)){const s=sessOf(pid,p);if(s&&!all[s.id])all[s.id]=s}
   for(const [iid,i] of Object.entries(ST().inst))if(i&&!i.done&&i.f<=today())for(const x of instSess(iid,i))if(!all[x.id])all[x.id]=x;
+  return Object.values(all).filter(x=>x&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
+}
+async function repLoad(){
+  const [a,b]=repRange(RP.per);
+  const key=RP.per;RP.busy=true;RP.key=key;renderRep();
+  const all={};
+  const list=await sessionsIn(a,b);
   if(RP.key!==key)return;
-  RP.data=Object.values(all).filter(x=>x&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
-  RP.busy=false;renderRep();
+  RP.data=list;RP.busy=false;renderRep();
 }
 function prLabel(pr){if(!pr)return t('repNoP');const o=SF.orders.find(o=>o.label===pr||normN(o.label.split(' · ').slice(1).join(' · '))===normN(pr));return o?o.label:pr}
 function renderRep(){
@@ -2149,6 +2186,70 @@ function repOpen(on){RP.open=on;renderRep();if(on)repLoad();try{if(on&&location.
 $('#btnTime').addEventListener('click',()=>repOpen(true));
 $('#rep').addEventListener('click',e=>{if(e.target.id==='rep'){repOpen(false);return}const b=e.target.closest('[data-rp]');if(!b)return;if(b.dataset.rp==='close')repOpen(false);else if(b.dataset.rp==='csv')repCsv()});
 $('#rep').addEventListener('change',e=>{if(e.target.id==='rp-per'){RP.per=e.target.value;RP.data=null;repLoad()}else if(e.target.id==='rp-by'){RP.by=e.target.value;renderRep()}});
+
+/* ---------- employee of the month (managers only) ----------
+   Most active = most working days in the month (a day counts from 30 min of logged work), then most hours.
+   Managers set the prize and announce the winner; both are kept in their own row. The log under each name is
+   every stretch of work behind the numbers. */
+const AW_ROW=ROW+'-awards';
+const AW={open:false,mon:monKey(Date.now()),list:null,rows:null,info:null,busy:false,sel:null,key:''};
+function awMonths(){const out=[],d=new Date();d.setDate(1);for(let i=0;i<12;i++){out.push(monKey(d.getTime()));d.setMonth(d.getMonth()-1)}return out}
+function monLabel(k){const [y,m]=k.split('-').map(Number);try{return new Date(y,m-1,1).toLocaleDateString(lang==='en'?'en-GB':'lt-LT',{year:'numeric',month:'long'})}catch(e){return k}}
+async function awLoad(){
+  const k=AW.mon,[y,m]=k.split('-').map(Number),a=new Date(y,m-1,1).getTime(),b=new Date(y,m,1).getTime();
+  AW.busy=true;AW.key=k;renderAw();
+  const [list,info]=await Promise.all([sessionsIn(a,b),WA.rest('workspaces?id=eq.'+AW_ROW+'&select=data').then(r=>r&&r[0]&&isObj(r[0].data)?r[0].data:{}).catch(()=>({}))]);
+  if(AW.key!==k)return;
+  const by={};
+  for(const x of list){const id=x.w;const e=by[id]=by[id]||{id,n:x.n||(ST().people[id]&&ST().people[id].n)||id,days:{},ms:0,jobs:new Set(),list:[]};
+    const d=dayOfMs(x.a1);e.days[d]=(e.days[d]||0)+x.ms;e.ms+=x.ms;e.jobs.add(d+'|'+(x.pr||'')+'|'+(x.sn||x.s));e.list.push(x)}
+  AW.rows=Object.values(by).map(e=>Object.assign(e,{nd:Object.values(e.days).filter(v=>v>=18e5).length,nj:e.jobs.size})).sort((p,q)=>q.nd-p.nd||q.ms-p.ms||p.n.localeCompare(q.n,'lt'));
+  AW.info=isObj(info.m)&&isObj(info.m[k])?info.m[k]:{};AW.busy=false;renderAw();
+}
+async function awSave(patch){
+  if(!isMgr()||!canWrite())return false;
+  try{
+    const r=await WA.rest('workspaces?id=eq.'+AW_ROW+'&select=data'),base=r&&r[0]&&isObj(r[0].data)?r[0].data:{};
+    if(!isObj(base.m))base.m={};base.m[AW.mon]=Object.assign({},base.m[AW.mon]||{},patch,{at:Date.now(),by:who});
+    await WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:AW_ROW,data:base,updated_at:new Date().toISOString(),updated_by:who})});
+    AW.info=base.m[AW.mon];renderAw();toast(t('awSaved'));return true;
+  }catch(e){toast(t('awErr'));return false}
+}
+function renderAw(){
+  const box=$('#aw');box.hidden=!AW.open;if(!AW.open)return;
+  const cur=AW.mon===monKey(Date.now()),inf=AW.info||{},p2=x=>String(x).padStart(2,'0'),tm=ms=>{const d=new Date(ms);return p2(d.getHours())+':'+p2(d.getMinutes())};
+  let h='<div class="rbox"><div class="rh"><h2 id="aw-h">🏆 '+esc(t('awH'))+'</h2><button type="button" class="x" data-aw="close" aria-label="✕">✕</button></div>'+
+    '<div class="ctl"><select id="aw-mon" aria-label="'+esc(t('awH'))+'">'+awMonths().map(k=>'<option value="'+k+'"'+(k===AW.mon?' selected':'')+'>'+esc(monLabel(k))+(k===monKey(Date.now())?' · '+esc(t('awNow')):'')+'</option>').join('')+'</select></div>';
+  h+='<div class="awp"><label for="aw-prize">'+esc(t('awPrize'))+'</label><div class="row"><input type="text" id="aw-prize" class="grow" maxlength="120" placeholder="'+esc(t('awPrizePh'))+'" value="'+esc(inf.prize||'')+'"><button type="button" class="btn" data-aw="prize">'+esc(t('awSavePrize'))+'</button></div>'+
+    (inf.winner?'<div class="awwin">🏆 '+esc(t('awWinner'))+': <b>'+esc(inf.wn||inf.winner)+'</b>'+(inf.prize?' · '+esc(inf.prize):'')+' <button type="button" class="lk" data-aw="unwin">'+esc(t('awUndo'))+'</button></div>':'')+'</div>';
+  if(AW.busy||!AW.rows)h+='<div class="note">'+esc(t('repLoad'))+'</div>';
+  else if(!AW.rows.length)h+='<div class="note">'+esc(t('repNone'))+'</div>';
+  else{
+    h+='<div class="tw"><table class="awt"><thead><tr><th>#</th><th>'+esc(t('awWho'))+'</th><th class="h">'+esc(t('awDays'))+'</th><th class="h">'+esc(t('awHours'))+'</th><th class="h">'+esc(t('awJobs'))+'</th><th></th></tr></thead><tbody>';
+    AW.rows.forEach((e,i)=>{const medal=['🥇','🥈','🥉'][i]||String(i+1),open=AW.sel===e.id,won=inf.winner===e.id;
+      h+='<tr class="awr'+(i===0?' top':'')+(won?' won':'')+'" data-aw="row" data-id="'+esc(e.id)+'"><td>'+medal+'</td><td><b>'+esc(e.n)+'</b>'+(won?' 🏆':'')+'</td><td class="h">'+e.nd+'</td><td class="h">'+esc(fmtH(e.ms))+'</td><td class="h">'+e.nj+'</td><td class="h">'+
+        (won?'':'<button type="button" class="btn sm" data-aw="win" data-id="'+esc(e.id)+'" data-n="'+esc(e.n)+'">'+esc(t('awPick'))+'</button>')+' <span class="caret">'+(open?'▾':'▸')+'</span></td></tr>';
+      if(open){
+        h+='<tr class="awlog"><td></td><td colspan="5"><table><tbody>';
+        for(const x of e.list.slice().sort((p,q)=>q.a1-p.a1))h+='<tr><td class="mono">'+esc(dayOfMs(x.a1).slice(5))+' '+esc(tm(x.a1))+'–'+esc(tm(x.b1))+'</td><td>'+esc(x.sn||x.s)+'</td><td>'+esc(x.pr?prLabel(x.pr):t('repNoP'))+(x.nt?' · '+esc(x.nt):'')+'</td><td class="h">'+esc(fmtH(x.ms))+'</td></tr>';
+        h+='</tbody></table></td></tr>'}
+    });
+    h+='</tbody></table></div>';
+  }
+  h+='<div class="note">'+esc(t('awNote'))+(cur?' '+esc(t('awOngoing')):'')+'</div></div>';
+  const a=document.activeElement,keep=a&&a.id==='aw-prize'?{v:a.value,s:a.selectionStart}:null;
+  box.innerHTML=h;
+  if(keep){const i=$('#aw-prize');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}
+}
+function awOpen(on){if(on&&!isMgr()){toast(t('awOnly'));return}AW.open=on;AW.sel=null;renderAw();if(on)awLoad()}
+$('#btnAw').addEventListener('click',()=>awOpen(true));
+$('#aw').addEventListener('click',e=>{if(e.target.id==='aw'){awOpen(false);return}const b=e.target.closest('[data-aw]');if(!b)return;const k=b.dataset.aw;
+  if(k==='close')awOpen(false);
+  else if(k==='prize')awSave({prize:$('#aw-prize').value.trim().slice(0,120)});
+  else if(k==='win'){e.stopPropagation();awSave({winner:b.dataset.id,wn:b.dataset.n})}
+  else if(k==='unwin')awSave({winner:null,wn:null});
+  else if(k==='row'&&!e.target.closest('button')){AW.sel=AW.sel===b.dataset.id?null:b.dataset.id;renderAw()}});
+$('#aw').addEventListener('change',e=>{if(e.target.id==='aw-mon'){AW.mon=e.target.value;AW.sel=null;AW.rows=null;awLoad()}});
 
 /* ---------- printable QR codes, one per station ---------- */
 let qrLib=null;
