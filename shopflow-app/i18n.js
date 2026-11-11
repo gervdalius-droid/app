@@ -810,5 +810,11 @@ var LT = {
   "Deleted — existing orders keep their tasks": "Ištrinta — esami užsakymai savo užduotis išlaiko",
   "New order": "Naujas užsakymas",
   "+ Add another article": "+ Pridėti dar vieną darbą",
-  "＋ New portfolio…": "＋ Naujas portfelis…"
+  "＋ New portfolio…": "＋ Naujas portfelis…",
+  "Add OneDrive folder link": "Pridėti OneDrive aplanko nuorodą",
+  "Open project files": "Atidaryti projekto failus",
+  "Change link…": "Keisti nuorodą…",
+  "Remove link": "Pašalinti nuorodą",
+  "Now opens the automatic folder:": "Dabar atidaromas automatinis aplankas:",
+  "Project files linked": "Projekto failai susieti"
 };

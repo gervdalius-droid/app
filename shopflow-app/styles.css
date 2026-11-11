@@ -3063,3 +3063,13 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .step-chip.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent-text); text-decoration: none; }
 .no-line-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 4px; }
 .no-empty-jobs { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: var(--r-md); background: var(--surface-2); }
+
+/* drawer header: tags wrap on the left, actions never leave the panel */
+.drawer .head-row { align-items: flex-start; }
+.drawer .head-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; flex: 1; min-width: 0; padding-top: 5px; }
+.drawer .head-tags .num { white-space: nowrap; }
+.drawer .head-acts { display: flex; align-items: center; gap: 4px; flex: none; }
+.drawer .head-sheet { white-space: nowrap; padding-left: 10px; padding-right: 10px; }
+@media (max-width: 420px) { .drawer .head-sheet span { display: none; } }
+.icon-btn.od-cloud { color: var(--text-3); }
+.icon-btn.od-cloud.on { color: var(--accent); background: var(--accent-soft); }

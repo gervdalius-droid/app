@@ -4797,15 +4797,23 @@ var OrderDetail = {
     return `
       <header>
         <div class="head-row">
-          <span class="num">${esc(o.num)}</span>
-          ${isEng ? `<span class="eng-badge">Engineering</span>` : ""}
-          ${pillHtml(st, D.statusLabelFor(o, st))}
-          ${prioHtml(o.priority)}
-          <span class="grow"></span>
-          ${D.projectLink(o) ? `<button class="icon-btn" id="od-od-quick" title="Open project files in OneDrive">${icon("cloud", 15)}</button>` : ""}
-          <button class="btn subtle" id="od-sheet" title="Everything about this project on one screen">${icon("layers", 13)} Project sheet</button>
-          ${canEdit ? `<button class="icon-btn" id="od-edit" title="Edit order details">${icon("pencil", 14)}</button>` : ""}
-          <button class="icon-btn" data-close>${icon("x", 15)}</button>
+          <div class="head-tags">
+            <span class="num">${esc(o.num)}</span>
+            ${isEng ? `<span class="eng-badge">Engineering</span>` : ""}
+            ${pillHtml(st, D.statusLabelFor(o, st))}
+            ${prioHtml(o.priority)}
+          </div>
+          <div class="head-acts">
+            ${(() => {
+      var own = String(o.oneDriveUrl || "").trim();
+      if (own) return `<button class="icon-btn od-cloud on" id="od-od-quick" title="Open project files in OneDrive">${icon("cloud", 16)}</button>`;
+      if (canEdit) return `<button class="icon-btn od-cloud" id="od-od-quick" title="Add OneDrive folder link">${icon("cloud", 16)}</button>`;
+      return D.projectLink(o) ? `<button class="icon-btn od-cloud" id="od-od-quick" title="Open project files in OneDrive">${icon("cloud", 16)}</button>` : "";
+    })()}
+            <button class="btn subtle head-sheet" id="od-sheet" title="Everything about this project on one screen">${icon("layers", 13)} <span>Project sheet</span></button>
+            ${canEdit ? `<button class="icon-btn" id="od-edit" title="Edit order details">${icon("pencil", 14)}</button>` : ""}
+            <button class="icon-btn" data-close>${icon("x", 15)}</button>
+          </div>
         </div>
         <h1>${esc(o.product)}</h1>
         <div class="sub">${o.client && o.client !== o.product ? esc(o.client) + " · " : ""}${o.qty} ${esc(o.unit)} · created ${fmtDate(o.createdAt)}</div>
@@ -5088,7 +5096,19 @@ var OrderDetail = {
     var odBtn = $("#od-onedrive", el);
     if (odBtn) odBtn.onclick = openFiles;
     var odQuick = $("#od-od-quick", el);
-    if (odQuick) odQuick.onclick = openFiles;
+    if (odQuick) odQuick.onclick = () => {
+      var own = String(o.oneDriveUrl || "").trim();
+      var canEd = App.can("orders.edit") || App.isManager();
+      if (!canEd) return openFiles();
+      if (!own) return this.linkDialog(o.id);
+      Popover.open(odQuick, `
+        <button class="opt-row" data-odq="open">${icon("cloud-open", 15)}<span class="grow">Open project files</span>${icon("external", 12)}</button>
+        <button class="opt-row" data-odq="edit">${icon("pencil", 14)}<span class="grow">Change link…</span></button>
+      `, pop => {
+        $("[data-odq=open]", pop).onclick = () => { Popover.close(); openFiles(); };
+        $("[data-odq=edit]", pop).onclick = () => { Popover.close(); this.linkDialog(o.id); };
+      });
+    };
     var odSet = $("#od-onedrive-set", el);
     if (odSet) odSet.onclick = () => this.linkDialog(o.id);
     $$("[data-op-act]", el).forEach(b => {
@@ -5807,9 +5827,12 @@ var OrderDetail = {
         <div class="field"><label>OneDrive / SharePoint folder for ${esc(o.num)}</label>
           <input class="input" id="ld-url" placeholder="https://onedrive.live.com/…" value="${esc(o.oneDriveUrl || "")}">
         </div>
+        ${!String(o.oneDriveUrl || "").trim() && D.projectLink(o) ? `<div class="t-caption">Now opens the automatic folder: <a href="${esc(D.projectLink(o))}" target="_blank" rel="noopener">${esc(D.projectLink(o))}</a></div>` : ""}
         ${base ? `<div class="t-caption">Tip: set a base folder in Settings and projects auto-link by code — no need to paste each one.</div>` : `<div class="t-caption">Paste this project's folder link, or set a base folder in Settings to auto-link every project by its code.</div>`}
       </div>
       <footer>
+        ${String(o.oneDriveUrl || "").trim() ? `<button class="btn ghost danger" id="ld-clear">Remove link</button>` : ""}
+        <span class="grow"></span>
         <button class="btn ghost" data-close>Cancel</button>
         <button class="btn primary" id="ld-save">Save link</button>
       </footer>
@@ -5826,6 +5849,13 @@ var OrderDetail = {
         });
       };
       $("#ld-save", modal).onclick = save;
+      var clr = $("#ld-clear", modal);
+      if (clr) clr.onclick = () => {
+        M.updateOrderLogged(o.id, { oneDriveUrl: "" }, App.me.id);
+        Modal.close();
+        Drawer.refresh();
+      };
+      setTimeout(() => { var u = $("#ld-url", modal); if (u) u.focus(); }, 70);
       $("#ld-url", modal).onkeydown = e => {
         if (e.key === "Enter") save();
       };
