@@ -274,6 +274,16 @@ body.ci #ci{display:block;max-width:560px;margin:0 auto;padding:max(16px,env(saf
 #ci .go{font:inherit;font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.03em;border:0;border-radius:12px;padding:16px;background:var(--run);color:#fff;cursor:pointer}
 #ci .stop{font:inherit;font-size:17px;font-weight:600;border:2px solid var(--line);border-radius:12px;padding:13px;background:var(--panel);color:var(--ink);cursor:pointer}
 #ci .go:disabled,#ci .stop:disabled{opacity:.5}
+#ci .hereL{margin:4px 0 0}
+#ci .hrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
+#ci .hereL h2+.hrow{border-top:0}
+#ci .hn{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+#ci .hn b{font:700 18px/1.15 var(--display)}
+#ci .hn small{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+#ci .hrow.pz .hn b{color:var(--muted)}
+#ci .hb{font:600 15px/1 var(--body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;padding:12px;min-height:46px;cursor:pointer;white-space:nowrap}
+#ci .hrow.pz .hb:not(.end){background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+#ci .hb.end{border-color:var(--down);color:var(--down);background:transparent}
 #ci .err{color:var(--down);font-weight:600;min-height:1.2em}
 #ci .done{background:var(--run);color:#fff;border-radius:12px;padding:18px;margin-top:12px;display:flex;flex-direction:column;gap:6px}
 #ci .done.off{background:var(--ink);color:var(--bg)}
@@ -494,7 +504,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -511,7 +521,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -717,7 +727,7 @@ function normalize(){
   const s=ST(); for(const k of ['st','people','stock','inst'])if(!isObj(s[k]))s[k]={};
   /* New day, clean board: a place set before today no longer counts, so every morning nobody is at a station
      until someone puts them there. Only this screen's copy changes; the next placing saves the new day. */
-  {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0)){p.pat=p.at;p.at=null}}
+  {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0)){if(!p.pz)p.pat=p.at;p.at=null;p.pz=null}}
   for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
   for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
@@ -881,9 +891,9 @@ const DEF_BREAKS=[{f:'10:00',t:'10:15',n:'Pertrauka'},{f:'12:00',t:'12:45',n:'Pi
 const breakList=()=>Array.isArray(ST().breaks)?ST().breaks:DEF_BREAKS;
 function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{const a=String(v||'').split(':');return(+a[0]||0)*60+(+a[1]||0)};
   for(const b of breakList())if(b&&b.f&&b.t&&mm(b.f)<=m&&m<mm(b.t))return b;return null}
-const peopleAt=id=>onBreak()?[]:peopleAtRaw(id);
+const peopleAt=id=>onBreak()?[]:peopleAtRaw(id).filter(e=>!e[1].pz);
 const SELF_RUN={volter:1,compressor:1};
-const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).length===0};
+const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).filter(e=>!e[1].pz).length===0};
 const shown=id=>{const v=statusOf(id);if(v==='run'&&noOperator(id))return'idle';return v==='run'&&onBreak()?'pause':v};
 const peopleAtRaw=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
 const statusOf=id=>{const s=ST().st[id];return s&&['run','idle','down'].includes(s.s)?s.s:'idle'};
@@ -1577,8 +1587,8 @@ function stationOpts(cur){
     if(a.length)s+='<optgroup label="'+esc(t(lab))+'">'+a.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]===cur?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</optgroup>'}
   return s;
 }
-function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly),ts:moveStamp(pid,at),pat:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
-function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:moveStamp(pid,at),ox:null,oy:null,pat:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
+function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly),ts:moveStamp(pid,at),pat:null,pz:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
+function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:moveStamp(pid,at),ox:null,oy:null,pat:null,pz:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
 /* ---------- time log ----------
    Every time someone is put somewhere else, starts another project or finishes, the stretch they just did
    is saved as one entry {who, place, project, start, end} in a monthly log row. The id is person + start time,
@@ -1589,7 +1599,7 @@ const snOf=at=>at&&LAY().items[at]?itemName(at,LAY().items[at]):null;
 const monKey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
 function dayEndOf(ms){const d=new Date(ms);d.setHours(WD_END_H,0,0,0);return Math.max(d.getTime(),ms)}
 function sessOf(pid,p){
-  const at=p&&(p.at||p.pat);if(!at||!(+p.ts>0))return null;
+  const at=p&&(p.at||p.pat);if(!at||!(+p.ts>0)||p.pz)return null;
   const a=+p.ts,now=Date.now(),b=a>=dayStart()?now:Math.min(now,dayEndOf(a)),it=LAY().items[at];
   return{id:pid+'_'+a,w:pid,n:String(p.n||''),s:at,sn:it?itemName(at,it):at,pr:String(p.pr||''),nt:String(p.nt||''),a,b:Math.max(a,b),by:who};
 }
@@ -1597,7 +1607,7 @@ function sessOf(pid,p){
    after saving the stretch that just ended */
 function moveStamp(pid,at,pr,nt){
   const p=ST().people[pid],now=Date.now();if(!p)return now;
-  const same=p.at&&p.at===at&&+p.ts>=dayStart()&&(pr===undefined||String(p.pr||'')===String(pr||''))&&(nt===undefined||String(p.nt||'')===String(nt||''));
+  const same=p.at&&p.at===at&&!p.pz&&+p.ts>=dayStart()&&(pr===undefined||String(p.pr||'')===String(pr||''))&&(nt===undefined||String(p.nt||'')===String(nt||''));
   if(same)return +p.ts;
   const s=sessOf(pid,p);if(s&&s.b-s.a>=60000)logAdd(s);
   return now;
@@ -1733,7 +1743,7 @@ function endDrag(e){
     if(cur&&st&&st.id!==cur&&st.d>0&&distTo(cur,q.x,q.y)<170){const l=localTo(cur,q.x,q.y);st={id:cur,lx:l[0],ly:l[1]}}
     if(!st&&per.at&&LAY().items[per.at]){const l=localTo(per.at,q.x,q.y);st={id:per.at,lx:l[0],ly:l[1]}}
     if(!st||!canWrite()){render();return}
-    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly),ts:moveStamp(d.pp,st.id),pat:null,sn:snOf(st.id)};
+    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly),ts:moveStamp(d.pp,st.id),pat:null,pz:null,sn:snOf(st.id)};
     selPerson=null;commit(docs.state,p);return}
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
@@ -1951,7 +1961,14 @@ function renderCI(force){
   }else{
     h+='<h1>'+(off?'🚪 '+esc(t('ciOffT')):'📍 '+esc(itemName(st,LAY().items[st])))+'</h1>';
     if(off)h+='<div class="here">'+esc(t('ciOffS'))+'</div>';
-    else{const here=peopleAtRaw(st);h+='<div class="here">'+(here.length?esc(t('ciHere'))+': '+here.map(([id,p])=>'<b>'+esc(p.n)+'</b>'+(p.pr?' · '+esc(p.pr):'')+' · '+esc(t('ciFrom'))+' '+esc(hhmm(p.ts))).join('<br>'):esc(t('ciNoOne')))+'</div>'}
+    else{const here=peopleAtRaw(st);
+      if(!here.length)h+='<div class="here">'+esc(t('ciNoOne'))+'</div>';
+      else{h+='<section class="hereL"><h2>'+esc(t('ciHere'))+'</h2>';
+        for(const [id,p] of here){const pz=!!p.pz;
+          h+='<div class="hrow'+(pz?' pz':'')+'"><div class="hn"><b>'+esc(p.n)+'</b><small>'+(pz?'⏸ '+esc(t('ciPaused'))+' · '+esc(hhmm(p.pz)):esc([p.pr,p.nt].filter(Boolean).join(' · '))+(p.pr||p.nt?' · ':'')+esc(t('ciFrom'))+' '+esc(hhmm(p.ts)))+'</small></div>'+
+             '<button type="button" class="hb" data-ci="'+(pz?'resume':'pause')+'" data-id="'+esc(id)+'">'+esc(pz?t('ciResume'):t('ciPause'))+'</button>'+
+             '<button type="button" class="hb end" data-ci="end" data-id="'+esc(id)+'">'+esc(t('ciEnd'))+'</button></div>'}
+        h+='</section>'}}
     if(CIS.done){const d=CIS.done;
       h+='<div class="done'+(d.off?' off':'')+(d.state==='wait'?' wait':d.state==='bad'?' bad':'')+'"><strong>'+(d.state==='bad'?'⚠ ':'✓ ')+esc(d.names.join(', '))+'</strong><span>'+esc(d.line)+'</span><span>'+esc(d.state==='wait'?t('ciSaving'):d.state==='bad'?t('ciNotSaved'):t('ciSaved')+' · '+hhmm(d.t))+'</span><button type="button" data-ci="again">'+esc(t('ciNext'))+'</button></div>';
     }else{
@@ -1984,9 +2001,9 @@ async function ciSubmit(stop){
   for(let id of sel){
     if(id==='__me'){id='p'+Date.now().toString(36);p.people[id]={n:String(person.name).slice(0,30),at:null,ts:Date.now()};ST().people[id]={n:String(person.name).slice(0,30)}}
     const cur=ST().people[id];names.push(cur.n);
-    if(off){p.people[id]=Object.assign(p.people[id]||{},{at:null,ts:moveStamp(id,null),ox:null,oy:null,pat:null,sn:null});continue}
+    if(off){p.people[id]=Object.assign(p.people[id]||{},{at:null,ts:moveStamp(id,null),ox:null,oy:null,pat:null,pz:null,sn:null});continue}
     const keepPos=cur.at===st;
-    p.people[id]=Object.assign(p.people[id]||{},{at:st,ts:moveStamp(id,st,pr,nt),pr,nt,pat:null,sn:snOf(st)},keepPos?{}:{ox:null,oy:null});
+    p.people[id]=Object.assign(p.people[id]||{},{at:st,ts:moveStamp(id,st,pr,nt),pr,nt,pat:null,pz:null,sn:snOf(st)},keepPos?{}:{ox:null,oy:null});
   }
   if(!off&&pr){const np=addProject(pr);if(np)p.projects=np;lsSet('cp.lastpr',pr)}
   else if(!off&&CIS.pr==='-')lsSet('cp.lastpr','-');
@@ -1995,10 +2012,22 @@ async function ciSubmit(stop){
   CIS.busy=false;renderCI(true);
   const ok=await waitSaved();CIS.done.state=ok?'ok':'bad';renderCI(true);
 }
+async function ciAct(id,k){
+  const p=ST().people[id];if(!p||!canWrite())return;const now=Date.now(),patch={people:{}};
+  if(k==='pause'){const s=sessOf(id,p);if(s&&now-s.a>=60000)logAdd(Object.assign(s,{b:now}));patch.people[id]={pz:now,ts:now}}
+  else if(k==='resume')patch.people[id]={pz:null,ts:now};
+  else patch.people[id]={at:null,ts:moveStamp(id,null),pz:null,ox:null,oy:null,pat:null,sn:null};
+  commit(docs.state,patch);
+  if(k==='end'&&CIS.done&&CIS.done.names.length===1&&CIS.done.names[0]===p.n)CIS.done=null;
+  renderCI(true);
+  toast((p.n||'')+' · '+(k==='pause'?t('ciPaused'):k==='resume'?t('ciResumed'):t('ciEnded')));
+  if(!(await waitSaved()))toast(t('ciNotSaved'));
+}
 $('#ci').addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!b)return;const k=b.dataset.ci;
   if(k==='p'){const id=b.dataset.id,s=CIS.sel||[];CIS.sel=s.includes(id)?s.filter(x=>x!==id):s.concat([id]);CIS.err='';renderCI(true)}
   else if(k==='start')ciSubmit(false);
   else if(k==='stop')ciSubmit(true);
+  else if(k==='pause'||k==='resume'||k==='end')ciAct(b.dataset.id,k);
   else if(k==='again'){CIS.done=null;CIS.sel=[];CIS.nt='';renderCI(true)}
   else if(k==='out'){setPerson(null);CIS.sel=null;authOpen().then(()=>{CIS.sel=null;renderCI(true)})}});
 $('#ci').addEventListener('change',e=>{const el=e.target;
