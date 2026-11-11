@@ -134,7 +134,9 @@ details.card:not([open]){gap:0}
 .dragchip{position:fixed;left:0;top:0;z-index:20;pointer-events:none;background:var(--person);color:var(--person-ink);font-family:var(--display);font-weight:600;font-size:18px;padding:6px 14px;border-radius:999px;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.25)}
 .dragchip.ok{background:var(--mark);color:var(--mark-ink)}
 body.dragging,body.dragging *{cursor:grabbing!important;user-select:none}
-.pcol{flex:1;min-width:0;display:flex;flex-direction:column}
+.pcol{flex:1 1 auto;min-width:6em;display:flex;flex-direction:column}
+.where.inst{flex:0 1 auto;max-width:62%;display:flex;flex-direction:column;align-items:flex-end;gap:2px;line-height:1.25}
+.where.inst .pj{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .badge{background:var(--mark);color:var(--mark-ink);border-radius:4px;padding:0 6px;font-size:12px;font-weight:600;white-space:nowrap}
 .chk{display:flex;flex-wrap:wrap;gap:4px 14px}
 .chk label{display:inline-flex;gap:5px;align-items:center}
@@ -960,7 +962,7 @@ function renderRail(){
       else{
         const work=[p.pr,p.nt].filter(Boolean).join(' · ');
         s+='<li><div class="pcol"><button class="pbtn" type="button" data-act="pick" data-pid="'+esc(pid)+'">'+esc(p.n)+'</button>'+(work?'<span class="sub">'+esc(work)+'</span>':'')+'</div>';
-        if(ins)s+='<span class="where on"><span class="badge">'+esc(t('atInst'))+'</span> '+esc(ins.p||'')+'</span></li>';
+        if(ins)s+='<span class="where on inst" title="'+esc(ins.p||'')+'"><span class="badge">'+esc(t('atInst'))+'</span>'+(ins.p?'<span class="pj">'+esc(String(ins.p).replace(/_/g,' '))+'</span>':'')+'</span></li>';
         else if(tvOn())s+='<span class="where'+(it?' on':'')+'">'+(brk&&it?'<span class="badge">'+esc(brk.n||t('brk'))+'</span> ':'')+esc(it?itemName(p.at,it):t('off'))+'</span></li>';
         else s+=(brk&&it?'<span class="badge">'+esc(brk.n||t('brk'))+'</span>':'')+'<select class="stsel'+(it?' on':'')+'" id="in-at-'+esc(pid)+'" data-chg="pat" data-pid="'+esc(pid)+'" aria-label="'+esc(p.n)+'">'+stationOpts(it?p.at:'')+'</select></li>';
       }
