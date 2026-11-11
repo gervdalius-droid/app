@@ -809,5 +809,6 @@ var LT = {
   "Keep at least one step": "Palikite bent vieną etapą",
   "Deleted — existing orders keep their tasks": "Ištrinta — esami užsakymai savo užduotis išlaiko",
   "New order": "Naujas užsakymas",
-  "+ Add another article": "+ Pridėti dar vieną darbą"
+  "+ Add another article": "+ Pridėti dar vieną darbą",
+  "＋ New portfolio…": "＋ Naujas portfelis…"
 };

@@ -407,13 +407,14 @@ var Mgr = {
     });
     $("#pf-add", root).onclick = () => this.portfolioModal();
   },
-  portfolioModal(pid) {
+  portfolioModal(pid, opts) {
+    opts = opts || {};
     var p = pid ? D.portfolio(pid) : null;
     Modal.open(`
       <header><h2>${p ? "Edit portfolio" : "New portfolio"}</h2><button class="icon-btn" data-close>✕</button></header>
       <div class="modal-body">
         <div class="form-row">
-          <div class="field"><label>Name</label><input class="input" id="pf-name" value="${esc((p === null || p === void 0 ? void 0 : p.name) || "")}" placeholder="e.g. Hotel Vilnius fit-out"></div>
+          <div class="field"><label>Name</label><input class="input" id="pf-name" value="${esc((p === null || p === void 0 ? void 0 : p.name) || opts.name || "")}" placeholder="e.g. Hotel Vilnius fit-out"></div>
           <div class="field"><label>Icon</label><button class="mat-ico" id="pf-icon" type="button" data-ic="${(p === null || p === void 0 ? void 0 : p.ic) || "folder"}" style="cursor:pointer">${pfIcon(p || {
       ic: "folder"
     }, 19)}</button></div>
@@ -431,8 +432,13 @@ var Mgr = {
         <button class="btn primary" id="pf-save">${p ? "Save" : "Create"}</button>
       </footer>
     `, modal => {
-      $$("[data-close]", modal).forEach(b => b.onclick = () => Modal.close());
+      $$("[data-close]", modal).forEach(b => b.onclick = () => {
+        Modal.close(!!opts.onCancel);
+        if (opts.onCancel) setTimeout(opts.onCancel, 0);
+      });
       var iconBtn = $("#pf-icon", modal);
+      setTimeout(() => { var n = $("#pf-name", modal); if (n && !p) { n.focus(); n.select(); } }, 30);
+      $("#pf-name", modal).onkeydown = e => { if (e.key === "Enter") $("#pf-save", modal).click(); };
       iconBtn.onclick = () => Popover.open(iconBtn, `<div class="icon-grid">${PORTFOLIO_IC_KEYS.map(k => `<button data-ic="${k}" title="${k}">${icon(k, 17)}</button>`).join("")}</div>`, pop => {
         $$("[data-ic]", pop).forEach(ib => ib.onclick = () => {
           iconBtn.dataset.ic = ib.dataset.ic;
@@ -451,13 +457,15 @@ var Mgr = {
           $("#pf-name", modal).focus();
           return;
         }
+        var saved = p;
         if (p) M.updatePortfolio(p.id, {
           name,
           ic: iconBtn.dataset.ic || "folder",
           color: color || null
-        });else M.addPortfolio(name, "📁", App.me.id, iconBtn.dataset.ic || "folder", color || null);
-        Modal.close();
+        });else saved = M.addPortfolio(name, "📁", App.me.id, iconBtn.dataset.ic || "folder", color || null);
+        Modal.close(!!opts.onDone);
         App.render();
+        if (opts.onDone) setTimeout(() => opts.onDone(saved), 0);
         Toast.show(p ? "Portfolio updated" : `Portfolio “${name}” created`, {
           emoji: "🗄"
         });
@@ -3612,7 +3620,7 @@ var Warehouse = {
       </footer>
     `, modal => {
       $$("[data-close]", modal).forEach(b => b.onclick = () => {
-        Modal.close();
+        Modal.close(!!opts.onCancel);
         if (opts.onCancel) setTimeout(opts.onCancel, 0);
       });
       var rerenderLanes = () => {
@@ -3697,7 +3705,7 @@ var Warehouse = {
           lanes: cleaned
         };
         var saved = a ? (M.updateArticle(a.id, payload, App.me.id), a) : M.addArticle(payload, App.me.id);
-        Modal.close();
+        Modal.close(!!opts.onDone);
         App.render();
         if (opts.onDone) setTimeout(() => opts.onDone(saved), 0);
         Toast.show(a ? "Article updated" : `Article “${name}” created`, {
@@ -4847,6 +4855,7 @@ var OrderDetail = {
             ${canEdit ? `<select id="od-portfolio">
               <option value="">None</option>
               ${Store.state.portfolios.map(pf => `<option value="${pf.id}" ${o.portfolioId === pf.id ? "selected" : ""}>${esc(pf.name)}</option>`).join("")}
+              <option value="__new">＋ New portfolio…</option>
             </select>` : `<span class="v">${o.portfolioId ? esc(((_D$portfolio = D.portfolio(o.portfolioId)) === null || _D$portfolio === void 0 ? void 0 : _D$portfolio.name) || "—") : "—"}</span>`}
           </div>
         </div>
@@ -5531,6 +5540,18 @@ var OrderDetail = {
       };
       var pf = $("#od-portfolio", el);
       if (pf) pf.onchange = () => {
+        if (pf.value === "__new") {
+          pf.value = o.portfolioId || "";
+          Mgr.portfolioModal(null, {
+            name: o.client || o.product || "",
+            onDone: np => {
+              M.updateOrderLogged(o.id, { portfolioId: np.id }, App.me.id);
+              App.render();
+              Drawer.refresh();
+            }
+          });
+          return;
+        }
         M.updateOrderLogged(o.id, {
           portfolioId: pf.value || null
         }, App.me.id);
@@ -6265,6 +6286,7 @@ var NewOrder = {
             <select class="select" id="no-portfolio">
               <option value="">None</option>
               ${s.portfolios.map(p => `<option value="${p.id}" ${d.portfolio === p.id ? "selected" : ""}>${p.icon} ${esc(p.name)}</option>`).join("")}
+              ${App.isManager() || App.can("orders.create") ? `<option value="__new">＋ New portfolio…</option>` : ""}
             </select>
           </div>
         </div>
@@ -6358,6 +6380,21 @@ var NewOrder = {
         });
         pv.textContent = tasks ? `Will create ${tasks} tasks across part groups for ${pcs} pcs — e.g. Cutting runs separately for facades and carcass.` : "";
       };
+      var pfSel = $("#no-portfolio", modal);
+      if (pfSel) {
+        var pfPrev = pfSel.value === "__new" ? "" : pfSel.value;
+        pfSel.onchange = () => {
+          if (pfSel.value !== "__new") { pfPrev = pfSel.value; return; }
+          pfSel.value = pfPrev;
+          this.captureDraft(modal);
+          var guess = ($("#no-client", modal) || {}).value || ($("#no-product", modal) || {}).value || "";
+          Mgr.portfolioModal(null, {
+            name: guess.trim(),
+            onDone: pf => { this.draft.portfolio = pf.id; this.render(); },
+            onCancel: () => this.render()
+          });
+        };
+      }
       var newJob = $("#no-new-job", modal);
       if (newJob) newJob.onclick = () => this.jobModal(null, modal);
       if (linesEl) {
