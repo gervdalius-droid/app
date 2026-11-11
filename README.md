@@ -14,7 +14,6 @@ All workshop and office apps on one address, one sign-in.
 | `/hub/crm/` | CRM (office) |
 | `/hub/prasymai/` | Prašymai |
 | `/hub/workers/` | Darbuotojai (admins) |
-| `/virtuve/` | Virtuvės eskizas — customer kitchen sketcher (public, no sign-in) |
 
 Served by GitHub Pages with the custom domain in `CNAME`; DNS at Hostinger:
 `CNAME app → gervdalius-droid.github.io`.
