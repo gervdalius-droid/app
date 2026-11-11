@@ -458,6 +458,15 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #shout.in .sht{animation:shUp .7s 1.6s both}
 @keyframes shPop{0%{opacity:0;transform:scale(.6) rotate(-3deg)}100%{opacity:1;transform:none}}
 @keyframes shUp{0%{opacity:0;transform:translateY(24px)}100%{opacity:1;transform:none}}
+#shout.clean{background:radial-gradient(ellipse at center,rgba(176,120,0,.93),rgba(28,22,8,.96))}
+#shout.clean .shk{color:#ffe7a8}
+#shout .clist{display:flex;flex-wrap:wrap;justify-content:center;gap:1.4vh}
+#shout .clist span{font:600 clamp(14px,2.8vh,32px)/1.2 var(--body);background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:1.1vh 2.2vh}
+#shout.in .clist span{animation:shUp .6s both}
+#shout.in .clist span:nth-child(1){animation-delay:.9s}#shout.in .clist span:nth-child(2){animation-delay:1.05s}#shout.in .clist span:nth-child(3){animation-delay:1.2s}#shout.in .clist span:nth-child(4){animation-delay:1.35s}
+#shout .broom{display:inline-block;transform-origin:70% 90%}
+#shout.in .broom{animation:sweep 1.2s 1s ease-in-out infinite alternate}
+@keyframes sweep{0%{transform:rotate(-14deg) translateX(-6px)}100%{transform:rotate(14deg) translateX(6px)}}
 @media (prefers-reduced-motion:reduce){#shout.in *{animation:none!important}}
 #aw th.h{font:600 11px/1.3 var(--mono);text-align:right}
 #aw td .btn{font-family:var(--body);font-size:13px}
@@ -560,7 +569,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',clShow:'Rodyti tvarkymosi priminimą',clK:'Darbo diena baigiasi',clH:'Laikas susitvarkyti!',clS:'Išvalyk savo darbo vietą ir sudėk visus įrankius į jų vietas.',clA:'🧹 Švari darbo vieta',clB:'🔧 Įrankiai – į vietas',clC:'🗑 Atliekos – išneštos',clD:'💨 Staklės nuvalytos',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -577,7 +586,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',clShow:'Show tidy-up reminder',clK:'The working day is ending',clH:'Time to tidy up!',clS:'Clean your work area and put every tool back in its place.',clA:'🧹 Clean work area',clB:'🔧 Tools back in place',clC:'🗑 Waste taken out',clD:'💨 Machines wiped down',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -2236,7 +2245,7 @@ function renderAw(){
   const box=$('#aw');box.hidden=!AW.open;if(!AW.open)return;
   const cur=AW.mon===monKey(Date.now()),inf=AW.info||{},p2=x=>String(x).padStart(2,'0'),tm=ms=>{const d=new Date(ms);return p2(d.getHours())+':'+p2(d.getMinutes())};
   let h='<div class="rbox"><div class="rh"><h2 id="aw-h">🏆 '+esc(t('awH'))+'</h2><button type="button" class="x" data-aw="close" aria-label="✕">✕</button></div>'+
-    '<div class="ctl"><button type="button" class="btn" data-aw="shout">🎉 '+esc(t('shShow'))+'</button><select id="aw-mon" aria-label="'+esc(t('awH'))+'">'+awMonths().map(k=>'<option value="'+k+'"'+(k===AW.mon?' selected':'')+'>'+esc(monLabel(k))+(k===monKey(Date.now())?' · '+esc(t('awNow')):'')+'</option>').join('')+'</select></div>';
+    '<div class="ctl"><button type="button" class="btn" data-aw="shout">🎉 '+esc(t('shShow'))+'</button><button type="button" class="btn" data-aw="clean">🧹 '+esc(t('clShow'))+'</button><select id="aw-mon" aria-label="'+esc(t('awH'))+'">'+awMonths().map(k=>'<option value="'+k+'"'+(k===AW.mon?' selected':'')+'>'+esc(monLabel(k))+(k===monKey(Date.now())?' · '+esc(t('awNow')):'')+'</option>').join('')+'</select></div>';
   h+='<div class="awp"><label for="aw-prize">'+esc(t('awPrize'))+'</label><div class="row"><input type="text" id="aw-prize" class="grow" maxlength="120" placeholder="'+esc(t('awPrizePh'))+'" value="'+esc(inf.prize||'')+'"><button type="button" class="btn" data-aw="prize">'+esc(t('awSavePrize'))+'</button></div>'+
     (inf.winner?'<div class="awwin">🏆 '+esc(t('awWinner'))+': <b>'+esc(inf.wn||inf.winner)+'</b>'+(inf.prize?' · '+esc(inf.prize):'')+' <button type="button" class="lk" data-aw="unwin">'+esc(t('awUndo'))+'</button></div>':'')+'</div>';
   if(AW.busy||!AW.rows)h+='<div class="note">'+esc(t('repLoad'))+'</div>';
@@ -2263,16 +2272,18 @@ $('#btnAw').addEventListener('click',()=>awOpen(true));
 $('#aw').addEventListener('click',e=>{if(e.target.id==='aw'){awOpen(false);return}const b=e.target.closest('[data-aw]');if(!b)return;const k=b.dataset.aw;
   if(k==='close')awOpen(false);
   else if(k==='shout'){awOpen(false);showShout(true)}
+  else if(k==='clean'){awOpen(false);showClean()}
   else if(k==='prize')awSave({prize:$('#aw-prize').value.trim().slice(0,120)});
   else if(k==='win'){e.stopPropagation();awSave({winner:b.dataset.id,wn:b.dataset.n})}
   else if(k==='unwin')awSave({winner:null,wn:null});
   else if(k==='row'&&!e.target.closest('button')){AW.sel=AW.sel===b.dataset.id?null:b.dataset.id;renderAw()}});
 $('#aw').addEventListener('change',e=>{if(e.target.id==='aw-mon'){AW.mon=e.target.value;AW.sel=null;AW.rows=null;awLoad()}});
 
-/* ---------- end of the day: a shout-out on the TV ----------
-   At 16:45 and again at 16:55 on working days the TV shows who did the most today (from 2 h of marked work),
+/* ---------- end of the day on the TV ----------
+   16:45: time to tidy up (60 s). At 16:50 and again at 16:56 on working days the TV shows who did the most today (from 2 h of marked work),
    with confetti, for 45 s; any key or tap closes it. Managers can show it any time from the nomination window. */
-const SHOUT_AT=[[16,45],[16,55]],SHOUT_MS=45000,SHOUT_MIN=2*36e5;
+/* 16:45 tidy-up reminder, 16:50 and 16:56 star of the day */
+const CLEAN_AT=[[16,45]],CLEAN_MS=60000,SHOUT_AT=[[16,50],[16,56]],SHOUT_MS=45000,SHOUT_MIN=2*36e5;
 let shoutDone={},shoutT=null,shoutAnim=null;
 /* Lithuanian vocative for a first name: Nerijus → Nerijau, Mantas → Mantai, Eglė → Egle */
 function voc(n){const w=String(n||'').trim().split(/\s+/)[0]||'';
@@ -2292,16 +2303,24 @@ async function showShout(manual){
   const also=best.slice(1,4).filter(e=>e.ms>=SHOUT_MIN*1.5).map(e=>e.n);
   $('#sh-box').innerHTML='<div class="shk">'+esc(t('shKicker'))+'</div><div class="shn">'+esc(line)+'</div><div class="shs">'+esc(fmtH(top.ms))+' · '+top.jobs.size+' '+esc(jobsWord(top.jobs.size))+' · '+esc([...top.places].slice(0,3).join(', '))+'</div>'+
     (also.length?'<div class="sha">'+esc(t('shAlso'))+': '+esc(also.join(', '))+' 👏</div>':'')+'<div class="sht">'+esc(t('shClose'))+'</div>';
-  const box=$('#shout');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
+  const box=$('#shout');box.classList.remove('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
   confetti();clearTimeout(shoutT);shoutT=setTimeout(hideShout,SHOUT_MS);
 }
 /* 1 darbas, 2–9 darbai, 10–20 / …0 darbų, 21 darbas… */
 function jobsWord(n){if(lang==='en')return n===1?'job':'jobs';const d=n%10,dd=n%100;return d===1&&dd!==11?'darbas':d>=2&&d<=9&&!(dd>=12&&dd<=19)?'darbai':'darbų'}
+/* end-of-day tidy-up: a calm reminder, no confetti */
+function showClean(){
+  $('#sh-box').innerHTML='<div class="shk">'+esc(t('clK'))+'</div><div class="shn"><span class="broom" aria-hidden="true">🧹</span> '+esc(t('clH'))+'</div><div class="shs">'+esc(t('clS'))+'</div>'+
+    '<div class="clist">'+['clA','clB','clC','clD'].map(k=>'<span>'+esc(t(k))+'</span>').join('')+'</div><div class="sht">'+esc(t('shClose'))+'</div>';
+  const box=$('#shout');box.classList.add('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
+  clearTimeout(shoutT);shoutT=setTimeout(hideShout,CLEAN_MS);
+}
 function hideShout(){const box=$('#shout');if(box.hidden)return;box.hidden=true;box.classList.remove('in');clearTimeout(shoutT);if(shoutAnim){cancelAnimationFrame(shoutAnim);shoutAnim=null}}
 function shoutTick(){
   if(!tvOn()||mode!=='db')return;const d=new Date(),wd=d.getDay();if(wd===0||wd===6)return;
-  for(const [h,m] of SHOUT_AT){const k=today()+' '+h+':'+m,at=new Date(d).setHours(h,m,0,0);
-    if(!shoutDone[k]&&Date.now()>=at&&Date.now()<at+5*6e4){shoutDone[k]=1;showShout(false);break}}
+  const due=(h,m)=>{const k=today()+' '+h+':'+m,at=new Date(d).setHours(h,m,0,0);if(shoutDone[k]||Date.now()<at||Date.now()>=at+4*6e4)return false;shoutDone[k]=1;return true};
+  for(const [h,m] of CLEAN_AT)if(due(h,m)){showClean();return}
+  for(const [h,m] of SHOUT_AT)if(due(h,m)){showShout(false);return}
 }
 function confetti(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
