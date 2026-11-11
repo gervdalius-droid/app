@@ -2085,7 +2085,7 @@ function buildCabinet(c, idx, projName) {
 
   /* ---- facades (drawer fronts) */
   facades.forEach(function (f, i) {
-    var p = panel(nm('FASADAS' + (i + 1)), 'FASADAS', f.w, f.h, fT, 'galinė (vidinė) pusė viršuje, apatinis kraštas Y=0');
+    var p = panel(nm('FASADAS' + (i + 1)), 'FASADAS', f.w, f.h, fT, 'galinė (vidinė) pusė viršuje, apatinis kraštas Y=0'); p.drawer = true;
     var rt = R.runner[f.hw];
     if (rt && rt.facade && o.tbFront !== 'off') {
       var fc = rt.facade, mk = o.tbFront === 'mark';
@@ -2602,7 +2602,7 @@ function buildBox(c, idx, projName) {
       if (!rt) warnOnce(lbl + ': bėgeliams „' + hwN + '“ skylių šablono nėra — žymės nepridėtos');
       var roomD = (B.back ? innerFace(B.back) : cav[1][1]) - yF - back;
       for (var j = 0; j < n; j++) {
-        var fb = z0 + j * (hD + gapF), p = mkFront('FASADAS', FW, hD, x0, fb, 'FASADAS' + (++nFas));
+        var fb = z0 + j * (hD + gapF), p = mkFront('FASADAS', FW, hD, x0, fb, 'FASADAS' + (++nFas)); p.drawer = true;
         if (rt && rt.facade && o.tbFront !== 'off') { var fc = rt.facade, mk = o.tbFront === 'mark';
           [fc.fromSide, FW - fc.fromSide].forEach(function (x) { fc.ys.concat(hD >= 250 ? [fc.yGallery] : []).forEach(function (y) { if (y > hD - 1) return; if (mk) hole(p, 'A', x, y, R.legs.markD, R.legs.markDepth, { mark:true }); else hole(p, 'A', x, y, fc.d, fc.depth); }); }); }
         out.push(p);
@@ -5418,7 +5418,7 @@ function fronts(i) {   // fronts of cabinet i from the engine: rectangles in cab
     if (!p.place || (p.role !== 'FASADAS' && p.role !== 'DURYS')) return;
     var q = p.place, pt = function (a, b) { return [q.o[0] + a * q.u[0] + b * q.v[0], q.o[2] + a * q.u[2] + b * q.v[2]]; };
     var cs = [pt(0, 0), pt(p.L, 0), pt(0, p.W), pt(p.L, p.W)], xs = cs.map(function (v) { return v[0]; }), zs = cs.map(function (v) { return v[1]; });
-    out.push({ x0:Math.min.apply(null, xs), x1:Math.max.apply(null, xs), z0:Math.min.apply(null, zs), z1:Math.max.apply(null, zs), door:p.role === 'DURYS', left:p.hingeLeft, sec:p.sec, box:!!p.boxFront });
+    out.push({ x0:Math.min.apply(null, xs), x1:Math.max.apply(null, xs), z0:Math.min.apply(null, zs), z1:Math.max.apply(null, zs), door:p.role === 'DURYS', drawer:!!p.drawer, left:p.hingeLeft, sec:p.sec, box:!!p.boxFront });
   });
   return out;
 }
@@ -5492,8 +5492,9 @@ function frontCab(c, i, it, bad, act) {
   if (art) {   // the same render as the cabinet's front view, at its place on the wall
     s += art.svg.replace('<svg class="fr-svg"', '<svg class="rm-art" x="' + x0.toFixed(1) + '" y="' + fY(z0 + h + 4).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (art.vbH * k).toFixed(1) + '" preserveAspectRatio="none"');
     s += '<rect class="rm-body art" x="' + x0.toFixed(1) + '" y="' + fY(z0 + h).toFixed(1) + '" width="' + (w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"/>';
-    fronts(i).forEach(function (f) { if (!f.door) return;   // door opening lines over the render (they meet on the handle side — where the door opens — as on the drawings)
+    fronts(i).forEach(function (f) { if (!f.door && !f.drawer) return;   // door opening lines over the render (they meet on the handle side — where the door opens — as on the drawings); an X on a drawer
       var fx = x0 + f.x0 * k, fy = fY(z0 + f.z1), fw = (f.x1 - f.x0) * k, fh = (f.z1 - f.z0) * k, hx = f.left ? fx + fw : fx, ox = f.left ? fx : fx + fw;
+      if (f.drawer) { s += '<path class="rm-open art" d="M' + fx.toFixed(1) + ' ' + fy.toFixed(1) + ' L' + (fx + fw).toFixed(1) + ' ' + (fy + fh).toFixed(1) + ' M' + fx.toFixed(1) + ' ' + (fy + fh).toFixed(1) + ' L' + (fx + fw).toFixed(1) + ' ' + fy.toFixed(1) + '"/>'; return; }
       s += '<path class="rm-open art" d="M' + ox.toFixed(1) + ' ' + fy.toFixed(1) + ' L' + hx.toFixed(1) + ' ' + (fy + fh / 2).toFixed(1) + ' L' + ox.toFixed(1) + ' ' + (fy + fh).toFixed(1) + '"/>'; });
   } else s += '<rect class="rm-body' + (c.dishwasher ? ' dish' : c.kind === 'panel' ? ' panel' : '') + '" x="' + x0.toFixed(1) + '" y="' + fY(z0 + h).toFixed(1) + '" width="' + Math.max(1.2, w * k).toFixed(1) + '" height="' + (h * k).toFixed(1) + '"' + (c.kind === 'panel' && window.DBFront ? ' style="fill:' + window.DBFront.matColor(c.mat && c.mat.carc, '#d5cbbd') + '"' : '') + '/>';
   if (!art) fronts(i).forEach(function (f) {
@@ -5501,6 +5502,7 @@ function frontCab(c, i, it, bad, act) {
     s += '<rect class="rm-front" x="' + fx.toFixed(1) + '" y="' + fy.toFixed(1) + '" width="' + fw.toFixed(1) + '" height="' + fh.toFixed(1) + '"/>';
     if (f.door) { var hx = f.left ? fx + fw : fx, ox = f.left ? fx : fx + fw;   // opening lines meet on the handle side, where the door opens (as on the drawings): a pair hinged outside points to the middle
       s += '<path class="rm-open" d="M' + ox.toFixed(1) + ' ' + fy.toFixed(1) + ' L' + hx.toFixed(1) + ' ' + (fy + fh / 2).toFixed(1) + ' L' + ox.toFixed(1) + ' ' + (fy + fh).toFixed(1) + '"/>'; }
+    else if (f.drawer) s += '<path class="rm-open" d="M' + fx.toFixed(1) + ' ' + fy.toFixed(1) + ' L' + (fx + fw).toFixed(1) + ' ' + (fy + fh).toFixed(1) + ' M' + fx.toFixed(1) + ' ' + (fy + fh).toFixed(1) + ' L' + (fx + fw).toFixed(1) + ' ' + fy.toFixed(1) + '"/>';
     else if (fw > 8) s += '<line class="rm-handle" x1="' + (fx + fw * 0.35).toFixed(1) + '" y1="' + (fy + Math.min(fh * 0.22, 40 * k + 3)).toFixed(1) + '" x2="' + (fx + fw * 0.65).toFixed(1) + '" y2="' + (fy + Math.min(fh * 0.22, 40 * k + 3)).toFixed(1) + '"/>';
   });
   var inf0 = C.o.infos[i], lv = inf0 && inf0.r && inf0.r.visual && inf0.r.visual.leds;
@@ -6710,7 +6712,7 @@ var TX = {
        views:'vaizdai ir matmenys', assembly:'surinkimas', allFronts:'Visi baldai', name:'Pavadinimas', type:'Tipas', place:'Vieta', nParts:'Detalių', unit:'Vnt.',
        base:'pastatoma', wallc:'pakabinama', tall:'aukšta', box:'3D konstrukcija', dish:'indaplovės fasadas', legs:'Kojelės', feet:'Pėdutės', frontEdge:'PRIEKIS',
        made:'Spintelių kūrėjas', firstAngle:'Projekcija E (ISO)', conn:'Jungtys:', cConf:'konfirmatai', cCam:'ekscentrikai', cDowel:'kaiščiai', extra:'papildoma',
-       data:'Duomenys', joinery:'Jungtys', carcM:'Korpusas', facM:'Fasadai', edgeM:'Kraštai', none:'—', warn:'Pastabos', open:'Atidarymo linijos — viršūnė rankenos pusėje',
+       data:'Duomenys', joinery:'Jungtys', carcM:'Korpusas', facM:'Fasadai', edgeM:'Kraštai', none:'—', warn:'Pastabos', open:'Atidarymo linijos — viršūnė rankenos pusėje; X — stalčius',
        fromStart:'nuo sienos pradžios', fromS:'Nuo pradžios', worktop:'stalviršis', wtPart:'Stalviršis', cont:'tęsinys', contNext:'Tęsinys kitame lape →', more:'daugiau — žr. spintelių lapus', noLayout:'Spintelės nesudėliotos Baldų skirtuke — rodomi visi fasadai iš eilės.', clear:'šviesos', wallLen:'Siena' },
   en:{ front:'Front view', inner:'Without fronts', left:'View from the left', top:'View from above', iso:'Assembled', expl:'Assembly diagram', parts:'Parts', hw:'Hardware',
        pos:'Pos.', part:'Part', size:'L × W × T', mat:'Material', edge:'Edges', qty:'Qty', scale:'Scale', date:'Date', sheet:'Sheet', project:'Project', drawing:'Drawing',
@@ -6718,7 +6720,7 @@ var TX = {
        views:'views and dimensions', assembly:'assembly', allFronts:'All furniture', name:'Name', type:'Type', place:'Position', nParts:'Parts', unit:'Unit',
        base:'base', wallc:'wall', tall:'tall', box:'3D construction', dish:'dishwasher front', legs:'Legs', feet:'Feet', frontEdge:'FRONT',
        made:'Cabinet creator', firstAngle:'Projection E (ISO)', conn:'Joints:', cConf:'confirmats', cCam:'cams', cDowel:'dowels', extra:'extra',
-       data:'Data', joinery:'Joints', carcM:'Carcass', facM:'Fronts', edgeM:'Edging', none:'—', warn:'Notes', open:'Opening lines — apex on the handle side',
+       data:'Data', joinery:'Joints', carcM:'Carcass', facM:'Fronts', edgeM:'Edging', none:'—', warn:'Notes', open:'Opening lines — apex on the handle side; X — drawer',
        fromStart:'from the wall start', fromS:'From start', worktop:'worktop', wtPart:'Worktop', cont:'continued', contNext:'Continued on the next sheet →', more:'more — see the cabinet sheets', noLayout:'Cabinets are not placed in the Furniture tab — all fronts are shown in a row.', clear:'clear', wallLen:'Wall' }
 };
 var L = TX.lt, curLang = 'lt'; function setLang(l) { L = TX[l] || TX.lt; curLang = TX[l] ? l : 'lt'; }
@@ -6763,7 +6765,7 @@ function cabBoxes(r, o) {
   o = o || {}; var out = [];
   (r.panels || []).forEach(function (p, i) {
     if (!p.place) return; var fr = isFront(p); if (fr && o.fronts === false) return; if (!fr && o.carcass === false) return;
-    out.push({ e:pbox(p), fill:partFill(p), p:p, front:fr, door:p.role === 'DURYS', hingeLeft:p.hingeLeft, pi:i, att:p.drawerOf || undefined });
+    out.push({ e:pbox(p), fill:partFill(p), p:p, front:fr, door:p.role === 'DURYS', drawer:!!p.drawer, hingeLeft:p.hingeLeft, pi:i, att:p.drawerOf || undefined });
   });
   if (o.legs !== false) (r.legs || []).forEach(function (l) { var d = l.d || 40; out.push({ e:[[l.x - d / 2, l.x + d / 2], [l.y - d / 2, l.y + d / 2], [-l.h, 0]], fill:COL.leg, leg:true, fit:'leg' }); });
   var pl = r.visual && r.visual.plinth;
@@ -7181,7 +7183,7 @@ function table(x, y, cols, rows, o) {   // cols: [{ w, label, align }], rows: ar
 }
 
 /* ---------------------------------------------------------------- cabinet views */
-/* front and door details on a front view: opening lines (apex on the handle side) and the front size */
+/* front and door details on a front view: opening lines (apex on the handle side), an X on a drawer front, and the front size */
 function frontMarks(order, m, V, o) {
   var s = '';
   order.forEach(function (b) {
@@ -7192,9 +7194,11 @@ function frontMarks(order, m, V, o) {
       var hx = b.hingeLeft ? x0 : x1, ox = b.hingeLeft ? x1 : x0, zm = (z0 + z1) / 2;
       s += line(P(hx, z0), P(ox, zm), 0.18, COL.thin, '2.4 1.2') + line(P(hx, z1), P(ox, zm), 0.18, COL.thin, '2.4 1.2');
     }
+    if (b.drawer && o.open !== false)   // a drawer: corner to corner, in the same dashed line as the doors' sign
+      s += line(P(x0, z0), P(x1, z1), 0.18, COL.thin, '2.4 1.2') + line(P(x0, z1), P(x1, z0), 0.18, COL.thin, '2.4 1.2');
     if (o.sizes !== false) {
       var a = P(x0, z0), c = P(x1, z1), w = Math.abs(c[0] - a[0]), h = Math.abs(c[1] - a[1]), lab = nm(x1 - x0) + ' × ' + nm(z1 - z0);
-      var fs = Math.min(2.4, h * 0.42); if (fs > 1.2 && tw(lab, fs) + 2 < w) s += txt((a[0] + c[0]) / 2, b.door ? Math.max(a[1], c[1]) - Math.max(fs + 0.8, h * 0.07) : (a[1] + c[1]) / 2 + fs * 0.35, lab, fs, { anchor:'middle', fill:'#4a524d' });
+      var fs = Math.min(2.4, h * 0.42); if (fs > 1.2 && tw(lab, fs) + 2 < w) s += (b.drawer && o.open !== false ? '<rect x="' + f2((a[0] + c[0]) / 2 - tw(lab, fs) / 2 - 0.8) + '" y="' + f2((a[1] + c[1]) / 2 - fs * 0.75) + '" width="' + f2(tw(lab, fs) + 1.6) + '" height="' + f2(fs * 1.4) + '" fill="#fff" fill-opacity="0.85"/>' : '') + txt((a[0] + c[0]) / 2, b.door ? Math.max(a[1], c[1]) - Math.max(fs + 0.8, h * 0.07) : (a[1] + c[1]) / 2 + fs * 0.35, lab, fs, { anchor:'middle', fill:'#4a524d' });
     }
   });
   return s;
@@ -7575,7 +7579,7 @@ function roomScene(proj, infos, RM) {
       out.push(Object.assign({ e:ee, cab:o.i, wall:it.wall }, extra)); };
     var bx = inf && inf.r && inf.r.panels && inf.r.panels.length ? cabBoxes(inf.r, {}) : [];
     if (!bx.some(function (b) { return !b.leg; })) bx = bx.concat([{ e:[[0, RM.cabW(c)], [0, D0], [0, RM.cabH(c)]], fill:lookFill(c.mat && c.mat.facade, COL.front), front:true }]);   // a cabinet without placed parts (dishwasher): its outline
-    bx.forEach(function (b) { add(b.e, { fill:b.fill, front:b.front, door:b.door, hingeLeft:b.hingeLeft, p:b.p, leg:b.leg }); });
+    bx.forEach(function (b) { add(b.e, { fill:b.fill, front:b.front, door:b.door, drawer:b.drawer, hingeLeft:b.hingeLeft, p:b.p, leg:b.leg }); });
     var wt = Lo.worktop && (inf && inf.r && inf.r.worktop || RM.wtOf(c)); if (wt) add([[wt.x0, wt.x1], [wt.y0, wt.y1], [wt.z0, wt.z1]], { fill:lookFill(wt.mat, COL.top), worktop:true });
     (RM.sideP ? RM.sideP(c) : []).forEach(function (q) { add([[q.x0, q.x1], [q.y0, q.y1], [q.z0, q.z1]], { fill:lookFill(q.mat, COL.front), sidePanel:true }); });   // side panels (extra parts set beside it)
   });
