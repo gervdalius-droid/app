@@ -222,7 +222,7 @@ body.tv h1{font-size:3.6vh;white-space:nowrap;overflow:hidden;text-overflow:elli
 body.tv .counts{font-size:3.4vh;flex-wrap:nowrap;white-space:nowrap;gap:2vh}
 body.tv .dot{width:1.8vh;height:1.8vh}
 body.tv .clock{font-size:4.6vh;order:-1}
-body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR,body.tv #btnAw{display:none!important}
+body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR,body.tv #btnAw,body.tv #btnDay{display:none!important}
 body.tv .tools{flex-wrap:nowrap;gap:1vh}
 body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
 body.tv main{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
@@ -443,6 +443,40 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #aw tr.awlog td{border-top:1px solid var(--line);padding:5px 6px}
 #aw .mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--muted)}
 #aw .note{font-size:13px;color:var(--muted)}
+#dv{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 16px max(12px,env(safe-area-inset-left,0px));overflow:auto}
+#dv .rbox{background:var(--panel);color:var(--ink);border-radius:16px;width:min(860px,100%);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#dv .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#dv h2{font:800 22px/1.1 var(--display);letter-spacing:-0.01em;margin:0}
+#dv .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#dv input,#dv select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);min-width:0}
+#dv .pend{font:600 12px/1 var(--mono);background:var(--mark);color:var(--mark-ink);border-radius:99px;padding:6px 10px}
+#dv .dvp{border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+#dv .dvh{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding-bottom:4px}
+#dv .dvh b{font:700 18px/1.2 var(--display)}
+#dv .mono{font-family:var(--mono);font-size:13px;color:var(--muted);white-space:nowrap}
+#dv .dvr,#dv .dvc{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);padding:6px 0;font-size:14.5px}
+#dv .dvl{flex:1;min-width:0;overflow-wrap:anywhere}
+#dv .dvr.has .dvl{color:var(--muted)}
+#dv .dvc{background:color-mix(in srgb,var(--mark) 14%,transparent);border-radius:8px;padding:6px 8px;border-top:0;margin:2px 0;flex-wrap:wrap}
+#dv .dvc.no{background:var(--bg);color:var(--muted)}
+#dv .dvc>span:first-child{flex:1;min-width:0;overflow-wrap:anywhere}
+#dv .dvc .who{font:500 12px/1.3 var(--mono);color:var(--muted)}
+#dv .ib{border:1px solid var(--line);background:var(--bg);border-radius:8px;min-width:36px;min-height:36px;cursor:pointer;font-size:15px}
+#dv .dvf{display:flex;flex-wrap:wrap;gap:6px;align-items:center;background:var(--bg);border-radius:10px;padding:8px;margin:2px 0}
+#dv .dvf select,#dv .dvf input[type=text]{flex:1 1 160px}
+#dv .dvf .tm{display:flex;gap:4px;align-items:center}
+#dv .lk{background:none;border:0;color:var(--accent);cursor:pointer;font:600 14px/1.2 var(--body);padding:6px 0;text-align:left}
+#dv .note{font-size:13px;color:var(--muted)}
+#btnDay.alert{border-color:var(--mark);background:color-mix(in srgb,var(--mark) 22%,var(--panel))}
+#shout.sum .shbox{max-width:94vw;gap:2vh}
+#shout .shn.sm{font-size:clamp(28px,6vh,80px)}
+#shout .sumg{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(42vh,320px),1fr));gap:1.6vh;width:min(92vw,170vh);text-align:left}
+#shout .sumc{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);border-radius:1.6vh;padding:1.6vh 2vh;display:flex;flex-direction:column;gap:.6vh}
+#shout .sumn{display:flex;justify-content:space-between;gap:1vh;font:700 clamp(15px,3vh,34px)/1.15 var(--display)}
+#shout .sumn span{font:600 clamp(13px,2.4vh,28px)/1.2 var(--mono);color:#bfeee8}
+#shout .sumj{display:flex;justify-content:space-between;gap:1vh;font:500 clamp(12px,2vh,22px)/1.3 var(--body);color:#e7f7f5}
+#shout .sumj span:last-child{font-family:var(--mono);color:#bfeee8;white-space:nowrap}
+#shout.in .sumc{animation:shUp .6s .5s both}
 #shout{position:fixed;inset:0;z-index:40;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(13,108,102,.92),rgba(10,20,22,.96));cursor:pointer;padding:5vh 6vw}
 #shout canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 #shout .shbox{position:relative;text-align:center;color:#fff;max-width:90vw;display:flex;flex-direction:column;gap:2.4vh;align-items:center}
@@ -513,6 +547,7 @@ body.tv .mapwrap{border-radius:1.4vh}
     <button class="btn" id="btnAuth" type="button" hidden></button>
     <button class="btn" id="btnRadio" type="button" aria-haspopup="dialog">📻</button>
     <button class="btn" id="btnTime" type="button" aria-haspopup="dialog"></button>
+    <button class="btn" id="btnDay" type="button" aria-haspopup="dialog" hidden></button>
     <button class="btn" id="btnAw" type="button" aria-haspopup="dialog" hidden></button>
     <button class="btn" id="btnQR" type="button" hidden></button>
     <button class="btn" id="btnView" type="button"></button>
@@ -531,6 +566,7 @@ body.tv .mapwrap{border-radius:1.4vh}
 <div id="ci" aria-live="polite"></div>
 <div id="rep" hidden role="dialog" aria-labelledby="rp-h"></div>
 <div id="aw" hidden role="dialog" aria-labelledby="aw-h"></div>
+<div id="dv" hidden role="dialog" aria-labelledby="dv-h"></div>
 <div id="shout" hidden role="status" aria-live="polite"><canvas id="sh-cv"></canvas><div class="shbox" id="sh-box"></div></div>
 <div id="qrs" hidden></div>
 <div id="auth" hidden><form class="authbox" id="authForm" autocomplete="on">
@@ -569,7 +605,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',clShow:'Rodyti tvarkymosi priminimą',clK:'Darbo diena baigiasi',clH:'Laikas susitvarkyti!',clS:'Išvalyk savo darbo vietą ir sudėk visus įrankius į jų vietas.',clA:'🧹 Švari darbo vieta',clB:'🔧 Įrankiai – į vietas',clC:'🗑 Atliekos – išneštos',clD:'💨 Staklės nuvalytos',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',dvBtn:'Diena',dvH:'Dienos darbai',dvAll:'Visi',dvMine:'Mano diena',dvOk:'patvirtinta',dvConfirm:'Patvirtinti dieną',dvEdit:'Taisyti',dvDel:'Ištrinti',dvAdd:'Pridėti pamirštą darbą',dvSave:'Siųsti',dvWait:'laukia vadovo patvirtinimo',dvNo:'atmesta',dvPendN:'Laukia patvirtinimo',dvSent:'Išsiųsta vadovui patvirtinti',dvApplied:'Pataisymas patvirtintas',dvRejected:'Pataisymas atmestas',dvBadTime:'Pabaiga turi būti vėliau nei pradžia.',dvTapAgain:'Paspausk dar kartą, kad patvirtintum',dvNoteW:'Jei kažkas neteisingai – pataisyk ar pridėk. Pataisymai įsigalioja, kai juos patvirtina vadovas.',dvNoteM:'Darbuotojų pataisymai laukia tavo ✓. Tavo paties pataisymai įsigalioja iš karto. „Patvirtinti dieną“ – diena peržiūrėta ir tinka.',sumK:'Dienos suvestinė',sumH:'Ką šiandien nuveikėme',sumFix:'Jei kas neteisingai – pataisyk telefone: „Mano diena“',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',clShow:'Rodyti tvarkymosi priminimą',clK:'Darbo diena baigiasi',clH:'Laikas susitvarkyti!',clS:'Išvalyk savo darbo vietą ir sudėk visus įrankius į jų vietas.',clA:'🧹 Švari darbo vieta',clB:'🔧 Įrankiai – į vietas',clC:'🗑 Atliekos – išneštos',clD:'💨 Staklės nuvalytos',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -586,7 +622,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',clShow:'Show tidy-up reminder',clK:'The working day is ending',clH:'Time to tidy up!',clS:'Clean your work area and put every tool back in its place.',clA:'🧹 Clean work area',clB:'🔧 Tools back in place',clC:'🗑 Waste taken out',clD:'💨 Machines wiped down',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',dvBtn:'Day',dvH:'Day log',dvAll:'Everyone',dvMine:'My day',dvOk:'confirmed',dvConfirm:'Confirm day',dvEdit:'Edit',dvDel:'Delete',dvAdd:'Add forgotten work',dvSave:'Send',dvWait:'waiting for a manager',dvNo:'rejected',dvPendN:'Waiting for approval',dvSent:'Sent to a manager for approval',dvApplied:'Correction approved',dvRejected:'Correction rejected',dvBadTime:'The end must be later than the start.',dvTapAgain:'Tap again to confirm',dvNoteW:'If something is wrong, fix it or add what is missing. Corrections count once a manager approves them.',dvNoteM:'Workers’ corrections wait for your ✓. Your own corrections count at once. “Confirm day” = the day was checked and is right.',sumK:'Day summary',sumH:'What we did today',sumFix:'Anything wrong? Fix it on your phone: “My day”',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',clShow:'Show tidy-up reminder',clK:'The working day is ending',clH:'Time to tidy up!',clS:'Clean your work area and put every tool back in its place.',clA:'🧹 Clean work area',clB:'🔧 Tools back in place',clC:'🗑 Waste taken out',clD:'💨 Machines wiped down',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -946,10 +982,11 @@ async function boot(){
   const timer=setTimeout(()=>{if(!docs.layout.loaded){stale=true;renderHeader()}},10000);
   await poll();clearTimeout(timer);
   loadShopflow().then(()=>{if(CHK)renderCI()});logFlush();
-  if(!TEAM)loadTeam().then(()=>renderHeader()).catch(()=>{});
+  if(!TEAM)loadTeam().then(()=>{renderHeader();fixCount()}).catch(()=>{});
   if(location.hash==='#laikas'&&!CHK)repOpen(true);
   if(timersOn)return;timersOn=true;
   setInterval(logFlush,60000);
+  fixCount();setInterval(fixCount,90000);
   setInterval(poll,6000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
   setInterval(loadShopflow,300000);
@@ -1190,7 +1227,7 @@ function renderHeader(){
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#tvhint').textContent=view==='3d'?t('tvHint3'):t('tvHint2');
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
-  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnAw').textContent='🏆 '+t('awBtn');$('#btnAw').hidden=mode!=='db'||!isMgr();$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
+  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnDay').textContent='📋 '+t('dvBtn')+(isMgr()&&fixPending?' · '+fixPending:'');$('#btnDay').hidden=mode!=='db';$('#btnDay').classList.toggle('alert',isMgr()&&fixPending>0);$('#btnAw').textContent='🏆 '+t('awBtn');$('#btnAw').hidden=mode!=='db'||!isMgr();$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
 }
@@ -1732,7 +1769,7 @@ async function logFlush(){
   for(const m of Object.keys(byM)){
     try{
       const id=LOG_PFX+m,rows=await WA.rest('workspaces?id=eq.'+id+'&select=data'),base=rows&&rows[0]&&isObj(rows[0].data)?rows[0].data:{};
-      if(!isObj(base.s))base.s={};for(const x of byM[m]){base.s[x.id]=x;done.push(x.id)}
+      if(!isObj(base.s))base.s={};for(const x of byM[m]){if(!(base.s[x.id]&&base.s[x.id].fx))base.s[x.id]=x;done.push(x.id)}
       await WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id,data:base,updated_at:new Date().toISOString(),updated_by:who})});
     }catch(e){for(const x of byM[m]){const i=done.indexOf(x.id);if(i>=0)done.splice(i,1)}}
   }
@@ -2100,7 +2137,7 @@ function renderCI(force){
          '<button type="button" class="stop" data-ci="stop"'+(CIS.busy?' disabled':'')+'>'+esc(off?t('ciLeave'):t('ciStop'))+'</button></div>';
     }
   }
-  h+='<div class="foot"><a href="'+esc(location.pathname)+'">'+esc(t('ciPlan'))+'</a>'+(person?'<button type="button" data-ci="out">'+esc(t('ciOut'))+' ('+esc(person.name)+')</button>':'')+'</div>';
+  h+='<div class="foot"><a href="'+esc(location.pathname)+'">'+esc(t('ciPlan'))+'</a><button type="button" data-ci="day">📋 '+esc(t('dvMine'))+'</button>'+(person?'<button type="button" data-ci="out">'+esc(t('ciOut'))+' ('+esc(person.name)+')</button>':'')+'</div>';
   box.innerHTML=h;
 }
 function waitSaved(){return new Promise(r=>{const t0=Date.now();(function chk(){if(mode==='db'&&!pend.length&&!flushing)return r(!saveErr&&!stale);if(Date.now()-t0>12000)return r(false);setTimeout(chk,250)})()})}
@@ -2143,6 +2180,7 @@ $('#ci').addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!
   else if(k==='stop')ciSubmit(true);
   else if(k==='pause'||k==='resume'||k==='end')ciAct(b.dataset.id,k);
   else if(k==='again'){CIS.done=null;CIS.sel=[];CIS.nt='';renderCI(true)}
+  else if(k==='day'){dvOpen(true,(CIS.sel&&CIS.sel.length===1&&CIS.sel[0]!=='__me')?CIS.sel[0]:(meId()||''))}
   else if(k==='out'){setPerson(null);CIS.sel=null;authOpen().then(()=>{CIS.sel=null;renderCI(true)})}});
 $('#ci').addEventListener('change',e=>{const el=e.target;
   if(el.id==='ci-pr'){CIS.pr=el.value;renderCI(true);if(el.value==='__new'){const n=$('#ci-nw');if(n)n.focus()}}
@@ -2175,7 +2213,7 @@ async function sessionsIn(a,b){
   for(const x of logQ)all[x.id]=x;
   for(const [pid,p] of Object.entries(ST().people)){const s=sessOf(pid,p);if(s&&!all[s.id])all[s.id]=s}
   for(const [iid,i] of Object.entries(ST().inst))if(i&&!i.done&&i.f<=today())for(const x of instSess(iid,i))if(!all[x.id])all[x.id]=x;
-  return Object.values(all).filter(x=>x&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
+  return Object.values(all).filter(x=>x&&!x.del&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
 }
 async function repLoad(){
   const [a,b]=repRange(RP.per);
@@ -2304,15 +2342,15 @@ async function dayBest(){
   for(const x of list){const e=by[x.w]=by[x.w]||{id:x.w,n:x.n||(ST().people[x.w]&&ST().people[x.w].n)||'',ms:0,jobs:new Set(),places:new Set()};e.ms+=x.ms;e.jobs.add((x.pr||'')+'|'+(x.sn||x.s));e.places.add(x.sn||x.s)}
   return Object.values(by).filter(e=>e.n&&e.ms>=SHOUT_MIN).sort((p,q)=>q.ms-p.ms||q.jobs.size-p.jobs.size);
 }
-async function showShout(manual){
+async function showShout(manual,chain){
   const best=await dayBest();
-  if(!best.length){if(manual)toast(t('shNone'));return}
+  if(!best.length){if(manual)toast(t('shNone'));else if(chain)showDaySum();return}
   const top=best[0],d=new Date(),lines=SHOUT_LINES[lang==='en'?'en':'lt'],line=lines[(d.getDate()+d.getMonth()*31)%lines.length].replace('{V}',voc(top.n)).replace('{N}',top.n.split(' ')[0]);
   const also=best.slice(1,4).filter(e=>e.ms>=SHOUT_MIN*1.5).map(e=>e.n);
   $('#sh-box').innerHTML='<div class="shk">'+esc(t('shKicker'))+'</div><div class="shn">'+esc(line)+'</div><div class="shs">'+esc(fmtH(top.ms))+' · '+top.jobs.size+' '+esc(jobsWord(top.jobs.size))+' · '+esc([...top.places].slice(0,3).join(', '))+'</div>'+
     (also.length?'<div class="sha">'+esc(t('shAlso'))+': '+esc(also.join(', '))+' 👏</div>':'')+'<div class="sht">'+esc(t('shClose'))+'</div>';
   const box=$('#shout');box.classList.remove('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
-  confetti();clearTimeout(shoutT);shoutT=setTimeout(hideShout,SHOUT_MS);
+  box.classList.remove('sum');confetti();clearTimeout(shoutT);shoutT=setTimeout(()=>{hideShout();if(chain)showDaySum()},SHOUT_MS);
 }
 /* 1 darbas, 2–9 darbai, 10–20 / …0 darbų, 21 darbas… */
 function jobsWord(n){if(lang==='en')return n===1?'job':'jobs';const d=n%10,dd=n%100;return d===1&&dd!==11?'darbas':d>=2&&d<=9&&!(dd>=12&&dd<=19)?'darbai':'darbų'}
@@ -2320,15 +2358,28 @@ function jobsWord(n){if(lang==='en')return n===1?'job':'jobs';const d=n%10,dd=n%
 function showClean(){
   $('#sh-box').innerHTML='<div class="shk">'+esc(t('clK'))+'</div><div class="shn"><span class="broom" aria-hidden="true">🧹</span> '+esc(t('clH'))+'</div><div class="shs">'+esc(t('clS'))+'</div>'+
     '<div class="clist">'+['clA','clB','clC','clD'].map(k=>'<span>'+esc(t(k))+'</span>').join('')+'</div><div class="sht">'+esc(t('shClose'))+'</div>';
-  const box=$('#shout');box.classList.add('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
+  const box=$('#shout');box.classList.remove('sum');box.classList.add('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
   clearTimeout(shoutT);shoutT=setTimeout(hideShout,CLEAN_MS);
 }
-function hideShout(){const box=$('#shout');if(box.hidden)return;box.hidden=true;box.classList.remove('in');clearTimeout(shoutT);if(shoutAnim){cancelAnimationFrame(shoutAnim);shoutAnim=null}}
+/* what everyone did today, as one screen (after the 16:50 star of the day) */
+async function showDaySum(){
+  const list=await sessionsIn(dayStart(),Date.now()),by={};
+  for(const x of list){const e=by[x.w]=by[x.w]||{n:x.n||'',ms:0,j:{}};e.ms+=x.ms;const k=(x.sn||x.s)+'|'+(x.pr?prLabel(x.pr):'');e.j[k]=(e.j[k]||0)+x.ms}
+  const ppl=Object.values(by).filter(e=>e.n).sort((p,q)=>q.ms-p.ms);if(!ppl.length)return;
+  let h='<div class="shk">'+esc(t('sumK'))+'</div><div class="shn sm">'+esc(t('sumH'))+'</div><div class="sumg">';
+  for(const e of ppl){h+='<div class="sumc"><div class="sumn"><b>'+esc(e.n)+'</b><span>'+esc(fmtH(e.ms))+'</span></div>';
+    for(const [k,ms] of Object.entries(e.j).sort((p,q)=>q[1]-p[1]).slice(0,4)){const [pl,pr]=k.split('|');h+='<div class="sumj"><span>'+esc(pl)+(pr?' · '+esc(pr):'')+'</span><span>'+esc(fmtH(ms))+'</span></div>'}
+    h+='</div>'}
+  $('#sh-box').innerHTML=h+'</div><div class="sht">'+esc(t('sumFix'))+'</div>';
+  const box=$('#shout');box.classList.remove('clean');box.classList.add('sum');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
+  clearTimeout(shoutT);shoutT=setTimeout(hideShout,75000);
+}
+function hideShout(){const box=$('#shout');if(box.hidden)return;box.hidden=true;box.classList.remove('in','sum');clearTimeout(shoutT);if(shoutAnim){cancelAnimationFrame(shoutAnim);shoutAnim=null}}
 function shoutTick(){
   if(!tvOn()||mode!=='db')return;const d=new Date(),wd=d.getDay();if(wd===0||wd===6)return;
   const due=(h,m)=>{const k=today()+' '+h+':'+m,at=new Date(d).setHours(h,m,0,0);if(shoutDone[k]||Date.now()<at||Date.now()>=at+4*6e4)return false;shoutDone[k]=1;return true};
   for(const [h,m] of CLEAN_AT)if(due(h,m)){showClean();return}
-  for(const [h,m] of SHOUT_AT)if(due(h,m)){showShout(false);return}
+  SHOUT_AT.forEach(([h,m],i)=>{if(due(h,m))showShout(false,i===0)});
 }
 function confetti(){
   if(window.matchMedia&&window.matchMedia('(prefers-reduced-motion: reduce)').matches)return;
@@ -2342,6 +2393,124 @@ function confetti(){
 }
 $('#shout').addEventListener('click',hideShout);
 window.addEventListener('keydown',e=>{if(!$('#shout').hidden){e.preventDefault();e.stopImmediatePropagation();hideShout()}},true);
+
+/* ---------- day review ----------
+   Everyone signed in can see a day's work and correct it: change place, project, part or times, remove an entry
+   or add a forgotten one. A correction from a worker waits; only a manager's ✓ writes it into the time log
+   (a manager's own correction counts at once). Managers can also confirm a person's whole day.
+   Corrections and confirmations live in their own row. */
+const FIX_ROW=ROW+'-fix';
+const DV={open:false,day:null,who:'',list:null,fix:{c:{},d:{}},busy:false,edit:null,key:''};
+let fixPending=0;
+const parseHM=(day,hm)=>{const x=day.split('-').map(Number),y=String(hm||'').split(':').map(Number);return new Date(x[0],x[1]-1,x[2],y[0]||0,y[1]||0).getTime()};
+const hm=ms=>{const d=new Date(ms),p=x=>String(x).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes())};
+async function fixRead(){try{const r=await WA.rest('workspaces?id=eq.'+FIX_ROW+'&select=data'),d=r&&r[0]&&isObj(r[0].data)?r[0].data:{};return{c:isObj(d.c)?d.c:{},d:isObj(d.d)?d.d:{}}}catch(e){return null}}
+async function fixWrite(mut){
+  const cur=await fixRead();if(!cur)throw new Error('read');mut(cur);
+  await WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:FIX_ROW,data:cur,updated_at:new Date().toISOString(),updated_by:who})});
+  return cur;
+}
+async function fixCount(){if(mode!=='db'||!isMgr())return;const f=await fixRead();if(!f)return;fixPending=Object.values(f.c).filter(c=>c&&c.st==='p').length;renderHeader()}
+/* write an approved correction into the monthly log */
+async function fixApply(c){
+  const rd=async m=>{const r=await WA.rest('workspaces?id=eq.'+LOG_PFX+m+'&select=data');return r&&r[0]&&isObj(r[0].data)?r[0].data:{}};
+  const wr=(m,data)=>WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:LOG_PFX+m,data,updated_at:new Date().toISOString(),updated_by:who})});
+  if(c.k==='del'||c.k==='edit'){const m=monKey(c.o.a),d=await rd(m);if(!isObj(d.s))d.s={};d.s[c.sid]={id:c.sid,w:c.w,n:c.n,a:c.o.a,b:c.o.b,del:1,fx:1};
+    if(c.k==='edit'&&monKey(c.v.a)===m){d.s[c.sid]=Object.assign({},c.o,c.v,{id:c.sid,w:c.w,n:c.n,fx:1,by:who})}else if(c.k==='edit'){await wr(m,d);const m2=monKey(c.v.a),d2=await rd(m2);if(!isObj(d2.s))d2.s={};d2.s[c.sid+'_m']=Object.assign({},c.o,c.v,{id:c.sid+'_m',w:c.w,n:c.n,fx:1,by:who});await wr(m2,d2);return}
+    await wr(m,d);return}
+  const m=monKey(c.v.a),d=await rd(m);if(!isObj(d.s))d.s={};const id=c.w+'_fix_'+c.at;d.s[id]=Object.assign({},c.v,{id,w:c.w,n:c.n,fx:1,by:who});await wr(m,d);
+}
+async function dvLoad(){
+  const day=DV.day,x=day.split('-').map(Number),a=new Date(x[0],x[1]-1,x[2]).getTime(),b=a+864e5;
+  DV.busy=true;DV.key=day;renderDV();
+  const [list,fx]=await Promise.all([sessionsIn(a,Math.min(b,Date.now())),fixRead()]);
+  if(DV.key!==day)return;
+  DV.list=list;DV.fix=fx||{c:{},d:{}};DV.busy=false;
+  if(isMgr())fixPending=Object.values(DV.fix.c).filter(c=>c&&c.st==='p').length;
+  renderDV();renderHeader();
+}
+function dvPlaceOpts(cur,curName){const L=ciPlaces().concat([['inst',t('inst')]]);if(cur&&!L.some(x=>x[0]===cur))L.unshift([cur,curName||cur]);return L.map(([id,n])=>'<option value="'+esc(id)+'"'+(id===cur?' selected':'')+'>'+esc(n)+'</option>').join('')}
+function dvForm(id,w,o){
+  const v=o||{};return'<div class="dvf" data-fid="'+esc(id)+'" data-w="'+esc(w)+'"><select data-f="s" aria-label="'+esc(t('ciWhere'))+'">'+dvPlaceOpts(v.s||'',v.sn)+'</select>'+
+    '<input type="text" data-f="pr" list="dv-prs" placeholder="'+esc(t('ciProj'))+'" value="'+esc(v.pr||'')+'"><input type="text" data-f="nt" placeholder="'+esc(t('ciPart'))+'" value="'+esc(v.nt||'')+'">'+
+    '<span class="tm"><input type="time" data-f="a" value="'+(v.a?hm(v.a):'08:00')+'"> – <input type="time" data-f="b" value="'+(v.b?hm(v.b):'17:00')+'"></span>'+
+    '<button type="button" class="btn sm ok" data-dv="save">'+esc(t('dvSave'))+'</button><button type="button" class="btn sm" data-dv="cancel">'+esc(t('cancel'))+'</button></div>'}
+function renderDV(){
+  const box=$('#dv');box.hidden=!DV.open;if(!DV.open)return;
+  const mgr=isMgr(),day=DV.day,fx=DV.fix||{c:{},d:{}},me=meId();
+  const ppl=Object.entries(ST().people).filter(e=>e[1]&&e[1].n).sort((p,q)=>String(p[1].n).localeCompare(String(q[1].n),'lt'));
+  let h='<div class="rbox"><div class="rh"><h2 id="dv-h">📋 '+esc(t('dvH'))+'</h2><button type="button" class="x" data-dv="close" aria-label="✕">✕</button></div>'+
+    '<div class="ctl"><input type="date" id="dv-day" value="'+esc(day)+'" max="'+esc(today())+'"><select id="dv-who"><option value="">'+esc(t('dvAll'))+'</option>'+ppl.map(([id,p])=>'<option value="'+esc(id)+'"'+(DV.who===id?' selected':'')+'>'+esc(p.n)+(id===me?' ('+esc(t('ciMe'))+')':'')+'</option>').join('')+'</select>'+
+    (mgr&&fixPending?'<span class="pend">'+esc(t('dvPendN'))+': '+fixPending+'</span>':'')+'</div>'+
+    '<datalist id="dv-prs">'+SF.orders.map(o=>'<option value="'+esc(o.label)+'"></option>').join('')+ST().projects.map(p=>'<option value="'+esc(p)+'"></option>').join('')+'</datalist>';
+  if(DV.busy||!DV.list){box.innerHTML=h+'<div class="note">'+esc(t('repLoad'))+'</div></div>';return}
+  const cs=Object.entries(fx.c).filter(([k,c])=>c&&c.day===day);
+  const ids=new Set(DV.list.map(x=>x.w).concat(cs.map(([k,c])=>c.w)));
+  const show=[...ids].filter(w=>!DV.who||w===DV.who).map(w=>[w,(ST().people[w]&&ST().people[w].n)||((DV.list.find(x=>x.w===w)||{}).n)||w]).sort((p,q)=>p[1].localeCompare(q[1],'lt'));
+  if(DV.who&&!show.length)show.push([DV.who,(ST().people[DV.who]||{}).n||DV.who]);
+  if(!show.length)h+='<div class="note">'+esc(t('repNone'))+'</div>';
+  const line=v=>esc(hm(v.a))+'–'+esc(hm(v.b))+' · '+esc(v.sn||v.s)+' · '+esc(v.pr?prLabel(v.pr):t('repNoP'))+(v.nt?' · '+esc(v.nt):'');
+  for(const [w,n] of show){
+    const mine=DV.list.filter(x=>x.w===w).sort((p,q)=>p.a1-q.a1),tot=mine.reduce((s,x)=>s+x.ms,0),ok=fx.d[day+'|'+w];
+    h+='<section class="dvp"><div class="dvh"><b>'+esc(n)+'</b><span class="mono">'+esc(fmtH(tot))+'</span>'+(ok?'<span class="badge">✓ '+esc(t('dvOk'))+'</span>':'')+
+      (mgr?(ok?'<button type="button" class="lk" data-dv="unok" data-w="'+esc(w)+'">'+esc(t('awUndo'))+'</button>':'<button type="button" class="btn sm ok" data-dv="ok" data-w="'+esc(w)+'">✓ '+esc(t('dvConfirm'))+'</button>'):'')+'</div>';
+    for(const x of mine){
+      const pend=cs.filter(([k,c])=>c.sid===x.id&&c.st==='p');
+      h+='<div class="dvr'+(pend.length?' has':'')+'"><span class="dvl">'+line({a:x.a1,b:x.b1,sn:x.sn,s:x.s,pr:x.pr,nt:x.nt})+'</span><span class="mono">'+esc(fmtH(x.ms))+'</span>'+
+        (pend.length?'':'<button type="button" class="ib" data-dv="edit" data-sid="'+esc(x.id)+'" aria-label="'+esc(t('dvEdit'))+'">✎</button><button type="button" class="ib" data-dv="del" data-sid="'+esc(x.id)+'" aria-label="'+esc(t('dvDel'))+'">🗑</button>')+'</div>';
+      if(DV.edit===x.id)h+=dvForm(x.id,w,x);
+    }
+    for(const [k,c] of cs.filter(([k,c])=>c.w===w&&c.st!=='ok')){
+      h+='<div class="dvc '+(c.st==='no'?'no':'')+'"><span>'+(c.k==='add'?'＋ '+line(c.v):c.k==='del'?'🗑 <s>'+line(c.o)+'</s>':'✎ <s>'+line(c.o)+'</s> → '+line(c.v))+'</span><span class="who">'+esc(c.byn||'')+' · '+esc(c.st==='no'?t('dvNo'):t('dvWait'))+'</span>'+
+        (mgr&&c.st==='p'?'<button type="button" class="btn sm ok" data-dv="yes" data-cid="'+esc(k)+'">✓</button><button type="button" class="btn sm" data-dv="no" data-cid="'+esc(k)+'">✕</button>':'')+'</div>'}
+    if(DV.edit==='new:'+w)h+=dvForm('new:'+w,w,null);
+    else h+='<button type="button" class="lk add" data-dv="add" data-w="'+esc(w)+'">＋ '+esc(t('dvAdd'))+'</button>';
+    h+='</section>';
+  }
+  h+='<div class="note">'+esc(mgr?t('dvNoteM'):t('dvNoteW'))+'</div></div>';
+  box.innerHTML=h;
+}
+async function dvSave(form){
+  const q=k=>form.querySelector('[data-f='+k+']').value,fid=form.dataset.fid,w=form.dataset.w,day=DV.day;
+  const s0=q('s'),it=LAY().items[s0],sel=form.querySelector('[data-f=s]'),v={s:s0,sn:s0==='inst'?t('inst'):(it?itemName(s0,it):(sel.selectedOptions[0]?sel.selectedOptions[0].textContent:s0)),pr:q('pr').trim().slice(0,60),nt:q('nt').trim().slice(0,80),a:parseHM(day,q('a')),b:parseHM(day,q('b'))};
+  if(!(v.b>v.a)){toast(t('dvBadTime'));return}
+  const x=fid.startsWith('new:')?null:DV.list.find(y=>y.id===fid);
+  const c={k:x?'edit':'add',sid:x?x.id:null,w,n:(ST().people[w]||{}).n||(x&&x.n)||'',day,o:x?{s:x.s,sn:x.sn,pr:x.pr||'',nt:x.nt||'',a:+x.a,b:+x.b}:null,v,by:who,byn:person?person.name:'',at:Date.now(),st:'p'};
+  await dvSubmit(c);
+}
+async function dvSubmit(c){
+  if(!canWrite())return;const mgr=isMgr(),cid=c.w+'_'+c.at;
+  try{
+    if(mgr){await fixApply(c);c.st='ok';c.mby=person.name;c.mat=Date.now()}
+    await fixWrite(f=>{f.c[cid]=c});
+    if(c.v&&c.v.pr){const np=addProject(c.v.pr);if(np)commit(docs.state,{projects:np})}
+    toast(mgr?t('awSaved'):t('dvSent'));DV.edit=null;dvLoad();
+  }catch(e){toast(t('awErr'))}
+}
+async function dvDecide(cid,yes){
+  if(!isMgr()||!canWrite())return;
+  try{const f=await fixRead(),c=f&&f.c[cid];if(!c||c.st!=='p')return dvLoad();
+    if(yes)await fixApply(c);
+    await fixWrite(g=>{g.c[cid]=Object.assign({},c,{st:yes?'ok':'no',mby:person.name,mat:Date.now()})});
+    toast(yes?t('dvApplied'):t('dvRejected'));dvLoad();
+  }catch(e){toast(t('awErr'))}
+}
+function dvOpen(on,who){DV.open=on;if(on){DV.day=DV.day||today();DV.who=who!==undefined?who:(isMgr()?'':(meId()||''));DV.edit=null;dvLoad()}renderDV()}
+$('#btnDay').addEventListener('click',()=>dvOpen(true));
+$('#dv').addEventListener('click',e=>{if(e.target.id==='dv'){dvOpen(false);return}const b=e.target.closest('[data-dv]');if(!b)return;const k=b.dataset.dv;
+  if(k==='close')dvOpen(false);
+  else if(k==='edit'){DV.edit=b.dataset.sid;renderDV()}
+  else if(k==='add'){DV.edit='new:'+b.dataset.w;renderDV()}
+  else if(k==='cancel'){DV.edit=null;renderDV()}
+  else if(k==='save')dvSave(b.closest('.dvf'));
+  else if(k==='del'){const x=DV.list.find(y=>y.id===b.dataset.sid);if(!x)return;if(!confirmTwice(b))return;
+    dvSubmit({k:'del',sid:x.id,w:x.w,n:x.n,day:DV.day,o:{s:x.s,sn:x.sn,pr:x.pr||'',nt:x.nt||'',a:+x.a,b:+x.b},v:null,by:who,byn:person?person.name:'',at:Date.now(),st:'p'})}
+  else if(k==='yes'||k==='no')dvDecide(b.dataset.cid,k==='yes');
+  else if(k==='ok'||k==='unok'){if(!isMgr()||!canWrite())return;const w=b.dataset.w,key=DV.day+'|'+w;
+    fixWrite(f=>{if(k==='ok')f.d[key]={by:person.name,at:Date.now()};else delete f.d[key]}).then(()=>{toast(t('awSaved'));dvLoad()}).catch(()=>toast(t('awErr')))}});
+$('#dv').addEventListener('change',e=>{if(e.target.id==='dv-day'&&e.target.value){DV.day=e.target.value;DV.edit=null;DV.list=null;dvLoad()}else if(e.target.id==='dv-who'){DV.who=e.target.value;renderDV()}});
+/* a second tap within 3 s confirms (the viewer cannot show confirm dialogs everywhere) */
+function confirmTwice(b){if(b.dataset.armed){return true}b.dataset.armed='1';const o=b.textContent;b.textContent='?';toast(t('dvTapAgain'));setTimeout(()=>{if(b.isConnected){delete b.dataset.armed;b.textContent=o}},3000);return false}
 
 /* ---------- printable QR codes, one per station ---------- */
 let qrLib=null;
