@@ -69,6 +69,7 @@ var Mgr = {
           <div class="search-box" id="topbar-search">${icon("search", 14)}<span style="flex:1">Search</span><kbd>⌘K</kbd></div>
           ${Offline.badgeHtml()}
           ${Notif.bellHtml(App.me.id)}
+          ${typeof Cechas !== "undefined" ? Cechas.btnHtml() : ""}
           <button class="icon-btn" id="theme-btn" title="Toggle appearance">${icon("moon", 16)}</button>
           ${App.can("orders.create") && App.view !== "planner" && !App.isEngineer() ? `<button class="btn" id="swood-btn" title="Import a SWOOD Report Lists to Excel export">${icon("import", 14)} Import SWOOD</button>` : ""}
           ${App.can("orders.create") || App.view === "planner" ? `<button class="btn primary" id="new-order-btn">${icon("plus", 14)} ${App.view === "planner" ? "New project" : App.isEngineer() ? "New Project" : "New Order"}</button>` : ""}

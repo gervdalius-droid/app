@@ -215,7 +215,7 @@ body.tv h1{font-size:3.6vh;white-space:nowrap;overflow:hidden;text-overflow:elli
 body.tv .counts{font-size:3.4vh;flex-wrap:nowrap;white-space:nowrap;gap:2vh}
 body.tv .dot{width:1.8vh;height:1.8vh}
 body.tv .clock{font-size:4.6vh;order:-1}
-body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang{display:none}
+body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR{display:none!important}
 body.tv .tools{flex-wrap:nowrap;gap:1vh}
 body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
 body.tv main{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
@@ -246,6 +246,75 @@ body.tv #radio .rpage{display:flex}
 @media (max-width:820px){body.tv main{display:grid}body.tv #map{min-width:0;height:100%}body.tv .mapwrap{overflow:hidden}body.tv .mapwrap.v3{height:auto}}
 
 a.btn{text-decoration:none;display:inline-block}
+
+/* ---- phone check-in (opened from a station's QR code: ?at=<station>) ---- */
+#ci{display:none}
+body.ci header,body.ci main,body.ci #radio{display:none!important}
+body.ci{height:auto;min-height:100vh;overflow:auto;display:block;padding:0}
+body.ci #ci{display:block;max-width:560px;margin:0 auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+#ci .brand{font-family:var(--display);font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+#ci h1{font-family:var(--display);font-size:34px;line-height:1.05;margin:4px 0 2px;text-transform:none;letter-spacing:0}
+#ci .here{color:var(--muted);font-size:15px;margin-bottom:14px}
+#ci .here b{color:var(--ink);font-weight:600}
+#ci section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px;display:flex;flex-direction:column;gap:10px}
+#ci h2{font-family:var(--display);font-size:15px;letter-spacing:.07em;text-transform:uppercase;margin:0;color:var(--muted)}
+#ci .who{display:flex;flex-wrap:wrap;gap:8px}
+#ci .who button{font:inherit;font-size:17px;font-weight:600;border:2px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:9px 16px;cursor:pointer;min-height:46px}
+#ci .who button[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+#ci .who button small{font-weight:400;opacity:.75;margin-left:6px;font-size:13px}
+#ci select,#ci input[type=text]{font:inherit;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);width:100%;box-sizing:border-box;min-height:48px}
+#ci .acts{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+#ci .go{font:inherit;font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.03em;border:0;border-radius:12px;padding:16px;background:var(--run);color:#fff;cursor:pointer}
+#ci .stop{font:inherit;font-size:17px;font-weight:600;border:2px solid var(--line);border-radius:12px;padding:13px;background:var(--panel);color:var(--ink);cursor:pointer}
+#ci .go:disabled,#ci .stop:disabled{opacity:.5}
+#ci .err{color:var(--down);font-weight:600;min-height:1.2em}
+#ci .done{background:var(--run);color:#fff;border-radius:12px;padding:18px;margin-top:12px;display:flex;flex-direction:column;gap:6px}
+#ci .done.off{background:var(--ink);color:var(--bg)}
+#ci .done.wait{background:var(--idle)}
+#ci .done.bad{background:var(--down)}
+#ci .done strong{font-family:var(--display);font-size:26px;line-height:1.1}
+#ci .done button{align-self:flex-start;margin-top:6px;font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 16px;background:rgba(255,255,255,.92);color:#111;cursor:pointer}
+#ci .foot{margin-top:18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px}
+#ci .foot a,#ci .foot button{color:var(--muted);background:none;border:0;font:inherit;text-decoration:underline;cursor:pointer;padding:4px 0}
+
+/* ---- time report ---- */
+#rep{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+#rep .rbox{background:var(--panel);color:var(--ink);border-radius:14px;width:min(860px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#rep .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#rep h2{font-family:var(--display);font-size:24px;text-transform:uppercase;letter-spacing:.03em;margin:0}
+#rep .ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#rep select{font:inherit;padding:7px 9px;border:1px solid var(--line);border-radius:6px;background:var(--bg);color:var(--ink)}
+#rep .tot{font-family:var(--display);font-size:20px;font-weight:600}
+#rep .tw{overflow-x:auto}
+#rep table{border-collapse:collapse;width:100%;font-size:15px}
+#rep td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+#rep td.h{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+#rep tr.g td{font-weight:700;background:var(--bg);font-family:var(--display);font-size:18px}
+#rep tr.s td:first-child{padding-left:22px;color:var(--muted)}
+#rep .note{font-size:13px;color:var(--muted)}
+
+/* ---- QR sheet ---- */
+#qrs{position:fixed;inset:0;z-index:29;background:var(--bg);overflow:auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 32px max(16px,env(safe-area-inset-left,0px))}
+#qrs .qh{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:14px}
+#qrs .qh h2{font-family:var(--display);font-size:26px;margin:0;text-transform:uppercase;flex:1}
+#qrs .qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px}
+#qrs .qc{background:#fff;color:#111;border:2px solid #111;border-radius:10px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;position:relative;break-inside:avoid;page-break-inside:avoid}
+#qrs .qc.off{display:none}
+#qrs .qc .qn{font-family:var(--display);font-weight:700;font-size:26px;line-height:1.05}
+#qrs .qc .qi{font-size:13px}
+#qrs .qc svg{width:180px;height:180px}
+#qrs .qc .qu{font-size:9px;color:#555;word-break:break-all}
+#qrs .qc .qx{position:absolute;top:4px;right:4px;border:0;background:none;font-size:18px;cursor:pointer;color:#888}
+#qrs .qc .qb{font-size:12px;font-weight:600;color:#111;letter-spacing:.06em;text-transform:uppercase}
+@media print{
+  @page{size:A4;margin:10mm}
+  body.printing>*:not(#qrs){display:none!important}
+  body.printing{height:auto;overflow:visible;background:#fff;display:block;padding:0}
+  body.printing #qrs{position:static;padding:0;background:#fff;overflow:visible}
+  body.printing #qrs .qh,body.printing #qrs .qx{display:none}
+  body.printing #qrs .qgrid{grid-template-columns:repeat(3,1fr);gap:6mm}
+  body.printing #qrs .qc{border-width:1.5px}
+}
 #auth{position:fixed;inset:0;z-index:30;background:rgba(20,24,22,.55);display:flex;align-items:center;justify-content:center;padding:16px}
 .authbox{background:#fff;color:#161a17;border-radius:14px;padding:26px 26px 20px;width:100%;max-width:340px;display:flex;flex-direction:column;gap:10px;box-shadow:0 20px 50px rgba(0,0,0,.3);font-family:var(--body)}
 .authbox .logo{width:52px;height:52px;background:#161a17;-webkit-mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat;mask:url(https://app.dedesbaldai.lt/hub/shared/logo-mask.png) center/contain no-repeat}
@@ -267,6 +336,8 @@ a.btn{text-decoration:none;display:inline-block}
     <a class="btn" id="btnHub" href="../shopfloor/">← Hub</a>
     <button class="btn" id="btnAuth" type="button" hidden></button>
     <button class="btn" id="btnRadio" type="button" aria-haspopup="dialog">📻</button>
+    <button class="btn" id="btnTime" type="button" aria-haspopup="dialog"></button>
+    <button class="btn" id="btnQR" type="button" hidden></button>
     <button class="btn" id="btnView" type="button"></button>
     <button class="btn" id="btnLang" type="button"></button>
     <button class="btn" id="btnEdit" type="button" aria-pressed="false"></button>
@@ -280,6 +351,9 @@ a.btn{text-decoration:none;display:inline-block}
 </main>
 <div id="toast" hidden></div>
 <div id="radio" hidden role="dialog" aria-labelledby="r-h"></div>
+<div id="ci" aria-live="polite"></div>
+<div id="rep" hidden role="dialog" aria-labelledby="rp-h"></div>
+<div id="qrs" hidden></div>
 <div id="auth" hidden><form class="authbox" id="authForm" autocomplete="on">
   <span class="logo" role="img" aria-label="Dėdės Baldai"></span>
   <h2 id="au-h"></h2><div class="note" id="au-sub"></div>
@@ -311,14 +385,34 @@ const L={
   workers:'Darbuotojai',off:'Ne ceche',picked:'Pasirinktas',pickHint:'Vietą keisk sąraše šalia vardo arba tempk žmogų plane.',cancel:'Atšaukti',toOff:'Ne ceche',
   since:'nuo',here:'Čia dirba',nobody:'Nieko nėra',status:'Būsena',stock:'Plokštės',partsHead:'Išgręžtos detalės',partsU:'det.',addPart:'+ Pridėti projektą / detales',mat:'Medžiaga',qty:'Kiekis',addRow:'+ Pridėti plokštę',sheets:'lakšt.',total:'Iš viso',
   addWorker:'Pridėti darbuotoją',name:'Vardas',add:'Pridėti',del:'Trinti',sure:'Tikrai?',rot:'Pasukti 90°',noOp:'Prie staklių nėra operatoriaus, todėl plane jos rodomos kaip laisvos. Priskyrus žmogų jos vėl rodomos kaip dirbančios.',pause:'Pauzė',breaks:'Pertraukos',brk:'Pertrauka',until:'iki',onBrk:'pertraukoje',brkAdd:'+ Pridėti pertrauką',brkHint:'Per pertrauką darbuotojai prie staklių nerodomi, o dirbančios staklės rodomos kaip pristabdytos. Pertraukai pasibaigus viskas grįžta savaime.',door:'Durų plotis (cm)',doorHint:'Duris perkelsi 2D plane tempdamas geltoną tašką ant jų – palei bet kurią sieną.',dup:'Dubliuoti',drawWall:'Braižyti sieną',drawStop:'Baigti braižyti',drawHint:'Spausk sienos pradžią, tada pabaigą. Kita siena tęsiama nuo paskutinio taško. Esc – baigti.',layout:'Išdėstymas',layoutHint:'Tempk įrenginius į tikras vietas (2D arba 3D). Paspausk įrenginį ir 2D plane tempk jo kampą, kad pakeistum dydį (Shift išlaiko proporcijas). Šone gali keisti pavadinimą, vietą, kampą arba ištrinti.',
-  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',radio:'Radijas',rPick:'Pasirink stotį',rFav:'Mėgstamos',rLt:'Lietuvos stotys',rRes:'Paieškos rezultatai',rFind:'Ieškoti stoties (bet kurios šalies)…',rLoading:'Kraunamos stotys…',rNone:'Stočių nerasta.',rFail:'Ši stotis dabar negroja. Pabandyk kitą.',rNet:'Nepavyko gauti stočių sąrašo. Patikrink internetą.',rStar:'Pridėti prie mėgstamų',rVol:'Garsas',rConn:'Jungiamasi…',tvHint3:'Pultelis: ◀ ▶ ▲ ▼ – sukti · OK – radijas · ⏯ – groti / stabdyti',tvHint2:'Pultelis: OK – radijas · ⏯ – groti / stabdyti · 3 – 3D vaizdas',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
+  hall:'Cecho kontūras',wallsHint:'Tempk geltonus kampus plane, spausk + ant sienos, kad pridėtum kampą, arba įrašyk sienų ilgius metrais.',wall:'Siena',closing:'uždaranti',rect:'Stačiakampis',lshape:'L forma',gate:'Vartai',proj:'Projektas',note:'Detalės / pastaba',projects:'Projektai',projHint:'Aktyvūs ShopFlow užsakymai į sąrašą patenka patys. Čia gali pridėti papildomų pavadinimų – po vieną eilutėje.',sfNone:'ShopFlow projektų dar negauta',sfN:'aktyvūs ShopFlow projektai, atnaujinta',sfErr:'ShopFlow duomenų gauti nepavyko',refresh:'Atnaujinti',sfWorkers:'Įkelti darbuotojus iš ShopFlow',sfAdded:'Pridėta darbuotojų',signIn:'Prisijungti',radio:'Radijas',rPick:'Pasirink stotį',rFav:'Mėgstamos',rLt:'Lietuvos stotys',rRes:'Paieškos rezultatai',rFind:'Ieškoti stoties (bet kurios šalies)…',rLoading:'Kraunamos stotys…',rNone:'Stočių nerasta.',rFail:'Ši stotis dabar negroja. Pabandyk kitą.',rNet:'Nepavyko gauti stočių sąrašo. Patikrink internetą.',rStar:'Pridėti prie mėgstamų',rVol:'Garsas',rConn:'Jungiamasi…',
+  ciWho:'Kas dirba?',ciMe:'aš',ciAdd:'pridėti',ciProj:'Projektas',ciPick:'— Pasirink projektą —',ciNoProj:'Be projekto (bendri darbai)',ciNew:'+ Naujas projektas…',ciNewPh:'Naujo projekto pavadinimas',
+  ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
+  ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
+  ciOk:'Gerai',ciHere:'Dabar čia',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
+  ciWhere:'Vieta',ciOffT:'Išeinu',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
+  repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
+  repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
+  repNoP:'(be projekto)',qr:'QR kodai',qrH:'Vietų QR kodai',qrPrint:'Spausdinti',qrClose:'Uždaryti',qrScan:'Nuskenuok telefonu – pažymėk, kad dirbi čia',qrLeaveS:'Nuskenuok, kai baigi darbą',
+  qrHint:'Kiekvienai stakliai, stalui ir patalpai – savas kodas. ✕ paslepia kortelę spausdinimui.',qrFail:'Nepavyko įkelti QR kūrimo bibliotekos. Patikrink internetą.',tvHint3:'Pultelis: ◀ ▶ ▲ ▼ – sukti · OK – radijas · ⏯ – groti / stabdyti',tvHint2:'Pultelis: OK – radijas · ⏯ – groti / stabdyti · 3 – 3D vaizdas',auH:'Prisijungimas',auName:'Vardas',auPin:'PIN',auShop:'ShopFlow slaptažodis',auShopNote:'Šis įrenginys dar neprisijungęs prie ShopFlow. Įvesk ShopFlow slaptažodį – to reikia tik vieną kartą.',auBad:'Neteisingas vardas arba PIN.',auBadShop:'Neteisingas ShopFlow slaptažodis.',auNet:'Nepavyko prisijungti. Patikrink internetą.',auSkip:'Žiūrėti be prisijungimo',auOut:'Atsijungti',auWho:'Kas keičia? Prisijunk savo vardu ir PIN.',noSave:'Serveris neleidžia saugoti – pakeitimai lieka tik šiame įrenginyje',inst:'Montavimas',instNone:'Suplanuotų montavimų nėra.',instAdd:'+ Pridėti montavimą',instNow:'Šiandien',atInst:'Montavime',instCount:'montavime',from:'Nuo',to:'Iki',save:'Išsaugoti',who:'Kas važiuoja',pickWho:'Pažymėk bent vieną darbuotoją ir datą',pos:'Vieta X / Y (m)',size:'Dydis: plotis × gylis (cm)',angle:'Kampas (°)',hint3:'Tempk – sukti · ratukas – artinti · Shift + tempk – stumti · rodyklės – sukti',fitAll:'Visas cechas',rotOn:'Sukasi',rotOff:'Sustabdyta',cL:'Sukti kairėn',cR:'Sukti dešinėn',cU:'Žiūrėti iš aukščiau',cD:'Žiūrėti iš žemiau',cIn:'Artinti',cOut:'Tolinti',no3d:'3D vaizdas šiame įrenginyje neveikia',addItem:'Pridėti į planą',desk:'Surinkimo stalas',rack:'Plokščių stelažas',zone:'Zona',
   hint:'Vietą pasirink sąraše šalia vardo, arba tempk vardą tiesiai į planą. Paspaudęs stakles ar stalą gali pridėti darbuotojus vienu paspaudimu. Paspausk vardą – projektas ir detalės.',assignHere:'Pridėti čia',grpM:'Staklės',grpD:'Stalai ir patalpos',grpZ:'Zonos',dropOn:'Paleisk ant staklių ar stalo',
   synced:'Sinchronizuota',local:'Tik šiame įrenginyje',loading:'Jungiamasi…',stale:'Duomenys gali būti pasenę',ro:'Tik peržiūra – keisti negalima',wait:'Dar kraunama, pabandyk po akimirkos',err:'Nepavyko išsaugoti',noWorkers:'Darbuotojų dar nėra. Įjunk „Redaguoti“ ir pridėk.'},
  en:{ttl:'Shop floor',run:'Running',idle:'Idle',down:'Down',busy:'Occupied',free:'Free',ppl:'on floor',edit:'Edit',editOn:'Done editing',tv:'TV mode',tvOff:'Exit TV',
   workers:'Workers',off:'Off floor',picked:'Selected',pickHint:'Change the place in the list next to the name, or drag the person on the plan.',cancel:'Cancel',toOff:'Off floor',
   since:'since',here:'Working here',nobody:'Nobody',status:'Status',stock:'Boards',partsHead:'Drilled parts',partsU:'parts',addPart:'+ Add project / parts',mat:'Material',qty:'Qty',addRow:'+ Add board',sheets:'sheets',total:'Total',
   addWorker:'Add worker',name:'Name',add:'Add',del:'Delete',sure:'Sure?',rot:'Rotate 90°',noOp:'Nobody is at this machine, so the plan shows it as idle. It shows as running again once someone is assigned.',pause:'Paused',breaks:'Breaks',brk:'Break',until:'until',onBrk:'on break',brkAdd:'+ Add a break',brkHint:'During a break workers are not shown at the machines and running machines show as paused. Everything comes back by itself when the break ends.',door:'Door width (cm)',doorHint:'Move the door on the 2D plan by dragging the yellow dot on it along any wall.',dup:'Duplicate',drawWall:'Draw a wall',drawStop:'Stop drawing',drawHint:'Tap where the wall starts, then where it ends. The next wall continues from the last point. Esc to finish.',layout:'Layout',layoutHint:'Drag equipment to its real place (2D or 3D). Tap an item and drag one of its corners on the 2D plan to resize it (Shift keeps proportions). Use the side panel for name, position, angle or delete.',
-  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',radio:'Radio',rPick:'Pick a station',rFav:'Favourites',rLt:'Lithuanian stations',rRes:'Search results',rFind:'Search stations (any country)…',rLoading:'Loading stations…',rNone:'No stations found.',rFail:'This station is not playing right now. Try another one.',rNet:'Could not get the station list. Check the internet connection.',rStar:'Add to favourites',rVol:'Volume',rConn:'Connecting…',tvHint3:'Remote: ◀ ▶ ▲ ▼ – turn · OK – radio · ⏯ – play / stop',tvHint2:'Remote: OK – radio · ⏯ – play / stop · 3 – 3D view',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
+  hall:'Hall outline',wallsHint:'Drag the yellow corners on the plan, tap + on a wall to add a corner, or type wall lengths in metres.',wall:'Wall',closing:'closing',rect:'Rectangle',lshape:'L shape',gate:'Gate',proj:'Project',note:'Parts / note',projects:'Projects',projHint:'Active ShopFlow orders appear in the dropdown automatically. Add extra names here, one per line.',sfNone:'No ShopFlow projects received yet',sfN:'active ShopFlow projects, updated',sfErr:'Could not get ShopFlow data',refresh:'Refresh',sfWorkers:'Import workers from ShopFlow',sfAdded:'Workers added',signIn:'Sign in',radio:'Radio',rPick:'Pick a station',rFav:'Favourites',rLt:'Lithuanian stations',rRes:'Search results',rFind:'Search stations (any country)…',rLoading:'Loading stations…',rNone:'No stations found.',rFail:'This station is not playing right now. Try another one.',rNet:'Could not get the station list. Check the internet connection.',rStar:'Add to favourites',rVol:'Volume',rConn:'Connecting…',
+  ciWho:'Who is working?',ciMe:'me',ciAdd:'add',ciProj:'Project',ciPick:'— Pick a project —',ciNoProj:'No project (general work)',ciNew:'+ New project…',ciNewPh:'New project name',
+  ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
+  ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
+  ciOk:'OK',ciHere:'Here now',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
+  ciWhere:'Place',ciOffT:'Leaving',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
+  repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
+  repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
+  repNoP:'(no project)',qr:'QR codes',qrH:'Station QR codes',qrPrint:'Print',qrClose:'Close',qrScan:'Scan with your phone – mark that you work here',qrLeaveS:'Scan when you finish work',
+  qrHint:'One code for every machine, desk and room. ✕ hides a card from printing.',qrFail:'Could not load the QR library. Check the internet.',tvHint3:'Remote: ◀ ▶ ▲ ▼ – turn · OK – radio · ⏯ – play / stop',tvHint2:'Remote: OK – radio · ⏯ – play / stop · 3 – 3D view',auH:'Sign in',auName:'Name',auPin:'PIN',auShop:'ShopFlow password',auShopNote:'This device is not signed in to ShopFlow yet. Enter the ShopFlow password – only needed once.',auBad:'Wrong name or PIN.',auBadShop:'Wrong ShopFlow password.',auNet:'Could not sign in. Check the internet connection.',auSkip:'View without signing in',auOut:'Sign out',auWho:'Who is making changes? Sign in with your name and PIN.',noSave:'The server refuses to save – changes stay on this device only',inst:'Installation',instNone:'No installations planned.',instAdd:'+ Add installation',instNow:'Today',atInst:'At installation',instCount:'at installation',from:'From',to:'To',save:'Save',who:'Who goes',pickWho:'Tick at least one worker and a date',pos:'Position X / Y (m)',size:'Size: width × depth (cm)',angle:'Angle (°)',hint3:'Drag to rotate · wheel to zoom · Shift + drag to pan · arrow keys rotate',fitAll:'Whole floor',rotOn:'Rotating',rotOff:'Paused',cL:'Rotate left',cR:'Rotate right',cU:'Look from higher',cD:'Look from lower',cIn:'Zoom in',cOut:'Zoom out',no3d:'3D view is not available on this device',addItem:'Add to plan',desk:'Assembly desk',rack:'Board rack',zone:'Zone',
   hint:'Pick the place in the list next to the name, or drag the name straight onto the plan. Tap a machine or desk to add workers with one tap. Tap a name for project and parts.',assignHere:'Add here',grpM:'Machines',grpD:'Desks and rooms',grpZ:'Zones',dropOn:'Drop on a machine or desk',
   synced:'Synced',local:'This device only',loading:'Connecting…',stale:'Data may be out of date',ro:'View only – you cannot change this',wait:'Still loading, try again in a moment',err:'Could not save',noWorkers:'No workers yet. Turn on Edit and add them.'}
 };
@@ -519,7 +613,7 @@ function normalize(){
   const s=ST(); for(const k of ['st','people','stock','inst'])if(!isObj(s[k]))s[k]={};
   /* New day, clean board: a place set before today no longer counts, so every morning nobody is at a station
      until someone puts them there. Only this screen's copy changes; the next placing saves the new day. */
-  {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0))p.at=null}
+  {const d0=dayStart();for(const p of Object.values(s.people))if(p&&p.at&&!(+p.ts>=d0)){p.pat=p.at;p.at=null}}
   for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
   for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
@@ -667,8 +761,10 @@ async function boot(){
   mode='db';render();
   const timer=setTimeout(()=>{if(!docs.layout.loaded){stale=true;renderHeader()}},10000);
   await poll();clearTimeout(timer);
-  loadShopflow();
+  loadShopflow().then(()=>{if(CHK)renderCI()});logFlush();
+  if(location.hash==='#laikas'&&!CHK)repOpen(true);
   if(timersOn)return;timersOn=true;
+  setInterval(logFlush,60000);
   setInterval(poll,6000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
   setInterval(loadShopflow,300000);
@@ -899,6 +995,7 @@ function renderHeader(){
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#tvhint').textContent=view==='3d'?t('tvHint3'):t('tvHint2');
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
+  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
 }
@@ -1027,6 +1124,7 @@ function renderRail(){
   $('#rail').innerHTML=s;
 }
 function render(){
+  if(CHK)renderCI();
   if(selItem&&!LAY().items[selItem])selItem=null;
   if(selPerson&&!ST().people[selPerson])selPerson=null;
   renderHeader();renderMap();if(view==='3d')build3D();
@@ -1375,8 +1473,48 @@ function stationOpts(cur){
     if(a.length)s+='<optgroup label="'+esc(t(lab))+'">'+a.map(o=>'<option value="'+esc(o[0])+'"'+(o[0]===cur?' selected':'')+'>'+esc(o[1])+'</option>').join('')+'</optgroup>'}
   return s;
 }
-function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly),ts:Date.now()};selPerson=null;commit(docs.state,p)}
-function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:Date.now(),ox:null,oy:null};selPerson=null;commit(docs.state,p)}
+function placePerson(pid,at,lx,ly){if(!canWrite())return;const per=ST().people[pid];if(!per)return;const p={people:{}};p.people[pid]={at:at,ox:Math.round(lx),oy:Math.round(ly),ts:moveStamp(pid,at),pat:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
+function movePerson(pid,at){if(!canWrite())return;const p={people:{}};p.people[pid]={at:at,ts:moveStamp(pid,at),ox:null,oy:null,pat:null,sn:snOf(at)};selPerson=null;commit(docs.state,p)}
+/* ---------- time log ----------
+   Every time someone is put somewhere else, starts another project or finishes, the stretch they just did
+   is saved as one entry {who, place, project, start, end} in a monthly log row. The id is person + start time,
+   so two screens saving the same stretch never count it twice. A stretch nobody closed ends at 17:00 that day. */
+const LOG_PFX=ROW+'-log-',WD_END_H=17;
+/* the place's name goes with the person, so ShopFlow can show it without knowing the plan's machine types */
+const snOf=at=>at&&LAY().items[at]?itemName(at,LAY().items[at]):null;
+const monKey=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')};
+function dayEndOf(ms){const d=new Date(ms);d.setHours(WD_END_H,0,0,0);return Math.max(d.getTime(),ms)}
+function sessOf(pid,p){
+  const at=p&&(p.at||p.pat);if(!at||!(+p.ts>0))return null;
+  const a=+p.ts,now=Date.now(),b=a>=dayStart()?now:Math.min(now,dayEndOf(a)),it=LAY().items[at];
+  return{id:pid+'_'+a,w:pid,n:String(p.n||''),s:at,sn:it?itemName(at,it):at,pr:String(p.pr||''),nt:String(p.nt||''),a,b:Math.max(a,b),by:who};
+}
+/* the start time a move should get: unchanged while it is the same place, project and part today, otherwise now,
+   after saving the stretch that just ended */
+function moveStamp(pid,at,pr,nt){
+  const p=ST().people[pid],now=Date.now();if(!p)return now;
+  const same=p.at&&p.at===at&&+p.ts>=dayStart()&&(pr===undefined||String(p.pr||'')===String(pr||''))&&(nt===undefined||String(p.nt||'')===String(nt||''));
+  if(same)return +p.ts;
+  const s=sessOf(pid,p);if(s&&s.b-s.a>=60000)logAdd(s);
+  return now;
+}
+let logQ=[];try{logQ=JSON.parse(lsGet('cp.logq')||'[]');if(!Array.isArray(logQ))logQ=[]}catch(e){logQ=[]}
+let logBusy=false;
+function logAdd(x){logQ=logQ.filter(y=>y.id!==x.id).concat([x]);lsSet('cp.logq',JSON.stringify(logQ));setTimeout(logFlush,600)}
+async function logFlush(){
+  if(logBusy||!logQ.length||mode!=='db')return;logBusy=true;
+  const batch=logQ.slice(),byM={};for(const x of batch)(byM[monKey(x.a)]=byM[monKey(x.a)]||[]).push(x);
+  const done=[];
+  for(const m of Object.keys(byM)){
+    try{
+      const id=LOG_PFX+m,rows=await WA.rest('workspaces?id=eq.'+id+'&select=data'),base=rows&&rows[0]&&isObj(rows[0].data)?rows[0].data:{};
+      if(!isObj(base.s))base.s={};for(const x of byM[m]){base.s[x.id]=x;done.push(x.id)}
+      await WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id,data:base,updated_at:new Date().toISOString(),updated_by:who})});
+    }catch(e){for(const x of byM[m]){const i=done.indexOf(x.id);if(i>=0)done.splice(i,1)}}
+  }
+  logQ=logQ.filter(x=>!done.includes(x.id));lsSet('cp.logq',JSON.stringify(logQ));logBusy=false;
+}
+
 /* which station a point on the floor belongs to: the one it is on, or the nearest one within about a metre */
 function stationAt(x,y){
   let best=null,bd=1e9;
@@ -1491,7 +1629,7 @@ function endDrag(e){
     if(cur&&st&&st.id!==cur&&st.d>0&&distTo(cur,q.x,q.y)<170){const l=localTo(cur,q.x,q.y);st={id:cur,lx:l[0],ly:l[1]}}
     if(!st&&per.at&&LAY().items[per.at]){const l=localTo(per.at,q.x,q.y);st={id:per.at,lx:l[0],ly:l[1]}}
     if(!st||!canWrite()){render();return}
-    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly),ts:Date.now()};
+    const p={people:{}};p.people[d.pp]={at:st.id,ox:Math.round(st.lx),oy:Math.round(st.ly),ts:moveStamp(d.pp,st.id),pat:null,sn:snOf(st.id)};
     selPerson=null;commit(docs.state,p);return}
   if(d.moved){
     suppressClick=true;setTimeout(()=>{suppressClick=false},0);
@@ -1581,7 +1719,7 @@ $('#rail').addEventListener('click',e=>{
     const p={stock:{}};p.stock[selItem]={rows};commit(docs.state,p);return}
   if(a==='pdel'){
     if(pendDel!=='p:'+pid){pendDel='p:'+pid;renderRail();return}
-    pendDel=null;commit(docs.state,{people:{[pid]:null}});return}
+    pendDel=null;moveStamp(pid,null);commit(docs.state,{people:{[pid]:null}});return}
   if(a==='rot'){const it=LAY().items[selItem];const p={items:{}};p.items[selItem]={r:((+it.r||0)+90)%360};commit(docs.layout,p);return}
   if(a==='dup'){const it=LAY().items[selItem];if(!it)return;const id=it.t+Date.now().toString(36),c=clone(it),h=LAY().hall;c.x=Math.min(h.w,(+it.x||0)+40);c.y=Math.min(h.h,(+it.y||0)+40);
     const p={items:{}};p.items[id]=c;selItem=id;commit(docs.layout,p);return}
@@ -1589,7 +1727,7 @@ $('#rail').addEventListener('click',e=>{
     if(pendDel!=='i:'+selItem){pendDel='i:'+selItem;renderRail();return}
     pendDel=null;const id=selItem;selItem=null;commit(docs.layout,{items:{[id]:null}});
     const here=Object.keys(ST().people).filter(k=>ST().people[k]&&ST().people[k].at===id);
-    if(here.length||ST().stock[id]||ST().st[id]){const sp={people:{},stock:{[id]:null},st:{[id]:null}};here.forEach(k=>{sp.people[k]={at:null}});commit(docs.state,sp)}
+    if(here.length||ST().stock[id]||ST().st[id]){const sp={people:{},stock:{[id]:null},st:{[id]:null}};here.forEach(k=>{sp.people[k]={at:null,ts:moveStamp(k,null),pat:null}});commit(docs.state,sp)}
     return}
   if(a==='additem'){
     const ty=$('#in-addt').value,T=TYPES[ty];if(!T)return;
@@ -1646,7 +1784,8 @@ $('#rail').addEventListener('change',e=>{
     if(c==='rowm')rows[i].m=v.slice(0,60);else rows[i].q=Math.max(0,Math.round(+v||0));
     const p={stock:{}};p.stock[selItem]={rows};commit(docs.state,p)}
   else if(c==='pproj'||c==='pnote'){
-    const pid=el.dataset.pid;if(!ST().people[pid])return;const p={people:{}};p.people[pid]=c==='pproj'?{pr:v.slice(0,60)}:{nt:v.slice(0,80)};
+    const pid=el.dataset.pid,pp=ST().people[pid];if(!pp)return;const p={people:{}};p.people[pid]=c==='pproj'?{pr:v.slice(0,60)}:{nt:v.slice(0,80)};
+    if(pp.at&&LAY().items[pp.at]){const ts=moveStamp(pid,pp.at,c==='pproj'?v.slice(0,60):pp.pr,c==='pnote'?v.slice(0,80):pp.nt);p.people[pid].ts=ts}
     const np=c==='pproj'?addProject(v.slice(0,60)):null;if(np)p.projects=np;commit(docs.state,p)}
   else if(c==='projs'){
     const list=[];for(const ln of String(el.value).split('\n')){const x=ln.trim().slice(0,60);if(x&&!list.includes(x))list.push(x)}
@@ -1677,6 +1816,180 @@ $('#btnAuth').addEventListener('click',async()=>{
 $('#btnLang').addEventListener('click',()=>{lang=lang==='lt'?'en':'lt';lsSet('cp.lang',lang);railDirty=false;render();renderRail();tick()});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')stopWall()});
 $('#btnEdit').addEventListener('click',()=>{if(drawWall){drawWall=null;document.body.classList.remove('drawing')}editing=!editing;selPerson=null;pendDel=null;railDirty=false;render();renderRail()});
+/* ---------- phone check-in: a station's QR code opens ?at=<station> ----------
+   Big buttons for a phone: tick who is working (yourself, or a colleague without a phone), pick the project
+   (ShopFlow orders first, or type a new one), tap Start. "Finished" takes them off. ?at=off is the leave code. */
+const CHK=(()=>{try{return new URLSearchParams(location.search).get('at')}catch(e){return null}})();
+const CIS={sel:null,pr:null,nw:'',nt:'',done:null,err:'',busy:false,st:null};
+const meId=()=>{if(!person)return null;const e=Object.entries(ST().people).find(([k,p])=>p&&normN(p.n)===normN(person.name));return e?e[0]:null};
+function ciStation(){const id=CIS.st||CHK;return id&&id!=='off'&&LAY().items[id]?id:null}
+function ciPlaces(){const out=[];for(const [id,it] of Object.entries(LAY().items)){const T=it&&TYPES[it.t];if(T&&['machine','desk','zone'].includes(T.kind))out.push([id,itemName(id,it)])}return out.sort((a,b)=>a[1].localeCompare(b[1],'lt'))}
+function ciProjOpts(cur){
+  const sf=SF.orders.map(o=>o.label),prods=SF.orders.map(o=>normN(o.label.split(' · ').slice(1).join(' · '))),own=ST().projects.filter(p=>!sf.includes(p)&&!prods.includes(normN(p)));
+  let h='<option value="">'+esc(t('ciPick'))+'</option>';
+  if(sf.length)h+='<optgroup label="'+esc(t('ciSF'))+'">'+sf.map(p=>'<option'+(p===cur?' selected':'')+'>'+esc(p)+'</option>').join('')+'</optgroup>';
+  if(own.length)h+='<optgroup label="'+esc(t('ciOther'))+'">'+own.slice().reverse().map(p=>'<option'+(p===cur?' selected':'')+'>'+esc(p)+'</option>').join('')+'</optgroup>';
+  if(cur&&cur!=='-'&&!sf.includes(cur)&&!own.includes(cur))h+='<option selected>'+esc(cur)+'</option>';
+  h+='<option value="-"'+(cur==='-'?' selected':'')+'>'+esc(t('ciNoProj'))+'</option><option value="__new"'+(cur==='__new'?' selected':'')+'>'+esc(t('ciNew'))+'</option>';
+  return h;
+}
+let ciDirty=false;
+function renderCI(force){
+  if(!CHK)return;const box=$('#ci'),a=document.activeElement;
+  if(!force&&a&&box.contains(a)&&/^(INPUT|SELECT)$/.test(a.tagName)){ciDirty=true;return}
+  ciDirty=false;const off=CHK==='off',st=ciStation(),me=meId(),ppl=Object.entries(ST().people).filter(e=>e[1]&&e[1].n).sort((x,y)=>String(x[1].n).localeCompare(String(y[1].n),'lt'));
+  if(CIS.sel===null&&docs.state.loaded){CIS.sel=me?[me]:(person?['__me']:[])}
+  const sel=CIS.sel||[];
+  if(CIS.pr===null&&docs.state.loaded){const p1=sel.length===1&&ST().people[sel[0]];CIS.pr=(p1&&p1.at===st&&p1.pr)||lsGet('cp.lastpr')||''}
+  let h='<div class="brand">Dėdės Baldai · '+esc(t('ttl'))+'</div>';
+  if(!off&&!st){
+    h+='<h1>📍 '+esc(t('ciWhere'))+'</h1><section><div class="err">'+esc(t('ciGone'))+'</div><select id="ci-st"><option value=""></option>'+ciPlaces().map(([id,n])=>'<option value="'+esc(id)+'">'+esc(n)+'</option>').join('')+'</select></section>';
+  }else{
+    h+='<h1>'+(off?'🚪 '+esc(t('ciOffT')):'📍 '+esc(itemName(st,LAY().items[st])))+'</h1>';
+    if(off)h+='<div class="here">'+esc(t('ciOffS'))+'</div>';
+    else{const here=peopleAtRaw(st);h+='<div class="here">'+(here.length?esc(t('ciHere'))+': '+here.map(([id,p])=>'<b>'+esc(p.n)+'</b>'+(p.pr?' · '+esc(p.pr):'')+' · '+esc(t('ciFrom'))+' '+esc(hhmm(p.ts))).join('<br>'):esc(t('ciNoOne')))+'</div>'}
+    if(CIS.done){const d=CIS.done;
+      h+='<div class="done'+(d.off?' off':'')+(d.state==='wait'?' wait':d.state==='bad'?' bad':'')+'"><strong>'+(d.state==='bad'?'⚠ ':'✓ ')+esc(d.names.join(', '))+'</strong><span>'+esc(d.line)+'</span><span>'+esc(d.state==='wait'?t('ciSaving'):d.state==='bad'?t('ciNotSaved'):t('ciSaved')+' · '+hhmm(d.t))+'</span><button type="button" data-ci="again">'+esc(t('ciNext'))+'</button></div>';
+    }else{
+      h+='<section><h2>'+esc(t('ciWho'))+'</h2><div class="who">';
+      if(!me&&person)h+='<button type="button" data-ci="p" data-id="__me" aria-pressed="'+sel.includes('__me')+'">'+esc(person.name)+'<small>'+esc(t('ciMe'))+' · '+esc(t('ciAdd'))+'</small></button>';
+      for(const [id,p] of ppl){const where=p.at&&LAY().items[p.at]?itemName(p.at,LAY().items[p.at]):'';
+        h+='<button type="button" data-ci="p" data-id="'+esc(id)+'" aria-pressed="'+sel.includes(id)+'">'+esc(p.n)+(id===me?'<small>'+esc(t('ciMe'))+'</small>':where&&!off?'<small>'+esc(where)+'</small>':'')+'</button>'}
+      h+='</div></section>';
+      if(!off){
+        const so=SF.orders.find(o=>o.label===CIS.pr);
+        h+='<section><h2>'+esc(t('ciProj'))+'</h2><select id="ci-pr">'+ciProjOpts(CIS.pr||'')+'</select>'+(CIS.pr==='__new'?'<input type="text" id="ci-nw" maxlength="60" autocomplete="off" placeholder="'+esc(t('ciNewPh'))+'" value="'+esc(CIS.nw)+'">':'')+
+           '<input type="text" id="ci-nt" maxlength="80" list="ci-parts" autocomplete="off" placeholder="'+esc(t('ciPart'))+'" value="'+esc(CIS.nt)+'"><datalist id="ci-parts">'+(so?so.items:[]).map(x=>'<option value="'+esc(x)+'"></option>').join('')+'</datalist></section>';
+      }
+      h+='<div class="err" role="alert">'+esc(CIS.err)+'</div><div class="acts">'+(off?'':'<button type="button" class="go" data-ci="start"'+(CIS.busy?' disabled':'')+'>'+esc(t('ciStart'))+'</button>')+
+         '<button type="button" class="stop" data-ci="stop"'+(CIS.busy?' disabled':'')+'>'+esc(off?t('ciLeave'):t('ciStop'))+'</button></div>';
+    }
+  }
+  h+='<div class="foot"><a href="'+esc(location.pathname)+'">'+esc(t('ciPlan'))+'</a>'+(person?'<button type="button" data-ci="out">'+esc(t('ciOut'))+' ('+esc(person.name)+')</button>':'')+'</div>';
+  box.innerHTML=h;
+}
+function waitSaved(){return new Promise(r=>{const t0=Date.now();(function chk(){if(mode==='db'&&!pend.length&&!flushing)return r(!saveErr&&!stale);if(Date.now()-t0>12000)return r(false);setTimeout(chk,250)})()})}
+async function ciSubmit(stop){
+  CIS.err='';const off=CHK==='off'||stop,st=ciStation(),sel=(CIS.sel||[]).filter(id=>id==='__me'||ST().people[id]);
+  if(!sel.length){CIS.err=t('ciNobody');renderCI(true);return}
+  let pr='';
+  if(!off){pr=CIS.pr==='__new'?CIS.nw.trim().slice(0,60):CIS.pr==='-'?'':String(CIS.pr||'');
+    if(CIS.pr!=='-'&&!pr){CIS.err=t('ciNeedProj');renderCI(true);return}}
+  if(!canWrite())return;
+  const nt=off?'':CIS.nt.trim().slice(0,80),p={people:{}},names=[];
+  for(let id of sel){
+    if(id==='__me'){id='p'+Date.now().toString(36);p.people[id]={n:String(person.name).slice(0,30),at:null,ts:Date.now()};ST().people[id]={n:String(person.name).slice(0,30)}}
+    const cur=ST().people[id];names.push(cur.n);
+    if(off){p.people[id]=Object.assign(p.people[id]||{},{at:null,ts:moveStamp(id,null),ox:null,oy:null,pat:null,sn:null});continue}
+    const keepPos=cur.at===st;
+    p.people[id]=Object.assign(p.people[id]||{},{at:st,ts:moveStamp(id,st,pr,nt),pr,nt,pat:null,sn:snOf(st)},keepPos?{}:{ox:null,oy:null});
+  }
+  if(!off&&pr){const np=addProject(pr);if(np)p.projects=np;lsSet('cp.lastpr',pr)}
+  else if(!off&&CIS.pr==='-')lsSet('cp.lastpr','-');
+  CIS.busy=true;commit(docs.state,p);
+  CIS.done={names,off,t:Date.now(),state:'wait',line:off?t('ciOffT'):(itemName(st,LAY().items[st])+(pr?' · '+pr:'')+(nt?' · '+nt:''))};
+  CIS.busy=false;renderCI(true);
+  const ok=await waitSaved();CIS.done.state=ok?'ok':'bad';renderCI(true);
+}
+$('#ci').addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!b)return;const k=b.dataset.ci;
+  if(k==='p'){const id=b.dataset.id,s=CIS.sel||[];CIS.sel=s.includes(id)?s.filter(x=>x!==id):s.concat([id]);CIS.err='';renderCI(true)}
+  else if(k==='start')ciSubmit(false);
+  else if(k==='stop')ciSubmit(true);
+  else if(k==='again'){CIS.done=null;CIS.sel=[];CIS.nt='';renderCI(true)}
+  else if(k==='out'){setPerson(null);CIS.sel=null;authOpen().then(()=>{CIS.sel=null;renderCI(true)})}});
+$('#ci').addEventListener('change',e=>{const el=e.target;
+  if(el.id==='ci-pr'){CIS.pr=el.value;renderCI(true);if(el.value==='__new'){const n=$('#ci-nw');if(n)n.focus()}}
+  else if(el.id==='ci-st'&&el.value){CIS.st=el.value;try{history.replaceState(null,'',location.pathname+'?at='+encodeURIComponent(el.value))}catch(x){}renderCI(true)}});
+$('#ci').addEventListener('input',e=>{const el=e.target;if(el.id==='ci-nw')CIS.nw=el.value;else if(el.id==='ci-nt')CIS.nt=el.value});
+$('#ci').addEventListener('focusout',()=>{setTimeout(()=>{if(ciDirty)renderCI()},0)});
+if(CHK){document.body.classList.add('ci');view='2d'}
+
+/* ---------- time report ---------- */
+const RP={open:false,per:'week',by:'p',data:null,busy:false,key:''};
+function repRange(per){const d=new Date();d.setHours(0,0,0,0);const day=(d.getDay()+6)%7;let a,b;
+  if(per==='today'){a=d.getTime();b=a+864e5}
+  else if(per==='yest'){b=d.getTime();a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-1).getTime()}
+  else if(per==='week'){a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day).getTime();b=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day+7).getTime()}
+  else if(per==='lweek'){a=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day-7).getTime();b=new Date(d.getFullYear(),d.getMonth(),d.getDate()-day).getTime()}
+  else if(per==='month'){a=new Date(d.getFullYear(),d.getMonth(),1).getTime();b=new Date(d.getFullYear(),d.getMonth()+1,1).getTime()}
+  else{a=new Date(d.getFullYear(),d.getMonth()-1,1).getTime();b=new Date(d.getFullYear(),d.getMonth(),1).getTime()}
+  return[a,b]}
+/* time worked between a and b, breaks taken out */
+function netMs(a,b){if(!(b>a))return 0;let ms=b-a;const mm=v=>{const x=String(v||'').split(':');return(+x[0]||0)*60+(+x[1]||0)};
+  const d=new Date(a);d.setHours(0,0,0,0);
+  for(;d.getTime()<b;d.setDate(d.getDate()+1)){const d0=d.getTime();for(const k of breakList()){if(!k||!k.f||!k.t)continue;const s0=d0+mm(k.f)*6e4,s1=d0+mm(k.t)*6e4;ms-=Math.max(0,Math.min(b,s1)-Math.max(a,s0))}}
+  return Math.max(0,ms)}
+const fmtH=ms=>{const m=Math.round(ms/6e4),h=Math.floor(m/60),r=m%60;return h?(h+' h'+(r?' '+r+' min':'')):r+' min'};
+async function repLoad(){
+  const [a,b]=repRange(RP.per),mons=[];for(const d=new Date(a);d.getTime()<b;d.setMonth(d.getMonth()+1,1)){const k=monKey(d.getTime());if(!mons.includes(k))mons.push(k)}
+  const pk=monKey(a-864e5*40);if(!mons.includes(pk))mons.unshift(pk);   /* a stretch can start in the month before */
+  const key=RP.per;RP.busy=true;RP.key=key;renderRep();
+  const all={};
+  try{const rows=await WA.rest('workspaces?id=in.('+mons.map(m=>LOG_PFX+m).join(',')+')&select=data');for(const r of rows||[])if(r&&isObj(r.data)&&isObj(r.data.s))Object.assign(all,r.data.s)}catch(e){}
+  for(const x of logQ)all[x.id]=x;
+  for(const [pid,p] of Object.entries(ST().people)){const s=sessOf(pid,p);if(s&&!all[s.id])all[s.id]=s}
+  if(RP.key!==key)return;
+  RP.data=Object.values(all).filter(x=>x&&+x.a<b&&+x.b>a).map(x=>{const a1=Math.max(a,+x.a),b1=Math.min(b,+x.b);return Object.assign({},x,{a1,b1,ms:netMs(a1,b1)})}).filter(x=>x.ms>=6e4);
+  RP.busy=false;renderRep();
+}
+function prLabel(pr){if(!pr)return t('repNoP');const o=SF.orders.find(o=>o.label===pr||normN(o.label.split(' · ').slice(1).join(' · '))===normN(pr));return o?o.label:pr}
+function renderRep(){
+  const box=$('#rep');box.hidden=!RP.open;if(!RP.open)return;
+  const per=[['today','repToday'],['yest','repYest'],['week','repWeek'],['lweek','repLWeek'],['month','repMonth'],['lmonth','repLMonth']],by=[['p','repByP'],['w','repByW'],['s','repByS']];
+  let h='<div class="rbox"><div class="rh"><h2 id="rp-h">⏱ '+esc(t('repH'))+'</h2><button type="button" class="x" data-rp="close" aria-label="✕">✕</button></div>'+
+    '<div class="ctl"><select id="rp-per" aria-label="'+esc(t('repH'))+'">'+per.map(([k,l])=>'<option value="'+k+'"'+(RP.per===k?' selected':'')+'>'+esc(t(l))+'</option>').join('')+'</select>'+
+    '<select id="rp-by">'+by.map(([k,l])=>'<option value="'+k+'"'+(RP.by===k?' selected':'')+'>'+esc(t(l))+'</option>').join('')+'</select>'+
+    '<span class="grow"></span><button type="button" class="btn" data-rp="csv"'+(RP.data&&RP.data.length?'':' disabled')+'>'+esc(t('repCsv'))+'</button></div>';
+  if(RP.busy||!RP.data)h+='<div class="note">'+esc(t('repLoad'))+'</div>';
+  else if(!RP.data.length)h+='<div class="note">'+esc(t('repNone'))+'</div>';
+  else{
+    const key={p:x=>prLabel(x.pr),w:x=>x.n||x.w,s:x=>x.sn||x.s}, sub={p:x=>(x.sn||x.s)+' · '+(x.n||x.w),w:x=>prLabel(x.pr)+' · '+(x.sn||x.s),s:x=>prLabel(x.pr)+' · '+(x.n||x.w)};
+    const g=new Map();let tot=0;
+    for(const x of RP.data){const k=key[RP.by](x),sk=sub[RP.by](x);tot+=x.ms;if(!g.has(k))g.set(k,{ms:0,sub:new Map()});const e=g.get(k);e.ms+=x.ms;e.sub.set(sk,(e.sub.get(sk)||0)+x.ms)}
+    h+='<div class="tot">'+esc(t('repTot'))+': '+esc(fmtH(tot))+' <span class="note">· '+RP.data.length+' '+esc(t('repN'))+'</span></div><div class="tw"><table><tbody>';
+    for(const [k,e] of [...g.entries()].sort((x,y)=>y[1].ms-x[1].ms)){
+      h+='<tr class="g"><td>'+esc(k)+'</td><td class="h">'+esc(fmtH(e.ms))+'</td></tr>';
+      for(const [sk,ms] of [...e.sub.entries()].sort((x,y)=>y[1]-x[1]))h+='<tr class="s"><td>'+esc(sk)+'</td><td class="h">'+esc(fmtH(ms))+'</td></tr>';
+    }
+    h+='</tbody></table></div>';
+  }
+  h+='<div class="note">'+esc(t('repNote'))+'</div></div>';
+  box.innerHTML=h;
+}
+function repCsv(){
+  const p2=x=>String(x).padStart(2,'0'),dt=ms=>{const d=new Date(ms);return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())},tm=ms=>{const d=new Date(ms);return p2(d.getHours())+':'+p2(d.getMinutes())};
+  const q=v=>'"'+String(v==null?'':v).replace(/"/g,'""')+'"';
+  const rows=[['Data','Darbuotojas','Vieta','Projektas','Detale / darbas','Pradzia','Pabaiga','Valandos be pertrauku']].concat(RP.data.slice().sort((x,y)=>x.a1-y.a1).map(x=>[dt(x.a1),x.n||x.w,x.sn||x.s,x.pr?prLabel(x.pr):'',x.nt||'',tm(x.a1),tm(x.b1),(x.ms/36e5).toFixed(2).replace('.',',')]));
+  const csv='\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n'),bl=new Blob([csv],{type:'text/csv;charset=utf-8'}),u=URL.createObjectURL(bl),a=document.createElement('a');
+  a.href=u;a.download='cecho-laikas-'+RP.per+'-'+today()+'.csv';document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(u);a.remove()},1000);
+}
+function repOpen(on){RP.open=on;renderRep();if(on)repLoad();try{if(on&&location.hash!=='#laikas')history.replaceState(null,'',location.pathname+location.search+'#laikas');else if(!on&&location.hash==='#laikas')history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+$('#btnTime').addEventListener('click',()=>repOpen(true));
+$('#rep').addEventListener('click',e=>{if(e.target.id==='rep'){repOpen(false);return}const b=e.target.closest('[data-rp]');if(!b)return;if(b.dataset.rp==='close')repOpen(false);else if(b.dataset.rp==='csv')repCsv()});
+$('#rep').addEventListener('change',e=>{if(e.target.id==='rp-per'){RP.per=e.target.value;RP.data=null;repLoad()}else if(e.target.id==='rp-by'){RP.by=e.target.value;renderRep()}});
+
+/* ---------- printable QR codes, one per station ---------- */
+let qrLib=null;
+function loadQR(){if(window.qrcode)return Promise.resolve(window.qrcode);if(qrLib)return qrLib;
+  const srcs=['https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js','https://unpkg.com/qrcode-generator@1.4.4/qrcode.js'];
+  qrLib=new Promise((res,rej)=>{const go=i=>{if(i>=srcs.length){qrLib=null;return rej()}const sc=document.createElement('script');sc.src=srcs[i];sc.onload=()=>window.qrcode?res(window.qrcode):go(i+1);sc.onerror=()=>go(i+1);document.head.appendChild(sc)};go(0)});return qrLib}
+const ciUrl=id=>location.origin+location.pathname+'?at='+encodeURIComponent(id);
+function qrSvg(q,url){const c=q(0,'M');c.addData(url);c.make();return c.createSvgTag({cellSize:4,margin:2,scalable:true})}
+async function qrOpen(){
+  const box=$('#qrs');let q;try{q=await loadQR()}catch(e){toast(t('qrFail'));return}
+  const card=(id,name,sub,big)=>{const u=ciUrl(id);return'<div class="qc"><button type="button" class="qx" data-qr="hide" aria-label="✕">✕</button><div class="qb">Dėdės Baldai</div><div class="qn">'+esc(name)+'</div>'+qrSvg(q,u)+'<div class="qi">'+esc(sub)+'</div><div class="qu">'+esc(u)+'</div></div>'};
+  let h='<div class="qh"><h2>'+esc(t('qrH'))+'</h2><button type="button" class="btn" data-qr="print">🖨 '+esc(t('qrPrint'))+'</button><button type="button" class="btn" data-qr="close">'+esc(t('qrClose'))+'</button><div class="note" style="flex-basis:100%">'+esc(t('qrHint'))+'</div></div><div class="qgrid">';
+  for(const [id,n] of ciPlaces())h+=card(id,n,t('qrScan'));
+  h+=card('off','🚪 '+t('ciOffT'),t('qrLeaveS'));
+  box.innerHTML=h+'</div>';box.hidden=false;
+}
+$('#btnQR').addEventListener('click',qrOpen);
+$('#qrs').addEventListener('click',e=>{const b=e.target.closest('[data-qr]');if(!b)return;const k=b.dataset.qr;
+  if(k==='close'){$('#qrs').hidden=true;$('#qrs').innerHTML=''}
+  else if(k==='hide')b.closest('.qc').classList.add('off');
+  else if(k==='print'){document.body.classList.add('printing');setTimeout(()=>{window.print();setTimeout(()=>document.body.classList.remove('printing'),500)},50)}});
+window.addEventListener('afterprint',()=>document.body.classList.remove('printing'));
+
 /* TV remote: ▲▼◀▶ turn the 3D view, OK opens the radio; in the radio ▲▼ pick a station, OK plays it,
    ◀▶ change the volume, Back closes. Play/pause key starts or stops the radio. */
 const KEY_BACK=e=>e.key==='Escape'||e.key==='GoBack'||e.key==='BrowserBack'||e.keyCode===4;
