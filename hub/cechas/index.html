@@ -965,9 +965,14 @@ function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{co
 const peopleAt=id=>onBreak()?[]:peopleAtRaw(id).filter(e=>!e[1].pz);
 const SELF_RUN={volter:1,compressor:1};
 const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).filter(e=>!e[1].pz).length===0};
-const shown=id=>{const v=statusOf(id);if(v==='run'&&noOperator(id))return'idle';return v==='run'&&onBreak()?'pause':v};
+/* a machine runs while someone is checked in at it (Volter and the compressor also when set running today);
+   "not working" wins; breaks show as a pause */
+const shown=id=>{const v=statusOf(id);if(v==='down')return'down';const it=LAY().items[id],run=peopleAtRaw(id).some(e=>!e[1].pz)||(v==='run'&&!!it&&!!SELF_RUN[it.t]);if(!run)return'idle';return onBreak()?'pause':'run'};
 const peopleAtRaw=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
-const statusOf=id=>{const s=ST().st[id];return s&&['run','idle','down'].includes(s.s)?s.s:'idle'};
+/* "running" belongs to the working day: set before today, or before 17:00 once it is past 17:00, it reads as stopped.
+   "not working" (broken) stays until someone changes it. */
+const runCounts=s=>{const d0=dayStart(),e=dayEndOf(d0),ts=+s.ts||0;return ts>=d0&&(Date.now()<e||ts>=e)};
+const statusOf=id=>{const s=ST().st[id];if(!s||!['run','idle','down'].includes(s.s))return'idle';return s.s==='run'&&!runCounts(s)?'idle':s.s};
 function hhmm(ts){if(!ts)return'';const d=new Date(ts),n=new Date();const p=x=>String(x).padStart(2,'0');
   const tm=p(d.getHours())+':'+p(d.getMinutes());return d.toDateString()===n.toDateString()?tm:p(d.getMonth()+1)+'-'+p(d.getDate())+' '+tm}
 /* the dust extractor has no status of its own: it runs whenever any machine is running */
