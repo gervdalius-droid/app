@@ -884,5 +884,7 @@ var LT = {
   "Its earlier SWOOD part list is replaced.": "Ankstesnis SWOOD detalių sąrašas bus pakeistas.",
   "A project with that name already exists — import into it instead (above)": "Toks projektas jau yra — importuokite į jį (aukščiau)",
   "Re-import SWOOD report list": "Iš naujo importuoti SWOOD sąrašą",
-  "Import SWOOD report list into this project": "Importuoti SWOOD sąrašą į šį projektą"
+  "Import SWOOD report list into this project": "Importuoti SWOOD sąrašą į šį projektą",
+  "Machines that send their own scans": "Staklės, siunčiančios savo skenavimus",
+  "The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.": "SCM Startech pagalbininkas siunčia kiekvieną staklėse nuskenuotą lipduką. Kiekvienas skenavimas įskaito detalę (arba paleidžia projekto etapą) čia pasirinktame etape. Sąraše matosi, ką šis ekranas padarė su paskutiniais skenavimais."
 };

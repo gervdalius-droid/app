@@ -3174,3 +3174,15 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .sw-target { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin: 4px 0 12px; border-radius: var(--r-md); background: var(--surface-2); }
 .sw-seg { align-self: flex-start; }
 .sw-into { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* machines in settings */
+.mach-wrap { display: flex; flex-direction: column; gap: 10px; width: min(520px, 100%); }
+.mach-card { border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+.mach-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.mach-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.mach-dot.on { background: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.mach-st { width: 170px; padding: 5px 8px; font-size: 12.5px; }
+.mach-list { display: flex; flex-direction: column; gap: 3px; max-height: 260px; overflow: auto; }
+.mach-row { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; padding: 3px 0; border-top: 1px solid var(--border); }
+.mach-row:first-child { border-top: 0; }
+.mach-row code { font-family: var(--font-mono); font-size: 11.5px; background: var(--surface-2); padding: 1px 6px; border-radius: 5px; }
+.mach-row.bad { color: var(--red); }

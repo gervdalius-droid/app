@@ -2108,6 +2108,13 @@ var Mgr = {
         </div>` : ""}
       </div>
 
+      ${typeof Machines !== "undefined" ? `<div class="panel">
+        <div class="settings-row" style="border-top:none;align-items:flex-start">
+          <span class="grow"><b>Machines that send their own scans</b><span>The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.</span></span>
+          <div class="mach-wrap" id="mach-wrap">${Machines.settingsHtml()}</div>
+        </div>
+      </div>` : ""}
+
       <div class="panel">
         <div class="settings-row" style="border-top:none;align-items:flex-start">
           <span class="grow"><b>Scan stations (QR / barcode)</b><span>Open a station kiosk on a device at each machine — a USB/Bluetooth scanner or the camera then advances every part you scan. Give a scanner a prefix (e.g. <span class="mono">EDGE#</span>) to route it to a station automatically when several share one PC.</span></span>
@@ -2421,6 +2428,7 @@ var Mgr = {
     odBase.onchange = saveOd;
     odTpl.onchange = saveOd;
     renderPreview();
+    if (typeof Machines !== "undefined") Machines.bindSettings(root);
     var odCid = $("#set-od-cid", root),
       odShare = $("#set-od-share", root),
       odAuto = $("#set-od-auto", root);

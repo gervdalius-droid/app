@@ -1078,7 +1078,12 @@ function machProject(m){
   if(!m||!m.last||!m.last.code)return'';
   const raw=String(m.last.code),base=raw.split(/[\\/]/).pop().replace(/\.[A-Za-z0-9]{1,5}$/,''),U=base.toUpperCase(),P=U.replace(/[_-]\d+[A-Z]?$/i,'').replace(/[_-][^_-]*$/,'');
   const o=SF.orders.find(o=>o.parts&&(o.parts.includes(raw)||o.parts.includes(base)))||SF.orders.find(o=>o.num.toUpperCase()===U||o.sw.toUpperCase()===U)||SF.orders.find(o=>P&&(o.sw.toUpperCase()===P||o.num.toUpperCase()===P||U.startsWith(o.sw.toUpperCase()+'_')&&o.sw));
-  return o?o.label:base}
+  if(o)return o.label;
+  /* a program name (GEL_Salionas1_79_) → the project whose name holds most of its pieces */
+  const nn=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
+  let tk=base.split(/[_\-\s.]+/).filter(Boolean);while(tk.length>1&&/^\d+[a-z]?$/i.test(tk[tk.length-1]))tk.pop();tk=tk.map(nn).filter(x=>x.length>=2);
+  let best=null,bs=0,sec=0;for(const q of SF.orders){const h=nn(q.label);let sc=0;for(const x of tk)if(h.includes(x))sc+=x.length;if(sc>bs){sec=bs;bs=sc;best=q}else if(sc>sec)sec=sc}
+  return best&&bs>=6&&bs>sec?best.label:base.replace(/[_\-\s.]+$/,'')}
 const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).filter(e=>!e[1].pz).length===0};
 /* a machine runs while someone is checked in at it (Volter and the compressor also when set running today);
    "not working" wins; breaks show as a pause */
