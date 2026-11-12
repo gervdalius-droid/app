@@ -1354,7 +1354,9 @@ var Mgr = {
     var multi = order.items.length > 1;
     var showNum = order.num !== order.product;
     var showClient = order.client && order.client !== order.product;
-    return `<div class="order-card" draggable="true" data-order="${order.id}" ${op ? `data-op="${op.id}"` : ""}>
+    /* someone is working on it right now — the card in that column goes green */
+    var live = op ? op.status === "running" : order.ops.some(x => x.status === "running");
+    return `<div class="order-card ${live ? "live" : ""}" draggable="true" data-order="${order.id}" ${op ? `data-op="${op.id}"` : ""}>
       <div class="top">
         ${showNum ? `<span class="num">${esc(order.num)}</span>` : ""}
         ${prioHtml(order.priority)}

@@ -3157,3 +3157,17 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .dt-state-sel.bad { background-color: var(--red-soft); }
 .dt-state.cl, .dt-state-sel.cl { background-color: var(--purple-soft, var(--surface-3)); color: var(--purple, var(--text-2)); }
 .dt-state-sel option { text-transform: none; color: var(--text); background: var(--surface); }
+
+/* project in action: someone is working on it right now */
+.order-card .num { white-space: nowrap; }
+.order-card.live {
+  background: color-mix(in srgb, var(--green) 7%, var(--surface));
+  border-color: color-mix(in srgb, var(--green) 45%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--green) 25%, transparent), var(--shadow-1);
+}
+.order-card.live:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--green) 35%, transparent), var(--shadow-2); }
+.order-card.live .runner { color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--surface)); }
+.order-card.live .runner .dot { background: var(--green) !important; animation: live-pulse 1.6s ease-in-out infinite; }
+@keyframes live-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
+@media (prefers-reduced-motion: reduce) { .order-card.live .runner .dot { animation: none; } }
+.order-card.live .steps-mini .running { background: var(--green) !important; }
