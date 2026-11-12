@@ -5034,6 +5034,7 @@ var OrderDetail = {
 
         ${isEng ? this.remarksHtml(o) : ""}
 
+        ${o.type !== "eng" && !o.archived && App.can("orders.create") && typeof SwoodImport !== "undefined" ? `<div class="sw-into"><button class="btn subtle" id="od-swood">${icon("import", 14)} ${o.swood ? "Re-import SWOOD report list" : "Import SWOOD report list into this project"}</button>${o.swood ? `<span class="t-caption">from ${esc(o.swood.project)} · ${fmtAgo(o.swood.importedAt)}</span>` : ""}</div>` : ""}
         ${this.appliancesHtml(o, canEdit)}
 
         ${this.detailsHtml(o, canEdit)}
@@ -5309,6 +5310,8 @@ var OrderDetail = {
       Drawer.refresh();
     };
     this.bindAppliances(el, o);
+    var swB = $("#od-swood", el);
+    if (swB) swB.onclick = () => SwoodImport.open(o.id);
     /* ---- project details ---- */
     var dtAdd = $("#dt-add", el),
       dtNew = $("#dt-new", el);

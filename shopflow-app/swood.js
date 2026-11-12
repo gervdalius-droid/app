@@ -913,7 +913,10 @@ var SwoodImport = {
   consEdits: null,
   // consumable index → { name, qty, materialId }
 
-  open() {
+  target: null,
+  // an existing project to fill instead of creating one
+  open(targetId) {
+    this.target = targetId && D.order(targetId) ? targetId : null;
     this.plan = null;
     this.fileName = "";
     this.scope = 1;
@@ -925,7 +928,7 @@ var SwoodImport = {
       <div class="modal-body" id="sw-body">${this.pickHtml()}</div>
       <footer id="sw-foot">
         <button class="btn" data-close>Cancel</button>
-        <button class="btn primary" id="sw-go" disabled>${icon("import", 14)} Create project</button>
+        <button class="btn primary" id="sw-go" disabled>${icon("import", 14)} <span id="sw-go-t">${this.target ? (typeof I18N !== "undefined" && I18N.lang === "lt" ? "Importuoti į " : "Import into ") + esc(D.order(this.target).num) : "Create project"}</span></button>
       </footer>`, m => {
       m.classList.add("sw-modal");
       this.bind(m);
@@ -994,6 +997,10 @@ var SwoodImport = {
               client: "",
               due: new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10)
             };
+            if (!_this8.target) {
+              var sug = _this8.suggest();
+              if (sug) _this8.target = sug.id;
+            }
             _this8.render(m);
             $("#sw-go", m).disabled = false;
             _context9.next = 28;
@@ -1053,6 +1060,37 @@ var SwoodImport = {
     $("#sw-body", m).innerHTML = this.previewHtml();
     this.bindPreview(m);
   },
+  /* projects a report list can go into: open, not engineering */
+  targets() {
+    var n = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+    var key = n(this.plan && this.plan.project);
+    var score = o => {
+      if (!key) return 0;
+      var a = n(o.product), b = n(o.num), c = n(o.swood && o.swood.project);
+      return a === key || c === key ? 3 : a && (a.indexOf(key) >= 0 || key.indexOf(a) >= 0) ? 2 : b === key ? 2 : 0;
+    };
+    return (Store.state.orders || []).filter(o => !o.archived && !o.shipped && o.type !== "eng").map(o => ({ o: o, sc: score(o) })).sort((x, y) => y.sc - x.sc || (y.o.createdAt || 0) - (x.o.createdAt || 0)).map(x => x.o);
+  },
+  suggest() {
+    var t = this.targets()[0];
+    if (!t) return null;
+    var n = s => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]+/g, "");
+    var key = n(this.plan.project);
+    return key && (n(t.product) === key || n(t.swood && t.swood.project) === key) ? t : null;
+  },
+  targetHtml() {
+    var list = this.targets();
+    var t = this.target ? D.order(this.target) : null;
+    var started = t && t.ops.some(op => op.status !== "queued" || op.loggedMs > 0);
+    return `<div class="sw-target">
+      <div class="segmented sw-seg">
+        <button data-swt="new" class="${t ? "" : "active"}">New project</button>
+        <button data-swt="old" class="${t ? "active" : ""}" ${list.length ? "" : "disabled"}>Into an existing project</button>
+      </div>
+      ${t ? `<select class="select" id="sw-target">${list.map(o => `<option value="${o.id}" ${o.id === t.id ? "selected" : ""}>${esc(o.num)} · ${esc(o.product)}${o.client && o.client !== o.product ? " — " + esc(o.client) : ""}</option>`).join("")}</select>
+        <div class="t-caption"><span>Parts, production lines, steps and materials come from SWOOD. The project keeps its number, name, client, date, files, remarks, appliances and details.</span>${started ? ` <span>Work already done stays: finished steps stay finished, logged time is kept.</span>` : ""}${t.swood ? ` <b>Its earlier SWOOD part list is replaced.</b>` : ""}</div>` : ""}
+    </div>`;
+  },
   previewHtml() {
     var p = this.plan,
       f = this.form;
@@ -1074,13 +1112,14 @@ var SwoodImport = {
 
       ${this.columnsHtml(p)}
 
-      <div class="field"><label>Project name</label><input class="input" id="sw-name" value="${esc(f.name)}" autocomplete="off">
+      ${this.targetHtml()}
+      <div class="field" ${this.target ? 'style="display:none"' : ""}><label>Project name</label><input class="input" id="sw-name" value="${esc(f.name)}" autocomplete="off">
         <span class="t-caption" id="sw-namewarn" style="color:var(--red);min-height:15px"></span></div>
       <div class="row" style="gap:12px">
-        <div class="field grow"><label>Client</label>
+        <div class="field grow" ${this.target ? 'style="display:none"' : ""}><label>Client</label>
           <input class="input" id="sw-client" value="${esc(f.client)}" placeholder="Optional" autocomplete="off"
             list="shared-customers">${typeof Bridge !== "undefined" ? Bridge.datalistHtml() : ""}</div>
-        <div class="field"><label>Due date</label><input class="input" type="date" id="sw-due" value="${esc(f.due)}"></div>
+        <div class="field" ${this.target ? 'style="display:none"' : ""}><label>Due date</label><input class="input" type="date" id="sw-due" value="${esc(f.due)}"></div>
         <div class="field sw-scope"><label>How many?</label>
           <input class="input" type="number" min="1" step="1" id="sw-scope" value="${this.scope}"></div>
       </div>
@@ -1168,11 +1207,22 @@ var SwoodImport = {
       go = $("#sw-go", m);
     var check = () => {
       var v = name.value.trim();
-      var bad = !v ? "Give the project a name" : D.projectNameTaken(v) ? "A project with that name already exists" : "";
+      var bad = this.target ? "" : !v ? "Give the project a name" : D.projectNameTaken(v) ? "A project with that name already exists — import into it instead (above)" : "";
       warn.textContent = bad;
       go.disabled = !!bad;
+      var gt = $("#sw-go-t", m);
+      if (gt) gt.textContent = this.target ? (typeof I18N !== "undefined" && I18N.lang === "lt" ? "Importuoti į " : "Import into ") + D.order(this.target).num : (typeof I18N !== "undefined" && I18N.t ? I18N.t("Create project") : "Create project");
       return !bad;
     };
+    $$("[data-swt]", m).forEach(b => b.onclick = () => {
+      this.form.name = name.value;
+      if (b.dataset.swt === "new") this.target = null;
+      else { var s0 = this.suggest() || this.targets()[0]; this.target = s0 ? s0.id : null; }
+      this.render(m);
+      if (typeof I18N !== "undefined") I18N.translate(m);
+    });
+    var tsel = $("#sw-target", m);
+    if (tsel) tsel.onchange = () => { this.target = tsel.value; this.form.name = name.value; this.render(m); if (typeof I18N !== "undefined") I18N.translate(m); };
     name.oninput = () => {
       this.form.name = name.value;
       check();
@@ -1240,8 +1290,27 @@ var SwoodImport = {
       repaint();
     });
   },
+  createInto(m) {
+    var cons = this.consRows().filter(c => c.qty > 0 && c.name).map(c => ({
+      name: c.name,
+      qty: c.qty,
+      unit: c.unit,
+      materialId: c.mat ? c.mat.id : null
+    }));
+    var o = M.applySwoodTo(this.target, this.plan, {
+      scope: this.scope,
+      consumables: cons,
+      lineNames: this.lineEdits
+    }, App.me.id);
+    if (!o) return;
+    Modal.close();
+    App.render();
+    Drawer.open(o.id);
+    Toast.show(`${o.num}: ${o.parts.length} part codes imported from SWOOD`, { emoji: "import", ms: 5000 });
+  },
   create(m) {
     if (!this.plan) return;
+    if (this.target) return this.createInto(m);
     var name = $("#sw-name", m).value.trim();
     if (D.projectNameTaken(name) || !name) return;
     var dueVal = $("#sw-due", m).value;

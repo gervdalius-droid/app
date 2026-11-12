@@ -3171,3 +3171,6 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 @keyframes live-pulse { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--green) 55%, transparent); } 50% { box-shadow: 0 0 0 5px transparent; } }
 @media (prefers-reduced-motion: reduce) { .order-card.live .runner .dot { animation: none; } }
 .order-card.live .steps-mini .running { background: var(--green) !important; }
+.sw-target { display: flex; flex-direction: column; gap: 8px; padding: 12px; margin: 4px 0 12px; border-radius: var(--r-md); background: var(--surface-2); }
+.sw-seg { align-self: flex-start; }
+.sw-into { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

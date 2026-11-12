@@ -5754,6 +5754,70 @@ var M = {
     Store.save();
     return order;
   },
+  /* A SWOOD report list into a project that already exists (made by hand, or
+     handed over from engineering): the parts, production lines, steps and
+     materials come from SWOOD; the project keeps its number, name, client,
+     date, files, remarks, appliances and details. Work already done is kept —
+     a step finished at a station stays finished there, time logged on a
+     station moves to the new step at that station. */
+  applySwoodTo(orderId, plan, opts, byId) {
+    var tgt = D.order(orderId);
+    if (!tgt) return null;
+    opts = opts || {};
+    var seq = Store.state.orderSeq;
+    var tmp = this.createFromSwood(plan, {
+      product: tgt.product, client: tgt.client, due: tgt.due, priority: tgt.priority, notes: tgt.notes,
+      portfolioId: tgt.portfolioId, oneDriveUrl: tgt.oneDriveUrl,
+      scope: opts.scope, consumables: opts.consumables, lineNames: opts.lineNames
+    }, byId);
+    /* createFromSwood made a new order — take its contents and undo the order itself */
+    Store.state.orders = Store.state.orders.filter(o => o.id !== tmp.id);
+    Store.state.orderSeq = seq;
+    Store.state.activity = Store.state.activity.filter(a => a.orderId !== tmp.id);
+    tgt = D.order(orderId);
+    /* what has happened at each station so far */
+    var prog = {};
+    (tgt.ops || []).forEach(op => {
+      var p = prog[op.stationId] || (prog[op.stationId] = { n: 0, done: 0, ms: 0, who: null, at: null, by: null, started: false });
+      p.n++;
+      if (op.status === "done") { p.done++; p.at = Math.max(p.at || 0, op.completedAt || 0); p.by = op.completedBy || p.by; }
+      var ms = op.startedAt ? D.opElapsed(op) : op.loggedMs || 0;
+      p.ms += ms;
+      if (ms > 0 || op.status === "running" || op.status === "paused") p.started = true;
+      if (!p.who && op.assigneeId) p.who = op.assigneeId;
+    });
+    var firstAt = {};
+    tmp.ops.forEach(op => {
+      var p = prog[op.stationId];
+      if (!p) return;
+      if (p.n && p.done === p.n) {
+        var it = tmp.items.find(i => i.id === op.itemId);
+        op.status = "done";
+        op.qtyDone = it ? it.qty : op.qtyDone;
+        op.completedAt = p.at || Date.now();
+        op.completedBy = p.by || byId;
+      } else if (p.started && !firstAt[op.stationId]) {
+        firstAt[op.stationId] = true;
+        op.status = "paused";
+        op.loggedMs = p.ms;
+      }
+      if (!op.assigneeId && p.who) op.assigneeId = p.who;
+    });
+    /* materials: lines already taken from stock stay; the rest come from SWOOD */
+    var kept = (tgt.materials || []).filter(l => l.consumed);
+    tgt.items = tmp.items;
+    tgt.ops = tmp.ops;
+    tgt.parts = tmp.parts;
+    tgt.modules = tmp.modules;
+    tgt.qty = tmp.qty;
+    tgt.unit = tmp.unit;
+    tgt.materials = kept.concat(tmp.materials);
+    var had = !!tgt.swood;
+    tgt.swood = tmp.swood;
+    this.log(byId, `${had ? "re-imported" : "imported"} SWOOD **${plan.project}** into ${tgt.num} · ${tmp.parts.length} parts`, { orderId: tgt.id });
+    Store.save();
+    return tgt;
+  },
   /* Append the stages an imported job never got. Only ever adds: every task
      already done, running or counted keeps exactly what it had. */
   repairSwoodRoute(orderId, byId) {

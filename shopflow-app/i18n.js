@@ -877,5 +877,12 @@ var LT = {
   "Drag up or down to change the order": "Tempkite aukštyn ar žemyn, kad pakeistumėte tvarką",
   "Automatic order": "Automatinė tvarka",
   "Back to: late first, then by due date": "Grąžinti: pirmiausia vėluojantys, tada pagal terminą",
-  "Client handles": "Pasirūpina klientas"
+  "Client handles": "Pasirūpina klientas",
+  "Into an existing project": "Į esamą projektą",
+  "Parts, production lines, steps and materials come from SWOOD. The project keeps its number, name, client, date, files, remarks, appliances and details.": "Detalės, gamybos linijos, etapai ir medžiagos ateina iš SWOOD. Projektas išlaiko savo numerį, pavadinimą, klientą, terminą, failus, pastabas, buitinę techniką ir detales.",
+  "Work already done stays: finished steps stay finished, logged time is kept.": "Atliktas darbas išlieka: užbaigti etapai lieka užbaigti, laikas išsaugomas.",
+  "Its earlier SWOOD part list is replaced.": "Ankstesnis SWOOD detalių sąrašas bus pakeistas.",
+  "A project with that name already exists — import into it instead (above)": "Toks projektas jau yra — importuokite į jį (aukščiau)",
+  "Re-import SWOOD report list": "Iš naujo importuoti SWOOD sąrašą",
+  "Import SWOOD report list into this project": "Importuoti SWOOD sąrašą į šį projektą"
 };
