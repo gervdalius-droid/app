@@ -2111,7 +2111,7 @@ var Mgr = {
       ${typeof Machines !== "undefined" ? `<div class="panel">
         <div class="settings-row" style="border-top:none;align-items:flex-start">
           <span class="grow"><b>Machines that send their own scans</b><span>The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.</span></span>
-          <div class="mach-wrap" id="mach-wrap">${Machines.settingsHtml()}</div>
+          <div class="mach-wrap" id="mach-wrap">${Machines.settingsHtml()}${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="open-scanlog" style="align-self:flex-start">${icon("list", 13)} Scan log</button>` : ""}</div>
         </div>
       </div>` : ""}
 
@@ -2429,6 +2429,8 @@ var Mgr = {
     odTpl.onchange = saveOd;
     renderPreview();
     if (typeof Machines !== "undefined") Machines.bindSettings(root);
+    var slB = $("#open-scanlog", root);
+    if (slB) slB.onclick = () => ScanLog.open();
     var odCid = $("#set-od-cid", root),
       odShare = $("#set-od-share", root),
       odAuto = $("#set-od-auto", root);
@@ -5042,7 +5044,7 @@ var OrderDetail = {
 
         ${isEng ? this.remarksHtml(o) : ""}
 
-        ${o.type !== "eng" && !o.archived && App.can("orders.create") && typeof SwoodImport !== "undefined" ? `<div class="sw-into"><button class="btn subtle" id="od-swood">${icon("import", 14)} ${o.swood ? "Re-import SWOOD report list" : "Import SWOOD report list into this project"}</button>${o.swood ? `<span class="t-caption">from ${esc(o.swood.project)} · ${fmtAgo(o.swood.importedAt)}</span>` : ""}</div>` : ""}
+        ${o.type !== "eng" && !o.archived && App.can("orders.create") && typeof SwoodImport !== "undefined" ? `<div class="sw-into">${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="od-scanlog">${icon("list", 14)} Scans</button>` : ""}<button class="btn subtle" id="od-swood">${icon("import", 14)} ${o.swood ? "Re-import SWOOD report list" : "Import SWOOD report list into this project"}</button>${o.swood ? `<span class="t-caption">from ${esc(o.swood.project)} · ${fmtAgo(o.swood.importedAt)}</span>` : ""}</div>` : ""}
         ${this.appliancesHtml(o, canEdit)}
 
         ${this.detailsHtml(o, canEdit)}
@@ -5318,6 +5320,8 @@ var OrderDetail = {
       Drawer.refresh();
     };
     this.bindAppliances(el, o);
+    var slP = $("#od-scanlog", el);
+    if (slP) slP.onclick = () => ScanLog.open({ order: o.id, from: ScanLog.dayKey(o.createdAt || Date.now() - 30 * 864e5) });
     var swB = $("#od-swood", el);
     if (swB) swB.onclick = () => SwoodImport.open(o.id);
     /* ---- project details ---- */

@@ -42,6 +42,7 @@ var ScanStation = {
         <div class="scan-logo">${icon("scan", 26)}</div>
         <div><h1 style="font-size:22px">Scan station</h1>
         <p class="muted" style="font-size:13.5px">Pick the station this device sits at. A USB/Bluetooth scanner or the camera then advances every part you scan.</p></div>
+        ${typeof ScanLog !== "undefined" && App.isManager && App.isManager() ? `<button class="btn subtle" id="scan-log-btn" style="margin-left:auto">${icon("list", 14)} Scan log</button>` : ""}
       </div>
       <div class="scan-grid">
         ${stns.map(st => {
@@ -117,6 +118,8 @@ var ScanStation = {
   },
   /* ---------- bind ---------- */
   bind(root) {
+    var slb = $("#scan-log-btn", root);
+    if (slb) slb.onclick = () => ScanLog.open();
     if (!this.stationId) {
       $$("[data-scan-station]", root).forEach(b => b.onclick = () => {
         this.stationId = b.dataset.scanStation;

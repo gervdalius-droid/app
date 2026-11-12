@@ -134,20 +134,33 @@ var Machines = {
     fresh.forEach(s => {
       seen[rowId] = Math.max(+seen[rowId] || 0, +s.seq);
       if (!stationId || now - (+s.at || 0) > this.MAX_AGE_MS) return;
-      this.handle(s, stationId, who, data.name || type);
+      this.handle(s, stationId, who, data.name || type, rowId);
     });
     Store.save();
     if (typeof App !== "undefined") App.render();
   },
-  handle(scan, stationId, who, machineName) {
+  handle(scan, stationId, who, machineName, rowId) {
+    var key = (rowId || "machine") + "-" + scan.seq;
+    var ctx = { key: key, ts: +scan.at || Date.now(), src: machineName || "machine" };
+    if (typeof ScanLog !== "undefined") ScanLog._ctx = ctx;
+    try { return this._handle(scan, stationId, who, machineName, ctx); } finally { if (typeof ScanLog !== "undefined") ScanLog._ctx = null; }
+  },
+  _handle(scan, stationId, who, machineName, ctx) {
     var c = this.codeOf(scan.code);
     /* the code as scanned first (a part label), then without folder/extension (a program file) */
     var tries = c.code !== c.raw ? [c.raw, c.code] : [c.raw];
-    var result = r => { this._remember(scan, c, r); return r; };
+    var viaScanPart = false;
+    var result = r => {
+      this._remember(scan, c, r);
+      /* M.scanPart writes its own log line; anything decided here gets one too */
+      if (!viaScanPart && typeof ScanLog !== "undefined") ScanLog.add({ k: ctx.key, ts: ctx.ts, src: ctx.src, code: c.raw, st: stationId, o: r.order ? r.order.id : "", w: who || (r.op && r.op.assigneeId) || "", r: r.status });
+      return r;
+    };
     var res = null;
     for (var i = 0; i < tries.length; i++) {
       var parsed = D.scanParse(tries[i]);
       if (parsed && parsed.order && !parsed.unknownPart) {
+        viaScanPart = true;
         res = M.scanPart(tries[i], stationId, who || this._fallbackMember(parsed.order, stationId));
         break;
       }

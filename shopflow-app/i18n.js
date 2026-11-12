@@ -886,5 +886,7 @@ var LT = {
   "Re-import SWOOD report list": "Iš naujo importuoti SWOOD sąrašą",
   "Import SWOOD report list into this project": "Importuoti SWOOD sąrašą į šį projektą",
   "Machines that send their own scans": "Staklės, siunčiančios savo skenavimus",
-  "The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.": "SCM Startech pagalbininkas siunčia kiekvieną staklėse nuskenuotą lipduką. Kiekvienas skenavimas įskaito detalę (arba paleidžia projekto etapą) čia pasirinktame etape. Sąraše matosi, ką šis ekranas padarė su paskutiniais skenavimais."
+  "The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.": "SCM Startech pagalbininkas siunčia kiekvieną staklėse nuskenuotą lipduką. Kiekvienas skenavimas įskaito detalę (arba paleidžia projekto etapą) čia pasirinktame etape. Sąraše matosi, ką šis ekranas padarė su paskutiniais skenavimais.",
+  "Scan log": "Skenavimų žurnalas",
+  "Scans": "Skenavimai"
 };
