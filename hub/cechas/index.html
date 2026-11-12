@@ -964,8 +964,10 @@ async function loadShopflow(manual){
         label:[o.num,o.product].filter(Boolean).join(' · ').slice(0,60),
         num:String(o.num||''),sw:String(o.swood&&o.swood.project||''),
         parts:(Array.isArray(o.parts)?o.parts:[]).map(x=>x&&(x.code||x.partCode||x.id)).filter(Boolean).map(String),
+        ops:(Array.isArray(o.ops)?o.ops:[]).filter(x=>x&&(x.status==='running'||x.status==='paused')).map(x=>({st:String(x.stationId||''),s:x.status,a:String(x.assigneeId||''),as:Array.isArray(x.assigneeIds)?x.assigneeIds.map(String):[]})),
         items:(Array.isArray(o.items)?o.items:[]).map(i=>i&&i.name).filter(Boolean).map(String)})).filter(o=>o.label);
       SF.members=(Array.isArray(r.members)?r.members:[]).map(m=>m&&m.name).filter(Boolean).map(String);
+      SF.byId={};for(const m of (Array.isArray(r.members)?r.members:[]))if(m&&m.id)SF.byId[String(m.id)]=String(m.name||'');
       SF.stations=(Array.isArray(r.stations)?r.stations:[]).filter(x=>x&&x.id).map(x=>({id:String(x.id),name:String(x.name||x.id)}));
       SF.at=Date.now();SF.err=false;
     }
@@ -1061,7 +1063,7 @@ const DEF_BREAKS=[{f:'10:00',t:'10:15',n:'Pertrauka'},{f:'12:00',t:'12:45',n:'Pi
 const breakList=()=>Array.isArray(ST().breaks)?ST().breaks:DEF_BREAKS;
 function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{const a=String(v||'').split(':');return(+a[0]||0)*60+(+a[1]||0)};
   for(const b of breakList())if(b&&b.f&&b.t&&mm(b.f)<=m&&m<mm(b.t))return b;return null}
-const peopleAt=id=>onBreak()?[]:peopleAtRaw(id).filter(e=>!e[1].pz);
+const peopleAt=id=>{if(onBreak())return[];const r=peopleAtRaw(id).filter(e=>!e[1].pz);if(r.length)return r;const a=typeof machOperator==='function'?machOperator(id):null;return a?[a]:[]};
 const SELF_RUN={volter:1,compressor:1};
 /* Machines with their own helper (the Startech PC sends each label the operator scans, row dedes-machine-<type>):
    such a machine shows as running for a while after a scan, with the project the scanned code belongs to */
@@ -1070,20 +1072,30 @@ async function pollMachines(){
   if(mode!=='db'||document.hidden)return;
   try{const r=await WA.rest('workspaces?id=like.dedes-machine-*&select=id,data');let ch=false;
     for(const row of (r||[])){if(!row||!isObj(row.data))continue;const old=MACH[row.id];if(!old||old.lastAt!==row.data.lastAt||old.agentAt!==row.data.agentAt)ch=true;MACH[row.id]=row.data}
-    if(ch)render()}catch(e){}
+    if(ch){render();if(Date.now()-sfKick>20000){sfKick=Date.now();setTimeout(()=>loadShopflow().then(render).catch(()=>{}),12000)}}}catch(e){}
 }
+let sfKick=0;
 const machOf=it=>{if(!it)return null;for(const k in MACH){const m=MACH[k];if(m&&m.type===it.t)return m}return null};
 const machLive=it=>{const m=machOf(it);return m&&m.lastAt&&Date.now()-m.lastAt<MACH_IDLE?m:null};
-function machProject(m){
+function machProject(m){const o=machOrder(m);return o&&o.label?o.label:(m&&m.last&&m.last.code?String(m.last.code).split(/[\\/]/).pop().replace(/\.[A-Za-z0-9]{1,5}$/,'').replace(/[_\-\s.]+$/,''):'')}
+function machOrder(m){
   if(!m||!m.last||!m.last.code)return'';
   const raw=String(m.last.code),base=raw.split(/[\\/]/).pop().replace(/\.[A-Za-z0-9]{1,5}$/,''),U=base.toUpperCase(),P=U.replace(/[_-]\d+[A-Z]?$/i,'').replace(/[_-][^_-]*$/,'');
   const o=SF.orders.find(o=>o.parts&&(o.parts.includes(raw)||o.parts.includes(base)))||SF.orders.find(o=>o.num.toUpperCase()===U||o.sw.toUpperCase()===U)||SF.orders.find(o=>P&&(o.sw.toUpperCase()===P||o.num.toUpperCase()===P||U.startsWith(o.sw.toUpperCase()+'_')&&o.sw));
-  if(o)return o.label;
+  if(o)return o;
   /* a program name (GEL_Salionas1_79_) → the project whose name holds most of its pieces */
   const nn=v=>String(v||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'');
   let tk=base.split(/[_\-\s.]+/).filter(Boolean);while(tk.length>1&&/^\d+[a-z]?$/i.test(tk[tk.length-1]))tk.pop();tk=tk.map(nn).filter(x=>x.length>=2);
   let best=null,bs=0,sec=0;for(const q of SF.orders){const h=nn(q.label);let sc=0;for(const x of tk)if(h.includes(x))sc+=x.length;if(sc>bs){sec=bs;bs=sc;best=q}else if(sc>sec)sec=sc}
-  return best&&bs>=6&&bs>sec?best.label:base.replace(/[_\-\s.]+$/,'')}
+  return best&&bs>=6&&bs>sec?best:null}
+/* who runs the machine: ShopFlow's person on that project's running step (the scan is the timer there) */
+function machOperator(id){
+  const it=LAY().items[id],m=machLive(it);if(!m)return null;
+  const o=machOrder(m);if(!o||!o.ops)return null;
+  const pref=/cnc|gr[eė][žz]|drill|bor/i;
+  const op=o.ops.find(x=>x.s==='running'&&pref.test(x.st))||o.ops.find(x=>x.s==='running')||o.ops.find(x=>pref.test(x.st));
+  const pid=op&&(op.as[0]||op.a);const n=pid&&SF.byId&&SF.byId[pid];
+  return n?['auto:'+id,{n:n,at:id,ts:m.lastAt,pr:o.label,auto:1}]:null}
 const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).filter(e=>!e[1].pz).length===0};
 /* a machine runs while someone is checked in at it (Volter and the compressor also when set running today);
    "not working" wins; breaks show as a pause */
@@ -1163,7 +1175,7 @@ function itemSVG(id,it){
   if(ppl.length){
     s+='<g transform="rotate('+rot+')" filter="url(#sh)">';
     ppl.forEach((e,i)=>{const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],face=Math.atan2(-ax,ay)*180/Math.PI;
-      s+='<g class="fig'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><g class="wk" style="animation-delay:-'+(i*1.3+(e[0].charCodeAt(e[0].length-1)%7)*.4)+'s"><ellipse class="bd ar" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd ar ar2" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g></g>'});
+      s+='<g class="fig'+(selPerson===e[0]?' sel':'')+(e[1].auto?' auto':'')+'"'+(e[1].auto?'':' data-pid="'+esc(e[0])+'"')+' transform="translate('+ax+','+ay+') rotate('+face+') scale(1.3)"><g class="wk" style="animation-delay:-'+(i*1.3+(e[0].charCodeAt(e[0].length-1)%7)*.4)+'s"><ellipse class="bd ar" cx="-16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd ar ar2" cx="16" cy="-13" rx="5.5" ry="12"/><ellipse class="bd" cx="0" cy="0" rx="22" ry="12"/><circle class="hd" cx="0" cy="-2" r="10"/><circle class="hr" cx="0" cy="0" r="7"/></g></g>'});
     s+='</g>';
   }
   /* the name tag sits right beside the person, on the side away from the station */
@@ -1171,7 +1183,7 @@ function itemSVG(id,it){
     const o=standAt(it,T,W,H,e[1],i),ax=o[0],ay=o[1],wx=ax*Math.cos(a)-ay*Math.sin(a),wy=ax*Math.sin(a)+ay*Math.cos(a);
     const nm=String(e[1].n||'?'),pr=String(e[1].pr||'').slice(0,26),hh=pr?68:42,w=Math.max(84,nm.length*16+36,pr.length*11.5+36);
     const side=Math.abs(wx)>=Math.abs(wy),px=side?wx+(wx<0?-1:1)*(36+w*fp/2):wx,py=side?wy:wy+(wy<0?-1:1)*(36+hh*fp/2);
-    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+'" data-pid="'+esc(e[0])+'" transform="translate('+px+','+py+') scale('+fp+')"><rect x="'+(-w/2)+'" y="'+(-hh/2)+'" width="'+w+'" height="'+hh+'" rx="21"/><text y="'+(31-hh/2)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" y="'+(57-hh/2)+'">'+esc(pr)+'</text>':'')+'</g>';
+    s+='<g class="pill'+(selPerson===e[0]?' sel':'')+(e[1].auto?' auto':'')+'"'+(e[1].auto?'':' data-pid="'+esc(e[0])+'"')+' transform="translate('+px+','+py+') scale('+fp+')"><rect x="'+(-w/2)+'" y="'+(-hh/2)+'" width="'+w+'" height="'+hh+'" rx="21"/><text y="'+(31-hh/2)+'">'+esc(nm)+'</text>'+(pr?'<text class="pp" y="'+(57-hh/2)+'">'+esc(pr)+'</text>':'')+'</g>';
   });
   return s+'</g>';
 }
