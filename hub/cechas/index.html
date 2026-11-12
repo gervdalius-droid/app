@@ -274,6 +274,11 @@ body.ci #ci{display:block;max-width:560px;margin:0 auto;padding:max(16px,env(saf
 #ci .go{font:inherit;font-family:var(--display);font-size:24px;font-weight:700;letter-spacing:.03em;border:0;border-radius:12px;padding:16px;background:var(--run);color:#fff;cursor:pointer}
 #ci .stop{font:inherit;font-size:17px;font-weight:600;border:2px solid var(--line);border-radius:12px;padding:13px;background:var(--panel);color:var(--ink);cursor:pointer}
 #ci .go:disabled,#ci .stop:disabled{opacity:.5}
+#ci.modal{display:flex;position:fixed;inset:0;z-index:27;background:rgba(20,24,22,.5);overflow:auto;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 16px max(12px,env(safe-area-inset-left,0px))}
+#ci.modal .cin{position:relative;width:min(600px,100%);background:var(--bg);border-radius:18px;padding:18px 18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.3);margin-top:3vh}
+#ci.modal h1{font-size:28px;padding-right:44px}
+#ci.modal .cix{position:absolute;top:14px;right:14px}
+#ci.modal .done button+button{margin-left:6px}
 #ci .hereL{margin:4px 0 0}
 #ci .hrow{display:flex;align-items:center;gap:8px;padding:8px 0;border-top:1px solid var(--line)}
 #ci .hereL h2+.hrow{border-top:0}
@@ -1208,7 +1213,7 @@ $('#radio').addEventListener('click',e=>{const b=e.target.closest('[data-r]');if
   else if(k==='go')playSt({n:b.dataset.n,u:b.dataset.u});
   else if(k==='star')toggleFav({n:b.dataset.n,u:b.dataset.u})});
 $('#radio').addEventListener('input',e=>{if(e.target.id==='r-vol'){AU.volume=+e.target.value;lsSet('cp.vol',String(AU.volume))}else if(e.target.id==='r-q')searchRadio(e.target.value)});
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RS.open){RS.open=false;renderRadio()}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&RS.open){RS.open=false;renderRadio()}else if(e.key==='Escape'&&CIM)ciClose()});
 function renderHeader(){
   document.documentElement.lang=lang;
   $('#ttl').textContent=(tvOn()?'':'Dėdės Baldai · ')+t('ttl');
@@ -1360,7 +1365,7 @@ function renderRail(){
   $('#rail').innerHTML=s;
 }
 function render(){
-  if(CHK)renderCI();
+  if(CHK||CIM)renderCI();
   if(selItem&&!LAY().items[selItem])selItem=null;
   if(selPerson&&!ST().people[selPerson])selPerson=null;
   renderHeader();renderMap();if(view==='3d')build3D();
@@ -1697,7 +1702,7 @@ function events3D(cv3){
     if(s.moved){T3.cam.user=true;saveCam();return}
     pendDel=null;const h=pick3(e);
     if(h&&h.pid&&!editing){selPerson=selPerson===h.pid?null:h.pid;render();return}
-    selPerson=null;if(h){selItem=h.id}else selItem=null;
+    selPerson=null;if(h){selItem=h.id;if(!editing&&ciOpenFor(h.id)){render();return}}else selItem=null;
     render();
   };
   cv3.addEventListener('pointerup',up);cv3.addEventListener('pointercancel',up);
@@ -1927,6 +1932,7 @@ $('#map').addEventListener('click',e=>{
   if(g){
     selPerson=null;
     selItem=g.dataset.id;
+    if(!editing&&ciOpenFor(g.dataset.id)){render();return}
   }else selItem=null;
   render();
 });
@@ -2099,14 +2105,21 @@ function ciProjOpts(cur){
   return h;
 }
 let ciDirty=false;
+/* the same sheet opens over the plan when a machine, desk or room is clicked (not in edit mode, not on the TV) */
+let CIM=null;
+function ciOpenFor(id){
+  const it=LAY().items[id],T=it&&TYPES[it.t];if(!T||!['machine','desk','zone'].includes(T.kind)||tvOn()||mode!=='db'||CHK)return false;
+  CIM=id;Object.assign(CIS,{sel:[],pr:null,nw:'',nt:'',done:null,err:'',busy:false,st:id});
+  $('#ci').classList.add('modal');renderCI(true);return true}
+function ciClose(){if(!CIM)return;CIM=null;CIS.st=null;const b=$('#ci');b.classList.remove('modal');b.innerHTML='';selItem=null;render()}
 function renderCI(force){
-  if(!CHK)return;const box=$('#ci'),a=document.activeElement;
+  if(!CHK&&!CIM)return;const box=$('#ci'),a=document.activeElement;
   if(!force&&a&&box.contains(a)&&/^(INPUT|SELECT)$/.test(a.tagName)){ciDirty=true;return}
   ciDirty=false;const off=CHK==='off',st=ciStation(),me=meId(),ppl=Object.entries(ST().people).filter(e=>e[1]&&e[1].n).sort((x,y)=>String(x[1].n).localeCompare(String(y[1].n),'lt'));
   if(CIS.sel===null&&docs.state.loaded){CIS.sel=me?[me]:(person?['__me']:[])}
   const sel=CIS.sel||[];
   if(CIS.pr===null&&docs.state.loaded){const p1=sel.length===1&&ST().people[sel[0]];CIS.pr=(p1&&p1.at===st&&p1.pr)||lsGet('cp.lastpr')||''}
-  let h='<div class="brand">Dėdės Baldai · '+esc(t('ttl'))+'</div>';
+  let h=CIM?'<button type="button" class="x cix" data-ci="close" aria-label="✕">✕</button>':'<div class="brand">Dėdės Baldai · '+esc(t('ttl'))+'</div>';
   if(!off&&!st){
     h+='<h1>📍 '+esc(t('ciWhere'))+'</h1><section><div class="err">'+esc(t('ciGone'))+'</div><select id="ci-st"><option value=""></option>'+ciPlaces().map(([id,n])=>'<option value="'+esc(id)+'">'+esc(n)+'</option>').join('')+'</select></section>';
   }else{
@@ -2121,7 +2134,7 @@ function renderCI(force){
              '<button type="button" class="hb end" data-ci="end" data-id="'+esc(id)+'">'+esc(t('ciEnd'))+'</button></div>'}
         h+='</section>'}}
     if(CIS.done){const d=CIS.done;
-      h+='<div class="done'+(d.off?' off':'')+(d.state==='wait'?' wait':d.state==='bad'?' bad':'')+'"><strong>'+(d.state==='bad'?'⚠ ':'✓ ')+esc(d.names.join(', '))+'</strong><span>'+esc(d.line)+'</span><span>'+esc(d.state==='wait'?t('ciSaving'):d.state==='bad'?t('ciNotSaved'):t('ciSaved')+' · '+hhmm(d.t))+'</span><button type="button" data-ci="again">'+esc(t('ciNext'))+'</button></div>';
+      h+='<div class="done'+(d.off?' off':'')+(d.state==='wait'?' wait':d.state==='bad'?' bad':'')+'"><strong>'+(d.state==='bad'?'⚠ ':'✓ ')+esc(d.names.join(', '))+'</strong><span>'+esc(d.line)+'</span><span>'+esc(d.state==='wait'?t('ciSaving'):d.state==='bad'?t('ciNotSaved'):t('ciSaved')+' · '+hhmm(d.t))+'</span><button type="button" data-ci="again">'+esc(t('ciNext'))+'</button>'+(CIM?'<button type="button" data-ci="close">'+esc(t('qrClose'))+'</button>':'')+'</div>';
     }else{
       h+='<section><h2>'+esc(t('ciWho'))+'</h2><div class="who">';
       if(!me&&person)h+='<button type="button" data-ci="p" data-id="__me" aria-pressed="'+sel.includes('__me')+'">'+esc(person.name)+'<small>'+esc(t('ciMe'))+' · '+esc(t('ciAdd'))+'</small></button>';
@@ -2137,6 +2150,7 @@ function renderCI(force){
          '<button type="button" class="stop" data-ci="stop"'+(CIS.busy?' disabled':'')+'>'+esc(off?t('ciLeave'):t('ciStop'))+'</button></div>';
     }
   }
+  if(CIM){box.innerHTML='<div class="cin">'+h+'</div>';return}
   h+='<div class="foot"><a href="'+esc(location.pathname)+'">'+esc(t('ciPlan'))+'</a><button type="button" data-ci="day">📋 '+esc(t('dvMine'))+'</button>'+(person?'<button type="button" data-ci="out">'+esc(t('ciOut'))+' ('+esc(person.name)+')</button>':'')+'</div>';
   box.innerHTML=h;
 }
@@ -2179,6 +2193,7 @@ $('#ci').addEventListener('click',e=>{const b=e.target.closest('[data-ci]');if(!
   else if(k==='start')ciSubmit(false);
   else if(k==='stop')ciSubmit(true);
   else if(k==='pause'||k==='resume'||k==='end')ciAct(b.dataset.id,k);
+  else if(k==='close')ciClose();
   else if(k==='again'){CIS.done=null;CIS.sel=[];CIS.nt='';renderCI(true)}
   else if(k==='day'){dvOpen(true,(CIS.sel&&CIS.sel.length===1&&CIS.sel[0]!=='__me')?CIS.sel[0]:(meId()||''))}
   else if(k==='out'){setPerson(null);CIS.sel=null;authOpen().then(()=>{CIS.sel=null;renderCI(true)})}});
