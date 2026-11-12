@@ -16,6 +16,9 @@
      completed. All of this goes through ShopFlow's own start / pause /
      complete, so ShopFlow keeps the times and saves as usual. It only
      runs on a ShopFlow screen that is live (in sync), never on stale data.
+   - The database now does the same around the clock (Edge Function
+     cechas-sync, 0015). While it reports in (cechas_sync), screens leave
+     the work to it; if it stops, the screens take over again.
    Read-only towards the plan: this file never writes its data.
    ============================================================ */
 "use strict";
@@ -79,6 +82,8 @@ var Cechas = {
       if (r.error) throw r.error;
       this.data = r.data && r.data[0] ? r.data[0].data : null;
       this.at = Date.now(); this.err = false;
+      var h = await Sync.client.from("cechas_sync").select("done_at,err,err_at").limit(1);
+      this.server = !h.error && h.data && h.data[0] || null;
     } catch (e) { this.err = true; }
     this.paintBtn();
     if (document.querySelector("#cechas-panel")) this.paintPanel();
@@ -114,7 +119,13 @@ var Cechas = {
     var k = this.norm(name);
     return k ? (Store.state.members || []).find(m => this.norm(m.name) === k) || null : null;
   },
+  /* the server sync ran in the last 30 minutes without failing since */
+  serverOn() {
+    var s = this.server, done = s && s.done_at ? Date.parse(s.done_at) : 0, bad = s && s.err_at ? Date.parse(s.err_at) : 0;
+    return !!done && Date.now() - done < 30 * 60000 && !(bad > done);
+  },
   reconcile() {
+    if (this.serverOn()) return;
     if (!this.data || typeof D === "undefined" || typeof M === "undefined" || typeof Sync === "undefined" || Sync.status !== "live" || Sync._applying) return;
     var ppl = this.state().people || {}, items = this.layout().items || {}, d0 = this.dayStart(), did = 0;
     /* people the plan speaks for today (placed, moved or finished today): member id → the job they are on, or null */
