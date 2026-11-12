@@ -839,8 +839,7 @@ var SWOOD = {
     try {
       for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
         var _p = _step10.value;
-        var s = _p.solid || "";
-        modules.add(s.startsWith(_p.name + "_") ? s.slice(_p.name.length + 1) : s || _p.name);
+        modules.add(D.cabinetOf(_p, parsed.project) || _p.name);
       }
       /* Stages are resolved by name, so this works on a shop's own station list
          and not just the seed's ids. A stage the shop does not have is left out
@@ -862,8 +861,9 @@ var SWOOD = {
     var cutSt = D.stationFor("cut") || D.stationsOf("prod")[0];
     var cutting = opts.cutStation || (cutSt || {}).id;
     var anyEdged = [...byBoard.values()].some(g => g.edged);
+    var noMat = parsed.parts.filter(p => D.noMaterial(p.board, p.notes));
     var items = [...byBoard.values()].sort((a, b) => b.pieces - a.pieces).map(g => ({
-      name: g.board,
+      name: D.noMaterial(g.board) ? "Medžiaga nepriskirta (SWOOD)" : g.board,
       qty: g.pieces,
       partCodes: g.parts.map(p => p.code),
       route: [cutting, ...(g.edged && edgeSt ? [edgeSt.id] : []), ...(cncSt ? [cncSt.id] : [])].filter(Boolean)
@@ -875,6 +875,7 @@ var SWOOD = {
     }[k])).filter(Boolean).map(st => st.id);
     /* only complain about edge banding if something actually needs it */
     var missing = warnRoute.filter(w => w !== "Edge banding" || anyEdged);
+    if (noMat.length) (parsed.warnings || (parsed.warnings = [])).push(`${noMat.length} part${noMat.length === 1 ? "" : "s"} with no material assigned in SWOOD (“(be medziagos)”): ${noMat.map(p => p.code).join(", ")} — check them in SolidWorks; they are listed as “Medžiaga nepriskirta (SWOOD)”`);
     return {
       project: parsed.project,
       items,

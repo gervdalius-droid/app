@@ -4746,6 +4746,34 @@ var D = {
      their parts kept SOLIDNAME we can rebuild the real names from those; if
      they did not, there is genuinely nothing to recover and they get numbered.
      Mirrors what SWOOD.plan() does at import time, deliberately. */
+  /* Which cabinet a SWOOD panel belongs to, from its SOLIDNAME:
+       DESINE_1_DAL_KOJOS_PL_GEL_Salionas1_2                  → 1_DAL_KOJOS_PL_GEL_Salionas1_2
+       FASADAS1_FASADAI_VERT_1_DAL_KOJOS_PL_GEL_Salionas1_2_1 → 1_DAL_KOJOS_PL_GEL_Salionas1_2
+       LENTYNA PAK_LENTYNA PAK_1_DAL_KOJOS_PL_GEL_Salionas1_3_2 → 1_DAL_KOJOS_PL_GEL_Salionas1_3
+     The cabinet type starts at the first number before the project code and
+     the cabinet is the first number after it; anything after that is a
+     sub-assembly (a facade, a shelf pack) inside the same cabinet. */
+  cabinetOf(p, project) {
+    var s = String(p && p.solid || "");
+    var name = String(p && p.name || "");
+    if (!s) return name;
+    var proj = String(project || "");
+    var at = proj ? s.lastIndexOf(proj) : -1;
+    if (at < 0) return s.startsWith(name + "_") ? s.slice(name.length + 1) : s; // the old rule
+    var before = s.slice(0, at).replace(/_+$/, "");
+    var inst = /^_(\d+)/.exec(s.slice(at + proj.length));
+    if (name && before.indexOf(name + "_") === 0) before = before.slice(name.length + 1);
+    else if (name && before === name) before = "";
+    var toks = before.split("_").filter(Boolean);
+    var i = toks.findIndex(t => /^\d+$/.test(t));
+    var type = i >= 0 ? toks.slice(i).join("_") : "";
+    if (!type) type = before && toks.length === 1 ? toks[0] : name; // a single piece such as PLINTUSAS
+    return (type ? type + "_" : "") + proj + (inst ? "_" + inst[1] : "");
+  },
+  /* SWOOD writes "(be medziagos)" when a part has no material assigned — a check, not a material */
+  noMaterial(board, notes) {
+    return /be\s*med[zž]iag/i.test(String(board || "")) || /nepriskirta/i.test(String(notes || ""));
+  },
   moduleNamesFromParts(o) {
     var out = new Set();
     var _iterator57 = _createForOfIteratorHelper(o.parts || []),
@@ -4755,7 +4783,7 @@ var D = {
         var p = _step57.value;
         var solid = p.solid || "";
         if (!solid) continue;
-        out.add(solid.startsWith(p.name + "_") ? solid.slice(p.name.length + 1) : solid);
+        out.add(this.cabinetOf(p, o.swood && o.swood.project));
       }
     } catch (err) {
       _iterator57.e(err);

@@ -4928,10 +4928,9 @@ var OrderDetail = {
 
     /* which materials each cabinet needs, so you can see at a glance whether
        the parts for it have actually been cut yet */
-    var boards = name => {
-      var parts = (o.parts || []).filter(p => (p.solid || "").includes(name) || (p.name || "") === name);
-      return [...new Set(parts.map(p => p.board))].filter(Boolean);
-    };
+    var proj = o.swood && o.swood.project;
+    var partsOf = name => (o.parts || []).filter(p => p.solid ? D.cabinetOf(p, proj) === name : (p.name || "") === name);
+    var boards = name => [...new Set(partsOf(name).filter(p => !D.noMaterial(p.board, p.notes)).map(p => p.board))].filter(Boolean);
     var cutFor = board => {
       var item = o.items.find(i => i.name === board);
       if (!item) return null;
@@ -4948,11 +4947,14 @@ var OrderDetail = {
       <div class="mod-list">
         ${mods.map(m => {
       var bs = boards(m.name);
+      var ps = partsOf(m.name);
+      var nm = ps.filter(p => D.noMaterial(p.board, p.notes));
       var blocked = bs.filter(b => cutFor(b) === "no");
       return `<label class="mod-row ${m.done >= (m.qty || 1) ? "on" : ""}">
             <input type="checkbox" data-mod="${m.id}" ${m.done >= (m.qty || 1) ? "checked" : ""} ${canEdit ? "" : "disabled"}>
             <span class="grow"><b ${canEdit ? `data-mod-name="${m.id}" title="Click to rename"` : ""}>${esc(m.name)}</b>
-              ${bs.length ? `<span class="mod-mats">${bs.map(b => `<span class="mod-mat ${cutFor(b) || ""}">${esc(b)}</span>`).join("")}</span>` : ""}</span>
+              ${bs.length || nm.length ? `<span class="mod-mats">${bs.map(b => `<span class="mod-mat ${cutFor(b) || ""}">${esc(b)}</span>`).join("")}${nm.length ? `<span class="mod-mat nomat" title="${esc(nm.map(p => p.code + " " + p.name).join(", "))}">${icon("alert", 11)} <span>no material</span> · ${esc(nm.map(p => p.code).join(", "))}</span>` : ""}</span>` : ""}
+              ${ps.length ? `<span class="mod-codes" title="${esc(ps.map(p => p.code + " — " + p.name).join("\n"))}">${ps.length} <span>parts</span>: ${esc(ps.map(p => p.code).join(", "))}</span>` : ""}</span>
             ${(m.qty || 1) > 1 ? `<span class="qty-pill">${m.done}/${m.qty}</span>` : ""}
             ${blocked.length ? `<span class="mod-wait" title="Not cut yet: ${esc(blocked.join(", "))}">${icon("clock", 12)}</span>` : ""}
           </label>`;

@@ -3213,3 +3213,5 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .oc-qty { color: var(--text-2); font-size: 11.5px; }
 .oc-sum { color: var(--text-2); font-size: 12px; }
 .oc-line .avatar.xs { width: 18px; height: 18px; font-size: 9px; }
+.mod-mat.nomat { background: var(--orange-soft) !important; color: var(--orange) !important; }
+.mod-codes { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); margin-top: 3px; white-space: normal; word-break: break-word; }
