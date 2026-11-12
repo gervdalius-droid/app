@@ -117,6 +117,35 @@ a.L-part:focus-visible{outline:none}
 .L-legend i{width:12px;height:4px;background:var(--stage)}
 @media (max-width:960px){.L-head{grid-template-columns:1fr auto}.L-meta{grid-column:1/-1;order:3}}
 @media (max-width:900px){.L-sheet{grid-template-columns:repeat(6,minmax(0,1fr))}.L-part{grid-column:span 3;grid-row:span 1}.L-part.big{grid-column:span 6}.L-part.big .L-ico{width:64px;height:64px}}
+.M{display:none}
+@media (max-width:640px){
+  .L-meta,.L-bar,.L-ruler,.L-sheet,.L-foot{display:none!important}
+  .L-head{grid-template-columns:minmax(0,1fr) auto!important;align-items:center;gap:12px;padding-bottom:6px;border-bottom:0}
+  .L .mark{width:40px;height:40px}.L-head h1{font-size:22px;white-space:nowrap}.L-head .sub{font-size:13px;white-space:nowrap}
+  .L-head .brand{gap:10px}
+  .L-head .seg button,.L-head .ib{min-height:34px;padding:0 9px;font-size:13px}
+  #btn-theme{font-size:0;gap:0;width:36px;padding:0;justify-content:center}#btn-theme svg{width:17px;height:17px}
+  .M{display:flex;flex-direction:column;gap:22px;padding:10px 0 8px}
+  .M-g h2{display:flex;align-items:center;gap:8px;margin:0 0 12px;font:600 11px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+  .M-g h2::before{content:"";width:12px;height:4px;background:var(--stage)}
+  .M-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:18px 6px}
+  .M-app{position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;min-width:0;color:var(--ink);text-decoration:none;-webkit-tap-highlight-color:transparent}
+  .M-ico{width:62px;height:62px;border-radius:17px;display:grid;place-items:center;color:var(--stage);
+    background:color-mix(in srgb,var(--stage) 13%,var(--surface));box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--stage) 22%,transparent);
+    transition:transform .15s var(--ease)}
+  .M-ico svg{width:30px;height:30px;stroke-width:1.8}
+  a.M-app:active .M-ico{transform:scale(.92)}
+  a.M-app:focus-visible{outline:none}a.M-app:focus-visible .M-ico{outline:3px solid var(--accent);outline-offset:2px}
+  .M-name{max-width:100%;font-size:12px;line-height:1.2;font-weight:500;text-align:center;overflow-wrap:anywhere;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .M-app.off{opacity:.4}
+  /* office lock: just the padlock, on the icon's corner */
+  .M-app .lk{position:absolute!important;top:-5px;right:calc(50% - 39px);left:auto;margin:0;width:22px;height:22px;padding:0;border-radius:50%;justify-content:center;
+    background:var(--surface);box-shadow:inset 0 0 0 1px var(--line-2),0 1px 3px rgba(0,0,0,.12)}
+  .M-app .lk span{display:none!important}
+  .M-app .lk.open{background:var(--surface)}
+  .M-app:hover .lk,.M-app:focus-visible .lk{color:var(--muted)!important;background:var(--surface)!important;box-shadow:inset 0 0 0 1px var(--line-2)!important}
+}
 @media (max-width:560px){.L-head{grid-template-columns:1fr}.L-meta{gap:18px}.L-meta div:nth-child(1){display:none}.L-sheet{grid-template-columns:1fr}.L-part,.L-part.big{grid-column:1/-1}.L-search{flex:1 1 100%}.L-ruler span:nth-child(2),.L-ruler span:nth-child(4){display:none}}
 
 /* ============ STOTIS ============ */
@@ -307,9 +336,9 @@ a.Z-entry:hover .Z-k,a.Z-entry.hit .Z-k{transform:translateX(-4px)}
 {"id":"nesting","code":"DB-04","group":"cnc","icon":"nest","url":"https://app.dedesbaldai.lt/nesting/","name":{"lt":"Nesting","en":"Nesting"},"desc":{"lt":"Plokščių optimizavimas, išdėstymai ir etikečių spausdinimas","en":"Board optimisation, layouts and label printing"},"tag":{"lt":"Prisijungimas","en":"Login"}},
 {"id":"xxlfix","code":"DB-05","group":"cnc","icon":"code","url":"https://app.dedesbaldai.lt/xxl-fix/","name":{"lt":"XXL Fix","en":"XXL Fix"},"desc":{"lt":"XXL CNC programų taisymas ir rankinis detalių kūrimas","en":"Fix .XXL CNC programs and create panels by hand"}},
 {"id":"shopflow","code":"DB-06","group":"production","icon":"track","url":"https://app.dedesbaldai.lt/shopflow-app/","name":{"lt":"ShopFlow","en":"ShopFlow"},"desc":{"lt":"Gamybos sekimas dirbtuvėse","en":"Workshop production tracking"}},
-{"id":"cechas","code":"DB-10","group":"production","icon":"track","url":"https://app.dedesbaldai.lt/hub/cechas/","name":{"lt":"Cecho planas","en":"Shop floor plan"},"desc":{"lt":"Kas kur dirba, staklių būsenos, plokštės ir montavimai – 2D ir 3D","en":"Who works where, machine status, boards and installations, in 2D and 3D"}},
+{"id":"cechas","code":"DB-10","group":"production","icon":"floor","url":"https://app.dedesbaldai.lt/hub/cechas/","name":{"lt":"Cecho planas","en":"Shop floor plan"},"desc":{"lt":"Kas kur dirba, staklių būsenos, plokštės ir montavimai – 2D ir 3D","en":"Who works where, machine status, boards and installations, in 2D and 3D"}},
 {"id":"prasymai","code":"DB-07","group":"staff","icon":"doc","url":"https://app.dedesbaldai.lt/hub/prasymai/","name":{"lt":"Prašymai","en":"Requests"},"desc":{"lt":"Atostogų, tėvadienių ir mamadienių prašymai: užpildyti, pateikti, atsispausdinti","en":"Leave and parent-day requests: fill in, submit, print"}},
-{"id":"offer","code":"DB-08","group":"office","icon":"doc","url":"https://app.dedesbaldai.lt/offer/","name":{"lt":"Pasiūlymai","en":"Offers"},"desc":{"lt":"Savikaina ir pasiūlymai klientams","en":"Costing and customer offers"}},
+{"id":"offer","code":"DB-08","group":"office","icon":"euro","url":"https://app.dedesbaldai.lt/offer/","name":{"lt":"Pasiūlymai","en":"Offers"},"desc":{"lt":"Savikaina ir pasiūlymai klientams","en":"Costing and customer offers"}},
 {"id":"crm","code":"DB-09","group":"office","icon":"people","url":"https://app.dedesbaldai.lt/hub/crm/","name":{"lt":"CRM","en":"CRM"},"desc":{"lt":"Klientai, užklausos ir kiti žingsniai — viskas vienoje vietoje","en":"Clients, deals and next steps in one place"}}
 ]}</script>
 <script type="application/json" id="hub-tokens">{"lapas": {"fonts": {"display": "'Schibsted Grotesk','Helvetica Neue',sans-serif", "body": "'Schibsted Grotesk','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "3px", "r-dock": "4px"}, "light": {"bg": "#e6e8e3", "surface": "#f8f9f6", "surface-2": "#eef0ec", "ink": "#131715", "muted": "#59615b", "line": "#d2d7cf", "line-2": "#b4bbb1", "accent": "#ff4a1c", "on-accent": "#160700", "s-design": "#2f55c8", "s-cnc": "#c27c00", "s-prod": "#127c52", "s-staff": "#7a4ab8", "focus": "#ff4a1c", "shadow": "0 1px 0 rgba(19,23,21,.05),0 12px 26px -18px rgba(19,23,21,.42)"}, "dark": {"bg": "#0f1211", "surface": "#191d1b", "surface-2": "#141816", "ink": "#e9ede8", "muted": "#8e9890", "line": "#2a302c", "line-2": "#3d4540", "accent": "#ff6b3d", "on-accent": "#160700", "s-design": "#86a5ff", "s-cnc": "#f0b23a", "s-prod": "#4cc993", "s-staff": "#c3a1ff", "focus": "#ff6b3d", "shadow": "0 1px 0 rgba(0,0,0,.4),0 14px 30px -18px rgba(0,0,0,.85)"}}, "stotis": {"fonts": {"display": "'Big Shoulders Display','Arial Narrow',sans-serif", "body": "'Archivo','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "0px", "r-dock": "0px"}, "light": {"bg": "#f2f1ec", "surface": "#ffffff", "surface-2": "#e8e7e1", "ink": "#0b1015", "muted": "#535b63", "line": "#d4d3cb", "line-2": "#0b1015", "accent": "#ffc400", "on-accent": "#0b1015", "s-design": "#1f5fe0", "s-cnc": "#b88400", "s-prod": "#0e8050", "s-staff": "#7a3fd0", "focus": "#0b1015", "shadow": "none"}, "dark": {"bg": "#121c25", "surface": "#18242f", "surface-2": "#1d2b38", "ink": "#f1f4f6", "muted": "#8fa0ae", "line": "#263646", "line-2": "#f1f4f6", "accent": "#ffc93c", "on-accent": "#0b1015", "s-design": "#7fb0ff", "s-cnc": "#ffc93c", "s-prod": "#5fd39b", "s-staff": "#c9a7ff", "focus": "#ffc93c", "shadow": "none"}}, "zurnalas": {"fonts": {"display": "'Newsreader','Iowan Old Style',Georgia,serif", "body": "'Hanken Grotesk','Helvetica Neue',sans-serif", "mono": "'IBM Plex Mono',ui-monospace,Menlo,monospace", "r": "999px", "r-dock": "999px"}, "light": {"bg": "#edefe7", "surface": "#f8f9f3", "surface-2": "#e3e6db", "ink": "#0f231c", "muted": "#56645d", "line": "#cdd2c4", "line-2": "#0f231c", "accent": "#86590a", "on-accent": "#fbf8ef", "s-design": "#2d50b8", "s-cnc": "#b5470f", "s-prod": "#1d7a46", "s-staff": "#6b4a9e", "focus": "#86590a", "shadow": "none"}, "dark": {"bg": "#0d1f19", "surface": "#122a22", "surface-2": "#0a1814", "ink": "#ece9dd", "muted": "#93a89d", "line": "#1f3a30", "line-2": "#ece9dd", "accent": "#e2b766", "on-accent": "#0d1f19", "s-design": "#93abff", "s-cnc": "#ff9466", "s-prod": "#6fd29a", "s-staff": "#c2a8f0", "focus": "#e2b766", "shadow": "none"}}}</script>
@@ -340,6 +369,8 @@ var ICONS = {
   nest:'<rect x="3" y="4" width="18" height="16"/><path d="M3 12h9M12 4v16M12 9h9M7.5 12v8M12 15h5v5"/>',
   code:'<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5.5l-3 13"/>',
   track:'<path d="M4 6l1.5 1.5L8 5M11 6h9M4 12l1.5 1.5L8 11M11 12h9M11 18h9"/><circle cx="6" cy="18" r="1.6"/>',
+  floor:'<path d="M3 4h18v16H3z"/><rect x="6" y="7" width="5.5" height="4"/><rect x="13" y="13" width="5" height="4"/><circle cx="16" cy="8.8" r="1.5"/><path d="M8.7 14v3.5"/>',
+  euro:'<path d="M6 3h9l4 4v14H6zM15 3v4h4"/><path d="M15.3 12.4a3.1 3.1 0 1 0 0 4.2M9.6 13.7h4.4M9.6 15.4h4.4"/>',
   doc:'<path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5"/>',
   generic:'<rect x="4" y="4" width="16" height="16"/><path d="M8 12h8M12 8v8"/>'
 };
@@ -445,6 +476,17 @@ function controlsHTML(){
 function emptyHTML(){return '<div class="empty">'+esc(t('nomatch').replace('{q}',q))+'</div>';}
 function keysHint(list){var n=list.filter(function(x){return x.k&&x.k<=9;}).length;return n?esc(t('keys').replace('{n}',n)):'';}
 
+/* ---------- PHONE: icons with short names, grouped by stage (shown ≤640px instead of the sheet) ---------- */
+function phoneHTML(){
+  var all=keyed(ordered(DATA.apps));
+  return '<nav class="M" aria-label="'+esc(t('sub'))+'">'+GROUPS.map(function(g){
+    var xs=all.filter(function(x){return x.a.group===g.id;}); if(!xs.length) return '';
+    return '<section class="M-g" data-g="'+g.id+'"><h2>'+esc(g[lang])+'</h2><div class="M-grid">'+xs.map(function(x){
+      return link(x,'M-app','<span class="M-ico">'+svg(x.a.icon)+'</span><span class="M-name">'+esc(txt(x.a.name))+'</span>',' title="'+esc(txt(x.a.desc))+'"');
+    }).join('')+'</div></section>';
+  }).join('')+'</nav>';
+}
+
 /* ---------- LAPAS: apps as parts nested on a 2800×2070 sheet ---------- */
 var LSPANS={7:[[7,2],[5,1],[5,1],[5,1],[4,1],[3,1],[12,1]],6:[[7,2],[5,1],[5,1],[5,1],[4,1],[3,1]],5:[[7,2],[5,1],[5,1],[6,1],[6,1]],4:[[7,2],[5,1],[5,1],[12,1]],3:[[7,2],[5,1],[5,1]],2:[[7,1],[5,1]],1:[[12,1]]};
 function renderL(){
@@ -465,6 +507,7 @@ function renderL(){
       '<div><dt>'+t('week')+'</dt><dd>'+N.week+'</dd></div><div><dt>'+t('time')+'</dt><dd data-clock>'+esc(N.time)+'</dd></div></dl>'+
       controlsHTML()+'</header>'+
     '<div class="L-bar rv" style="--i:1">'+filtersHTML('L-filters')+searchHTML('L-search')+'</div>'+
+    phoneHTML()+
     (list.length?'<div class="L-ruler" aria-hidden="true"><span>0</span><span>700</span><span>1400</span><span>2100</span><span>2800 mm</span></div><div class="L-sheet">'+parts+'</div>':emptyHTML())+
     '<footer class="L-foot"><span class="L-legend">'+t('legend')+':'+GROUPS.map(function(g){return '<span data-g="'+g.id+'"><i></i>'+esc(g[lang])+'</span>';}).join('')+'</span><span>'+keysHint(list)+'</span></footer>'+
   '</div>';
