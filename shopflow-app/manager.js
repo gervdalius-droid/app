@@ -1271,10 +1271,7 @@ var Mgr = {
     }) => `<div class="board-col" data-drop="${st.id}">
           <header><span class="ico">${stIcon(st, 15)}</span><b>${esc(st.name)}</b><span class="count-badge">${q.length}</span></header>
           <div class="board-col-cards">
-            ${q.length ? q.map(({
-      order,
-      op
-    }) => this.orderCard(order, op)).join("") : `<div class="col-empty">No tasks here</div>`}
+            ${q.length ? this.cardsFor(q) : `<div class="col-empty">No tasks here</div>`}
           </div>
         </div>`).join("")}
         <div class="board-col" data-drop="__ready">
@@ -1330,10 +1327,7 @@ var Mgr = {
           </span>
           ${g.overdue ? `<span class="due-chip bad" title="${g.overdue} of ${g.orders.length} past due">${g.overdue} <span>late</span></span>` : due ? `<span class="due-chip ${due.cls}">${due.label}</span>` : ""}
         </div>
-        ${cells.map(c => `<div class="bg-cell ${c.cards.length ? "" : "none"}" data-drop="${c.drop}">${c.cards.map(({
-        order,
-        op
-      }) => this.orderCard(order, op)).join("")}</div>`).join("")}
+        ${cells.map(c => `<div class="bg-cell ${c.cards.length ? "" : "none"}" data-drop="${c.drop}">${this.cardsFor(c.cards)}</div>`).join("")}
       </div>`;
     };
     return `<div class="board-wrap">
@@ -1344,6 +1338,65 @@ var Mgr = {
     </div>`;
   },
   /* A card = one TASK (lane op) — an order with parallel lanes appears in several columns */
+  /* One card per project in a column: a SWOOD job sends each material through
+     its own route, so a column would otherwise show the same project once per
+     material. The materials become rows inside the one card instead. */
+  cardsFor(q) {
+    var groups = [], at = {};
+    q.forEach(x => {
+      var k = x.order.id;
+      if (!x.op) { groups.push({ order: x.order, ops: [null] }); return; }
+      if (at[k] === undefined) { at[k] = groups.length; groups.push({ order: x.order, ops: [] }); }
+      groups[at[k]].ops.push(x.op);
+    });
+    return groups.map(g => g.ops.length === 1 ? this.orderCard(g.order, g.ops[0]) : this.orderCardMulti(g.order, g.ops)).join("");
+  },
+  orderCardMulti(order, ops) {
+    var due = fmtDue(order.due);
+    var p = D.progress(order);
+    var short = D.orderShortages(order).length;
+    var live = ops.some(op => op.status === "running");
+    var showNum = order.num !== order.product;
+    var showClient = order.client && order.client !== order.product;
+    var done = 0, total = 0;
+    ops.forEach(op => { var it = D.item(order, op.itemId); total += it ? it.qty : 0; done += Math.min(op.qtyDone || 0, it ? it.qty : 0); });
+    var blocked = ops.filter(op => op.status === "blocked");
+    var line = op => {
+      var it = D.item(order, op.itemId);
+      var who = D.opAssignees(op)[0] || D.member(op.assigneeId);
+      var label = [it ? it.name : "", op.group || ""].filter(Boolean).join(" · ") || "—";
+      return `<div class="oc-line s-${op.status}" draggable="true" data-order="${order.id}" data-op="${op.id}" title="${esc(label)} — drag to move just this material">
+        <span class="oc-dot"></span>
+        <span class="oc-mat">${esc(label)}</span>
+        ${op.status === "running" ? `<span class="t t-num oc-timer" data-timer="${order.id}/${op.id}" data-timer-style="clock">${fmtClock(D.opElapsed(op))}</span>` : ""}
+        <span class="oc-qty t-num">${it ? `${op.qtyDone || 0}/${it.qty}` : ""}</span>
+        ${who ? avatarHtml(who, "xs") : ""}
+      </div>`;
+    };
+    return `<div class="order-card multi ${live ? "live" : ""}" data-order="${order.id}">
+      <div class="top">
+        ${showNum ? `<span class="num">${esc(order.num)}</span>` : ""}
+        ${prioHtml(order.priority)}
+        ${short ? `<span title="Material shortage" style="color:var(--red)">${icon("trend-down", 13)}</span>` : ""}
+        <span class="grow"></span>
+        ${odCloudHtml(order)}
+        <span class="due-chip ${due.cls}">${due.label}</span>
+      </div>
+      <div class="title">${esc(order.product)}</div>
+      ${showClient ? `<div class="client">${esc(order.client)}</div>` : ""}
+      <div class="oc-lines">${ops.map(line).join("")}</div>
+      ${blocked.length ? `<div class="blocked-note">${icon("ban", 12)} ${esc(blocked.map(op => op.blockNote || "Blocked").join(" · "))}</div>` : ""}
+      ${(() => {
+      var n = D.unreadComments(order, App.me.id);
+      return n ? `<div class="card-remarks">${icon("send", 12)}<span>${n} <span>new remark${n === 1 ? "" : "s"}</span></span></div>` : "";
+    })()}
+      <div class="bottom">
+        ${stepsMini(order)}
+        <span class="grow"></span>
+        <span class="t-num oc-sum" title="Pieces through this step">${done}/${total}</span>
+      </div>
+    </div>`;
+  },
   orderCard(order, op) {
     var due = fmtDue(order.due);
     var p = D.progress(order);
@@ -1495,9 +1548,10 @@ var Mgr = {
       });
     });
     var dragRef = null; // {orderId, opId}
-    $$(".order-card", root).forEach(card => {
-      card.onclick = () => Drawer.open(card.dataset.order);
+    $$(".order-card, .oc-line", root).forEach(card => {
+      if (card.classList.contains("order-card")) card.onclick = () => Drawer.open(card.dataset.order);
       card.ondragstart = e => {
+        e.stopPropagation();
         dragRef = {
           orderId: card.dataset.order,
           opId: card.dataset.op || null

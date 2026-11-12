@@ -3194,3 +3194,22 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .sl-quick { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .sl-quick .mini-act { padding: 4px 10px; border-radius: 8px; background: var(--surface-2); font-size: 12px; font-weight: 600; }
 .sl-text { margin: 0; padding: 12px 14px; border-radius: var(--r-md); background: var(--surface-2); font: 12px/1.6 var(--font-mono, ui-monospace, Menlo, monospace); white-space: pre; overflow: auto; max-height: 56vh; min-height: 200px; }
+
+/* one card per project per step: its materials as rows */
+.order-card.multi { cursor: pointer; }
+.oc-lines { display: flex; flex-direction: column; gap: 4px; }
+.oc-line { display: flex; align-items: center; gap: 7px; padding: 5px 8px; border-radius: 8px; background: var(--surface-2); font-size: 12px; font-weight: 600; cursor: grab; min-width: 0; }
+.oc-line:hover { background: color-mix(in srgb, var(--accent) 8%, var(--surface-2)); }
+.oc-line:active { cursor: grabbing; }
+.oc-line.dragging { opacity: .45; }
+.oc-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex: none; opacity: .5; }
+.oc-line.s-running .oc-dot { background: var(--green); opacity: 1; animation: live-pulse 1.6s ease-in-out infinite; }
+.oc-line.s-paused .oc-dot { background: var(--orange); opacity: 1; }
+.oc-line.s-blocked .oc-dot { background: var(--red); opacity: 1; }
+.oc-line.s-running { background: color-mix(in srgb, var(--green) 13%, var(--surface)); color: var(--green); }
+.oc-mat { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--teal, var(--text)); }
+.oc-line.s-running .oc-mat { color: inherit; }
+.oc-timer { font-family: var(--font-mono); font-size: 11px; }
+.oc-qty { color: var(--text-2); font-size: 11.5px; }
+.oc-sum { color: var(--text-2); font-size: 12px; }
+.oc-line .avatar.xs { width: 18px; height: 18px; font-size: 9px; }
