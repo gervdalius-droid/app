@@ -889,5 +889,12 @@ var LT = {
   "The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.": "SCM Startech pagalbininkas siunčia kiekvieną staklėse nuskenuotą lipduką. Kiekvienas skenavimas įskaito detalę (arba paleidžia projekto etapą) čia pasirinktame etape. Sąraše matosi, ką šis ekranas padarė su paskutiniais skenavimais.",
   "Scan log": "Skenavimų žurnalas",
   "Scans": "Skenavimai",
-  "no material": "medžiaga nepriskirta"
+  "no material": "medžiaga nepriskirta",
+  "Numbers from drawings": "Numeriai iš brėžinių",
+  "Number on the drawings": "Numeris brėžiniuose",
+  "Number on the drawings (e.g. SP-1)": "Numeris brėžiniuose (pvz. SP-1)",
+  "The cabinet list the drawing tool writes next to the PDF (…_SPINTELES.csv) — or drop it anywhere on the project": "Spintelių sąrašas, kurį brėžinių programa įrašo šalia PDF (…_SPINTELES.csv) — arba numeskite jį bet kur ant projekto",
+  "No cabinets found in that file": "Šiame faile spintelių nerasta",
+  "Cabinet numbers from the drawings": "Spintelių numeriai iš brėžinių",
+  "not found": "nerasta"
 };

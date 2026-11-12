@@ -3215,3 +3215,9 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .oc-line .avatar.xs { width: 18px; height: 18px; font-size: 9px; }
 .mod-mat.nomat { background: var(--orange-soft) !important; color: var(--orange) !important; }
 .mod-codes { display: block; font-family: var(--font-mono); font-size: 11px; color: var(--text-3); margin-top: 3px; white-space: normal; word-break: break-word; }
+.mod-num { display: inline-block; min-width: 38px; margin-right: 6px; padding: 1px 6px; border-radius: 6px; background: var(--accent-soft, rgba(0,122,255,.12)); color: var(--accent, #007aff); font-variant-numeric: tabular-nums; text-align: center; }
+.mod-num.empty { background: transparent; color: var(--text-3); border: 1px dashed var(--line, rgba(0,0,0,.15)); font-weight: 500; }
+.mod-key { font-size: 11px; color: var(--text-3); font-weight: 400; }
+.mod-title { display: flex; align-items: baseline; gap: 0; flex-wrap: wrap; }
+.mod-row b.mod-num { display: inline-block; font-size: 13px; font-weight: 650; cursor: pointer; }
+.mod-row .mod-key { display: block; }

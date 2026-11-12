@@ -1215,7 +1215,12 @@ var ProjectDrop = {
       if (e.target && e.target.closest && e.target.closest("input, textarea") && !dt.files.length) return;
       e.preventDefault();
       if (dt.files && dt.files.length) {
-        ProjectFiles.add(o, dt.files).then(() => this._done(o));
+        /* the drawing tool's cabinet list numbers the cabinets instead of being attached */
+        var files = [].slice.call(dt.files);
+        var lists = files.filter(f => /spintel|cabinet/i.test(f.name) && /\.(csv|txt|tsv)$/i.test(f.name) && D.hasModules(o));
+        lists.forEach(f => OrderDetail.cabinetListFile(o.id, f));
+        files = files.filter(f => lists.indexOf(f) < 0);
+        if (files.length) ProjectFiles.add(o, files).then(() => this._done(o));
       } else {
         this._fromData(o, dt);
       }

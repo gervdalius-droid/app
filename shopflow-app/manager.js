@@ -4930,6 +4930,7 @@ var OrderDetail = {
        the parts for it have actually been cut yet */
     var proj = o.swood && o.swood.project;
     var partsOf = name => (o.parts || []).filter(p => p.solid ? D.cabinetOf(p, proj) === name : (p.name || "") === name);
+    var keyOf = m => m.key || m.name;
     var boards = name => [...new Set(partsOf(name).filter(p => !D.noMaterial(p.board, p.notes)).map(p => p.board))].filter(Boolean);
     var cutFor = board => {
       var item = o.items.find(i => i.name === board);
@@ -4939,20 +4940,21 @@ var OrderDetail = {
     };
     return `<div>
       <div class="t-label" style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-        <span class="grow">Cabinets — ${done} of ${total} assembled${st ? ` · counted at ${esc(st.name)}` : ""}</span>
+        <span class="grow" style="min-width:180px">Cabinets — ${done} of ${total} assembled${st ? ` · counted at ${esc(st.name)}` : ""}</span>
         ${canEdit ? `<button class="link" id="mod-count">${mods.length} <span>cabinets — not right?</span></button>` : ""}
+        ${canEdit ? `<button class="link" id="mod-nums" title="${esc(I18N.t("The cabinet list the drawing tool writes next to the PDF (…_SPINTELES.csv) — or drop it anywhere on the project"))}">${icon("import", 12)} <span>Numbers from drawings</span></button>` : ""}
         ${canEdit && done < total ? `<button class="link" id="mod-all">Tick all</button>` : ""}
         ${canEdit && done > 0 ? `<button class="link" id="mod-none">Clear</button>` : ""}
       </div>
       <div class="mod-list">
         ${mods.map(m => {
-      var bs = boards(m.name);
-      var ps = partsOf(m.name);
+      var bs = boards(keyOf(m));
+      var ps = partsOf(keyOf(m));
       var nm = ps.filter(p => D.noMaterial(p.board, p.notes));
       var blocked = bs.filter(b => cutFor(b) === "no");
       return `<label class="mod-row ${m.done >= (m.qty || 1) ? "on" : ""}">
             <input type="checkbox" data-mod="${m.id}" ${m.done >= (m.qty || 1) ? "checked" : ""} ${canEdit ? "" : "disabled"}>
-            <span class="grow"><b ${canEdit ? `data-mod-name="${m.id}" title="Click to rename"` : ""}>${esc(m.name)}</b>
+            <span class="grow"><span class="mod-title">${m.num || canEdit ? `<b class="mod-num ${m.num ? "" : "empty"}" ${canEdit ? `data-mod-num="${m.id}" title="${esc(I18N.t("Number on the drawings"))}"` : ""}>${esc(m.num || "SP-?")}</b>` : ""}<b ${canEdit ? `data-mod-name="${m.id}" title="Click to rename"` : ""}>${esc(m.name)}</b></span>${m.key && m.key !== m.name ? `<span class="mod-key">${esc(m.key)}</span>` : ""}
               ${bs.length || nm.length ? `<span class="mod-mats">${bs.map(b => `<span class="mod-mat ${cutFor(b) || ""}">${esc(b)}</span>`).join("")}${nm.length ? `<span class="mod-mat nomat" title="${esc(nm.map(p => p.code + " " + p.name).join(", "))}">${icon("alert", 11)} <span>no material</span> · ${esc(nm.map(p => p.code).join(", "))}</span>` : ""}</span>` : ""}
               ${ps.length ? `<span class="mod-codes" title="${esc(ps.map(p => p.code + " — " + p.name).join("\n"))}">${ps.length} <span>parts</span>: ${esc(ps.map(p => p.code).join(", "))}</span>` : ""}</span>
             ${(m.qty || 1) > 1 ? `<span class="qty-pill">${m.done}/${m.qty}</span>` : ""}
@@ -4961,6 +4963,18 @@ var OrderDetail = {
     }).join("")}
       </div>
     </div>`;
+  },
+  /* read the drawing tool's cabinet list and number the cabinets from it */
+  cabinetListFile(orderId, file) {
+    return file.text().then(t => {
+      var rows = D.parseCabinetList(t);
+      if (!rows.length) { Toast.show(I18N.t("No cabinets found in that file"), { emoji: "alert" }); return; }
+      var r = M.applyCabinetList(orderId, rows, App.me.id);
+      Toast.show(I18N.t("Cabinet numbers from the drawings") + `: ${r.matched}/${rows.length}` + (r.missed.length ? ` · ${I18N.t("not found")}: ${r.missed.join(", ")}` : ""), { emoji: r.missed.length ? "alert" : "check", ms: r.missed.length ? 9000 : 4000 });
+      App.render();
+      Drawer.refresh();
+      if (this._sheetId === orderId) this.refreshSheet();
+    });
   },
   showAllHist: false,
   html(o) {
@@ -5451,6 +5465,24 @@ var OrderDetail = {
     if (modCount) modCount.onclick = () => this.moduleCountModal(o.id);
     var asmQty = $("#od-asm-qty", el);
     if (asmQty) asmQty.onclick = () => this.moduleCountModal(o.id);
+    $$("[data-mod-num]", el).forEach(b => b.onclick = e => {
+      e.preventDefault();
+      e.stopPropagation();
+      var m = D.module(o, b.dataset.modNum);
+      var next = prompt(I18N.t("Number on the drawings (e.g. SP-1)"), m.num || "SP-");
+      if (next === null) return;
+      M.setModuleNum(o.id, m.id, next === "SP-" ? "" : next, App.me.id);
+      App.render();
+      Drawer.refresh();
+    });
+    var modNums = $("#mod-nums", el);
+    if (modNums) modNums.onclick = () => {
+      var inp = document.createElement("input");
+      inp.type = "file";
+      inp.accept = ".csv,.txt,.tsv";
+      inp.onchange = () => inp.files[0] && OrderDetail.cabinetListFile(o.id, inp.files[0]);
+      inp.click();
+    };
     $$("[data-mod-name]", el).forEach(b => b.onclick = e => {
       e.preventDefault();
       e.stopPropagation(); // do not toggle the tick

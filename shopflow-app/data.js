@@ -4549,6 +4549,23 @@ var D = {
   orderModules(o) {
     return o && o.modules || [];
   },
+  /* numbered cabinets in drawing order (SP-2 before SP-10), the rest after */
+  sortModules(mods) {
+    var n = m => { var d = /(\d+)/.exec(m.num || ""); return d ? +d[1] : Infinity; };
+    return (mods || []).map((m, i) => [m, i]).sort((a, b) => n(a[0]) - n(b[0]) || a[1] - b[1]).map(x => x[0]);
+  },
+  /* the drawing tool's list: "SP-1;1_DAL_KOJOS_PL;GEL_Salionas1_24, GEL_Salionas1_25 …"
+     — semicolon or tab between columns, a header row is fine */
+  parseCabinetList(text) {
+    var rows = [];
+    String(text || "").replace(/^\uFEFF/, "").split(/\r?\n/).forEach(line => {
+      if (!line.trim()) return;
+      var c = line.split(line.indexOf("\t") >= 0 ? "\t" : ";").map(x => x.trim().replace(/^"|"$/g, ""));
+      if (!c[0] || /^(nr|no|pozicija|numeris|#)\.?$/i.test(c[0])) return;
+      rows.push({ num: c[0], name: c[1] || "", codes: (c.slice(2).join(",").match(/[^,\s]+/g) || []) });
+    });
+    return rows;
+  },
   hasModules(o) {
     return this.orderModules(o).length > 0;
   },
@@ -5673,6 +5690,7 @@ var M = {
        number nobody can map onto the bench in front of them. */
     var modules = (plan.moduleNames || []).map(name => ({
       id: uid("mod"),
+      key: name, // what the parts point at; the name can be changed
       name,
       qty: mult,
       done: 0
@@ -5836,7 +5854,16 @@ var M = {
     tgt.items = tmp.items;
     tgt.ops = tmp.ops;
     tgt.parts = tmp.parts;
-    tgt.modules = tmp.modules;
+    /* cabinets: keep the drawing numbers, names and ticks a re-import would lose */
+    var oldMods = D.orderModules(tgt);
+    tmp.modules.forEach(m => {
+      var was = oldMods.find(x => (x.key || x.name) === m.key);
+      if (!was) return;
+      if (was.num) m.num = was.num;
+      if (was.name && was.name !== (was.key || was.name)) m.name = was.name;
+      m.done = Math.min(m.qty || 1, was.done || 0);
+    });
+    tgt.modules = D.sortModules(tmp.modules);
     tgt.qty = tmp.qty;
     tgt.unit = tmp.unit;
     tgt.materials = kept.concat(tmp.materials);
@@ -6724,12 +6751,63 @@ var M = {
     var clean = String(name || "").trim();
     if (!m || !clean || m.name === clean) return null;
     var was = m.name;
+    if (!m.key) m.key = was; // the parts still point at the old name
     m.name = clean;
     this.log(byId, `renamed **${esc0(was)}** to **${esc0(clean)}** on ${o.num}`, {
       orderId
     });
     Store.save();
     return m;
+  },
+  /* the number a cabinet has on the drawings (SP-1, SP-2 …) */
+  setModuleNum(orderId, moduleId, num, byId) {
+    var o = D.order(orderId);
+    var m = D.module(o, moduleId);
+    if (!m) return null;
+    var clean = String(num || "").trim();
+    if ((m.num || "") === clean) return m;
+    if (clean) m.num = clean; else delete m.num;
+    o.modules = D.sortModules(o.modules);
+    this.log(byId, `numbered **${esc0(m.name)}** as **${esc0(clean || "—")}** on ${o.num}`, { orderId });
+    Store.save();
+    return m;
+  },
+  /* A cabinet list from the drawing tool: one row per cabinet with its number,
+     name and part codes (column D). Cabinets are matched by their part codes,
+     so the SolidWorks names never have to agree. Returns {matched, missed}. */
+  applyCabinetList(orderId, rows, byId) {
+    var o = D.order(orderId);
+    var mods = D.orderModules(o);
+    if (!o || !mods.length || !rows.length) return { matched: 0, missed: rows.length };
+    var proj = o.swood && o.swood.project;
+    var codesOf = m => {
+      var key = m.key || m.name;
+      return new Set((o.parts || []).filter(p => p.solid ? D.cabinetOf(p, proj) === key : p.name === key).map(p => String(p.code).toUpperCase()));
+    };
+    var have = mods.map(m => ({ m, codes: codesOf(m) }));
+    var used = new Set(), matched = 0, missed = [];
+    rows.forEach(r => {
+      var best = null, bestN = 0;
+      have.forEach(h => {
+        if (used.has(h.m.id)) return;
+        var n = r.codes.filter(c => h.codes.has(c.toUpperCase())).length;
+        if (!n && r.name) {
+          var k = String(h.m.key || h.m.name).toUpperCase(), rn = r.name.toUpperCase();
+          if (k === rn || k.indexOf(rn + "_") === 0) n = 0.5;
+        }
+        if (n > bestN) { best = h; bestN = n; }
+      });
+      if (!best) { missed.push(r.num); return; }
+      used.add(best.m.id);
+      if (!best.m.key) best.m.key = best.m.name;
+      best.m.num = r.num;
+      if (r.name) best.m.name = r.name;
+      matched++;
+    });
+    o.modules = D.sortModules(mods);
+    this.log(byId, `took cabinet numbers from the drawings on ${o.num} · ${matched} of ${mods.length}`, { orderId });
+    Store.save();
+    return { matched, missed };
   },
   /* ---------- who is on a job ---------- */
   setOpAssignees(orderId, opId, ids, byId) {
