@@ -1063,12 +1063,12 @@ var Mgr = {
       order,
       op
     }) => {
-      var m = D.member(op.assigneeId);
+      var m = D.opAssignees(op)[0] || D.member(op.assigneeId);
       var st = D.station(op.stationId);
       var item = D.item(order, op.itemId);
       return `<button class="panel-row" data-order="${order.id}">
                   ${avatarHtml(m, "md")}
-                  <span class="grow"><b>${esc(m ? m.name : "—")} · ${esc(st.name)}${op.group ? ` · ${esc(op.group)}` : ""}</b>
+                  <span class="grow"><b>${esc(D.opAssignees(op).map(x => x.name).join(", ") || (m ? m.name : "—"))} · ${esc(st.name)}${op.group ? ` · ${esc(op.group)}` : ""}</b>
                   <span>${esc(order.num)} — ${esc(order.product)}${item && item.qty > 1 ? ` · ${op.qtyDone}/${item.qty} pcs` : ""}</span></span>
                   <span class="pill running"><span class="dot"></span><span class="t-num" data-timer="${order.id}/${op.id}" data-timer-style="clock">${fmtClock(D.opElapsed(op))}</span></span>
                 </button>`;
@@ -1088,7 +1088,7 @@ var Mgr = {
       return `<button class="panel-row" data-order="${o.id}">
                   <span style="color:var(--text-2)">${st ? stIcon(st, 17) : icon("check-circle", 17)}</span>
                   <span class="grow"><b>${o.num !== o.product ? esc(o.num) + " · " : ""}${esc(o.product)}</b>
-                  <span>${st ? `at ${esc(st.name)}` : "complete"} · ${p.done}/${p.total} stages${cur && cur.assigneeId ? ` · ${esc(((_D$member = D.member(cur.assigneeId)) === null || _D$member === void 0 ? void 0 : _D$member.name) || "")}` : ""}</span></span>
+                  <span>${st ? `at ${esc(st.name)}` : "complete"} · ${p.done}/${p.total} stages${cur && D.opAssigneeIds(cur).length ? ` · ${esc(D.opAssignees(cur).map(x => x.name).join(", "))}` : ""}</span></span>
                   <span class="due-chip ${due.cls}">${due.label}</span>
                   ${pillHtml(D.orderStatus(o), D.statusLabelFor(o, D.orderStatus(o)))}
                 </button>`;
@@ -1235,7 +1235,7 @@ var Mgr = {
     var matches = ({
       order,
       op
-    }) => (!filterWho || op && op.assigneeId === filterWho) && (!filterPrio || order.priority === filterPrio);
+    }) => (!filterWho || op && D.opAssignedTo(op, filterWho)) && (!filterPrio || order.priority === filterPrio);
     var ready = s.orders.filter(o => !o.archived && o.type === (kind === "eng" ? "eng" : "prod") && o.ops.length && o.ops.every(op => op.status === "done")).filter(o => (!filterPrio || o.priority === filterPrio) && !filterWho);
     var cols = D.stationsOf(kind).map(st => ({
       st,
@@ -1347,7 +1347,8 @@ var Mgr = {
   orderCard(order, op) {
     var due = fmtDue(order.due);
     var p = D.progress(order);
-    var assignee = op ? D.member(op.assigneeId) : null;
+    var assignee = op ? D.opAssignees(op)[0] || D.member(op.assigneeId) : null;
+    var assigneeNames = op ? D.opAssignees(op).map(x => x.name).join(", ") : "";
     var short = D.orderShortages(order).length;
     var item = op ? D.item(order, op.itemId) : null;
     var multi = order.items.length > 1;
@@ -1370,7 +1371,7 @@ var Mgr = {
         ${multi && item ? `<span class="task-tag" style="background:var(--teal-soft);color:var(--teal)">${esc(item.name)}</span>` : ""}
         ${item && item.qty > 1 && op.qtyDone > 0 ? `<span class="qty-pill part">${op.qtyDone}/${item.qty}</span>` : ""}
       </div>` : ""}
-      ${op && op.status === "running" ? `<div class="runner"><span class="pill running" style="padding:0;background:none"><span class="dot"></span></span>${esc(assignee ? assignee.name : "Running")}<span class="t t-num" data-timer="${order.id}/${op.id}" data-timer-style="clock">${fmtClock(D.opElapsed(op))}</span></div>` : ""}
+      ${op && op.status === "running" ? `<div class="runner"><span class="pill running" style="padding:0;background:none"><span class="dot"></span></span>${esc(assigneeNames || (assignee ? assignee.name : "Running"))}<span class="t t-num" data-timer="${order.id}/${op.id}" data-timer-style="clock">${fmtClock(D.opElapsed(op))}</span></div>` : ""}
       ${op && op.status === "blocked" ? `<div class="blocked-note">${icon("ban", 12)} ${esc(op.blockNote || "Blocked")}</div>` : ""}
       ${(() => {
       var n = D.unreadComments(order, App.me.id);
@@ -1709,7 +1710,7 @@ var Mgr = {
       var stn = cur ? D.station(cur.stationId) : null;
       var p = D.progress(o);
       var due = fmtDue(o.due);
-      var assignee = cur ? D.member(cur.assigneeId) : null;
+      var assignee = cur ? D.opAssignees(cur)[0] || D.member(cur.assigneeId) : null;
       var packed = D.packedSummary(o);
       var pfo = o.portfolioId ? D.portfolio(o.portfolioId) : null;
       return `<tr data-order="${o.id}">
@@ -5131,7 +5132,7 @@ var OrderDetail = {
     var canRoute = App.can("orders.route");
     var canAssign = App.can("orders.assign");
     var canAct = App.usesCockpit() || ready; // in the cockpit every task row offers its actions
-    var assignee = D.member(op.assigneeId);
+    var assignee = D.opAssignees(op)[0] || D.member(op.assigneeId);
     var elapsed = D.opElapsed(op);
     var nodeIcon = op.status === "done" ? icon("check", 13) : op.status === "blocked" ? icon("x", 13) : stIcon(st, 13);
     var last = i === laneLen - 1;

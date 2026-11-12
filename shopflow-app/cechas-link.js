@@ -86,12 +86,20 @@ var Cechas = {
   },
 
   /* ---------- orders follow the floor ---------- */
+  /* ShopFlow stations may be named in Lithuanian with their own ids; a default like "cnc" is matched by name too */
+  CAT: { cut: /pjov|piov|cut|saw|format/i, edge: /briaun|kra[sš]t|edge|band/i, cnc: /cnc|gr[eę][žz]|drill|frez|rout/i, asm: /surink|assem/i, fin: /apdail|da[žz]|paint|finish|lak/i, pack: /pakav|pack/i },
+  resolveStep(id) {
+    var st = Store.state.stations || [];
+    if (!id) return null;
+    if (st.some(s => s.id === id)) return id;
+    var re = this.CAT[id];
+    var hit = re && st.find(s => re.test(String(s.id) + " " + String(s.name || "")));
+    return hit ? hit.id : null;
+  },
   stepFor(itemId) {
     var it = (this.layout().items || {})[itemId];
     if (!it) return null;
-    var id = it.sf !== undefined && it.sf !== null ? it.sf : this.DEF_SF[it.t];
-    if (!id) return null;
-    return (Store.state.stations || []).some(s => s.id === id) ? id : null;
+    return this.resolveStep(it.sf !== undefined && it.sf !== null ? it.sf : this.DEF_SF[it.t]);
   },
   installStep() {
     var st = (Store.state.stations || []).find(s => /montav|install|instal/i.test(String(s.id) + " " + String(s.name || "")));
@@ -108,21 +116,43 @@ var Cechas = {
   },
   reconcile() {
     if (!this.data || typeof D === "undefined" || typeof M === "undefined" || typeof Sync === "undefined" || Sync.status !== "live" || Sync._applying) return;
-    var ppl = this.state().people || {}, items = this.layout().items || {}, d0 = this.dayStart(), want = {}, did = 0;
+    var ppl = this.state().people || {}, items = this.layout().items || {}, d0 = this.dayStart(), did = 0;
+    /* people the plan speaks for today (placed, moved or finished today): member id → the job they are on, or null */
+    var plan = {};
     Object.keys(ppl).forEach(k => {
-      var p = ppl[k];
-      if (!p || !p.at || !items[p.at] || p.pz || !this.counts(p) || !p.pr) return;
-      var o = this.orderFor(p.pr), step = this.stepFor(p.at), m = this.memberFor(p.n);
-      if (!o || !step || !m || !Array.isArray(o.ops)) return;
+      var p = ppl[k], m = p && this.memberFor(p.n);
+      if (!m || !(+p.ts >= d0)) return;
+      if (!(m.id in plan)) plan[m.id] = null;
+      if (!p.at || !items[p.at] || p.pz || !this.counts(p) || !p.pr) return;
+      var o = this.orderFor(p.pr), step = this.stepFor(p.at);
+      if (!o || !step || !Array.isArray(o.ops)) return;
       var ops = o.ops.filter(x => x.stationId === step && x.status !== "done");
       if (!ops.length) return;
-      var op = ops.find(x => x.status === "running" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status === "running" && x.fromPlan) || ops.find(x => x.status === "paused" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status !== "running") || ops[0];
-      want[op.id] = 1;
-      if (!(op.status === "running" && D.opAssignedTo(op, m.id))) { M.startOp(o.id, op.id, m.id); op.fromPlan = true; did++; }
+      var op = ops.find(x => x.status === "running" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status === "running") ||
+        ops.find(x => x.status === "paused" && D.opAssignedTo(x, m.id)) || ops.find(x => x.status !== "running") || ops[0];
+      plan[m.id] = { o, op };
     });
+    /* 1. take people off running jobs the plan no longer has them on; a job left with nobody is paused */
     (Store.state.orders || []).forEach(o => (o.ops || []).forEach(op => {
-      if (op.fromPlan && op.status === "running" && !want[op.id]) { M.pauseOp(o.id, op.id, (D.opAssigneeIds(op) || [])[0] || null); did++; }
+      if (op.status !== "running") return;
+      var ids = D.opAssigneeIds(op), keep = ids.filter(id => !(id in plan) || (plan[id] && plan[id].op === op));
+      if (keep.length === ids.length) return;
+      if (!keep.length) { M.pauseOp(o.id, op.id, ids[0] || null); did++; return; }
+      op.assigneeIds = keep; op.assigneeId = keep[0]; did++;
     }));
+    /* 2. start or join the job each person is on */
+    var jobs = new Map();
+    Object.keys(plan).forEach(id => { var j = plan[id]; if (!j) return; if (!jobs.has(j.op)) jobs.set(j.op, { o: j.o, op: j.op, ids: [] }); jobs.get(j.op).ids.push(id); });
+    jobs.forEach(({ o, op, ids }) => {
+      var cur = D.opAssigneeIds(op).filter(id => !(id in plan) || ids.includes(id));
+      var all = ids.concat(cur.filter(id => !ids.includes(id)));
+      if (op.status !== "running") {
+        op.assigneeIds = all; op.assigneeId = ids[0];
+        M.startOp(o.id, op.id, ids[0]); op.fromPlan = true; did++;
+      } else if (all.length !== D.opAssigneeIds(op).length || all.some(id => !D.opAssignedTo(op, id))) {
+        op.assigneeIds = all; op.assigneeId = all[0]; did++;
+      }
+    });
     /* installation marked back on the plan → its installation step is done */
     var ist = this.installStep(), inst = this.state().inst || {}, week = Date.now() - 7 * 864e5;
     if (ist) Object.keys(inst).forEach(k => {

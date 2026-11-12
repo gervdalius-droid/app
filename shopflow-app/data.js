@@ -5291,10 +5291,15 @@ var M = {
   startOp(orderId, opId, memberId) {
     var o = D.order(orderId);
     var op = o.ops.find(x => x.id === opId);
-    this._pauseOtherRunning(memberId);
+    /* someone starting a job that already has its people picked (e.g. a teammate pressing start for them) starts
+       it for those people: they stay the assignees and the starter is not put on it */
+    var picked = Array.isArray(op.assigneeIds) && op.assigneeIds.length ? op.assigneeIds : null;
+    var forTeam = picked && memberId && !picked.includes(memberId);
+    if (!forTeam) this._pauseOtherRunning(memberId);
     // fold any already-ticking time (e.g. op was running unassigned) before resetting the clock
     if (op.status === "running" && op.startedAt) op.loggedMs = D.opElapsed(op);
-    if (memberId) op.assigneeId = memberId;
+    if (forTeam) op.assigneeId = picked[0];
+    else if (memberId) { op.assigneeId = memberId; if (picked) op.assigneeIds = picked.includes(memberId) ? picked : picked.concat([memberId]); }
     op.status = "running";
     op.startedAt = Date.now();
     op.blockNote = null;

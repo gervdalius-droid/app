@@ -1185,7 +1185,10 @@ const RB_HOSTS=['de1.api.radio-browser.info','de2.api.radio-browser.info','fi1.a
 /* ShopFlow step for a place: set per machine/desk in the inspector; otherwise by machine type */
 const DEF_SF={altendorf:'cut',felder:'cut',olimpic:'edge',startech:'cnc',volter:'cnc',vitap:'cnc',blum:'cnc',oproom:'cnc',booth:'fin',desk:'asm'};
 const sfStepOf=it=>it?(it.sf!==undefined&&it.sf!==null?it.sf:(DEF_SF[it.t]||'')):'';
-const sfStepName=id=>{const x=(SF.stations||[]).find(s=>s.id===id);return x?x.name:id};
+const SF_CAT={cut:/pjov|piov|cut|saw|format/i,edge:/briaun|kra[sš]t|edge|band/i,cnc:/cnc|gr[eę][žz]|drill|frez|rout/i,asm:/surink|assem/i,fin:/apdail|da[žz]|paint|finish|lak/i,pack:/pakav|pack/i};
+/* the ShopFlow station a default means: same id, or matched by name (ShopFlow's own ids may differ) */
+const sfResolve=id=>{const st=SF.stations||[];if(!id)return null;if(st.some(x=>x.id===id))return id;const re=SF_CAT[id],h=re&&st.find(x=>re.test(x.id+' '+x.name));return h?h.id:null};
+const sfStepName=id=>{const r=sfResolve(id),x=(SF.stations||[]).find(s=>s.id===r);return x?x.name:(SF.stations&&SF.stations.length?'—':id)};
 const RADIO_FIX=[{n:'Gold FM',u:'https://stream.goldfm.lt/goldfm.aac',alt:'https://stream.goldfm.lt/goldfm.mp3',c:'AAC',b:0}];
 const DEF_FAV=['Gold FM','LRT Radijas','LRT Opus','LRT Klasika','M-1','Lietus','ZIP FM','Power Hit Radio','Radiocentras','Relax FM','Rock FM'];
 const AU=new Audio();AU.preload='none';
