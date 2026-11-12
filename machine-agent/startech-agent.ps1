@@ -255,7 +255,7 @@ public class SfScanner : NativeWindow {
   }
 }
 '@
-Add-Type -TypeDefinition $cs -ReferencedAssemblies System.Windows.Forms
+Add-Type -TypeDefinition $cs -ReferencedAssemblies System.Windows.Forms -IgnoreWarnings
 
 # ---------------- one copy only ----------------
 $mutex = New-Object Threading.Mutex($false, 'Global\ShopFlowStartechAgent')
