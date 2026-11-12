@@ -134,6 +134,7 @@ main{padding-block:18px 40px}
 .nestmat{margin-top:18px}.nestmat h3{font:600 17px var(--f-display);margin:0 0 8px}.nestgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,560px),1fr));gap:14px}
 .nestsheet{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}.nestsheet figcaption{display:flex;gap:10px;align-items:baseline;font-size:13px;margin-bottom:4px}.nestsheet svg{width:100%;height:auto;display:block}
 .nestsheet text{font-family:var(--f-ui,system-ui)}.note.warn{color:#9a3b1d}
+.shfront{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end}.shfront .note{flex-basis:100%;margin:0}
 .libsub{margin:6px 0 10px;font:600 16px var(--f-display)}.btn.libon{color:#9a6a00}
 .preset{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px}
 .preset:hover{border-color:var(--accent)}
@@ -1375,8 +1376,12 @@ function splitFronts(secH, n, hs, gap) {
   return { mods:mods.slice().reverse(), note:note };
 }
 
+/* how far the shelves stand back from the carcass front: c.shelfSb mm (0 = flush with the front); not set → the rule (20) */
+function shelfSetSb(c) { var v = c ? c.shelfSb : null; return v === '' || v == null || !isFinite(+v) ? null : Math.max(0, Math.min(150, +v)); }
+function shelfPinF(sb) { return Math.max(R.pins.fromFront, sb + R.pins.fromFront - R.shelf.setback); }   // the front pin keeps its place under a shelf set further back
 function buildCabinet(c, idx, projName) {
   if (c.kind === 'box') return buildBox(c, idx, projName);   // 3D construction: board by board
+  var shSet = shelfSetSb(c), shSb = shSet == null ? R.shelf.setback : shSet, pinF = shelfPinF(shSb);
   var o = cncDefaults(c); var t = +c.thick || 18, W = +c.W, H = +c.H, D = +c.D;
   var base = safeName(projName || 'PROJ') + '_' + (idx + 1) + (c.name ? '_' + safeName(c.name) : '');
   var nm = function (role) { return base + '_' + role; };
@@ -1836,10 +1841,10 @@ function buildCabinet(c, idx, projName) {
   var shelfPanels = [];
   shelves.forEach(function (s, i) {
     var p, k = s.col || 0, Lc = ix1(k) - ix0(k), cb = clearBackK(k);
-    s.depth = Dside - cb - R.shelf.setback;   // adjustable shelf depth (the pins follow it)
+    s.depth = Dside - cb - shSb;   // adjustable shelf depth (the pins follow it)
     if (s.depth < 50 || Lc - R.shelf.clearW < 50) { warnOnce('lentyna ' + (i + 1) + ': per mažai vietos (' + num(Lc) + ' × ' + num(s.depth) + ' mm) — nepridėta'); s.skip = true; return; }
     if (s.fixed) {
-      var sb = s.oven ? 0 : R.shelf.setback, dF = Dside - cb - sb - (s.fridge ? R.fridgeVent : 0);   // a fridge niche's shelf stops short of the back: the air goes up there
+      var sb = s.oven ? 0 : shSb, dF = Dside - cb - sb - (s.fridge ? R.fridgeVent : 0);   // a fridge niche's shelf stops short of the back: the air goes up there
       p = panel(nm('LENTYNA' + (i + 1)), 'LENTYNA', Lc, dF, t, (s.fridge ? 'šaldytuvo nišos lentyna, gale ' + R.fridgeVent + ' mm tarpas orui' : s.oven ? 'orkaitės atrama' : 'fiksuota lentyna') + (cols > 1 ? ', kolona ' + (k + 1) : '') + ', viršus viršuje, priekis Y=0');
       var zc = s.z + t/2 - t;   // side x of the shelf's mid-thickness
       endJoint(p, Lc, s.oven ? joint('oven', dF, 'shelf', s.fridge ? 'šaldytuvo nišos lentynos' : 'orkaitės atramos') : joint('shelf', dF, 'shelf', 'fiksuotos lentynos'), 'B', function (a) { return { x:zc, yf:sb + a }; }, cols > 1 ? tgL(k) : null, cols > 1 ? tgR(k) : null);
@@ -1848,7 +1853,7 @@ function buildCabinet(c, idx, projName) {
       place(p, [ix0(k), sb, s.z + t], X, Y, Z);
     } else {
       p = panel(nm('LENTYNA' + (i + 1)), 'LENTYNA', Lc - R.shelf.clearW, s.depth, t, 'lentyna' + (cols > 1 ? ', kolona ' + (k + 1) : ''));
-      place(p, [ix0(k) + R.shelf.clearW/2, R.shelf.setback, s.z + t], X, Y, Z);
+      place(p, [ix0(k) + R.shelf.clearW/2, shSb, s.z + t], X, Y, Z);
     }
     p.mat = mCarc; p.eb.y0 = eCarc; shelfPanels.push(p);
   });
@@ -1913,12 +1918,12 @@ function buildCabinet(c, idx, projName) {
       var pr = R.pins, nPin = 0;
       shelves.forEach(function (s) {
         if (s.fixed || s.skip || s.col !== myCol) return;
-        var yB = R.shelf.setback + s.depth - pr.fromBack;
+        var yB = shSb + s.depth - pr.fromBack;
         var xc = s.z - pr.below - t, xs = [xc];
         if (o.pins === 'row') for (var k = 1; k <= pr.extra; k++) { xs.push(xc - k*pr.pitch); xs.push(xc + k*pr.pitch); }
         xs.forEach(function (x) {
           if (x < 10 || x > Lside - 10) return;
-          [pr.fromFront, yB].forEach(function (y) {
+          [pinF, yB].forEach(function (y) {
             var hit = p.holes.some(function (g) { return (g.face === 'A' || g.through) && Math.hypot(g.x - x, g.y - Yf(y)) < (g.d + pr.d)/2 + 1.5; });
             if (hit) { warnOnce('lentyna ' + num(s.z + t) + ' mm aukštyje: laikiklio skylė kliūna už kitos skylės (lankstas/bėgelis) — praleista, perkelkite lentyną'); return; }
             hole(p, 'A', x, Yf(y), pr.d, pr.depth, { op:'pin' }); nPin++; });
@@ -2003,7 +2008,7 @@ function buildCabinet(c, idx, projName) {
         var pr = R.pins, xc3 = s.z - pr.below - t, xs = [xc3], sh = isA ? 10 : 0;
         if (o.pins === 'row') for (var q = 1; q <= pr.extra; q++) { xs.push(xc3 - q*pr.pitch); xs.push(xc3 + q*pr.pitch); }
         xs.forEach(function (x) { if (x < 10 || x > Lp - 10) return;
-          [pr.fromFront + sh, R.shelf.setback + s.depth - pr.fromBack - sh].forEach(function (yf) { var y = yf - y0p;
+          [pinF + sh, shSb + s.depth - pr.fromBack - sh].forEach(function (yf) { var y = yf - y0p;
             if (!free(x, y, pr.d, pr.depth)) { warnOnce('lentyna ' + num(s.z + t) + ' mm aukštyje: laikiklio skylė pertvaroje kliūna už kitos skylės — praleista, perkelkite lentyną'); return; }
             hole(p, face, x, y, pr.d, pr.depth, { op:'pin' }); }); });
       });
@@ -2312,6 +2317,7 @@ function boxFrame(ax, sg) {
 var DIR_LT = { '0-':'kairys', '0+':'dešinys', '1-':'priekinis', '1+':'galinis', '2-':'apatinis', '2+':'viršutinis' };
 
 function buildBox(c, idx, projName) {
+  var shSet = shelfSetSb(c), shSb = shSet == null ? R.shelf.setback : shSet;
   var o = cncDefaults(c), bx = boxDefaults(c);
   var t = +c.thick || 18, W = +c.W, H = +c.H, D = +c.D, S3 = [W, D, H];
   var base = safeName(projName || 'PROJ') + '_' + (idx + 1) + (c.name ? '_' + safeName(c.name) : '');
@@ -2387,7 +2393,7 @@ function buildBox(c, idx, projName) {
     var T = +q.T > 0 ? +q.T : t, col = Math.min(comp.length - 1, Math.max(0, Math.floor(+q.col || 0))), z = +q.z || 0, adj = !!q.adj, cx = comp[col];
     if (z < cav[2][0] + 30 || z + T > cav[2][1] - 30) { warnOnce('lentyna ' + num(z) + ' mm aukštyje: ne vidinėje erdvėje — praleista'); return; }
     if (boards.some(function (o2) { return o2.kind === 'shelf' && o2.col === col && z < o2.ext[2][1] + 30 && z + T > o2.ext[2][0] - 30; })) { warnOnce('lentyna ' + num(z) + ' mm aukštyje: per arti kitos lentynos — praleista'); return; }
-    var cl = adj ? R.shelf.clearW / 2 : 0, y0 = cav[1][0] + (adj ? R.shelf.setback : Math.max(0, +q.setback || 0));
+    var cl = adj ? R.shelf.clearW / 2 : 0, y0 = cav[1][0] + (adj ? shSb : shSet != null ? shSet : Math.max(0, +q.setback || 0));   // the cabinet's setting, when it is set, for all of them
     nSh++;
     boards.push({ id:'i' + q.id, inner:q, ax:2, T:T, role:'LENTYNA', kind:'shelf', adj:adj, col:col, lt:'lentyna ' + nSh, nr:nSh, ext:[[cx[0] + cl, cx[1] - cl], [y0, cav[1][1]], [z, z + T]] });
   });
@@ -2518,7 +2524,7 @@ function buildBox(c, idx, projName) {
   /* ---- adjustable shelves: Ø5 pin holes in the boards at their ends */
   boards.forEach(function (S1) {
     if (S1.kind !== 'shelf' || !S1.adj) return;
-    var pr = R.pins, zc = S1.ext[2][0] - pr.below, ys = [S1.ext[1][0] + pr.fromFront - R.shelf.setback, S1.ext[1][1] - pr.fromBack];
+    var pr = R.pins, zc = S1.ext[2][0] - pr.below, ys = [S1.ext[1][0] - shSb + shelfPinF(shSb), S1.ext[1][1] - pr.fromBack];
     var zs = [zc]; if (bx.pinRow) for (var k = 1; k <= pr.extra; k++) zs.push(zc - k*pr.pitch, zc + k*pr.pitch);
     [[S1.ext[0][0], -1], [S1.ext[0][1], 1]].forEach(function (end) {
       var Q = boards.filter(function (q) { return q.ax === 0 && Math.abs((end[1] < 0 ? q.ext[0][1] : q.ext[0][0]) - end[0]) < R.shelf.clearW && !q.thin; })[0];
@@ -2907,7 +2913,7 @@ function sidePanels(c) {
   return out;
 }
 function sideWidths(c) { var o = { L:0, R:0 }; sidePanels(c).forEach(function (p) { o[p.side] += p.T; }); return o; }
-var api = { R:R, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, newCabinet:newCabinet, newSection:newSection, cncDefaults:cncDefaults,
+var api = { R:R, shelfSetSb:shelfSetSb, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, newCabinet:newCabinet, newSection:newSection, cncDefaults:cncDefaults,
             buildCabinet:function (c, idx, pn) { var r = buildCabinet(c, idx, pn); r.worktop = worktopOf(c);
               var bad = r.panels.filter(function (p) { return !(p.L >= 1 && p.W >= 1 && p.T > 0 && isFinite(p.L + p.W + p.T)); });   // a part with no size (dimensions too small for the layout) is left out
               if (bad.length) { r.panels = r.panels.filter(function (p) { return bad.indexOf(p) < 0; }); r.warnings.push(bad.map(function (p) { return p.short || p.role; }).join(', ') + ': per maži matmenys (' + bad.map(function (p) { return num(Math.round(p.L)) + '×' + num(Math.round(p.W)); }).join(', ') + ') — detalės nepridėtos, padidinkite spintelę'); }
@@ -8224,7 +8230,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8372,7 +8378,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -8785,6 +8791,7 @@ function engineDef(c) {
   if (d.dishwasher) d.W = d.dishWidth || d.W;
   if (c.hang === true && !d.dishwasher) { d.cnc.legs = false; d.cnc.feet = false; }   // hung on the wall (set in Baldai): no legs, whatever the type default said
   d.cnc.facadeT = num(d.cnc.facadeT) || 18;
+  if (d.shelfSb != null && String(d.shelfSb).trim() !== '') d.shelfSb = Math.abs(num(String(d.shelfSb).replace(/[−–]/g, '-')) || 0); else delete d.shelfSb;   // "-5" or "5": 5 mm back
   d.sections.forEach(function (s) { ['height', 'nDrawers', 'rail', 'nDoors', 'shelves'].forEach(function (k) { s[k] = num(s[k]); }); s.shelfPos = (s.shelfPos || []).map(num); });
   d.cols = colsOf(c); d.colW = d.cols > 1 ? colWidths(c) : [];
   if (d.kind === 'box' && d.box) {
@@ -9146,6 +9153,7 @@ function viewEditor(c) {
       ['drawers', 'doors', 'open', 'oven'].map(function (kd) { return '<button class="btn addk k-' + kd + '" data-act="addsec" data-v="' + kd + '" data-i="' + k + '"><i class="kdot" aria-hidden="true"></i>＋ ' + t({ drawers:'kDrawers', doors:'kDoors', open:'kOpen', oven:'kOven' }[kd]) + '</button>'; }).join('') + '</div></div>';
   }
   secs += '</div>';
+  if (c.sections.some(function (s) { return (s.kind === 'doors' || s.kind === 'open') && num(s.shelves) > 0; })) secs += shelfFront(c);
 
   h += step(3, t('s2'), t('s2l'), secs, 'secs');
   var rInfo = S._info && S._info[S.sel] ? S._info[S.sel].r : null;
@@ -9183,6 +9191,13 @@ function jointsBlock(c, r) {
       (j.custom ? '<button class="btn ghost jreset" data-act="jreset" data-v="' + j.key + '" title="' + t('jAuto') + '">↺ ' + t('jAuto') + '</button>' : '<span class="badge mut">' + t('jAuto') + '</span>') + '</div>';
   }).join('');
   return '<div class="lbl" style="margin-top:4px">' + t('jTitle') + '</div><p class="note" style="margin:0 0 8px">' + t('jLead') + '</p><div class="jrows">' + rows + '</div>';
+}
+/* the shelves' front edge: flush with the carcass front, or set back by a few mm (one setting for the cabinet's shelves) */
+function shelfFront(c) {
+  var v = E.shelfSetSb ? E.shelfSetSb(engineDef(c)) : null, cur = v == null ? E.R.shelf.setback : v, pre = [0, 2, 5, 20];
+  return '<div class="shfront"><div class="f"><span>' + t('shFront') + '</span>' +
+    seg('c.shelfSb', pre.indexOf(cur) >= 0 ? cur : 'x', pre.map(function (n) { return [n, n ? '−' + n + ' mm' : t('shFlush')]; })) + '</div>' +
+    fN(t('shOther'), 'c.shelfSb', fmt(cur), 's') + '<p class="note">' + t('shFrontD') + '</p></div>';
 }
 /* ---- 3D construction (c.kind 'box'): boards, corners, inner boards and joints; the same choices as the model's ▣ Plokštės mode */
 function cap1(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
@@ -9247,7 +9262,8 @@ function boxEditor(c) {
   var anyAdj = bx.inner.some(function (q) { return q.kind === 'shelf' && q.adj; });
   h += step(3, t('bxS3'), t('bxS3l'), '<div class="bxinner">' + (inner || '<p class="note" style="margin:0">' + t('bxNoInner') + '</p>') + '</div>' +
     '<div class="addsec" style="margin-top:10px"><button class="btn" data-act="boxadd" data-v="shelf">' + t('bxAddShelf') + '</button><button class="btn" data-act="boxadd" data-v="part">' + t('bxAddPart') + '</button></div>' +
-    (anyAdj ? '<div class="row" style="margin-top:10px">' + chk(b + 'box.pinRow', bx.pinRow, t('bxPinRow')) + '</div>' : ''), 'inner');
+    (anyAdj ? '<div class="row" style="margin-top:10px">' + chk(b + 'box.pinRow', bx.pinRow, t('bxPinRow')) + '</div>' : '') +
+    (bx.inner.some(function (q) { return q.kind === 'shelf'; }) ? shelfFront(c) : ''), 'inner');
   /* 4 — joints */
   var jo = '<div class="lbl">' + t('bxDefJ') + '</div><div class="choices">' + choice(b + 'cnc.joinery', c.cnc.joinery, 'confirmat', artOf('confirmat'), t('jConf'), t('jConfD')) +
     choice(b + 'cnc.joinery', c.cnc.joinery, 'cam', artOf('cam'), t('jCam'), t('jCamD')) + '</div>' + (r ? '<div style="margin-top:14px">' + jointsBlock(c, r) + '</div>' : '');
@@ -10441,7 +10457,7 @@ function numOrNull(v) {
 }
 var NUM_LIMITS = [   // [binding, min, max, whole number]
   [/^c\.(W|H|D|dishWidth)$/, 50, 6000], [/^c\.thick$/, 6, 60], [/^c\.cnc\.facadeT$/, 6, 60], [/^c\.legH$/, 0, 400], [/^c\.cnc\.bottomZ$/, 0, 2000], [/^c\.cnc\.bottomD$/, 0, 2000], [/^c\.leds\.\d+\.from$/, 0, 3000], [/^c\.cnc\.railW$/, 30, 400],
-  [/^c\.colW\.\d+$/, 50, 6000], [/^c\.sections\.\d+\.nDrawers$/, 1, 12, true], [/^c\.sections\.\d+\.nDoors$/, 1, 6, true], [/^c\.sections\.\d+\.shelves$/, 0, 12, true], [/^c\.sections\.\d+\.height$/, 0, 6000],
+  [/^c\.colW\.\d+$/, 50, 6000], [/^c\.shelfSb$/, -150, 150], [/^c\.sections\.\d+\.nDrawers$/, 1, 12, true], [/^c\.sections\.\d+\.nDoors$/, 1, 6, true], [/^c\.sections\.\d+\.shelves$/, 0, 12, true], [/^c\.sections\.\d+\.height$/, 0, 6000],
   [/^c\.sections\.\d+\.frontH\.\d+$/, 0, 3000], [/^c\.sections\.\d+\.shelfPos\.\d+$/, 0, 6000],
   [/^c\.box\.fronts\.\d+\.nDrawers$/, 1, 8, true], [/^c\.box\.boards\.\w+\.inset$/, 0, 3000], [/^c\.box\.boards\.\w+\.T$/, 3, 60], [/^c\.box\.inner\.\d+\.T$/, 3, 60], [/^c\.box\.inner\.\d+\.(x|z)$/, 0, 6000],
   [/^c\.worktop\.T$/, 6, 120], [/^c\.extras\.\d+\.(L|W)$/, 1, 6000], [/^c\.extras\.\d+\.T$/, 1, 120], [/^c\.extras\.\d+\.qty$/, 0, 999, true], [/^c\.extras\.\d+\.zb$/, -5000, 5000], [/^c\.extras\.\d+\.yf$/, -300, 300], [/^c\.worktop\.(left|right)$/, 0, 1000], [/^c\.worktop\.over$/, -100, 300],
@@ -10509,7 +10525,7 @@ app.addEventListener('change', function (e) {
     assign(bind, el.value); if (bad) toast(t('perLenBad'), true);
   }
   else assign(bind, el.value);
-  var full = /^(pr|pp)\./.test(bind) || /^c\.worktop\./.test(bind) || el.type === 'checkbox' || el.tagName === 'SELECT' || /\.(nDrawers|nDoors|shelves|height|frontH\.\d+|doorSplit)$/.test(bind) || /cnc\.joints\./.test(bind) || /^c\.box\./.test(bind) || /^c\.(colW\.|W$)/.test(bind) || bind === 'p.name';
+  var full = /^(pr|pp)\./.test(bind) || /^c\.worktop\./.test(bind) || el.type === 'checkbox' || el.tagName === 'SELECT' || /\.(nDrawers|nDoors|shelves|height|frontH\.\d+|doorSplit)$/.test(bind) || /cnc\.joints\./.test(bind) || /^c\.box\./.test(bind) || /^c\.(colW\.|W$|shelfSb$)/.test(bind) || bind === 'p.name';
   if (full) { if (bind.indexOf('s.') === 0) { store('dbKurejas.settings', S.settings); applyRules(); } else save(); later('render'); }   // after focus has moved, so it is restored
   else { if (bind.indexOf('pr.') === 0) return; if (bind.indexOf('s.') === 0) { store('dbKurejas.settings', S.settings); applyRules(); } else save(); later('live'); }
 });
