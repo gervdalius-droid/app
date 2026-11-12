@@ -63,10 +63,12 @@ Add-Type -AssemblyName System.Drawing
 function Get-Password {
   if (-not (Test-Path $PwPath)) { return $null }
   try {
-    $sec = Get-Content $PwPath -Raw | ConvertTo-SecureString
+    $txt = ([string](Get-Content $PwPath -Raw)).Trim()   # Set-Content adds a line break, which ConvertTo-SecureString refuses
+    if (-not $txt) { return $null }
+    $sec = ConvertTo-SecureString -String $txt
     $b = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec)
     try { return [Runtime.InteropServices.Marshal]::PtrToStringBSTR($b) } finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($b) }
-  } catch { return $null }
+  } catch { Log "saved password unreadable: $($_.Exception.Message)"; return $null }
 }
 function Ask-Password {
   $f = New-Object Windows.Forms.Form
@@ -80,7 +82,8 @@ function Ask-Password {
   $ok.Text = 'Išsaugoti'; $ok.Left = 290; $ok.Top = 86; $ok.Width = 100; $ok.DialogResult = 'OK'
   $f.Controls.AddRange(@($l, $t, $ok)); $f.AcceptButton = $ok
   if ($f.ShowDialog() -ne 'OK' -or -not $t.Text) { return $false }
-  ($t.Text | ConvertTo-SecureString -AsPlainText -Force | ConvertFrom-SecureString) | Set-Content -Path $PwPath
+  $enc = ConvertTo-SecureString -String $t.Text -AsPlainText -Force | ConvertFrom-SecureString
+  [IO.File]::WriteAllText($PwPath, $enc)   # no trailing line break
   return $true
 }
 
