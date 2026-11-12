@@ -159,6 +159,7 @@ body.dragging,body.dragging *{cursor:grabbing!important;user-select:none}
 .editing .it{cursor:grab}
 .picking .it .hit{stroke:var(--mark);stroke-dasharray:14 10}
 .lbl{font-family:var(--plan);font-weight:700;font-size:34px;fill:var(--ink);text-anchor:middle;paint-order:stroke;stroke:var(--floor);stroke-width:9px;stroke-linejoin:round}
+.lbl.mproj{font-size:24px;font-weight:600;fill:var(--muted)}
 .stt{font-family:var(--plan);font-weight:600;font-size:27px;text-anchor:middle;letter-spacing:.04em;paint-order:stroke;stroke:var(--floor);stroke-width:8px;stroke-linejoin:round}
 .s-pause{fill:var(--warn)}.s-run{fill:var(--run)}.s-idle{fill:var(--idle)}.s-down{fill:var(--down)}.s-busy{fill:var(--busy)}
 .pill rect{fill:var(--person)}
@@ -961,6 +962,8 @@ async function loadShopflow(manual){
     if(!r){SF.err=true}else{
       SF.orders=(Array.isArray(r.orders)?r.orders:[]).filter(o=>o&&!o.archived&&!o.shipped).map(o=>({
         label:[o.num,o.product].filter(Boolean).join(' · ').slice(0,60),
+        num:String(o.num||''),sw:String(o.swood&&o.swood.project||''),
+        parts:(Array.isArray(o.parts)?o.parts:[]).map(x=>x&&(x.code||x.partCode||x.id)).filter(Boolean).map(String),
         items:(Array.isArray(o.items)?o.items:[]).map(i=>i&&i.name).filter(Boolean).map(String)})).filter(o=>o.label);
       SF.members=(Array.isArray(r.members)?r.members:[]).map(m=>m&&m.name).filter(Boolean).map(String);
       SF.stations=(Array.isArray(r.stations)?r.stations:[]).filter(x=>x&&x.id).map(x=>({id:String(x.id),name:String(x.name||x.id)}));
@@ -1046,6 +1049,7 @@ async function boot(){
   setInterval(logFlush,60000);
   fixCount();setInterval(fixCount,90000);
   setInterval(poll,6000);
+  pollMachines();setInterval(pollMachines,8000);
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)poll()});
   setInterval(loadShopflow,300000);
 }
@@ -1059,10 +1063,26 @@ function onBreak(){const d=new Date(),m=d.getHours()*60+d.getMinutes(),mm=v=>{co
   for(const b of breakList())if(b&&b.f&&b.t&&mm(b.f)<=m&&m<mm(b.t))return b;return null}
 const peopleAt=id=>onBreak()?[]:peopleAtRaw(id).filter(e=>!e[1].pz);
 const SELF_RUN={volter:1,compressor:1};
+/* Machines with their own helper (the Startech PC sends each label the operator scans, row dedes-machine-<type>):
+   such a machine shows as running for a while after a scan, with the project the scanned code belongs to */
+const MACH={},MACH_IDLE=10*60000;
+async function pollMachines(){
+  if(mode!=='db'||document.hidden)return;
+  try{const r=await WA.rest('workspaces?id=like.dedes-machine-*&select=id,data');let ch=false;
+    for(const row of (r||[])){if(!row||!isObj(row.data))continue;const old=MACH[row.id];if(!old||old.lastAt!==row.data.lastAt||old.agentAt!==row.data.agentAt)ch=true;MACH[row.id]=row.data}
+    if(ch)render()}catch(e){}
+}
+const machOf=it=>{if(!it)return null;for(const k in MACH){const m=MACH[k];if(m&&m.type===it.t)return m}return null};
+const machLive=it=>{const m=machOf(it);return m&&m.lastAt&&Date.now()-m.lastAt<MACH_IDLE?m:null};
+function machProject(m){
+  if(!m||!m.last||!m.last.code)return'';
+  const raw=String(m.last.code),base=raw.split(/[\\/]/).pop().replace(/\.[A-Za-z0-9]{1,5}$/,''),U=base.toUpperCase(),P=U.replace(/[_-]\d+[A-Z]?$/i,'').replace(/[_-][^_-]*$/,'');
+  const o=SF.orders.find(o=>o.parts&&(o.parts.includes(raw)||o.parts.includes(base)))||SF.orders.find(o=>o.num.toUpperCase()===U||o.sw.toUpperCase()===U)||SF.orders.find(o=>P&&(o.sw.toUpperCase()===P||o.num.toUpperCase()===P||U.startsWith(o.sw.toUpperCase()+'_')&&o.sw));
+  return o?o.label:base}
 const noOperator=id=>{const it=LAY().items[id];return!!it&&!SELF_RUN[it.t]&&peopleAtRaw(id).filter(e=>!e[1].pz).length===0};
 /* a machine runs while someone is checked in at it (Volter and the compressor also when set running today);
    "not working" wins; breaks show as a pause */
-const shown=id=>{const v=statusOf(id);if(v==='down')return'down';const it=LAY().items[id],run=peopleAtRaw(id).some(e=>!e[1].pz)||(v==='run'&&!!it&&!!SELF_RUN[it.t]);if(!run)return'idle';return onBreak()?'pause':'run'};
+const shown=id=>{const v=statusOf(id);if(v==='down')return'down';const it=LAY().items[id],run=peopleAtRaw(id).some(e=>!e[1].pz)||(v==='run'&&!!it&&!!SELF_RUN[it.t])||!!machLive(it);if(!run)return'idle';return onBreak()?'pause':'run'};
 const peopleAtRaw=id=>Object.entries(ST().people).filter(e=>e[1]&&e[1].at===id).sort((a,b)=>String(a[1].n).localeCompare(String(b[1].n),'lt'));
 /* "running" belongs to the working day: set before today, or before 17:00 once it is past 17:00, it reads as stopped.
    "not working" (broken) stays until someone changes it. */
@@ -1125,6 +1145,8 @@ function itemSVG(id,it){
     const half=stTxt.length*7.5+(T.kind==='rack'?0:14);
     if(T.kind!=='rack')lg+='<circle class="beacon s-'+stCls+'" cx="'+(-half)+'" cy="65" r="10"/>';
     lg+='<text class="stt'+col+'" '+(T.kind==='rack'?'fill="var(--muted)" ':'')+'x="'+(T.kind==='rack'?0:12)+'" y="74">'+esc(stTxt.toUpperCase())+'</text>';
+    const ml=T.kind==='machine'&&stCls==='run'&&!peopleAt(id).some(e=>e[1].pr)?machLive(it):null;
+    if(ml){const pr=machProject(ml);if(pr)lg+='<text class="lbl mproj" y="104">'+esc(pr.length>34?pr.slice(0,33)+'…':pr)+'</text>'}
   }
   if(lg)s+='<g transform="translate(0,'+(sh/2)+') scale('+fl+')">'+lg+'</g>';
   if(editing&&selItem===id){
