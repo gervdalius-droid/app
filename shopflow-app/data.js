@@ -3362,7 +3362,25 @@ var D = {
   /* can this op be worked on now? */
   opReady(order, op) {
     if (op.status === "done") return false;
-    return this.opAvail(order, op) > 0 || op.qtyDone > 0 || ["running", "paused", "blocked"].includes(op.status);
+    if (op.qtyDone > 0 || ["running", "paused", "blocked"].includes(op.status)) return true;
+    if (this.assemblyWaiting(order, op)) return false;
+    return this.opAvail(order, op) > 0;
+  },
+  /* A SWOOD job's assembly line is its own item, so on paper it could start at
+     once — but there is nothing to assemble until the parts come through. It
+     waits until every material line has pieces out of its last step. */
+  assemblyWaiting(order, op) {
+    var asm = this.assemblyOp(order);
+    if (!asm || asm.itemId !== op.itemId) return false;
+    var first = order.ops.find(x => x.itemId === op.itemId);
+    if (first !== op) return false;
+    var asmItem = op.itemId;
+    return order.items.filter(i => i.id !== asmItem).some(i => {
+      var ops = order.ops.filter(x => x.itemId === i.id);
+      if (!ops.length) return false;
+      var last = ops[ops.length - 1];
+      return last.status !== "done" && !(last.qtyDone > 0);
+    });
   },
   activeOps(order) {
     return order.ops.filter(op => this.opReady(order, op));
