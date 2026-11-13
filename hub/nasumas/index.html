@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#131715">
+<title>Našumas · Dėdės Baldai</title>
+<link rel="icon" type="image/png" href="https://app.dedesbaldai.lt/hub/shared/favicon-64.png">
+<link rel="apple-touch-icon" href="https://app.dedesbaldai.lt/hub/shared/touch-180.png">
+<script src="/hub/shared/gate.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Schibsted+Grotesk:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: Lapas family. Sheet-style header → tabs → one column of ruled tables. */
+:root{
+  --bg:#e6e8e3;--surface:#f8f9f6;--surface-2:#eef0ec;--ink:#131715;--muted:#59615b;--line:#d2d7cf;--line-2:#b4bbb1;
+  --accent:#ff4a1c;--on-accent:#160700;--ok:#127c52;--warn:#b86e00;--bad:#c4321c;--track:#dde1da;
+  --f-ui:'Schibsted Grotesk','Helvetica Neue',sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){color-scheme:dark;
+  --bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;
+  --accent:#ff6b3d;--on-accent:#160700;--ok:#4cc993;--warn:#f0b23a;--bad:#ff7a63;--track:#2a302c}}
+:root[data-theme="dark"]{color-scheme:dark;
+  --bg:#0f1211;--surface:#191d1b;--surface-2:#141816;--ink:#e9ede8;--muted:#8e9890;--line:#2a302c;--line-2:#3d4540;
+  --accent:#ff6b3d;--on-accent:#160700;--ok:#4cc993;--warn:#f0b23a;--bad:#ff7a63;--track:#2a302c}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15.5px/1.45 var(--f-ui);-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:22px 20px 70px;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:2px solid var(--ink);padding-bottom:12px}
+.kick{font:600 11.5px/1 var(--f-mono);letter-spacing:.16em;text-transform:uppercase;color:var(--muted)}
+h1{font-size:34px;line-height:1.05;letter-spacing:-.03em;margin:6px 0 0;font-weight:800}
+h2{font-size:17px;margin:0;letter-spacing:-.01em}
+.meta{font:500 12.5px/1.5 var(--f-mono);color:var(--muted);text-align:right}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+nav.tabs{display:flex;gap:4px;flex-wrap:wrap}
+.tab,.chip,.btn{font:600 14px/1 var(--f-ui);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:8px;padding:9px 13px;cursor:pointer;text-decoration:none}
+.tab.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip.on{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.5;cursor:default}
+.tab:focus-visible,.chip:focus-visible,.btn:focus-visible,.in:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px}
+.tl{font:600 11.5px/1.2 var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.tv{font-size:32px;font-weight:800;letter-spacing:-.03em;margin:6px 0 2px;font-variant-numeric:tabular-nums}
+.ts{color:var(--muted);font-size:13px;min-height:1.4em}
+.good{color:var(--ok)}.mid{color:var(--warn)}.low{color:var(--bad)}.na{color:var(--muted)}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th{text-align:left;font:600 11px/1.2 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);padding:8px 10px;border-bottom:1px solid var(--line-2);white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.r{text-align:right;white-space:nowrap}
+tr.sum td{font-weight:700;background:var(--surface-2)}
+.tag{display:inline-block;background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:2px 7px;font-size:12.5px;margin:2px 4px 2px 0;white-space:nowrap}
+.pill{display:inline-block;border-radius:99px;padding:2px 9px;font:600 12px/1.5 var(--f-ui);border:1px solid currentColor;white-space:nowrap}
+.perf{display:flex;align-items:center;gap:10px;min-width:180px}
+.pv{font-weight:700;min-width:54px;text-align:right}
+.meter{position:relative;flex:1;height:10px;background:var(--track);border-radius:5px;min-width:80px}
+.meter i{position:absolute;left:0;top:0;bottom:0;border-radius:5px;background:currentColor}
+.meter b{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.6}
+.note{color:var(--muted);font-size:13px;margin:0;max-width:86ch}
+.lead{color:var(--muted);margin:0;max-width:74ch}
+.in{font:inherit;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);border-radius:7px;padding:6px 8px;min-width:0}
+.in.sm{width:96px;text-align:right}
+.fld{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--muted);font-weight:600}
+.banner{padding:10px 14px;border-radius:10px;border:1px solid var(--line-2);border-left:4px solid var(--warn);background:var(--surface);font-size:14px}
+.banner.bad{border-left-color:var(--bad)}.banner.ok{border-left-color:var(--ok)}
+@media (max-width:560px){h1{font-size:26px}.wrap{padding:16px 16px 56px}.meta{text-align:left}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div><div class="kick">Dėdės Baldai · DB-11</div><h1 id="ttl">Našumas</h1></div>
+    <div class="row"><div class="meta" id="meta"></div><button class="btn" id="reload" type="button">↻</button><button class="btn" id="lang" type="button">EN</button><a class="btn" href="/hub/shopfloor/" id="back">Hub</a></div>
+  </header>
+  <nav class="tabs" id="tabs"></nav>
+  <main id="main" style="display:flex;flex-direction:column;gap:18px"></main>
+</div>
+<script src="../workers/workshop-auth.js"></script>
+<script src="/hub/shared/nasumas-core.js"></script>
+<script>
+"use strict";
+/* Našumas — managers' view. Reads ShopFlow (team, projects, report lists, steps), the plan's
+   work stretches and the norms row; writes only the norms row (dedes-cechas-nasumas). */
+var WA=window.WorkshopAuth,N=window.Nasumas;
+var SF_ROW='dedes-baldai',CE_ROW='dedes-cechas',CFG_ROW='dedes-cechas-nasumas',LOG_PFX='dedes-cechas-log-';
+var DEF_BREAKS=[{f:'10:00',t:'10:15'},{f:'12:00',t:'12:45'},{f:'15:00',t:'15:15'}];
+var lang=(function(){try{return localStorage.getItem('cp.lang')==='en'?'en':'lt'}catch(e){return'lt'}})();
+var view='rezultatai',period='week',me=null,D=null,err='',busy=false,saved='',draft=null;
+function $(s){return document.querySelector(s)}
+function $$(s){return Array.prototype.slice.call(document.querySelectorAll(s))}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function L(lt,en){return lang==='en'?en:lt}
+function num(n,d){d=d==null?1:d;return(+n||0).toLocaleString(lang==='en'?'en-GB':'lt-LT',{maximumFractionDigits:d,minimumFractionDigits:0})}
+function hrs(ms){return num(ms/36e5)}
+function pct(x){return x==null?'–':Math.round(x*100)+' %'}
+function eur(x){return Math.round(x).toLocaleString('lt-LT')+' €'}
+function pc(p){return p==null?'na':p>=.9?'good':p>=.6?'mid':'low'}
+function meter(p){var w=p==null?0:Math.min(p,1.3)/1.3*100;return'<div class="meter '+pc(p)+'"><i style="width:'+w+'%"></i><b style="left:'+(100/1.3)+'%"></b></div>'}
+function opName(k){var o=N.DEF.ops[k];return L(o.lt,o.en)}
+function monKey(ms){var d=new Date(ms);return d.getFullYear()+'-'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)}
+function range(per){var d=new Date();d.setHours(0,0,0,0);var day=(d.getDay()+6)%7,y=d.getFullYear(),m=d.getMonth(),dd=d.getDate();
+  if(per==='today')return[d.getTime(),d.getTime()+864e5];
+  if(per==='yest')return[new Date(y,m,dd-1).getTime(),d.getTime()];
+  if(per==='week')return[new Date(y,m,dd-day).getTime(),new Date(y,m,dd-day+7).getTime()];
+  if(per==='lweek')return[new Date(y,m,dd-day-7).getTime(),new Date(y,m,dd-day).getTime()];
+  if(per==='month')return[new Date(y,m,1).getTime(),new Date(y,m+1,1).getTime()];
+  return[new Date(y,m-1,1).getTime(),new Date(y,m,1).getTime()]}
+function dshort(ms){var d=new Date(ms);return d.getDate()+'.'+(d.getMonth()<9?'0':'')+(d.getMonth()+1)}
+
+/* ---------- data ---------- */
+async function loadAll(){
+  busy=true;err='';paintMeta();
+  try{
+    var mons=[],x=new Date();x.setDate(1);for(var i=0;i<3;i++){mons.push(LOG_PFX+monKey(x.getTime()));x.setMonth(x.getMonth()-1)}
+    var res=await Promise.all([
+      WA.rest('workspaces?id=eq.'+SF_ROW+'&select=orders:data->orders,members:data->members,stations:data->stations'),
+      WA.rest('workspaces?id=eq.'+CE_ROW+'&select=data'),
+      WA.rest('workspaces?id=eq.'+CFG_ROW+'&select=data').catch(function(){return[]}),
+      WA.rest('workspaces?id=in.('+mons.join(',')+')&select=data').catch(function(){return[]})]);
+    var sf=res[0]&&res[0][0];if(!sf)throw new Error(L('ShopFlow duomenys nepasiekiami šiai paskyrai','ShopFlow data is not available to this account'));
+    var ce=res[1]&&res[1][0]&&res[1][0].data||{},st=ce.state||{},lay=ce.layout||{};
+    var all={};(res[3]||[]).forEach(function(r){var s=r&&r.data&&r.data.s;if(s)for(var k in s)all[k]=s[k]});
+    /* stretches still open on the plan right now */
+    var now=Date.now();Object.keys(st.people||{}).forEach(function(pid){var p=st.people[pid],at=p&&(p.at||p.pat);if(!at||!(+p.ts>0)||p.pz)return;
+      var a=+p.ts,e=new Date(a).setHours(17,0,0,0),b=a<e?Math.min(now,e):Math.min(now,new Date(a).setHours(23,59,59,0)),id=pid+'_'+a;
+      if(!all[id])all[id]={n:String(p.n||''),s:at,pr:String(p.pr||''),a:a,b:Math.max(a,b)}});
+    D={orders:Array.isArray(sf.orders)?sf.orders:[],members:Array.isArray(sf.members)?sf.members:[],stations:Array.isArray(sf.stations)?sf.stations:[],
+      sessions:Object.keys(all).map(function(k){return all[k]}),items:lay.items||{},breaks:Array.isArray(st.breaks)?st.breaks:DEF_BREAKS,
+      saved:res[2]&&res[2][0]&&res[2][0].data||null,at:Date.now()};
+    D.cfg=N.cfgOf(D.saved);draft=null;
+  }catch(e){err=(e&&e.message)||String(e)}
+  busy=false;render();
+}
+function calc(per){var r=range(per);return N.compute({orders:D.orders,stations:D.stations,members:D.members,sessions:D.sessions,items:D.items,breaks:D.breaks,cfg:D.cfg,from:r[0],to:Math.min(r[1],Date.now()+1)})}
+function activeProd(){return D.orders.filter(function(o){return o&&o.type!=='eng'&&!o.archived&&!o.shipped})}
+
+/* ---------- views ---------- */
+function vResults(){
+  var r=calc(period),t=r.team,rg=range(period);
+  var P=[['today',L('Šiandien','Today')],['yest',L('Vakar','Yesterday')],['week',L('Ši savaitė','This week')],['lweek',L('Praeita savaitė','Last week')],['month',L('Šis mėnuo','This month')],['lmonth',L('Praeitas mėnuo','Last month')]];
+  var h='<div class="row">'+P.map(function(p){return'<button type="button" class="chip'+(period===p[0]?' on':'')+'" data-per="'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>';
+  h+='<div class="tiles">'+
+    tile(L('Komandos našumas','Team performance'),pct(t.perf),t.perf==null?L('nėra baigtų normuotų darbų su pažymėtu laiku','no finished normed work with marked time'):L('normuotos h ÷ faktinės h','normed h ÷ actual h'),pc(t.perf))+
+    tile(L('Normuotos valandos','Normed hours'),num(t.earnedH)+' h',num(t.measuredH)+' h '+L('per','in')+' '+hrs(t.normedMs)+' h'+(t.looseH>0?' · '+num(t.looseH)+' h '+L('be pažymėto laiko','without marked time'):''))+
+    tile(L('Pagaminta už','Value produced'),eur(t.value),L('pagal operacijų pardavimo vertes','by the operations’ sale values'))+
+    tile(L('Aprėptis','Coverage'),t.presentMs?pct(t.normedMs/t.presentMs):'–',hrs(t.normedMs)+' h '+L('iš','of')+' '+hrs(t.presentMs)+' h '+L('plane pažymėto laiko','marked on the plan'))+'</div>';
+  h+='<section class="card"><h2>'+L('Darbuotojai','Workers')+'</h2><div class="scroll"><table><thead><tr><th>'+L('Darbuotojas','Worker')+'</th><th class="r">'+L('Pažymėta, h','Marked, h')+'</th><th class="r">'+L('Normuotuose darbuose, h','On normed work, h')+'</th><th class="r">'+L('Normuotos h','Normed h')+'</th><th>'+L('Našumas','Performance')+'</th><th class="r">'+L('Be laiko, h','No time, h')+'</th><th>'+L('Ką padarė','What was made')+'</th></tr></thead><tbody>';
+  r.people.slice().sort(function(a,b){return(b.perf==null?-1:b.perf)-(a.perf==null?-1:a.perf)||b.earnedH-a.earnedH||a.n.localeCompare(b.n,'lt')}).forEach(function(p){
+    if(!p.presentMs&&!p.earnedH&&!D.members.some(function(m){return m&&m.role==='worker'&&N.norm(m.name)===N.norm(p.n)}))return;
+    var made=N.ORDER.filter(function(k){return p.byOp[k]>0}).map(function(k){return'<span class="tag">'+esc(opName(k))+' '+num(p.byOp[k])+' '+N.DEF.ops[k].unit+'</span>'}).join('');
+    h+='<tr><td><b>'+esc(p.n)+'</b></td><td class="r">'+hrs(p.presentMs)+'</td><td class="r">'+hrs(p.normedMs)+'</td><td class="r">'+num(p.measuredH)+'</td><td><div class="perf">'+meter(p.perf)+'<span class="pv '+pc(p.perf)+'">'+pct(p.perf)+'</span></div></td><td class="r">'+(p.looseH>0?num(p.looseH):'–')+'</td><td>'+(made||'<span class="na">–</span>')+'</td></tr>'});
+  h+='</tbody></table></div><p class="note">'+L('Našumas = baigtų etapų normuotos valandos ÷ laikas, pažymėtas plane tame projekte prie tinkamos vietos. Brūkšnys žymi 100 %. „Be laiko“ – etapai, kuriems laikas nepažymėtas: jie priskirti ShopFlow atsakingam žmogui ir į procentą neįeina.','Performance = normed hours of finished steps ÷ time marked on the plan for that project at a matching place. The tick marks 100%. “No time” are steps with no marked time: they go to the person assigned in ShopFlow and are left out of the percentage.')+'</p></section>';
+  /* jobs */
+  var jobs=r.jobs.filter(function(j){return(j.at>=rg[0]&&j.at<rg[1])||(!j.allDone&&j.started)}).sort(function(a,b){return(b.at||9e15)-(a.at||9e15)});
+  h+='<section class="card"><h2>'+L('Etapai su reportlist','Steps with a report list')+'</h2>';
+  if(!jobs.length)h+='<p class="note">'+L('Šiuo laikotarpiu baigtų ar vykstančių normuotų etapų nėra.','No finished or running normed steps in this period.')+'</p>';
+  else{h+='<div class="scroll"><table><thead><tr><th>'+L('Projektas','Project')+'</th><th>'+L('Etapas','Step')+'</th><th class="r">'+L('Kiekis','Quantity')+'</th><th class="r">'+L('Norma, h','Norm, h')+'</th><th class="r">'+L('Faktas, h','Actual, h')+'</th><th>'+L('Našumas','Performance')+'</th><th>'+L('Kas','Who')+'</th><th>'+L('Būsena','Status')+'</th></tr></thead><tbody>';
+    jobs.forEach(function(j){var u=N.DEF.ops[j.cat].unit;
+      var stt=j.allDone?'<span class="pill good">'+L('baigta','done')+' '+dshort(j.at)+'</span>':j.doneH>0?'<span class="pill mid">'+L('dalis baigta','partly done')+'</span>':'<span class="pill na">'+L('vyksta','running')+'</span>';
+      h+='<tr><td><b>'+esc(j.label)+'</b></td><td>'+esc(opName(j.cat))+'</td><td class="r">'+num(j.qty)+' '+u+'</td><td class="r">'+num(j.stdH)+'</td><td class="r">'+(j.actualMs?hrs(j.actualMs):'–')+'</td><td>'+(j.eff!=null?'<div class="perf">'+meter(j.eff)+'<span class="pv '+pc(j.eff)+'">'+pct(j.eff)+'</span></div>':'<span class="na">'+(j.doneH>0?L('laikas nepažymėtas','no time marked'):'–')+'</span>')+'</td><td>'+esc(j.people.join(', ')||'–')+'</td><td>'+stt+'</td></tr>'});
+    h+='</tbody></table></div>'}
+  h+='</section>';
+  return h;
+}
+function tile(l,v,s,c){return'<div class="tile"><div class="tl">'+l+'</div><div class="tv '+(c||'')+'">'+v+'</div><div class="ts">'+(s||'')+'</div></div>'}
+
+function vProjects(){
+  var G=N.groups(D.orders,D.stations,D.cfg),by={},ord=[];
+  G.forEach(function(g){if(!by[g.label]){by[g.label]={o:g.order,c:{}};ord.push(g.label)}by[g.label].c[g.cat]=g});
+  var act=activeProd(),noList=act.filter(function(o){return!Array.isArray(o.parts)||!o.parts.length});
+  var h='<p class="lead">'+L('Projektai, kurių reportlist įkeltas į ShopFlow. Detalių matmenys ir briaunos paverčiami kiekiais, kiekiai – normuotomis valandomis.','Projects whose report list is in ShopFlow. Part sizes and edges become quantities, and quantities become normed hours.')+'</p>';
+  if(noList.length)h+='<div class="banner">'+L('Be reportlist (neskaičiuojama): ','Without a report list (not counted): ')+noList.length+' '+L('aktyvūs projektai','active projects')+' – '+esc(noList.map(function(o){return o.num}).join(', '))+'. '+L('Įkėlus reportlist į projektą ShopFlow, jis atsiras čia.','Once a report list is imported into the project in ShopFlow it appears here.')+'</div>';
+  h+='<section class="card"><div class="scroll"><table><thead><tr><th>'+L('Projektas','Project')+'</th><th class="r">'+L('Detalių','Parts')+'</th>'+N.ORDER.map(function(k){return'<th class="r">'+esc(opName(k))+'</th>'}).join('')+'<th class="r">'+L('Iš viso, h','Total, h')+'</th><th class="r">'+L('Vertė','Value')+'</th></tr></thead><tbody>';
+  if(!ord.length)h+='<tr><td colspan="8" class="na">'+L('Nė vienas projektas neturi reportlist.','No project has a report list.')+'</td></tr>';
+  ord.forEach(function(k){var e=by[k],tot=0,val=0,o=e.o;
+    h+='<tr><td><b>'+esc(k)+'</b>'+(o.archived||o.shipped?' <span class="tag">'+L('užbaigtas','closed')+'</span>':'')+'</td><td class="r">'+o.parts.reduce(function(s,p){return s+Math.max(1,+p.qty||1)},0)+'</td>'+N.ORDER.map(function(c){var g=e.c[c];if(!g)return'<td class="r na">–</td>';tot+=g.stdH;val+=g.qty*D.cfg.ops[c].sale;
+      return'<td class="r">'+num(g.qty)+' '+N.DEF.ops[c].unit+'<br><small class="'+(g.allDone?'good':'na')+'">'+num(g.stdH)+' h'+(g.allDone?' ✓':'')+'</small></td>'}).join('')+'<td class="r"><b>'+num(tot)+'</b></td><td class="r">'+eur(val)+'</td></tr>'});
+  h+='</tbody></table></div><p class="note">'+L('Pjovimas – visų detalių plotas; briaunavimas – briaunuojamų kraštų ilgis; gręžimas – detalių plotas be stalviršių ir plaušo; surinkimas – detalių plotas be stalviršių. Apdaila ir pakavimas reportlist kiekių neturi, todėl kol kas nenormuojami.','Cutting is the area of all parts; edge banding the length of edged sides; drilling the part area without countertops and hardboard backs; assembly the part area without countertops. Finishing and packing have no quantities in the report list, so they are not normed yet.')+'</p></section>';
+  return h;
+}
+
+function vNorms(){
+  var c=draft||D.cfg,mgr=WA.isManager(me),names=D.members.filter(function(m){return m&&m.name&&m.role==='worker'}).map(function(m){return m.name});
+  var dis=mgr?'':' disabled';
+  var h='<p class="lead">'+L('Norma – kiek vienas žmogus padaro per darbo dieną (iš 2025 m. liepos lentelės NORMATYVAS eilutės). Pakeitus ir išsaugojus, rezultatai čia ir dienos šaunuolis plane perskaičiuojami.','A norm is what one person makes in a working day (from the NORMATYVAS row of the July 2025 workbook). After saving, the results here and the star of the day on the plan are recalculated.')+'</p>';
+  if(!mgr)h+='<div class="banner">'+L('Normas keisti gali tik vadovai.','Only managers can change the norms.')+'</div>';
+  if(saved)h+='<div class="banner '+(saved==='ok'?'ok':'bad')+'">'+(saved==='ok'?L('Išsaugota.','Saved.'):esc(saved))+'</div>';
+  h+='<section class="card"><div class="scroll"><table><thead><tr><th>'+L('Etapas','Step')+'</th><th>'+L('Vnt.','Unit')+'</th><th class="r">'+L('Norma per dieną','Norm per day')+'</th><th class="r">'+L('Min. vienetui','Min per unit')+'</th><th class="r">'+L('Pardavimo vertė, €/vnt.','Sale value, €/unit')+'</th><th>'+L('Kam priskirti, kai niekas nepažymėtas','Who gets it when nobody is marked')+'</th></tr></thead><tbody>';
+  N.ORDER.forEach(function(k){var o=c.ops[k];
+    h+='<tr><td><b>'+esc(opName(k))+'</b></td><td>'+o.unit+'</td><td class="r"><input class="in sm" type="number" min="0.1" step="0.5" id="n-'+k+'" data-n="'+k+'" value="'+o.perDay+'"'+dis+'></td><td class="r">'+num(c.dayHours*60/o.perDay,2)+'</td><td class="r"><input class="in sm" type="number" min="0" step="0.1" id="s-'+k+'" data-s="'+k+'" value="'+o.sale+'"'+dis+'></td><td><select class="in" id="d-'+k+'" data-d="'+k+'"'+dis+'><option value="">'+L('— niekam —','— nobody —')+'</option>'+names.map(function(n){return'<option'+(n===c.def[k]?' selected':'')+'>'+esc(n)+'</option>'}).join('')+'</select></td></tr>'});
+  h+='</tbody></table></div><div class="row"><label class="fld" for="c-day">'+L('Darbo diena, h','Working day, h')+'<input class="in sm" type="number" id="c-day" min="1" step="0.5" value="'+c.dayHours+'"'+dis+'></label><label class="fld" for="c-cost">'+L('Valandos savikaina, €','Cost per hour, €')+'<input class="in sm" type="number" id="c-cost" min="0" step="0.5" value="'+c.hourCost+'"'+dis+'></label><span style="flex:1"></span>'+(mgr?'<button class="btn primary" type="button" id="save">'+L('Išsaugoti normas','Save norms')+'</button>':'')+'</div></section>';
+  h+='<section class="card"><h2>'+L('Kaip priskiriamas darbas','How work is assigned')+'</h2><p class="note">'+L('1. Žmonėms, kurie plane pažymėjo laiką tame projekte prie tinkamos vietos (Startech, Volter, Olimpic, pjūklai, surinkimo stalai DM, DK, MV) – pagal jų laiką. 2. Jei laikas nepažymėtas – ShopFlow etapo atsakingam žmogui. 3. Jei ir jo nėra – žmogui iš šios lentelės (gręžimas: Donatas, pjovimas: Nerijus, kol nepakeista).','1. To the people who marked time on the plan for that project at a matching place (Startech, Volter, Olimpic, saws, assembly desks DM, DK, MV), by their time. 2. With no marked time, to the person assigned to the step in ShopFlow. 3. With nobody assigned, to the person in this table (drilling: Donatas, cutting: Nerijus, until changed).')+'</p></section>';
+  return h;
+}
+function readDraft(){var c=JSON.parse(JSON.stringify(draft||D.cfg));
+  N.ORDER.forEach(function(k){var a=+$('#n-'+k).value,b=+$('#s-'+k).value;if(a>0)c.ops[k].perDay=a;if(b>=0)c.ops[k].sale=b;c.def[k]=$('#d-'+k).value});
+  var d=+$('#c-day').value,h=+$('#c-cost').value;if(d>0)c.dayHours=d;if(h>=0)c.hourCost=h;return c}
+async function saveNorms(){
+  var c=readDraft(),b=$('#save');b.disabled=true;
+  var out={dayHours:c.dayHours,hourCost:c.hourCost,ops:{},def:c.def,at:Date.now(),by:me&&me.display_name||''};
+  N.ORDER.forEach(function(k){out.ops[k]={perDay:c.ops[k].perDay,sale:c.ops[k].sale}});
+  try{await WA.rest('workspaces',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({id:CFG_ROW,data:out,updated_at:new Date().toISOString(),updated_by:out.by||'nasumas'})});
+    D.saved=out;D.cfg=N.cfgOf(out);draft=null;saved='ok'}
+  catch(e){draft=c;saved=L('Nepavyko išsaugoti: ','Could not save: ')+((e&&e.message)||e)}
+  render();
+}
+
+/* ---------- shell ---------- */
+var VIEWS={rezultatai:[vResults,'Rezultatai','Results'],projektai:[vProjects,'Projektai','Projects'],normos:[vNorms,'Normos','Norms']};
+function paintMeta(){$('#meta').innerHTML=(me?esc(me.display_name)+'<br>':'')+(busy?L('kraunama…','loading…'):D?L('atnaujinta ','updated ')+new Date(D.at).toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'}):'')}
+function render(){
+  $('#ttl').textContent=L('Našumas','Performance');$('#lang').textContent=lang==='en'?'LT':'EN';document.documentElement.lang=lang;
+  $('#tabs').innerHTML=Object.keys(VIEWS).map(function(k){return'<a class="tab'+(k===view?' on':'')+'" href="#'+k+'">'+L(VIEWS[k][1],VIEWS[k][2])+'</a>'}).join('');
+  paintMeta();
+  if(err){$('#main').innerHTML='<div class="banner bad">'+esc(err)+'</div>';return}
+  if(!D){$('#main').innerHTML='<p class="note">'+L('Kraunama…','Loading…')+'</p>';return}
+  $('#main').innerHTML=VIEWS[view][0]();
+  $$('[data-per]').forEach(function(b){b.onclick=function(){period=b.dataset.per;render()}});
+  var s=$('#save');if(s)s.onclick=saveNorms;
+  $$('[data-n],[data-s],[data-d],#c-day,#c-cost').forEach(function(i){i.onchange=function(){draft=readDraft();saved='';render()}});
+}
+function route(){var h=location.hash.replace('#','');view=VIEWS[h]?h:'rezultatai';saved='';render()}
+window.addEventListener('hashchange',route);
+$('#lang').onclick=function(){lang=lang==='en'?'lt':'en';try{localStorage.setItem('cp.lang',lang)}catch(e){}render()};
+$('#reload').onclick=function(){if(!busy)loadAll()};
+(async function boot(){
+  route();
+  if(!WA){err='workshop-auth.js';render();return}
+  if(!WA.signedIn())await WA.gate({lang:lang,title:'Našumas',opaque:true});
+  me=await WA.me();
+  /* results of named people: managers only */
+  while(!WA.isManager(me)){
+    D=null;err='';render();
+    $('#main').innerHTML='<div class="banner">'+L('Šis puslapis skirtas vadovams. Prisijungta kaip ','This page is for managers. Signed in as ')+'<b>'+esc(me&&me.display_name||'—')+'</b>. <button class="btn" type="button" id="other">'+L('Prisijungti vadovo vardu','Sign in as a manager')+'</button></div>';
+    await new Promise(function(res){$('#other').onclick=res});
+    await WA.gate({lang:lang,title:'Našumas',opaque:true,managers:true});me=await WA.me();
+  }
+  await loadAll();
+  setInterval(function(){if(!document.hidden&&!busy&&!draft)loadAll()},180000);
+})();
+</script>
+</body>
+</html>

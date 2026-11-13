@@ -645,6 +645,7 @@ body.tv .mapwrap{border-radius:1.4vh}
 </form></div>
 
 <script src="../workers/workshop-auth.js"></script>
+<script src="/hub/shared/nasumas-core.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
 (function(){
@@ -2492,12 +2493,24 @@ async function dayBest(){
   for(const x of list){const e=by[x.w]=by[x.w]||{id:x.w,n:x.n||(ST().people[x.w]&&ST().people[x.w].n)||'',ms:0,jobs:new Set(),places:new Set()};e.ms+=x.ms;e.jobs.add((x.pr||'')+'|'+(x.sn||x.s));e.places.add(x.sn||x.s)}
   return Object.values(by).filter(e=>e.n&&e.ms>=SHOUT_MIN).sort((p,q)=>q.ms-p.ms||q.jobs.size-p.jobs.size);
 }
+/* Našumas (norms): when today has finished, normed work with marked time, the best by norms leads
+   (see /hub/nasumas/ and shared/nasumas-core.js); otherwise the day is ranked by marked hours as before */
+async function normBest(){
+  try{if(!window.Nasumas||mode!=='db')return[];
+    const [sf,cf]=await Promise.all([WA.rest('workspaces?id=eq.'+SF_ROW+'&select=orders:data->orders,members:data->members,stations:data->stations'),WA.rest('workspaces?id=eq.'+ROW+'-nasumas&select=data').catch(()=>[])]),r=sf&&sf[0];
+    if(!r)return[];
+    const list=await sessionsIn(dayStart()-45*864e5,Date.now());
+    return Nasumas.best({orders:r.orders||[],members:r.members||[],stations:r.stations||[],sessions:list,items:LAY().items,breaks:breakList(),cfg:Nasumas.cfgOf(cf&&cf[0]&&cf[0].data),from:dayStart(),to:Date.now()+1});
+  }catch(e){return[]}
+}
 async function showShout(manual,chain){
   const best=await dayBest();
   if(!best.length){if(manual)toast(t('shNone'));else if(chain)showDaySum();return}
+  const nb=await normBest();let perf=null;
+  if(nb.length){const i=best.findIndex(e=>normN(e.n)===normN(nb[0].n));if(i>=0){best.unshift(best.splice(i,1)[0]);perf=nb[0].perf}}
   const top=best[0],d=new Date(),lines=SHOUT_LINES[lang==='en'?'en':'lt'],line=lines[(d.getDate()+d.getMonth()*31)%lines.length].replace('{V}',voc(top.n)).replace('{N}',top.n.split(' ')[0]);
   const also=best.slice(1,4).filter(e=>e.ms>=SHOUT_MIN*1.5).map(e=>e.n);
-  $('#sh-box').innerHTML='<div class="shk">'+esc(t('shKicker'))+'</div><div class="shn">'+esc(line)+'</div><div class="shs">'+esc(fmtH(top.ms))+' · '+top.jobs.size+' '+esc(jobsWord(top.jobs.size))+' · '+esc([...top.places].slice(0,3).join(', '))+'</div>'+
+  $('#sh-box').innerHTML='<div class="shk">'+esc(t('shKicker'))+'</div><div class="shn">'+esc(line)+'</div><div class="shs">'+esc(fmtH(top.ms))+' · '+top.jobs.size+' '+esc(jobsWord(top.jobs.size))+' · '+esc([...top.places].slice(0,3).join(', '))+(perf!=null?' · '+(lang==='en'?'performance ':'našumas ')+Math.round(perf*100)+' %':'')+'</div>'+
     (also.length?'<div class="sha">'+esc(t('shAlso'))+': '+esc(also.join(', '))+' 👏</div>':'')+'<div class="sht">'+esc(t('shClose'))+'</div>';
   const box=$('#shout');box.classList.remove('clean');box.hidden=false;box.classList.remove('in');void box.offsetWidth;box.classList.add('in');
   box.classList.remove('sum');confetti();clearTimeout(shoutT);shoutT=setTimeout(()=>{hideShout();if(chain)showDaySum()},SHOUT_MS);
