@@ -3245,3 +3245,20 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
   .confirm-modal footer .btn { justify-content: center; min-height: 46px; }
   .confirm-modal footer .grow { display: none; }
 }
+/* client corrections on engineering projects */
+.rev-panel { display: flex; flex-direction: column; gap: 8px; }
+.rev-card { border: 1px solid var(--line, rgba(0,0,0,.1)); border-radius: 12px; padding: 10px 12px; background: var(--surface-2, rgba(0,0,0,.02)); display: flex; flex-direction: column; gap: 8px; }
+.rev-card.open { border-color: var(--orange); background: var(--orange-soft); }
+.rev-head { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.rev-head b { font-size: 13.5px; }
+.rev-took { font-size: 12px; color: var(--green, #34c759); }
+.rev-note { white-space: pre-wrap; font-size: 13.5px; line-height: 1.5; }
+.rev-acts { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.rev-acts .rev-rm { margin-left: auto; font-size: 12px; color: var(--text-3); }
+.rev-hist summary { cursor: pointer; font-size: 12.5px; color: var(--text-2); padding: 4px 0; }
+.rev-hist .rev-card { margin-top: 6px; }
+.rev-chip { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11.5px; font-weight: 600; color: var(--orange); background: var(--orange-soft); }
+.rev-picked { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.rev-pf { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2, rgba(0,0,0,.05)); }
+.rev-opt { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 4px 0 10px; }
+.rev-acts .btn { padding: 5.5px 12px; font-size: 12.5px; }

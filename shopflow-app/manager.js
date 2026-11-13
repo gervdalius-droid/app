@@ -1386,6 +1386,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         <span class="due-chip ${due.cls}">${due.label}</span>
       </div>
       <div class="title">${esc(order.product)}</div>
+      ${typeof Revisions !== "undefined" ? Revisions.cardChip(order) : ""}
       ${showClient ? `<div class="client">${esc(order.client)}</div>` : ""}
       <div class="oc-lines">${ops.map(line).join("")}</div>
       ${blocked.length ? `<div class="blocked-note">${icon("ban", 12)} ${esc(blocked.map(op => op.blockNote || "Blocked").join(" · "))}</div>` : ""}
@@ -1423,6 +1424,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         <span class="due-chip ${due.cls}">${due.label}</span>
       </div>
       <div class="title">${esc(order.product)}</div>
+      ${typeof Revisions !== "undefined" ? Revisions.cardChip(order) : ""}
       ${showClient || item && item.qty > 1 ? `<div class="client">${showClient ? esc(order.client) : ""}${showClient && item && item.qty > 1 ? " · " : ""}${item && item.qty > 1 ? `${item.qty} ${esc(order.unit)}` : ""}</div>` : ""}
       ${op && (op.group || multi) ? `<div class="row" style="gap:5px;flex-wrap:wrap">
         ${op.group ? `<span class="task-tag">${esc(op.group)}</span>` : ""}
@@ -4145,6 +4147,8 @@ var Notif = {
     task: "columns",
     eng_link: "link",
     eng_link_ok: "check",
+    client_rev: "pencil",
+    client_rev_ok: "check",
     eng_link_no: "x"
   },
   bellHtml(memberId) {
@@ -4222,7 +4226,7 @@ var Notif = {
     });
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       try {
-        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : "Update"), {
+        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : n.type === "client_rev" ? I18N.t("Client corrections") : "Update"), {
           body: n.text
         });
       } catch (e) {}
@@ -5084,6 +5088,7 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
         </button>` : ""}
         ${EngLink.engBanner(o)}
         ${EngLink.prodBanner(o)}
+        ${typeof Revisions !== "undefined" ? Revisions.html(o) : ""}
 
         <div class="meta-grid">
           <div class="meta-box"><span class="t-label">Due date</span>
@@ -5904,6 +5909,7 @@ Confirm.del('comment','komentarą',Confirm.nm((o.comments || []).find(x => x.id 
       var handoff = $("#od-handoff", el);
       if (handoff) handoff.onclick = () => this.handoffModal(o.id);
       EngLink.bind(el, o);
+      if (typeof Revisions !== "undefined") Revisions.bind(el, o);
       var approve = $("#od-approve", el);
       if (approve) approve.onclick = () => {
         var engineers = M.confirmClientApproval(o.id, App.me.id);

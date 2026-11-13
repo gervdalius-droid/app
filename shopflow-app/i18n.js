@@ -896,5 +896,6 @@ var LT = {
   "The cabinet list the drawing tool writes next to the PDF (…_SPINTELES.csv) — or drop it anywhere on the project": "Spintelių sąrašas, kurį brėžinių programa įrašo šalia PDF (…_SPINTELES.csv) — arba numeskite jį bet kur ant projekto",
   "No cabinets found in that file": "Šiame faile spintelių nerasta",
   "Cabinet numbers from the drawings": "Spintelių numeriai iš brėžinių",
-  "not found": "nerasta"
+  "not found": "nerasta",
+  "Client corrections": "Kliento pataisos"
 };

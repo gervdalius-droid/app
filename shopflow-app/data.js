@@ -7882,6 +7882,83 @@ var M = {
     Store.save();
     return engineers;
   },
+  /* ---------- client corrections on a design ----------
+     The concept went to the client, the client came back with a marked-up PDF
+     and a list of changes. One round = notes + files; the engineer is told and
+     takes it over, so nobody works from last week's drawing. */
+  revisions(o) {
+    return o && o.revisions || [];
+  },
+  openRevisions(o) {
+    return this.revisions(o).filter(r => !r.takenAt);
+  },
+  addRevision(orderId, { note, fileIds, reopen }, byId) {
+    var o = D.order(orderId);
+    if (!o) return null;
+    if (!o.revisions) o.revisions = [];
+    var r = {
+      id: uid("rv"),
+      n: o.revisions.length + 1,
+      at: Date.now(),
+      by: byId,
+      note: String(note || "").trim(),
+      files: (fileIds || []).slice()
+    };
+    o.revisions.push(r);
+    r.files.forEach(id => { var f = D.file(id); if (f) f.revId = r.id; });
+    /* corrections mean the drawings are not approved any more */
+    if (o.clientApproved) o.clientApproved = null;
+    /* back to drawing: the design step opens again */
+    if (reopen) {
+      var design = o.ops.find(op => op.stationId === "eg-design");
+      if (design && design.status === "done") { design.status = "paused"; design.completedAt = null; }
+      var appr = o.ops.find(op => op.stationId === "eg-appr");
+      if (appr && appr.status === "done") { appr.status = "paused"; appr.completedAt = null; }
+    }
+    var ids = D.orderResponsible(o);
+    if (!ids.length) ids = D.projectEngineers(o);
+    if (!ids.length) ids = Store.state.members.filter(m => m.role === "engineer" && !m.archived).map(m => m.id);
+    ids = ids.filter(id => id !== byId);
+    r.notified = ids;
+    var who = D.member(byId);
+    var name = who ? who.name : this._ltText("A manager", "Vadovas");
+    var nf = r.files.length;
+    ids.forEach(id => this.notify(id, {
+      type: "client_rev",
+      orderId: o.id,
+      text: this._ltText(
+        `${name} added client corrections #${r.n} to ${o.num}${nf ? ` · ${nf} file${nf === 1 ? "" : "s"}` : ""} — take them over to continue`,
+        `${name} pridėjo kliento pataisas Nr. ${r.n} prie ${o.num}${nf ? ` · failų: ${nf}` : ""} — perimkite ir tęskite darbą`)
+    }, byId));
+    this.log(byId, `added **client corrections #${r.n}** to ${o.num}${ids.length ? ` — notified ${ids.map(id => (D.member(id) || {}).name).filter(Boolean).join(", ")}` : ""}`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
+  takeRevision(orderId, revId, byId) {
+    var o = D.order(orderId);
+    var r = this.revisions(o).find(x => x.id === revId);
+    if (!r || r.takenAt) return null;
+    r.takenAt = Date.now();
+    r.takenBy = byId;
+    var who = D.member(byId);
+    if (r.by && r.by !== byId) this.notify(r.by, {
+      type: "client_rev_ok",
+      orderId: o.id,
+      text: this._ltText(`${who ? who.name : "The engineer"} took over client corrections #${r.n} on ${o.num}`, `${who ? who.name : "Inžinierius"} perėmė kliento pataisas Nr. ${r.n} (${o.num})`)
+    }, byId);
+    this.log(byId, `took over **client corrections #${r.n}** on ${o.num}`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
+  removeRevision(orderId, revId, byId) {
+    var o = D.order(orderId);
+    var r = this.revisions(o).find(x => x.id === revId);
+    if (!r) return;
+    o.revisions = o.revisions.filter(x => x !== r);
+    r.files.forEach(id => { var f = D.file(id); if (f) delete f.revId; });
+    this.log(byId, `removed client corrections #${r.n} from ${o.num}`, { orderId: o.id });
+    Store.save();
+  },
   revokeClientApproval(orderId, byId) {
     var o = D.order(orderId);
     if (!o || !o.clientApproved) return;
