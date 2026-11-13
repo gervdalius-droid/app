@@ -1347,6 +1347,80 @@ var Modal = {
 };
 
 /* ============================================================
+   Confirm — every delete asks first.
+   A tap on a bin icon used to remove a whole project at once, with only a
+   short "Undo" toast as a safety net. Now it says exactly what goes, the
+   safe choice (Cancel) has the focus — Enter or a second tap can't delete —
+   and where something gentler exists (archive a project) it is offered.
+   Its own layer, above the drawer and any open dialog.
+   ============================================================ */
+var Confirm = {
+  L(en, lt) { return typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en; },
+  /* the readable name of a record, whatever it calls it */
+  nm(x) { return x ? String(x.name || x.title || x.text || x.model || x.label || x.num || "").trim() : ""; },
+  /* Confirm.ask({ title, name, note, ok, cancel, danger, alt: { label, fn } }) → Promise<boolean> */
+  ask(o) {
+    o = o || {};
+    var L = this.L;
+    return new Promise(resolve => {
+      var root = document.getElementById("confirm-root");
+      if (!root) { root = document.createElement("div"); root.id = "confirm-root"; document.body.appendChild(root); }
+      var back = document.activeElement;
+      var danger = o.danger !== false;
+      var name = o.name ? String(o.name) : "";
+      if (name.length > 160) name = name.slice(0, 157) + "…";
+      root.innerHTML = `<div class="modal-scrim confirm-scrim"><div class="modal confirm-modal" role="alertdialog" aria-modal="true" aria-labelledby="cf-title" aria-describedby="cf-body">
+        <header><span class="cf-ico${danger ? "" : " soft"}" aria-hidden="true">${icon(danger ? "trash" : "alert", 18)}</span><h2 id="cf-title">${esc(o.title || L("Delete?", "Ištrinti?"))}</h2></header>
+        <div class="modal-body" id="cf-body">
+          ${name ? `<div class="cf-name">${esc(name)}</div>` : ""}
+          ${o.note ? `<p class="cf-note">${esc(o.note)}</p>` : ""}
+          ${o.alt && o.alt.hint ? `<p class="cf-alt-hint">${esc(o.alt.hint)}</p>` : ""}
+        </div>
+        <footer>
+          ${o.alt ? `<button type="button" class="btn" data-cf="alt">${o.alt.icon ? icon(o.alt.icon, 15) + " " : ""}${esc(o.alt.label)}</button><span class="grow"></span>` : ""}
+          <button type="button" class="btn" data-cf="no">${esc(o.cancel || L("Cancel", "Atšaukti"))}</button>
+          <button type="button" class="btn ${danger ? "danger-solid" : "primary"}" data-cf="yes">${esc(o.ok || L("Delete", "Ištrinti"))}</button>
+        </footer></div></div>`;
+      var scrim = root.firstElementChild, done = false;
+      var finish = v => {
+        if (done) return; done = true;
+        document.removeEventListener("keydown", onKey, true);
+        scrim.classList.add("closing");
+        setTimeout(() => { root.innerHTML = ""; }, 180);
+        try { if (back && back.focus && document.contains(back)) back.focus(); } catch (e) {}
+        if (v === "alt") { resolve(false); try { o.alt.fn(); } catch (e) { console.error(e); } }
+        else resolve(v === true);
+      };
+      var onKey = e => {
+        if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); finish(false); }
+        else if (e.key === "Tab") {        // keep focus inside the dialog
+          var bs = [].slice.call(scrim.querySelectorAll("button"));
+          var i = bs.indexOf(document.activeElement);
+          e.preventDefault();
+          bs[(i + (e.shiftKey ? bs.length - 1 : 1)) % bs.length].focus();
+        }
+      };
+      document.addEventListener("keydown", onKey, true);
+      scrim.querySelector('[data-cf="no"]').onclick = () => finish(false);
+      scrim.querySelector('[data-cf="yes"]').onclick = () => finish(true);
+      var alt = scrim.querySelector('[data-cf="alt"]');
+      if (alt) alt.onclick = () => finish("alt");
+      /* a tap beside the dialog = no (nothing is lost by not deleting) */
+      scrim.addEventListener("click", e => { if (e.target === scrim) finish(false); });
+      setTimeout(() => { var c = scrim.querySelector('[data-cf="no"]'); if (c) c.focus(); }, 30);
+    });
+  },
+  /* the usual case: "Delete <kind>?" + the name + an optional consequence */
+  del(kindEn, kindLt, name, noteEn, noteLt, extra) {
+    return this.ask(Object.assign({
+      title: this.L(`Delete ${kindEn}?`, `Ištrinti ${kindLt}?`),
+      name: name,
+      note: noteEn || noteLt ? this.L(noteEn || noteLt, noteLt || noteEn) : ""
+    }, extra || {}));
+  }
+};
+
+/* ============================================================
    Drawer (order detail) — content defined in manager.js/worker.js
    ============================================================ */
 var Drawer = {

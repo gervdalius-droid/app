@@ -3221,3 +3221,27 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .mod-title { display: flex; align-items: baseline; gap: 0; flex-wrap: wrap; }
 .mod-row b.mod-num { display: inline-block; font-size: 13px; font-weight: 650; cursor: pointer; }
 .mod-row .mod-key { display: block; }
+
+/* ---- Confirm (every delete asks first) ---- */
+.confirm-scrim { z-index: 300; }
+.modal.confirm-modal { max-width: 440px; }
+.confirm-modal > header { align-items: center; }
+.confirm-modal .cf-ico { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--red-soft); color: var(--red); }
+.confirm-modal .cf-ico.soft { background: var(--surface-2, rgba(127,127,127,.12)); color: var(--text-2); }
+.confirm-modal .modal-body { gap: 8px; padding-top: 10px; }
+.confirm-modal .cf-name { font-weight: 650; font-size: 15.5px; padding: 10px 12px; border-radius: var(--r-md, 10px); background: var(--red-soft); color: var(--text); overflow-wrap: anywhere; }
+.confirm-modal .cf-note { margin: 0; color: var(--text-2); font-size: 14px; line-height: 1.45; }
+.confirm-modal .cf-alt-hint { margin: 2px 0 0; font-size: 13px; color: var(--text-3, var(--text-2)); line-height: 1.45; }
+.confirm-modal footer { flex-wrap: wrap; }
+.confirm-modal footer .grow { flex: 1; }
+.btn.danger-solid { background: var(--red); color: #fff; }
+.btn.danger-solid:hover { filter: brightness(1.06); }
+@media (max-width: 520px) {
+  .confirm-scrim { align-items: flex-end; padding: 10px; }
+  .confirm-modal footer { flex-direction: column; align-items: stretch; }
+  .confirm-modal footer [data-cf="yes"] { order: 1; }
+  .confirm-modal footer [data-cf="alt"] { order: 2; }
+  .confirm-modal footer [data-cf="no"] { order: 3; }
+  .confirm-modal footer .btn { justify-content: center; min-height: 46px; }
+  .confirm-modal footer .grow { display: none; }
+}

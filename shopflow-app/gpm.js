@@ -378,6 +378,8 @@ var GPM = {
       });
     };
     $("#gp-del", root).onclick = () => {
+Confirm.del('project','projektą',p.name,'All its tasks are deleted too.','Kartu ištrinamos ir visos jo užduotys.').then(ok => {
+ if (!ok) return;
       var snap = Store.snapshot();
       M.deleteGProject(p.id, App.me.id);
       this.openId = null;
@@ -388,7 +390,8 @@ var GPM = {
           App.render();
         }
       });
-    };
+    });
+};
     $("#gp-add-task", root).onclick = () => this.addTaskInline(p.stages[0].id);
     $$("[data-gtab]", root).forEach(b => b.onclick = () => {
       this.tab = b.dataset.gtab;
@@ -699,9 +702,15 @@ var GPM = {
         if (a === "left") M.moveGStage(p.id, sid, -1);
         if (a === "right") M.moveGStage(p.id, sid, 1);
         if (a === "del") {
-          if (!M.deleteGStage(p.id, sid)) Toast.show("Keep at least one column", {
-            emoji: "alert"
+          Popover.close();
+          Confirm.del('column', 'stulpelį', Confirm.nm(p.stages.find(x => x.id === sid)), 'Its tasks move to the column next to it.', 'Jo užduotys bus perkeltos į gretimą stulpelį.').then(ok => {
+            if (!ok) return;
+            if (!M.deleteGStage(p.id, sid)) Toast.show("Keep at least one column", {
+              emoji: "alert"
+            });
+            App.render();
           });
+          return;
         }
         Popover.close();
         App.render();
@@ -842,6 +851,8 @@ var GPM = {
       this.renderTaskDrawer();
     });
     $("#gtd-del", el).onclick = () => {
+Confirm.del('task','užduotį',Confirm.nm(t)).then(ok => {
+ if (!ok) return;
       var snap = Store.snapshot();
       M.deleteGTask(p.id, t.id);
       this.closeTask();
@@ -852,7 +863,8 @@ var GPM = {
           App.render();
         }
       });
-    };
+    });
+};
     // subtasks
     $$("[data-gsub-done]", el).forEach(b => b.onclick = () => {
       M.toggleSubtask(p.id, t.id, b.dataset.gsubDone);
@@ -860,10 +872,13 @@ var GPM = {
       this.renderTaskDrawer();
     });
     $$("[data-gsub-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('subtask','použduotį',Confirm.nm((t.subtasks || []).find(x => x.id === b.dataset.gsubDel))).then(ok => {
+ if (!ok) return;
       M.deleteSubtask(p.id, t.id, b.dataset.gsubDel);
       App.render();
       this.renderTaskDrawer();
     });
+});
     var subIn = $("#gsub-input", el);
     var addSub = () => {
       var v = subIn.value.trim();
@@ -903,10 +918,13 @@ var GPM = {
     };
     Mentions.attach(cIn, addC);
     $$("[data-oc-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('comment','komentarą',Confirm.nm((t.comments || []).find(x => x.id === b.dataset.ocDel))).then(ok => {
+ if (!ok) return;
       t.comments = t.comments.filter(c => c.id !== b.dataset.ocDel);
       Store.save();
       this.renderTaskDrawer();
     });
+});
     $("#gc-addbtn", el).onclick = addC; // Enter is handled by Mentions.attach (it may be picking a name)
   }
 };

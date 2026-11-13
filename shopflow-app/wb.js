@@ -274,6 +274,8 @@ var WB = {
     $("#wb-share", root).onclick = () => this.shareModal(b);
     var delBtn = $("#wb-del-board", root);
     if (delBtn) delBtn.onclick = () => {
+Confirm.del('board','lentą',Confirm.nm(b)).then(ok => {
+ if (!ok) return;
       var snap = Store.snapshot();
       M.deleteBoard(b.id, App.me.id);
       this.openId = null;
@@ -284,7 +286,8 @@ var WB = {
           App.render();
         }
       });
-    };
+    });
+};
     $$("[data-wb-tool]", root).forEach(bt => bt.onclick = () => {
       this.tool = bt.dataset.wbTool;
       this.connectFrom = null;
@@ -1041,6 +1044,10 @@ var WB = {
         return;
       }
       if (e.target.closest("[data-wb-el-del]")) {
+        var elRef = el;
+        Confirm.del('item', 'elementą', Confirm.nm(elRef) || (elRef.kind || elRef.type || '')).then(ok => {
+        if (!ok) return;
+        var el = elRef;
         var snap = Store.snapshot();
         M.wbDelete(b.id, el.id);
         this.selectedId = null;
@@ -1050,6 +1057,7 @@ var WB = {
             Store.restore(snap);
             App.render();
           }
+        });
         });
       }
     });

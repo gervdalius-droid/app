@@ -462,8 +462,10 @@ var ProjectFiles = {
     $$(".pf-mail [data-file-rm]", root).forEach(b => b.onclick = ev => {
       ev.stopPropagation();
       var f = D.file(b.dataset.fileRm);
-      if (!f || !confirm(_pfLt("Remove ", "Pašalinti ") + ((f.email && f.email.subject) || f.name) + "?")) return;
-      Files.remove(f.id, App.me.id).then(() => { App.render(); redraw(); });
+      if (!f) return;
+      Confirm.ask({ title: Confirm.L("Remove file?", "Pašalinti failą?"), name: (f.email && f.email.subject) || f.name, ok: Confirm.L("Remove", "Pašalinti") }).then(ok => {
+        if (ok) Files.remove(f.id, App.me.id).then(() => { App.render(); redraw(); });
+      });
     });
     var zone = $('[data-drop="pf-in"]', root),
       input = $("#pf-in", root);

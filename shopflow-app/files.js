@@ -513,10 +513,13 @@ var Files = {
     $$("[data-file-rm]", root).forEach(b => b.onclick = e => {
       e.stopPropagation();
       var f = D.file(b.dataset.fileRm);
-      if (!f || !confirm(`Remove ${f.name}?`)) return;
-      this.remove(f.id, App.me.id).then(() => {
-        App.render();
-        if (onRemove) onRemove();
+      if (!f) return;
+      Confirm.ask({ title: Confirm.L("Remove file?", "Pašalinti failą?"), name: f.name, ok: Confirm.L("Remove", "Pašalinti") }).then(ok => {
+        if (!ok) return;
+        this.remove(f.id, App.me.id).then(() => {
+          App.render();
+          if (onRemove) onRemove();
+        });
       });
     });
   },

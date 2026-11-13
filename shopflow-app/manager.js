@@ -479,13 +479,16 @@ var Mgr = {
       };
       var del = $("#pf-del", modal);
       if (del) del.onclick = () => {
+Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Jame esantys projektai neištrinami.').then(ok => {
+ if (!ok) return;
         M.deletePortfolio(p.id, App.me.id);
         Modal.close();
         App.render();
         Toast.show("Portfolio deleted — projects kept", {
           emoji: "🗑"
         });
-      };
+      });
+};
     });
   },
   /* ---------------- Timeline (Gantt) ---------------- */
@@ -1942,6 +1945,8 @@ var Mgr = {
       });
       var removeBtn = $("#mm-remove", modal);
       if (removeBtn) removeBtn.onclick = () => {
+Confirm.del('team member','darbuotoją',m.name,'They will no longer be able to sign in. Their past work stays in the history.','Jis nebegalės prisijungti. Atlikti darbai liks istorijoje.',{ok:Confirm.L('Remove','Pašalinti'),title:Confirm.L('Remove team member?','Pašalinti darbuotoją?')}).then(ok => {
+ if (!ok) return;
         var snap = Store.snapshot();
         M.removeMember(m.id, App.me.id);
         Modal.close();
@@ -1952,7 +1957,8 @@ var Mgr = {
             App.render();
           }
         });
-      };
+      });
+};
       $("#mm-save", modal).onclick = () => {
         var name = $("#mm-name", modal).value.trim();
         var trade = $("#mm-trade", modal).value.trim();
@@ -2519,11 +2525,11 @@ var Mgr = {
       App.navigate("scan");
     });
     var syncPush = $("#sync-push", root);
-    if (syncPush) syncPush.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
+    var syncPushRun = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee2() {
       return _regeneratorRuntime().wrap(function _callee2$(_context2) {
         while (1) switch (_context2.prev = _context2.next) {
           case 0:
-            if (confirm("Upload THIS device's data to the cloud, overwriting the shared copy? Do this once, from the device that has the correct data.")) {
+            if (true) {
               _context2.next = 2;
               break;
             }
@@ -2558,10 +2564,17 @@ var Mgr = {
         }
       }, _callee3);
     }));
+    if (syncPush) syncPush.onclick = () => Confirm.ask({
+      title: Confirm.L("Overwrite the shared data?", "Perrašyti bendrus duomenis?"),
+      note: Confirm.L("This device's data replaces the shared copy for everyone. Do this once, only from the device that has the correct data.", "Šio įrenginio duomenys pakeis bendrą kopiją visiems. Darykite tai vieną kartą ir tik iš įrenginio, kuriame duomenys teisingi."),
+      ok: Confirm.L("Overwrite", "Perrašyti")
+    }).then(ok => { if (ok) syncPushRun(); });
     var syncLogout = $("#sync-logout", root);
-    if (syncLogout) syncLogout.onclick = () => {
-      if (confirm("Sign this device out of the shared workspace? You'll need the shop password to sign back in.")) Sync.logout();
-    };
+    if (syncLogout) syncLogout.onclick = () => Confirm.ask({
+      title: Confirm.L("Sign this device out?", "Atjungti šį įrenginį?"),
+      note: Confirm.L("You'll need the shop password to sign back in.", "Norint vėl prisijungti, reikės dirbtuvių slaptažodžio."),
+      ok: Confirm.L("Sign out", "Atsijungti"), danger: false
+    }).then(ok => { if (ok) Sync.logout(); });
     $("#set-export", root).onclick = () => this.exportBackup();
     var stBtn = $("#set-storage", root);
     if (stBtn) stBtn.onclick = () => this.storageModal();
@@ -2604,11 +2617,14 @@ var Mgr = {
       App.render();
     });
     $$("[data-brk-del]", root).forEach(b => b.onclick = () => {
+Confirm.del('break','pertrauką',Confirm.nm((D.shift().breaks || [])[+b.dataset.brkDel])).then(ok => {
+ if (!ok) return;
       M.setShift({
         breaks: D.shift().breaks.filter((_, n) => n !== +b.dataset.brkDel)
       }, App.me.id);
       App.render();
     });
+});
     var brkAdd = $("#set-brk-add", root);
     if (brkAdd) brkAdd.onclick = () => {
       M.setShift({
@@ -2740,6 +2756,8 @@ var Mgr = {
         <div class="row" style="justify-content:flex-end;margin-top:16px"><button class="btn ghost" id="bk-close">Close</button></div>`, m => {
         $("#bk-close", m).onclick = () => Modal.close();
         $$("[data-bk-del]", m).forEach(btn => btn.onclick = () => {
+Confirm.del('restore point','atkūrimo tašką','').then(ok => {
+ if (!ok) return;
           Store.deleteBackup(parseInt(btn.dataset.bkDel));
           Modal.close();
           App.render();
@@ -2747,6 +2765,7 @@ var Mgr = {
             emoji: "trash"
           });
         });
+});
         $$("[data-bk]", m).forEach(btn => btn.onclick = /*#__PURE__*/_asyncToGenerator(/*#__PURE__*/_regeneratorRuntime().mark(function _callee4() {
           var snap;
           return _regeneratorRuntime().wrap(function _callee4$(_context4) {
@@ -2883,6 +2902,8 @@ var Mgr = {
       App.render();
     });
     $$("[data-st-del]", root).forEach(b => b.onclick = () => {
+Confirm.del('station','stotį',Confirm.nm(D.station(b.dataset.stDel))).then(ok => {
+ if (!ok) return;
       var id = b.dataset.stDel;
       var st = D.station(id);
       var snap = Store.snapshot();
@@ -2901,6 +2922,7 @@ var Mgr = {
         }
       });
     });
+});
   }
 };
 
@@ -3544,18 +3566,24 @@ var Warehouse = {
       };
       var cancel = $("#po-cancel", modal);
       if (cancel) cancel.onclick = () => {
-        if (!confirm(`Cancel ${po.num}? It stays on the list as a record.`)) return;
+Confirm.ask({title:Confirm.L(`Cancel ${po.num}?`,`Atšaukti ${po.num}?`),note:Confirm.L('It stays on the list as a record.','Jis liks sąraše kaip įrašas.'),ok:Confirm.L('Cancel order','Atšaukti užsakymą'),cancel:Confirm.L('Back','Atgal')}).then(ok => {
+ if (!ok) return;
+
         M.cancelPurchase(po.id, App.me.id);
         Modal.close();
         App.render();
-      };
+      });
+};
       var del = $("#po-del", modal);
       if (del) del.onclick = () => {
-        if (!confirm(`Delete draft ${po.num}?`)) return;
+Confirm.del('draft','juodraštį',po.num).then(ok => {
+ if (!ok) return;
+
         M.deletePurchase(po.id, App.me.id);
         Modal.close();
         App.render();
-      };
+      });
+};
       // there is no close hook on Modal, so the header fields save as they change
       ["#po-sup", "#po-exp", "#po-notes"].forEach(sel => {
         var el = $(sel, modal);
@@ -3614,11 +3642,14 @@ var Warehouse = {
       };
       var del = $("#sup-del", modal);
       if (del && !locked) del.onclick = () => {
-        if (!confirm(`Delete ${sup.name}? Materials keep their stock but lose the link.`)) return;
+Confirm.del('supplier','tiekėją',sup.name,'Materials keep their stock but lose the link.','Medžiagų likučiai liks, tik nebebus susieti su šiuo tiekėju.').then(ok => {
+ if (!ok) return;
+
         M.deleteSupplier(sup.id, App.me.id);
         Modal.close();
         App.render();
-      };
+      });
+};
     });
   },
   bind(root) {
@@ -3877,13 +3908,16 @@ var Warehouse = {
       };
       var del = $("#art-del", modal);
       if (del) del.onclick = () => {
+Confirm.del('article','gaminį',a.name).then(ok => {
+ if (!ok) return;
         M.deleteArticle(a.id, App.me.id);
         Modal.close();
         App.render();
         Toast.show("Article deleted — existing orders keep their routing", {
           emoji: "🗑"
         });
-      };
+      });
+};
     });
   },
   materialModal(matId, focusReceive) {
@@ -4002,6 +4036,8 @@ var Warehouse = {
         });
       };
       $("#mat-del", modal).onclick = () => {
+Confirm.del('material','medžiagą',m.name).then(ok => {
+ if (!ok) return;
         var snap = Store.snapshot();
         if (!M.deleteMaterial(m.id, App.me.id)) {
           Toast.show("Can't delete — needed by open orders", {
@@ -4017,7 +4053,8 @@ var Warehouse = {
             App.render();
           }
         });
-      };
+      });
+};
     });
   },
   addModal() {
@@ -4271,6 +4308,8 @@ var Todo = {
       App.render();
     });
     $$("[data-todo-del]", root).forEach(b => b.onclick = () => {
+Confirm.del('to-do','užduotį',Confirm.nm((Store.state.todos || []).find(x => x.id === b.dataset.todoDel))).then(ok => {
+ if (!ok) return;
       var snap = Store.snapshot();
       M.deleteTodo(b.dataset.todoDel);
       App.render();
@@ -4281,6 +4320,7 @@ var Todo = {
         }
       });
     });
+});
     $$("[data-todo-add]", root).forEach(b => {
       var forId = b.dataset.todoAdd;
       var input = $(`[data-todo-input="${forId}"]`, root);
@@ -4782,11 +4822,14 @@ var OrderDetail = {
       this.refreshSheet();
     });
     $$("[data-ap-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id === b.dataset.apDel))).then(ok => {
+ if (!ok) return;
       M.removeAppliance(o.id, b.dataset.apDel, App.me.id);
       App.render();
       Drawer.refresh();
       this.refreshSheet();
     });
+});
   },
   /* the sheet is a modal; the drawer's handlers only redraw the drawer */
   refreshSheet() {
@@ -5457,10 +5500,13 @@ var OrderDetail = {
       Drawer.refresh();
     });
     $$("[data-dt-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('item','detalę',Confirm.nm(D.detail(o, b.dataset.dtDel))).then(ok => {
+ if (!ok) return;
       M.removeDetail(o.id, b.dataset.dtDel, App.me.id);
       App.render();
       Drawer.refresh();
     });
+});
     var modCount = $("#mod-count", el);
     if (modCount) modCount.onclick = () => this.moduleCountModal(o.id);
     var asmQty = $("#od-asm-qty", el);
@@ -5552,6 +5598,8 @@ var OrderDetail = {
     });
     $$("[data-op-del]", el).forEach(b => b.onclick = e => {
       e.stopPropagation();
+Confirm.del('step','etapą',Confirm.nm(D.station((o.ops.find(x => x.id === b.dataset.opDel) || {}).stationId))).then(ok => {
+ if (!ok) return;
       var snap = Store.snapshot();
       if (M.removeOp(o.id, b.dataset.opDel, App.me.id)) {
         App.render();
@@ -5563,6 +5611,7 @@ var OrderDetail = {
         });
       }
     });
+});
     var addStep = $("#od-add-step", el);
     if (addStep) addStep.onclick = () => {
       var kind = o.type === "eng" ? "eng" : "prod";
@@ -5628,8 +5677,11 @@ var OrderDetail = {
       });
     });
     $$("[data-line-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('material line','medžiagos eilutę',Confirm.nm((o.materials || []).find(x => x.id === b.dataset.lineDel))).then(ok => {
+ if (!ok) return;
       if (M.removeOrderMaterial(o.id, b.dataset.lineDel, App.me.id)) App.render();
     });
+});
     var matAdd = $("#od-mat-add", el);
     if (matAdd) matAdd.onclick = () => {
       var sel = $("#od-mat-sel", el),
@@ -5685,9 +5737,12 @@ var OrderDetail = {
       if (cAdd) cAdd.onclick = post;
     }
     $$("[data-oc-del]", el).forEach(b => b.onclick = () => {
+Confirm.del('comment','komentarą',Confirm.nm((o.comments || []).find(x => x.id === b.dataset.ocDel))).then(ok => {
+ if (!ok) return;
       M.deleteOrderComment(o.id, b.dataset.ocDel, App.me.id);
       Drawer.refresh();
     });
+});
     if (inCockpit) {
       var sheetBtn = $("#od-sheet", el);
       if (sheetBtn) sheetBtn.onclick = () => this.sheetModal(o.id);
@@ -5871,6 +5926,8 @@ var OrderDetail = {
       $$("[data-open-order]", el).forEach(b => b.onclick = () => Drawer.open(b.dataset.openOrder));
       var del = $("#od-delete", el);
       if (del) del.onclick = () => {
+Confirm.ask({title:Confirm.L('Delete project?','Ištrinti projektą?'),name:[o.num,o.client,o.product].filter((v,i,arr)=>v&&arr.indexOf(v)===i).join(' · '),note:Confirm.L('The project, its steps, comments and file list are removed for everyone.','Projektas, jo etapai, komentarai ir failų sąrašas bus pašalinti visiems.'),alt:archiveBtn&&!o.archived?{label:Confirm.L('Archive instead','Archyvuoti'),icon:'archive',fn:()=>archiveBtn.onclick(),hint:Confirm.L('Customer on hold or job paused? Archive keeps everything and takes it off the boards — you can bring it back any time.','Klientas laukia ar darbas sustabdytas? Archyvavus viskas išlieka, tik dingsta iš lentų – bet kada galima grąžinti.')}:null}).then(ok => {
+ if (!ok) return;
         var snap = Store.snapshot();
         M.deleteOrder(o.id, App.me.id);
         Drawer.close();
@@ -5881,7 +5938,8 @@ var OrderDetail = {
             App.render();
           }
         });
-      };
+      });
+};
     }
   },
   /* Copy a project — a fresh job from a proven one. The name must be free:
@@ -6503,11 +6561,14 @@ var NewOrder = {
       };
       var del = $("#sj-del", modal);
       if (del) del.onclick = () => {
+Confirm.del('standard job','standartinį darbą',a.name).then(ok => {
+ if (!ok) return;
         M.deleteArticle(a.id, App.me.id);
         self.draft.lines = (self.draft.lines || []).filter(l => l.articleId !== a.id);
         Toast.show("Deleted — existing orders keep their tasks", { emoji: "🗑" });
         back(null);
-      };
+      });
+};
     });
   },
   render() {
