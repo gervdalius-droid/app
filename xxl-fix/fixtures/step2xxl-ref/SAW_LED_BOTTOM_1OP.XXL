@@ -1,0 +1,14 @@
+H DX=1926 DY=567 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SAW_LED_BOTTOM_1OP
+;** Date codage : step2xxl
+; ------ BP_SCM_DRILLING_BLOCK
+ XBO X=100 Y=300 Z=-13 D=5 N="P" F=1 R=1#
+ XBO X=1800 Y=300 Z=-13 D=5 N="P" F=1 R=1#
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

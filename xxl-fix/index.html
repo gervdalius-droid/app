@@ -535,6 +535,7 @@ header .grow{flex:1}
         <span><i style="border:2px dashed #7b1fa2;width:8px;height:8px"></i>apačioje</span>
         <span><i style="background:#d98200;border-radius:2px"></i>briaunoje</span>
         <span><i style="background:#9fd3b6;border-radius:2px"></i>frezuojama</span>
+        <span><i style="background:#00838f;border-radius:2px;height:3px"></i>pjūklu</span>
       </div>
       <div class="tip">Spustelėkite skaičių — įveskite naują &middot; vilkite operaciją &middot; rodyklės ±1 mm (Shift ±10)<br>Ctrl+C / Ctrl+V — kopijuoti / įklijuoti &middot; Delete — ištrinti</div>
     </div>
@@ -578,6 +579,7 @@ header .grow{flex:1}
         <span><i style="background:#1f6feb"></i>iš viršaus</span>
         <span><i style="background:#d98200;border-radius:2px"></i>briaunoje</span>
         <span><i style="background:#9fd3b6;border-radius:2px"></i>frezuojama</span>
+        <span><i style="background:#00838f;border-radius:2px;height:3px"></i>pjūklu</span>
         <span><i style="background:#c62828"></i>neprogramuojama</span>
         <span><i style="background:#aab4c0"></i>išjungta</span>
       </div>
@@ -2847,6 +2849,9 @@ var PART = (function () {
     edge_max_depth: 31.906,   // deepest edge hole the machine accepts (SWOOD CAM post maximum)
     face_left: 3, face_right: 2, face_front: 4, face_back: 5,
     rout: { T: 96, dia: 15.5, D: 24, name: "DEIMANTAS 16MM  - NAUJA - " },
+    // saw blade (as step2xxl 2.14 / SWOOD CAM): grooves up to max_width wide (neon-flex LED) are sawn along X
+    saw: { T: 82, dia: 120, kerf: 3.2, D: 130, feed_approach: 4000, feed_cut: 8000, max_width: 6, max_depth: 15,
+           name: "RA_SCM_SAVKLINGE", op_name: "CUT-GROOVE", overrun_depth_offset: 1 },
     feed_cut: 4000, feed_plunge: 2000, safe_z: 10,
     rout_skin: 2, ramp: 30, lead_in: 5, air: 20,
     min_circle: 20,
@@ -2905,6 +2910,10 @@ var PART = (function () {
       case "groove":
         o = { kind: "groove", face: "T", dir: "X", p: 50, pr: "B", w: 16, depth: Math.min(8, DZ - CFG.rout_skin),
               full: true, a: 50, ar: "L", len: Math.max(50, Math.round(DX / 2)) };
+        break;
+      case "led":        // neon-flex LED groove: 4 mm wide, 7 deep, cut with the saw along X
+        o = { kind: "groove", face: "T", dir: "X", p: 50, pr: "B", w: 4, depth: Math.min(7, DZ - 2),
+              full: true, a: 50, ar: "L", len: Math.max(200, Math.round(DX / 2)), preset: "led" };
         break;
       case "notch":
         o = { kind: "notch", corner: "BR", a: 50, b: 50 };
@@ -2990,6 +2999,19 @@ var PART = (function () {
     else { a1 = along - o.a; a0 = a1 - o.len; }
     return { dir: o.dir, c0: c0, c1: c1, a0: a0, a1: a1, along: along, across: across,
              open0: a0 <= 1e-6, open1: a1 >= along - 1e-6 };
+  }
+  function isSaw(o) { return o.kind === "groove" && fin(o.w) && o.w <= CFG.saw.max_width + 1e-9; }
+  /* the saw passes for a narrow groove along X (step2xxl saw_groove): passes spaced across the
+     groove, first and last touching the walls, always cut from high X to low X; an open end is run
+     out past the panel like SWOOD, a closed end stops with the kerf exactly at the groove end on
+     the top surface (the rounded bottom, one blade chord long, is finished by hand). */
+  function sawPlan(g, depth, DZ) {
+    var sw = CFG.saw, k = sw.kerf, w = g.c1 - g.c0, d = Math.min(depth, sw.max_depth, DZ - 2);
+    var n = w <= k + 1e-3 ? 1 : Math.ceil((w - k) / k - 1e-9) + 1, ys = [];
+    if (n === 1) ys.push((g.c0 + g.c1) / 2); else for (var i = 0; i < n; i++) ys.push(g.c0 + k / 2 + i * (w - k) / (n - 1));
+    var dd = Math.max(0.1, d - sw.overrun_depth_offset), ov = Math.sqrt(dd * (sw.dia - dd)), c = Math.sqrt(d * (sw.dia - d));
+    var from = g.open1 ? g.along + ov : g.a1 - c, to = g.open0 ? -ov : g.a0 + c;
+    return { ys: ys, d: d, from: from, to: to, chord: c, ok: from > to + 1e-3 };
   }
   // the same box as a plan rectangle
   function grooveRect(g) {
@@ -3107,9 +3129,28 @@ var PART = (function () {
         var opposite = { L: P.DX, R: P.DX, F: P.DY, B: P.DY }[o.edge];
         if (o.depth >= opposite) add(id, "err", "Gylis didesnis už plokštės matmenį.");
       }
+      else if (o.kind === "groove" && isSaw(o)) {
+        if (!need("p", "w", "depth") || (!o.full && !need("a", "len"))) return;
+        var sw = CFG.saw, gs = grooveBox(o, P), sawMax = Math.min(sw.max_depth, P.DZ - 2);
+        if (o.dir !== "X") { add(id, "err", "Pjūklas pjauna tik išilgai X — pasukite griovelį (ar visą detalę)."); return; }
+        if (o.w < sw.kerf - 0.1) add(id, "err", "Siauriausias pjūklo griovelis — " + num(sw.kerf) + " mm (pjūklo propjova).");
+        if (o.depth <= 0) add(id, "err", "Gylis turi būti didesnis už 0.");
+        else if (o.depth > sawMax + 1e-6) add(id, "err", "Pjūklu — ne giliau kaip " + num(sawMax) + " mm.");
+        if (gs.c0 < -0.01 || gs.c1 > gs.across + 0.01) add(id, "err", "Griovelis už plokštės ribų.");
+        if (!o.full && o.len <= 0) { add(id, "err", "Ilgis turi būti didesnis už 0."); return; }
+        if (!o.full && (gs.a0 < -0.01 || gs.a1 > gs.along + 0.01)) { add(id, "err", "Griovelis ilgesnis nei plokštė."); return; }
+        if (o.depth > 0) {
+          var sp = sawPlan(gs, o.depth, P.DZ);
+          if (!sp.ok) add(id, "err", "Per trumpas pjūklui: " + num(Math.round(2 * sp.chord)) + " mm gylyje " + num(sp.d) + " pjūklas palieka ilgesnį pėdsaką — pjaukite rankomis.");
+          else {
+            add(id, "info", "Pjaunama pjūklu T=" + sw.T + " (propjova " + num(sw.kerf) + " mm): " + sp.ys.length + (sp.ys.length === 1 ? " praėjimas" : " praėjimai") + ".");
+            if (!gs.open0 || !gs.open1) add(id, "info", "Galas plokštės viduje: ~" + num(Math.round(sp.chord)) + " mm suapvalintą dugną pabaikite rankomis" + (!gs.open1 ? " (dešiniajame gale pjūklas įleidžiamas)" : "") + ".");
+          }
+        }
+      }
       else if (o.kind === "groove") {
         if (!need("p", "w", "depth") || (!o.full && !need("a", "len"))) return;
-        if (o.w < CFG.rout.dia - 0.01) add(id, "err", "Freza Ø" + num(CFG.rout.dia) + " — siauresnio nei " + num(CFG.rout.dia) + " mm griovelio padaryti negalima (pjūklo grioveliai dar nepalaikomi).");
+        if (o.w < CFG.rout.dia - 0.01) add(id, "err", "Griovelis " + num(o.w) + " mm: per platus pjūklui (iki " + num(CFG.saw.max_width) + " mm) ir per siauras frezai Ø" + num(CFG.rout.dia) + ".");
         if (o.depth <= 0) add(id, "err", "Gylis turi būti didesnis už 0.");
         else if (o.depth > routMax + 1e-6) add(id, "err", "Frezuojant paliekama " + CFG.rout_skin + " mm — didžiausias gylis " + num(routMax) + " mm.");
         var g = grooveBox(o, P);
@@ -3225,6 +3266,14 @@ var PART = (function () {
     return route(start, segs, depth, "GROOVE");
   }
 
+  function sawCut(g, depth, DZ) {             // g in program coordinates, along X
+    var sp = sawPlan(g, depth, DZ), mv = [];
+    sp.ys.forEach(function (y) {
+      mv.push({ t: "G0", x: sp.from, y: y, z: -sp.d }, { t: "L", x: sp.to, y: y, z: -sp.d, v: CFG.saw.feed_cut });
+    });
+    return { name: CFG.saw.op_name, moves: mv, saw: true, passes: sp.ys.length };
+  }
+
   function notchPath(nr, P) {               // through notch at a corner, tool in the waste, panel on the right
     var L = nr.x0 <= 1e-9, F = nr.y0 <= 1e-9;
     var a = nr.x1 - nr.x0, b = nr.y1 - nr.y0;
@@ -3268,9 +3317,10 @@ var PART = (function () {
                ' N="' + b.N + '" F=' + b.F + " R=1#");
       });
     }
-    if (prog.routes.length) {
+    var rts = prog.routes.filter(function (rt) { return !rt.saw; }), saws = prog.routes.filter(function (rt) { return rt.saw; });
+    if (rts.length) {
       L.push("; ------ " + CFG.rout.name);
-      prog.routes.forEach(function (rt) {
+      rts.forEach(function (rt) {
         L.push("; ***** " + rt.name);
         rt.moves.forEach(function (m) {
           if (m.t === "G0") L.push(" XG0 X=" + num(m.x) + " Y=" + num(m.y) + " Z=" + num(m.z) + " T=" + CFG.rout.T +
@@ -3279,6 +3329,18 @@ var PART = (function () {
                                        " I=" + num(m.i) + " J=" + num(m.j) + " G=" + m.g + " V=" + m.v);
           else L.push(" XL2P X=" + num(m.x) + " Y=" + num(m.y) + " Z=" + num(m.z) + " V=" + m.v);
         });
+      });
+    }
+    if (saws.length) {
+      var sw = CFG.saw;
+      L.push("; ------ " + sw.name);
+      saws.forEach(function (rt) {
+        for (var q = 0; q + 1 < rt.moves.length; q += 2) {
+          var a = rt.moves[q], b = rt.moves[q + 1];
+          L.push("; ***** " + rt.name);
+          L.push(" XG0 X=" + num(a.x) + " Y=" + num(a.y) + " Z=" + num(a.z) + " T=" + sw.T + " F=1 C=0 D=" + sw.D + " V=" + sw.feed_approach);
+          L.push(" XL2P X=" + num(b.x) + " Y=" + num(b.y) + " Z=" + num(b.z) + " V=" + sw.feed_cut);
+        }
       });
     }
     L.push(";**********************************************************", ".END",
@@ -3291,11 +3353,17 @@ var PART = (function () {
     var holes = prog.bores.map(function (b, k) {
       return { face: b.vface, fF: b.F, x: b.vx, y: b.vy, z: b.Z, d: b.D, t: b.vt, op: k, line: k };
     });
-    var paths = prog.routes.map(function (rt, k) {
-      return { op: holes.length + k, line: holes.length + k, d: CFG.rout.dia, tool: String(CFG.rout.T), name: rt.name,
-               pts: rt.moves.map(function (m) {
-                 return m.t === "A" ? [m.x, m.y, m.z, 0, m.i, m.j, m.g] : [m.x, m.y, m.z, m.t === "G0" ? 1 : 0];
-               }) };
+    var paths = [];
+    prog.routes.filter(function (rt) { return !rt.saw; }).concat(prog.routes.filter(function (rt) { return rt.saw; })).forEach(function (rt) {
+      var cur = null;
+      rt.moves.forEach(function (m) {
+        if (!cur || (rt.saw && m.t === "G0")) {     // each saw pass is its own cut
+          cur = { op: holes.length + paths.length, line: holes.length + paths.length, d: rt.saw ? CFG.saw.kerf : CFG.rout.dia,
+                  tool: String(rt.saw ? CFG.saw.T : CFG.rout.T), name: rt.name, pts: [] };
+          paths.push(cur);
+        }
+        cur.pts.push(m.t === "A" ? [m.x, m.y, m.z, 0, m.i, m.j, m.g] : [m.x, m.y, m.z, m.t === "G0" ? 1 : 0]);
+      });
     });
     return { DX: prog.DX, DY: prog.DY, DZ: P.DZ, holes: holes, paths: paths, zfast: null,
              warnings: [], errors: [], faceUse: {}, lines: [] };
@@ -3348,21 +3416,24 @@ var PART = (function () {
       }
     });
 
-    // routing: grooves first, then inner cut-outs, the outline (notches) last
+    // routing: grooves first, then inner cut-outs, the outline (notches) last; saw cuts after all routing
+    var s1 = [], s2 = [];
     P.ops.forEach(function (o) {
       if (o.kind !== "groove") return;
       var g = grooveBox(o, P);
       if (o.face === "B") {                     // in the turned-over frame
         if (g.dir === "X") { var c0 = DY - g.c1; g.c1 = DY - g.c0; g.c0 = c0; }
         else { var a0 = DY - g.a1; g.a1 = DY - g.a0; g.a0 = a0; var t = g.open0; g.open0 = g.open1; g.open1 = t; }
-        p2.routes.push(groovePaths(g, o.depth));
-      } else p1.routes.push(groovePaths(g, o.depth));
+      }
+      var r = isSaw(o) ? sawCut(g, o.depth, DZ) : groovePaths(g, o.depth);
+      (o.face === "B" ? (r.saw ? s2 : p2.routes) : (r.saw ? s1 : p1.routes)).push(r);
     });
     P.ops.forEach(function (o) {
       if (o.kind === "cut") p1.routes.push(cutPath(cutRect(o, P), P));
       if (o.kind === "circle") p1.routes.push(circlePath(circleC(o, P), P));
     });
     P.ops.forEach(function (o) { if (o.kind === "notch") p1.routes.push(notchPath(notchRect(o, P), P)); });
+    p1.routes = p1.routes.concat(s1); p2.routes = p2.routes.concat(s2);
 
     function sortB(a) {
       a.sort(function (p, q) {
@@ -3429,7 +3500,7 @@ var PART = (function () {
     CFG: CFG, R: R, LEAD: LEAD, DEPTH: DEPTH, num: num, r1: r1,
     blank: blank, make: make, check: check, build: build, rotate: rotate, cleanName: cleanName,
     abs: abs, rel: rel, holePts: holePts, edgePts: edgePts, edgePoint: edgePoint, edgeLen: edgeLen, edgeH: edgeH,
-    grooveBox: grooveBox, grooveRect: grooveRect, cutRect: cutRect, notchRect: notchRect, circleC: circleC,
+    grooveBox: grooveBox, grooveRect: grooveRect, isSaw: isSaw, sawPlan: sawPlan, cutRect: cutRect, notchRect: notchRect, circleC: circleC,
     writeXXL: writeXXL
   };
 })();
@@ -3450,7 +3521,7 @@ var PB = (function () {
   var hist = [], fut = [], last = null, commitT = null, loaded = false;
   var showPath = false, view = null, drag = null;
   var el = {};
-  var C = { top: "#1f6feb", bot: "#7b1fa2", edge: "#d98200", rot: "#b26a00", rout: "#147a45", routFill: "#9fd3b6",
+  var C = { top: "#1f6feb", bot: "#7b1fa2", edge: "#d98200", rot: "#b26a00", rout: "#147a45", routFill: "#9fd3b6", saw: "#00838f", sawFill: "#9ad8de",
             sel: "#7b1fa2", err: "#c62828", panel: "#fbfcfe", line: "#3f4956", bg: "#e8edf3", grid: "#e6ebf1", lbl: "#5f6b7c" };
 
   function $(id) { return document.getElementById(id); }
@@ -3475,20 +3546,22 @@ var PB = (function () {
     groove: '<rect x="3" y="7" width="26" height="18" rx="1.5"/><rect x="3" y="11" width="26" height="4.5" fill="currentColor" stroke="none" opacity=".55"/>',
     notch: '<path d="M3 7h19v7h7v11H3z"/>',
     cut: '<rect x="3" y="7" width="26" height="18" rx="1.5"/><rect x="10" y="11.5" width="12" height="9" rx="2.2" stroke-dasharray="2.5 1.5"/>',
-    circle: '<rect x="3" y="7" width="26" height="18" rx="1.5"/><circle cx="16" cy="16" r="5" stroke-dasharray="2.5 1.5"/>'
+    circle: '<rect x="3" y="7" width="26" height="18" rx="1.5"/><circle cx="16" cy="16" r="5" stroke-dasharray="2.5 1.5"/>',
+    led: '<rect x="3" y="7" width="26" height="18" rx="1.5"/><path d="M3 13.5h26" stroke-width="2.6"/><circle cx="22" cy="20" r="3.2"/><path d="M22 16.8v6.4M18.8 20h6.4" stroke-width="1"/>'
   };
-  var ICOL = { hole: C.top, shelf: C.top, hinge: C.top, edge: C.edge, groove: C.rout, notch: C.rout, cut: C.rout, circle: C.rout };
+  var ICOL = { hole: C.top, shelf: C.top, hinge: C.top, edge: C.edge, groove: C.rout, notch: C.rout, cut: C.rout, circle: C.rout, led: C.saw };
   function icon(k, col) {
     return '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" style="color:' + (col || ICOL[k]) + '">' + IC[k] + '</svg>';
   }
-  function kindOf(o) { return o.kind === "hole" && o.preset && presetOk(o) ? o.preset : o.kind; }
+  function kindOf(o) { return o.kind === "hole" && o.preset && presetOk(o) ? o.preset : PART.isSaw(o) ? "led" : o.kind; }
   function presetOk(o) { return (o.preset === "shelf" && o.d === 5) || (o.preset === "hinge" && o.d === 35); }
 
   var TILES = [
     ["hole", "Skylė", "Ø5 · 8 · 15 · 35"], ["shelf", "Lentynų skylės", "Ø5 eilės kas 32"],
     ["hinge", "Vyrių lizdai", "Ø35 × 13"], ["edge", "Briaunos skylė", "Ø5 · Ø8 šone"],
     ["groove", "Griovelis", "freza Ø15.5"], ["notch", "Kampo išpjova", "kiaurai"],
-    ["cut", "Išpjova viduje", "stačiakampė"], ["circle", "Apvali kiaurymė", "nuo Ø20"]
+    ["cut", "Išpjova viduje", "stačiakampė"], ["circle", "Apvali kiaurymė", "nuo Ø20"],
+    ["led", "LED griovelis", "pjūklu, 4–6 mm"]
   ];
 
   /* ---------------------------------------------------------------- words */
@@ -3503,7 +3576,7 @@ var PB = (function () {
         var nm = o.preset === "shelf" && presetOk(o) ? "Lentynų skylės" : o.preset === "hinge" && presetOk(o) ? "Vyrių lizdai" : "Skylė";
         return nm + " Ø" + n(o.d) + (o.through ? " kiaurai" : " × " + n(o.depth));
       case "edge": return "Briaunos skylė Ø" + n(o.d) + " × " + n(o.depth);
-      case "groove": return "Griovelis " + n(o.w) + " × " + n(o.depth);
+      case "groove": return (PART.isSaw(o) ? "LED griovelis pjūklu " : "Griovelis ") + n(o.w) + " × " + n(o.depth);
       case "notch": return "Kampo išpjova " + n(o.a) + " × " + n(o.b);
       case "cut": return "Išpjova " + n(o.w) + " × " + n(o.h);
       case "circle": return "Kiaurymė Ø" + n(o.D);
@@ -3859,12 +3932,12 @@ var PB = (function () {
         cut.push(grp(o, 0, 1, 1, '<circle cx="' + X(cc.x) + '" cy="' + Y(cc.y) + '" r="' + (o.D / 2 * s).toFixed(2) + '" fill="' + C.bg + '" stroke="' + stroke + '" stroke-width="' + sw + '"/>'));
       }
       if (o.kind === "groove" && fin(o.w) && o.w > 0 && fin(o.p)) {
-        var gb = PART.grooveBox(o, P), rc = PART.grooveRect(gb), rg = Math.min(R, o.w / 2);
+        var gb = PART.grooveBox(o, P), rc = PART.grooveRect(gb), sawn = PART.isSaw(o), rg = sawn ? 0 : Math.min(R, o.w / 2);
         var r0 = gb.open0 ? 0 : rg, r1_ = gb.open1 ? 0 : rg;
         var rr2 = gb.dir === "X" ? { ll: r0, ul: r0, lr: r1_, ur: r1_ } : { ll: r0, lr: r0, ul: r1_, ur: r1_ };
         var bot = o.face === "B";
-        cut.push(grp(o, 0, 1, 1, '<polygon points="' + poly(roundPoly(rc.x0, rc.y0, rc.x1, rc.y1, rr2)) + '" fill="' + (bot ? "rgba(123,31,162,.07)" : C.routFill) +
-                '" fill-opacity="' + (bot ? 1 : 0.55) + '" stroke="' + (on ? C.sel : bad[o.id] ? C.err : bot ? C.bot : C.rout) + '" stroke-width="' + (on || bad[o.id] ? 2.5 : 1.3) + '"' + (bot ? ' stroke-dasharray="6 4"' : '') + '/>'));
+        cut.push(grp(o, 0, 1, 1, '<polygon points="' + poly(roundPoly(rc.x0, rc.y0, rc.x1, rc.y1, rr2)) + '" fill="' + (bot ? "rgba(123,31,162,.07)" : sawn ? C.sawFill : C.routFill) +
+                '" fill-opacity="' + (bot ? 1 : 0.55) + '" stroke="' + (on ? C.sel : bad[o.id] ? C.err : bot ? C.bot : sawn ? C.saw : C.rout) + '" stroke-width="' + (on || bad[o.id] ? 2.5 : 1.3) + '"' + (bot ? ' stroke-dasharray="6 4"' : '') + '/>'));
       }
     });
     out.push('<g clip-path="url(#pbClip)">' + cut.join("") + '</g>');
@@ -3877,6 +3950,15 @@ var PB = (function () {
         if (pg.kind === "rot") return;
         var flip = pg.kind === "flip" || pg.kind === "flipOnly";
         pg.routes.forEach(function (rt) {
+          if (rt.saw) {                     // straight saw passes, kerf wide, may run out past the panel
+            for (var q = 0; q + 1 < rt.moves.length; q += 2) {
+              var a = rt.moves[q], b = rt.moves[q + 1], ya = flip ? P.DY - a.y : a.y, sp = poly([[a.x, ya], [b.x, ya]]);
+              tp.push('<polyline points="' + sp + '" fill="none" stroke="' + C.saw + '" stroke-opacity=".3" stroke-width="' + Math.max(PART.CFG.saw.kerf * s, 2).toFixed(1) + '"/>' +
+                      '<polyline points="' + sp + '" fill="none" stroke="' + C.saw + '" stroke-width="1" stroke-dasharray="' + (flip ? "5 3" : "10 3") + '"/>' +
+                      (q ? "" : '<circle cx="' + X(a.x) + '" cy="' + Y(ya) + '" r="3.5" fill="' + C.saw + '"/>'));
+            }
+            return;
+          }
           var pts = [], prev = null;
           rt.moves.forEach(function (m) {
             if (m.t === "A" && prev) {
@@ -4232,9 +4314,10 @@ var PB = (function () {
       return;
     }
     el.progs.innerHTML = b.programs.map(function (pg, i) {
-      var nb = pg.bores.length, nr = pg.routes.length, c = [];
+      var nb = pg.bores.length, ns = pg.routes.filter(function (r) { return r.saw; }).length, nr = pg.routes.length - ns, c = [];
       if (nb) c.push(plural(nb, "skylė", "skylės", "skylių"));
       if (nr) c.push(plural(nr, "frezavimas", "frezavimai", "frezavimų"));
+      if (ns) c.push(ns + " pjūklu");
       return '<div class="pb-prog k-' + pg.kind + '"><div class="h"><span class="op">' + pg.op + 'OP</span><span class="fn" title="' + escH(pg.file) + '">' + escH(pg.file) + '</span>' +
         '<button type="button" class="ghost" data-p3d="' + i + '">3D</button><button type="button" class="ghost" data-pcode="' + i + '">Kodas</button></div>' +
         '<div class="c">' + c.join(" · ") + ' · ' + n(pg.DX) + '×' + n(pg.DY) + '</div>' +
@@ -4613,7 +4696,7 @@ var PB = (function () {
 /* ============================================================================
    S2X — step2xxl in the browser.
 
-   A faithful JavaScript port of step2xxl.py v2.12 (the program the engineer
+   A faithful JavaScript port of step2xxl.py v2.14 (the program the engineer
    runs from SolidWorks): read a STEP export of ONE panel, recognise the bores,
    grooves and through contours from the B-rep, and write the same .XXL
    programs (1OP / 2OP / rotated) with the same rules and the same numbers.
@@ -4634,8 +4717,16 @@ var S2X = (function () {
     drills_top: [5, 8, 15, 35], through_drills: [5, 8], drills_x_ends: [5, 8], drills_y_edges: [8],
     horizontal_max_depth: 35, cam_bolt_depth: 31.906, min_groove_length: 40,
     edge_depth_cap: 31.906,   // the machine refuses deeper edge holes (SWOOD CAM post maximum = cam_bolt_depth)
-    small_hole_as_mark: { max_d: 4, D: 5, Z: 2 }, max_width_y: 900
+    small_hole_as_mark: { max_d: 4, D: 5, Z: 2 }, max_width_y: 900,
+    // saw blade "SavKlinge" (Maestro tlgx): 120 mm, 3.2 mm kerf. Grooves up to max_width wide
+    // (neon-flex LED strips, 4-5 mm) are cut with the saw instead of the router (step2xxl 2.13+).
+    saw: { T: 82, dia: 120, kerf: 3.2, D: 130, feed_approach: 4000, feed_cut: 8000, max_width: 6, max_depth: 15,
+           name: "RA_SCM_SAVKLINGE", op_name: "CUT-GROOVE", overrun_depth_offset: 1, stop_clearance: 0 }
   };
+  var PROG_KINDS = ["groove", "contour", "saw", "circle"];                     // op kinds that produce cutting moves
+  var ROUT_UNSUP = ["pocket_unsupported", "saw_unsupported", "narrow_unsupported"];
+  function isProg(o) { return PROG_KINDS.indexOf(o.kind) >= 0; }
+  function isUnsup(o) { return ROUT_UNSUP.indexOf(o.kind) >= 0; }
   var EPS = 1e-3, PI = Math.PI;
 
   /* ---------------------------------------------------------------- numbers (Python-compatible) */
@@ -4898,11 +4989,15 @@ var S2X = (function () {
   function analyse(M) {
     var b = [Infinity, Infinity, Infinity, -Infinity, -Infinity, -Infinity];
     M.faces.forEach(function (f) { for (var k = 0; k < 3; k++) { if (f.bb[k] < b[k]) b[k] = f.bb[k]; if (f.bb[k + 3] > b[k + 3]) b[k + 3] = f.bb[k + 3]; } });
-    var x0 = b[0], y0 = b[1], z0 = b[2];
-    var dims = [b[3] - b[0], b[4] - b[1], b[5] - b[2]];
+    // OpenCascade's Bnd_Box (what step2xxl measures with) is widened by the shape tolerance, 1e-7
+    // (Precision::Confusion) for every SolidWorks export seen so far. Mirrored here so values that
+    // depend on it (the saw's stop points) come out the same to the last digit.
+    var g = 1e-7;
+    var x0 = b[0] - g, y0 = b[1] - g, z0 = b[2] - g;
+    var dims = [b[3] - b[0] + 2 * g, b[4] - b[1] + 2 * g, b[5] - b[2] + 2 * g];
     if (!(dims[2] < dims[0] && dims[2] < dims[1]))
       throw new Error("THICKNESS");
-    function rel(bb) { return [bb[0] - x0, bb[1] - y0, bb[2] - z0, bb[3] - x0, bb[4] - y0, bb[5] - z0]; }
+    function rel(bb) { return [bb[0] - g - x0, bb[1] - g - y0, bb[2] - g - z0, bb[3] + g - x0, bb[4] + g - y0, bb[5] + g - z0]; }
     var cyls = [], planes = [];
     M.faces.forEach(function (f) {
       if (f.surf.t === "Y") {
@@ -5042,6 +5137,30 @@ var S2X = (function () {
   }
   function onBox(p, DX, DY, tol) { tol = tol === undefined ? EPS : tol; return p[0] < tol || p[0] > DX - tol || p[1] < tol || p[1] > DY - tol; }
   function dist(a, b) { return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+
+  /* Narrow groove cut with the saw blade (as SWOOD CAM did for neon-flex LED grooves) - step2xxl 2.14
+     saw_groove: passes spaced across the groove, first and last touching the walls, always from high X
+     to low X. An open end is run out past the panel edge like SWOOD; at a closed end the kerf stops
+     exactly at the groove end on the top surface and the rounded bottom is finished by hand. */
+  function sawGroove(x0, y0, x1, y1, alongX, width, depth, fr, saw) {
+    var bb = [x0, y0, x1, y1];
+    if (!alongX) return { kind: "saw_unsupported", bb: bb, depth: depth, why: "eina išilgai Y — pjūklas pjauna tik išilgai X" };
+    var k = saw.kerf;
+    if (width < k - 0.1) return { kind: "saw_unsupported", bb: bb, depth: depth, why: "siauresnis už pjūklo " + num(k) + " mm propjovą" };
+    var d = Math.min(depth, saw.max_depth, fr.DZ - 2);
+    var n = width <= k + EPS ? 1 : Math.ceil((width - k) / k - 1e-9) + 1, ys = [];
+    if (n === 1) ys.push((y0 + y1) / 2); else for (var i = 0; i < n; i++) ys.push(y0 + k / 2 + i * (width - k) / (n - 1));
+    var dd = Math.max(0.1, d - saw.overrun_depth_offset), ov = Math.sqrt(dd * (saw.dia - dd));
+    var c = Math.sqrt(d * (saw.dia - d)) + (saw.stop_clearance || 0);
+    var loOpen = x0 <= EPS, hiOpen = x1 >= fr.DX - EPS;
+    var xFrom = hiOpen ? fr.DX + ov : x1 - c, xTo = loOpen ? -ov : x0 + c;
+    if (xFrom <= xTo + EPS) return { kind: "saw_unsupported", bb: bb, depth: depth, short: true,
+                                     why: "trumpesnis už pjūklo pėdsaką (" + num(pyround(2 * c, 1)) + " mm, " + num(d) + " mm gylyje) — pjaukite rankomis" };
+    var notes = [], yy = "Y " + num(pyround(y0, 2)) + "–" + num(pyround(y1, 2));
+    if (!hiOpen) notes.push("Pjūklo griovelis (" + yy + ") baigiasi plokštės viduje ties X=" + num(pyround(x1, 2)) + ": pjūklas ten įleidžiamas, ~" + num(Math.round(c)) + " mm suapvalintą galą pabaikite rankomis");
+    if (!loOpen) notes.push("Pjūklo griovelis (" + yy + ") baigiasi plokštės viduje ties X=" + num(pyround(x0, 2)) + ": ~" + num(Math.round(c)) + " mm suapvalintą galą pabaikite rankomis");
+    return { kind: "saw", depth: d, ys: ys, x_from: xFrom, x_to: xTo, name: saw.op_name, capped: d < depth - EPS, want: depth, notes: notes, bb: bb, width: width };
+  }
 
   function groovePass(x0, y0, x1, y1, alongX, width, depth, fr, cfg, rt) {
     var toolD = 2 * rt, ov = cfg.groove_overrun, c, loOpen, hiOpen, lo, hi, pts;
@@ -5242,8 +5361,21 @@ var S2X = (function () {
       strips.forEach(function (st) {
         var w = st[3] - st[1], l = st[2] - st[0], alongX = l >= w, width = alongX ? w : l;
         if (width > tool.dia + 1) { ops.push({ kind: "pocket_unsupported", bb: st, depth: depth }); return; }
+        var saw = cfg.saw;
+        if (saw && width <= saw.max_width + EPS) { ops.push(sawGroove(st[0], st[1], st[2], st[3], alongX, width, depth, fr, saw)); return; }
+        if (width < tool.dia - 0.5) { ops.push({ kind: "narrow_unsupported", bb: st, depth: depth, width: width }); return; }
         ops.push(groovePass(st[0], st[1], st[2], st[3], alongX, width, depth, fr, cfg, rt));
       });
+    });
+    ops.forEach(function (o) {             // warned here, so they show even when no program is written (step2xxl 2.13)
+      var bb = o.bb;
+      if (o.kind === "pocket_unsupported")
+        warn("pocket", "Kišenė " + (bb[2] - bb[0]).toFixed(1) + "×" + (bb[3] - bb[1]).toFixed(1) + " mm, gylis " + o.depth.toFixed(1) + " — platesnė už frezą, NEPROGRAMUOJAMA");
+      else if (o.kind === "narrow_unsupported")
+        warn("narrow", "Griovelis " + o.width.toFixed(1) + " mm pločio (" + Math.max(bb[2] - bb[0], bb[3] - bb[1]).toFixed(1) + " ilgio, " + o.depth.toFixed(1) +
+             " gylio) per platus pjūklui ir per siauras Ø" + num(tool.dia) + " frezai — NEPROGRAMUOJAMAS", "err");
+      else if (o.kind === "saw_unsupported")
+        warn("saw_bad", "Pjūklo griovelis " + (bb[2] - bb[0]).toFixed(1) + "×" + (bb[3] - bb[1]).toFixed(1) + " mm " + o.why + " — NEPROGRAMUOJAMAS", "err");
     });
     function biggest(sign, zval) {
       var best = null, ba = -1;
@@ -5320,7 +5452,7 @@ var S2X = (function () {
     function XG0(x, y, z) { L.push(" XG0 X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " T=" + tool.T + " C=0 V=" + Vp + " D=" + tool.D + " F=1"); cur.push({ t: "G0", x: x, y: y, z: z }); }
     function XL(x, y, z, v) { L.push(" XL2P X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " V=" + v); cur.push({ t: "L", x: x, y: y, z: z }); }
     function XA(x, y, z, cx, cy, ccw, v) { L.push(" XA2P X=" + num(x) + " Y=" + num(y) + " Z=" + num(z) + " I=" + num(cx) + " J=" + num(cy) + " G=" + (ccw ? 3 : 2) + " V=" + v); cur.push({ t: "A", x: x, y: y, z: z, i: cx, j: cy, g: ccw ? 3 : 2 }); }
-    if (ops.some(function (o) { return o.kind !== "pocket_unsupported"; })) L.push("; ------ " + tool.name);
+    if (ops.some(function (o) { return o.kind === "groove" || o.kind === "contour" || o.kind === "circle"; })) L.push("; ------ " + tool.name);
     var rt = tool.dia / 2, zmax = -(fr.DZ - cfg.rout_skin), ramp = cfg.ramp_length, air = cfg.air_limit;
     var lead = Math.min(cfg.lead_in + rt, air);
     function along(a, b, d) { var l = dist(a, b); return [a[0] + (b[0] - a[0]) / l * d, a[1] + (b[1] - a[1]) / l * d]; }
@@ -5371,12 +5503,27 @@ var S2X = (function () {
         entry([cx + r, cy], pts[0], zc);
         pts.forEach(function (q) { XA(q[0], q[1], zc, cx, cy, true, V); });
         XL(cx + r, cy, cfg.safe_z, V);
-      } else if (o.kind === "pocket_unsupported") {
-        warn("pocket", "Kišenė " + (o.bb[2] - o.bb[0]).toFixed(1) + "×" + (o.bb[3] - o.bb[1]).toFixed(1) + " mm, gylis " + o.depth.toFixed(1) + " — platesnė už frezą, NEPROGRAMUOJAMA");
       }
+      if (drawn.routes.length && drawn.routes[drawn.routes.length - 1].op === o) drawn.routes[drawn.routes.length - 1].l1 = L.length;
     });
-    // where each route's lines end (for leaving a route out after review)
-    drawn.routes.forEach(function (r, k) { r.l1 = k + 1 < drawn.routes.length ? drawn.routes[k + 1].l0 : L.length; });
+    var saws = ops.filter(function (o) { return o.kind === "saw"; });
+    if (saws.length) {
+      var sw = cfg.saw;
+      L.push("; ------ " + sw.name);
+      saws.forEach(function (o) {
+        if (o.capped) warn("saw_cap", "Pjūklo griovelio gylis " + num(o.want) + " sumažintas iki " + num(o.depth));
+        (o.notes || []).forEach(function (t) { warn("saw_stop", t, "info"); });
+        cur = []; var r = { name: o.name, kind: "saw", moves: cur, op: o, l0: L.length };
+        drawn.routes.push(r);
+        o.ys.forEach(function (y) {
+          L.push("; ***** " + o.name);
+          L.push(" XG0 X=" + num(o.x_from) + " Y=" + num(y) + " Z=" + num(-o.depth) + " T=" + sw.T + " F=1 C=0 D=" + sw.D + " V=" + sw.feed_approach);
+          L.push(" XL2P X=" + num(o.x_to) + " Y=" + num(y) + " Z=" + num(-o.depth) + " V=" + sw.feed_cut);
+          cur.push({ t: "G0", x: o.x_from, y: y, z: -o.depth }, { t: "L", x: o.x_to, y: y, z: -o.depth });
+        });
+        r.l1 = L.length;
+      });
+    }
     L.push(";**********************************************************", ".END", ";**********************************************************", ";FINEPROG");
     return { text: L.join("\r\n") + "\r\n", drawn: drawn, lines: L };
   }
@@ -5449,7 +5596,7 @@ var S2X = (function () {
     if (tilted) w("tilted", tilted + " pasvirų cilindrinių paviršių (įstrižos skylės) — neprogramuojama", "err");
     var other = M.faces.filter(function (f) { return f.surf.t === "O"; }).length;
     if (other) w("surface", other + " paviršių nėra nei plokštuma, nei cilindras (pvz. kreivas kontūras) — neprogramuojama, patikrinkite", "warn");
-    var nRout = ops.filter(function (o) { return o.kind !== "pocket_unsupported"; }).length;
+    var nRout = ops.filter(isProg).length;
     var n1 = bores.length - otherSide.length - bores.filter(function (b) { return b.skip || b.routed; }).length + nRout;
     var fr2 = new Frame([fr.mx, fr.my, fr.mz], fr.flip, fr.rot, true);
     var need2 = machinedCount(fr2, cyls, planes) > 0;
@@ -5474,7 +5621,7 @@ var S2X = (function () {
       var out = writeXXL(name, frm, bs, os, cfg, W(list), op, rotFlag, note);
       res.programs.push({ op: op, kind: kind, file: name + "_" + op + "OP.XXL", name: name + "_" + op + "OP", text: out.text, lines: out.lines,
                           DX: frm.DX, DY: frm.DY, DZ: frm.DZ, bores: out.drawn.bores, routes: out.drawn.routes,
-                          skipped: bs.filter(function (b) { return b.skip && !b.rotate; }), pockets: os.filter(function (o) { return o.kind === "pocket_unsupported"; }),
+                          skipped: bs.filter(function (b) { return b.skip && !b.rotate; }), pockets: os.filter(isUnsup),
                           warnings: list, how: how });
     }
     if (!rotOnly) {
@@ -5504,7 +5651,7 @@ var S2X = (function () {
       bores2.forEach(function (b) {
         if (cfg.drills_top.indexOf(pyround(b.D, 2)) < 0) { b.skip = true; w2.push({ code: "nodrill", level: "err", msg: "Skylė Ø" + num(b.D) + " (X=" + num(b.X) + " Y=" + num(b.Y) + "): tokio grąžto nėra — NEPROGRAMUOJAMA" }); }
       });
-      var ops2 = recogniseRouting(fr2, planes, origin, cfg, W(w2)).filter(function (o) { return o.kind === "groove" || o.kind === "pocket_unsupported"; });
+      var ops2 = recogniseRouting(fr2, planes, origin, cfg, W(w2)).filter(function (o) { return o.kind === "groove" || o.kind === "saw" || isUnsup(o); });
       var note2 = rotOnly ? "panel back in the usual position (long side along X), turned over about its long edge" : null;
       program(2, "flip", fr2, bores2, ops2, w2, false, note2, rotOnly ? "flipBack" : "flip");
     }
@@ -5531,9 +5678,17 @@ var S2X = (function () {
       h.x = c6(h.x); h.y = c6(h.y); h.t = c6(h.t);
       return h;
     });
-    var paths = pg.routes.map(function (rt, k) {
-      return { op: holes.length + k, line: holes.length + k, d: CFG.rout_tool.dia, tool: String(CFG.rout_tool.T), name: rt.name,
-               pts: rt.moves.map(function (m) { return m.t === "A" ? [c6(m.x), c6(m.y), c6(m.z), 0, c6(m.i), c6(m.j), m.g] : [c6(m.x), c6(m.y), c6(m.z), m.t === "G0" ? 1 : 0]; }) };
+    var paths = [];
+    pg.routes.forEach(function (rt) {
+      var saw = rt.kind === "saw", tl = saw ? CFG.saw : CFG.rout_tool, pass = null;
+      rt.moves.forEach(function (m) {
+        // a saw groove's passes are separate cuts: one path each
+        if (!pass || (saw && m.t === "G0")) {
+          pass = { op: holes.length + paths.length, line: holes.length + paths.length, d: saw ? tl.kerf : tl.dia, tool: String(tl.T), name: rt.name, pts: [] };
+          paths.push(pass);
+        }
+        pass.pts.push(m.t === "A" ? [c6(m.x), c6(m.y), c6(m.z), 0, c6(m.i), c6(m.j), m.g] : [c6(m.x), c6(m.y), c6(m.z), m.t === "G0" ? 1 : 0]);
+      });
     });
     return { DX: c6(pg.DX), DY: c6(pg.DY), DZ: c6(pg.DZ), holes: holes, paths: paths, zfast: null, warnings: [], errors: [], faceUse: {}, lines: [] };
   }
@@ -5542,15 +5697,17 @@ var S2X = (function () {
   function textWithout(pg, offB, offR) {
     var drop = {}, nB = 0, nR = 0;
     pg.bores.forEach(function (b, k) { if (offB[k]) drop[b.line] = 1; else nB++; });
-    pg.routes.forEach(function (r, k) { if (offR[k]) { for (var l = r.l0; l < r.l1; l++) drop[l] = 1; } else nR++; });
+    var nS = 0;
+    pg.routes.forEach(function (r, k) { if (offR[k]) { for (var l = r.l0; l < r.l1; l++) drop[l] = 1; } else if (r.kind === "saw") nS++; else nR++; });
     if (!Object.keys(drop).length) return pg.text;
     var out = pg.lines.filter(function (l, i) {
       if (drop[i]) return false;
       if (!nB && l === "; ------ BP_SCM_DRILLING_BLOCK") return false;
       if (!nR && l === "; ------ " + CFG.rout_tool.name) return false;
+      if (!nS && l === "; ------ " + CFG.saw.name) return false;
       return true;
     });
-    return { text: out.join("\r\n") + "\r\n", empty: !nB && !nR };
+    return { text: out.join("\r\n") + "\r\n", empty: !nB && !nR && !nS };
   }
 
   return { CFG: CFG, num: num, parseStep: parseStep, process: process, viewDoc: viewDoc, textWithout: textWithout };
@@ -5568,7 +5725,7 @@ var S2X = (function () {
 var SI = (function () {
   "use strict";
   var items = [], cur = -1, el = {}, hl = null;
-  var C = { top: "#1f6feb", edge: "#d98200", rout: "#147a45", routFill: "#9fd3b6", off: "#aab4c0", bad: "#c62828", sel: "#7b1fa2",
+  var C = { top: "#1f6feb", edge: "#d98200", rout: "#147a45", saw: "#00838f", routFill: "#9fd3b6", off: "#aab4c0", bad: "#c62828", sel: "#7b1fa2",
             panel: "#fbfcfe", line: "#3f4956", bg: "#e8edf3", grid: "#e6ebf1" };
   var F = S2X.CFG;
   function $(id) { return document.getElementById(id); }
@@ -5619,8 +5776,26 @@ var SI = (function () {
       return "Griovelis / LED kanalas, gylis " + n(r.op.depth) + " (frezos kelias " + n(len) + " mm)";
     }
     if (r.kind === "circle") return "Kiaurymė Ø" + n(r.op.D) + " (frezuojama ratu)";
+    if (r.kind === "saw") {
+      var b = r.op.bb;
+      return "LED griovelis pjūklu " + n(b[3] - b[1]) + " mm pločio, gylis " + n(r.op.depth) + " (" + plural(r.op.ys.length, "praėjimas", "praėjimai", "praėjimų") + ")";
+    }
     if (r.kind === "inner") return "Vidinė kiaurinė išpjova";
     return "Kiaurinis kontūras / išpjova (" + plural(r.op.segs.length, "atkarpa", "atkarpos", "atkarpų") + ")";
+  }
+
+  function routeTool(r) {
+    if (r.kind !== "saw") return "freza Ø" + n(F.rout_tool.dia) + ", paliekama " + n(F.rout_skin) + " mm";
+    var o = r.op, b = o.bb, t = "pjūklas T=" + F.saw.T + " Ø" + n(F.saw.dia) + ", propjova " + n(F.saw.kerf) + " mm";
+    var open0 = o.x_to < 0, open1 = o.x_from > b[2];
+    if (!open0 || !open1) t += " · " + (!open0 && !open1 ? "abu galai" : "galas") + " plokštės viduje — suapvalinimą pabaikite rankomis";
+    return t;
+  }
+  function unsupLabel(q) {
+    var w = n(q.bb[2] - q.bb[0]) + "×" + n(q.bb[3] - q.bb[1]);
+    if (q.kind === "saw_unsupported") return ["Pjūklo griovelis " + w, "nepjaunamas", q.why];
+    if (q.kind === "narrow_unsupported") return ["Griovelis " + w, "nefrezuojamas", n(q.width) + " mm: per platus pjūklui, per siauras frezai"];
+    return ["Kišenė " + w, "nefrezuojama", "platesnė už frezą"];
   }
 
   /* ---------------------------------------------------------------- files */
@@ -5745,7 +5920,7 @@ var SI = (function () {
       });
       pg.routes.forEach(function (rt, k) {
         h += '<label class="si-item" data-p="' + p + '" data-r="' + k + '"><input type="checkbox"' + (o.r[k] ? "" : " checked") + '>' +
-             '<span class="sw" style="background:' + C.rout + '"></span><span>' + escH(routeLabel(rt)) + '<small>freza Ø' + n(F.rout_tool.dia) + ', paliekama ' + n(F.rout_skin) + ' mm</small></span></label>';
+             '<span class="sw" style="background:' + (rt.kind === "saw" ? C.saw : C.rout) + '"></span><span>' + escH(routeLabel(rt)) + '<small>' + escH(routeTool(rt)) + '</small></span></label>';
       });
       var sg = [], sm = {};
       pg.skipped.forEach(function (b) {
@@ -5758,7 +5933,8 @@ var SI = (function () {
              '<small>' + escH(SIDE[g.b.F] || "") + ': ' + escH(g.list.join(", ")) + '</small></span></div>';
       });
       pg.pockets.forEach(function (q) {
-        h += '<div class="si-item no"><span class="sw" style="background:' + C.bad + '"></span><span>Kišenė ' + n(q.bb[2] - q.bb[0]) + '×' + n(q.bb[3] - q.bb[1]) + ' — <b>nefrezuojama</b><small>platesnė už frezą</small></span></div>';
+        var u = unsupLabel(q);
+        h += '<div class="si-item no"><span class="sw" style="background:' + C.bad + '"></span><span>' + escH(u[0]) + ' — <b>' + u[1] + '</b><small>' + escH(u[2]) + '</small></span></div>';
       });
       if (pg.warnings !== r.warnings) (pg.warnings || []).forEach(function (w) { h += '<div class="pb-msg ' + w.level + '" style="margin:4px 0 0">' + escH(w.msg) + '</div>'; });
       h += '</div>';
@@ -5780,9 +5956,11 @@ var SI = (function () {
     else { st.className = "st ok"; st.textContent = "Peržiūrėkite ir patvirtinkite"; }
     el.progs.innerHTML = r.programs.map(function (pg, p) {
       var fin = finalOf(it, p), o = offOf(it, p);
-      var nb = pg.bores.filter(function (b, k) { return !o.b[k]; }).length, nr = pg.routes.filter(function (x, k) { return !o.r[k]; }).length, c = [];
+      var nb = pg.bores.filter(function (b, k) { return !o.b[k]; }).length, nr = pg.routes.filter(function (x, k) { return !o.r[k] && x.kind !== "saw"; }).length, c = [];
+      var ns = pg.routes.filter(function (x, k) { return !o.r[k] && x.kind === "saw"; }).length;
       if (nb) c.push(plural(nb, "skylė", "skylės", "skylių"));
       if (nr) c.push(plural(nr, "frezavimas", "frezavimai", "frezavimų"));
+      if (ns) c.push(ns + " pjūklu");
       return '<div class="pb-prog k-' + (pg.kind === "rot" ? "rot" : pg.kind === "flip" ? "flip" : "main") + (fin.empty ? " si-empty" : "") + '"><div class="h"><span class="op">' + pg.op + 'OP</span>' +
         '<span class="fn" title="' + escH(pg.file) + '">' + escH(pg.file) + '</span>' +
         '<button type="button" class="ghost" data-p3d="' + p + '">3D</button><button type="button" class="ghost" data-pcode="' + p + '">Kodas</button></div>' +
@@ -5823,7 +6001,20 @@ var SI = (function () {
              '<circle cx="' + lef + '" cy="' + bot + '" r="4" fill="#1b2330"/>' + txt(lef - 11, bot + 13, "0", { fs: 12, c: "#1b2330", b: 1 }));
     // routing
     pg.routes.forEach(function (rt, k) {
-      var pts = [], prev = null, isOff = !!o.r[k], h = hl && hl.r === k;
+      var isOff = !!o.r[k], h = hl && hl.r === k;
+      if (rt.kind === "saw") {
+        var colS = isOff ? C.off : h ? C.sel : C.saw, gS = '<g class="si-hit" data-r="' + k + '">';
+        for (var q2 = 0; q2 + 1 < rt.moves.length; q2 += 2) {
+          var a = rt.moves[q2], b = rt.moves[q2 + 1], pl2 = X(a.x) + "," + Y(a.y) + " " + X(b.x) + "," + Y(b.y);
+          gS += '<polyline points="' + pl2 + '" fill="none" stroke="' + colS + '" stroke-opacity="' + (isOff ? 0.2 : 0.35) + '" stroke-width="' + Math.max(F.saw.kerf * s, 3).toFixed(1) + '"/>' +
+                '<polyline points="' + pl2 + '" fill="none" stroke="' + colS + '" stroke-width="' + (h ? 2 : 1) + '"' + (isOff ? ' stroke-dasharray="5 4"' : ' stroke-dasharray="10 3"') + '/>';
+        }
+        var a0 = rt.moves[0];
+        out.push(gS + '<circle cx="' + X(a0.x) + '" cy="' + Y(a0.y) + '" r="3.5" fill="' + colS + '"/>' +
+                 '<rect x="' + X(rt.op.bb[0]) + '" y="' + Y(rt.op.bb[3]) + '" width="' + ((rt.op.bb[2] - rt.op.bb[0]) * s).toFixed(1) + '" height="' + Math.max((rt.op.bb[3] - rt.op.bb[1]) * s, 8).toFixed(1) + '" fill="transparent"/></g>');
+        return;
+      }
+      var pts = [], prev = null;
       rt.moves.forEach(function (m) {
         if (m.t === "A" && prev) {
           var r = Math.hypot(prev[0] - m.i, prev[1] - m.j), a0 = Math.atan2(prev[1] - m.j, prev[0] - m.i), a1 = Math.atan2(m.y - m.j, m.x - m.i), d = a1 - a0;

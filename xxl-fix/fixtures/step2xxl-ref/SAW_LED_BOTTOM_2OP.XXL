@@ -1,0 +1,19 @@
+H DX=1926 DY=567 DZ=18 BX=0 BY=0 BZ=21 -EH T=0 *MM /"DEF" R=1 V=0
+; Machine Type:  ZapPZmN
+;Ensemble : 
+;Piece : 
+;Ref : 
+;Fichier : SAW_LED_BOTTOM_2OP
+;** Date codage : step2xxl
+; 2OP: panel turned over about the X axis after 1OP (long edge stays in place, Y is mirrored)
+; ------ RA_SCM_SAVKLINGE
+; ***** CUT-GROOVE
+ XG0 X=1952.153394 Y=536.6 Z=-7 T=82 F=1 C=0 D=130 V=4000
+ XL2P X=-26.153394 Y=536.6 Z=-7 V=8000
+; ***** CUT-GROOVE
+ XG0 X=1952.153394 Y=537.4 Z=-7 T=82 F=1 C=0 D=130 V=4000
+ XL2P X=-26.153394 Y=537.4 Z=-7 V=8000
+;**********************************************************
+.END
+;**********************************************************
+;FINEPROG

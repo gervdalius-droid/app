@@ -54,18 +54,22 @@ Maestro output.
 
 **`⬆ STEP → programa`** (or drop `.STEP` files on the page) reads the STEP export of one or
 more panels in the browser and recognises bores, grooves/LED channels and through contours
-exactly as step2xxl v2.12 does — same 1OP / turned-over 2OP / 90°-rotated programs, same
-lines. The reviewer sees each program on a drawing, can switch groups off, sees in red what
+exactly as step2xxl v2.14 does — same 1OP / turned-over 2OP / 90°-rotated programs, same
+lines. Grooves up to 6 mm wide (neon-flex LED) are cut with the saw blade (T=82, 3.2 mm kerf,
+passes from wall to wall, always from high X to low X, run out past an open end like SWOOD CAM,
+stopping with the kerf at a closed end — the rounded bottom left there is finished by hand);
+grooves 6–15 mm wide are refused, not routed with the 15.5 mm cutter. The reviewer sees each program on a drawing, can switch groups off, sees in red what
 the machine cannot do, and approves: download or write straight to the machine folder.
 Verified byte-for-byte against step2xxl.py on 21 real panels and 10 test panels
-(`fixtures/step`, references in `fixtures/step2xxl-ref`). Beyond step2xxl: inner through
+(`fixtures/step`, references in `fixtures/step2xxl-ref`, including `SAW_*` saw-groove panels). Beyond step2xxl: inner through
 cut-outs and through holes larger than any drill are routed (step2xxl skips them).
 
 ## Make a part by hand
 
 **`＋ Nauja detalė`** (top right) opens a part builder, so the workshop can make a program
 without the engineer or SolidWorks: set the panel size, add holes (Ø5/8/15/35, blind or
-through), shelf-pin rows, hinge cups, edge holes, grooves, corner notches, cut-outs and round
+through), shelf-pin rows, hinge cups, edge holes, grooves, LED grooves cut with the saw
+(4–6 mm wide, along X, through or stopping inside the panel), corner notches, cut-outs and round
 holes, position each one **from the edge it was measured from**, drag it on the drawing, and
 download or send the programs straight to the machine.
 

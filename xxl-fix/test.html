@@ -960,7 +960,11 @@ async function run(){
   e1.ops = []; mk(e1, "edge", { edge: "L", d: 5, depth: 32 });       ck("Briaunos gylis 32 -> klaida (staklės iki 31.906)", errs(e1) === 1);
   e1.ops = []; mk(e1, "edge", { edge: "L", d: 5, depth: PART.DEPTH.edge[5] });
   ck("Ø5 briaunoje — numatytasis gylis 31.906, be klaidų", PART.DEPTH.edge[5] === 31.906 && errs(e1) === 0, PART.DEPTH.edge[5]);
-  e1.ops = []; mk(e1, "groove", { w: 10 });                          ck("Griovelis siauresnis už frezą -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "groove", { w: 10 });                          ck("Griovelis 10 mm (per platus pjūklui, per siauras frezai) -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "led", { dir: "Y" });                          ck("Pjūklo griovelis išilgai Y -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "led", { depth: 16 });                         ck("Pjūklo griovelis giliau nei 15 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "led", { w: 2 });                              ck("Siauresnis už propjovą 3.2 -> klaida", errs(e1) === 1);
+  e1.ops = []; mk(e1, "led", { full: false, a: 200, len: 45 });      ck("Uždaras pjūklo griovelis trumpesnis už pėdsaką -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "groove", { depth: 17 });                      ck("Griovelis giliau nei storis-2 -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "circle", { D: 12 });                          ck("Kiaurymė < Ø20 -> klaida", errs(e1) === 1);
   e1.ops = []; mk(e1, "cut", { xr: "L", x: 0 });                     ck("Išpjova liečia kraštą -> klaida", errs(e1) === 1);
@@ -990,9 +994,27 @@ async function run(){
      r1b.programs.reduce(function (a, p) { return a + p.bores.length; }, 0) === sb.programs.reduce(function (a, p) { return a + p.bores.length; }, 0),
      JSON.stringify(r1b.check));
 
+  // LED groove with the saw: same lines as step2xxl / SWOOD CAM write (KAZ_RUB_A_105 reference)
+  var sl1 = { name: "SAW_LED_TOP", DX: 1926, DY: 567, DZ: 18, ops: [] };
+  mk(sl1, "led", { p: 28, pr: "B" });
+  var bs1 = PART.build(sl1), st1 = bs1.programs[0] ? bs1.programs[0].text : "";
+  ck("LED griovelis pjūklu: 2 praėjimai, išbėgimas 26.153 abiejuose galuose",
+     bs1.ok && bs1.programs.length === 1 && lines(st1, /^; ------ RA_SCM_SAVKLINGE$/).length === 1 && !/DEIMANTAS/.test(st1) &&
+     lines(st1, /^ XG0 X=1952\.153394 Y=536\.6 Z=-7 T=82 F=1 C=0 D=130 V=4000$/).length === 1 &&
+     lines(st1, /^ XL2P X=-26\.153394 Y=537\.4 Z=-7 V=8000$/).length === 1, st1);
+  var sl2 = { name: "S2", DX: 1926, DY: 567, DZ: 18, ops: [] };
+  mk(sl2, "groove", {}); mk(sl2, "led", { full: false, a: 500, ar: "L", len: 600, w: 5, p: 450, pr: "F" }); mk(sl2, "led", { face: "B", p: 100, pr: "F" });
+  var bs2 = PART.build(sl2), st2 = bs2.programs.map(function (q) { return q.text; });
+  ck("Uždaras pjūklo griovelis: pjūklas sustoja 28.125 nuo galų, frezavimas prieš pjūklą",
+     bs2.ok && st2[0].indexOf("; ------ DEIMANTAS") < st2[0].indexOf("; ------ RA_SCM_SAVKLINGE") &&
+     / XG0 X=1071\.875278 Y=451\.6 Z=-7 T=82 /.test(st2[0]) && / XL2P X=528\.124722 Y=453\.4 Z=-7 V=8000/.test(st2[0]), st2[0]);
+  ck("Pjūklo griovelis apačioje -> 2OP, Y veidrodinis", bs2.programs.length === 2 && / XG0 X=1952\.153394 Y=464\.6 Z=-7 T=82 /.test(st2[1] || ""), st2[1]);
+  ck("3D: kiekvienas praėjimas atskiras kelias, propjova 3.2", bs1.programs[0].view.paths.length === 2 &&
+     bs1.programs[0].view.paths.every(function (q) { return q.tool === "82" && q.d === 3.2 && q.pts.length === 2; }));
+
   /* ---------------- part builder UI ---------------- */
   /* ---------------- STEP import: step2xxl in the browser ----------------
-     Every program must be byte-identical to what step2xxl.py v2.12 writes
+     Every program must be byte-identical to what step2xxl.py v2.14 writes
      for the same STEP file (reference programs in fixtures/step2xxl-ref). */
   section("STEP → programos (step2xxl naršyklėje)");
   var sc = /<script id="s2x-core">([\s\S]*?)<\/script>/.exec(html);
@@ -1000,7 +1022,8 @@ async function run(){
   if (sc) (0,eval)(sc[1]);
   var SAME = { "LONGEDGE": ["1OP", "2OP"], "MIXEDGE": ["1OP", "2OP"], "TWOFACE": ["1OP", "2OP"], "GROOVES": ["1OP"],
                "SYN_NOTCHES": ["1OP"], "SYN_FILLET_ROT": ["1OP"], "SYN_TWOFACE2": ["1OP", "2OP"], "SYN_EDGES": ["1OP", "2OP"],
-               "SYN_GROOVES": ["1OP"], "SYN_4NOTCH": ["1OP"] };
+               "SYN_GROOVES": ["1OP"], "SYN_4NOTCH": ["1OP"],
+               "SAW_LED_TOP": ["1OP"], "SAW_LED_BOTTOM": ["1OP", "2OP"], "SAW_STOPPED": ["1OP"], "SAW_BAD": ["1OP"] };
   var stepTxt = {}, allProgs = [], capped = 0;
   // step2xxl writes edge holes as modelled (e.g. -32); XXL Fix stops them at the machine maximum 31.906 — the only allowed difference
   function capEdge(t) {
@@ -1026,9 +1049,11 @@ async function run(){
   // routing rules hold on every generated program
   var airBad = [], deepBad = [], plBad = [];
   allProgs.forEach(function (pg) {
-    var prev = null;
+    var prev = null, saw = false;
     pg.text.split("\r\n").forEach(function (l) {
       var m = /^ X(G0|L2P|A2P) X=(\S+) Y=(\S+) Z=(\S+)/.exec(l); if (!m) return;
+      if (m[1] === "G0") saw = / T=82 /.test(l);
+      if (saw) return;                       // the saw runs out past the panel exactly like SWOOD CAM did
       var x = +m[2], y = +m[3], z = +m[4];
       if (x < -20 - 1e-9 || x > pg.DX + 20 + 1e-9 || y < -20 - 1e-9 || y > pg.DY + 20 + 1e-9) airBad.push(pg.file + ": " + l);
       if (z < -(pg.DZ - 2) - 1e-6) deepBad.push(pg.file + ": " + l);
@@ -1045,6 +1070,26 @@ async function run(){
   ck("Didelė kiaurymė Ø60 frezuojama ratu, ne gręžiama", !/D=60 /.test(cut1) && /XA2P [^\n]* I=700 J=300 G=3/.test(cut1), cut1);
   ck("Vidinė kiaurinė išpjova frezuojama", cu.programs[0] && cu.programs[0].routes.some(function (r) { return r.kind === "inner"; }));
   ck("Ø35 lizdas lieka gręžimu", / XBO X=150 Y=100 Z=-13 D=35 N="P" F=1 R=1#/.test(cut1));
+  // saw grooves (step2xxl 2.13 / 2.14)
+  var sStop = S2X.process(stepTxt.SAW_STOPPED, "SAW_STOPPED"), sp0 = sStop.programs[0];
+  ck("Pjūklo grioveliai: 3 maršrutai, 6 praėjimai, be frezos antraštės", sp0 && sp0.routes.length === 3 && sp0.routes.every(function (r) { return r.kind === "saw"; }) &&
+     (sp0.text.match(/ T=82 /g) || []).length === 6 && !/DEIMANTAS/.test(sp0.text));
+  ck("Per trumpas pjūklui -> NEPROGRAMUOJAMAS (klaida)", sStop.warnings.some(function (x) { return x.level === "err" && /trumpesnis už pjūklo pėdsaką/.test(x.msg); }) &&
+     sp0.pockets.length === 1 && sp0.pockets[0].kind === "saw_unsupported");
+  ck("Galai plokštės viduje -> pastaba apie rankinį pabaigimą", sStop.warnings.filter(function (x) { return x.code === "saw_stop"; }).length === 4);
+  var sBad = S2X.process(stepTxt.SAW_BAD, "SAW_BAD");
+  ck("8 mm griovelis (per platus pjūklui, per siauras frezai) -> klaida, ne frezuojamas 15.5", sBad.warnings.some(function (x) { return x.code === "narrow" && x.level === "err"; }) &&
+     !/DEIMANTAS/.test(sBad.programs[0].text));
+  var offS = {}; offS[0] = 1;
+  var tS = S2X.textWithout(sp0, {}, offS);
+  ck("Išjungtas pjūklo griovelis dingsta (2 praėjimai)", (tS.text.match(/ T=82 /g) || []).length === 4 && /RA_SCM_SAVKLINGE/.test(tS.text));
+  var allS = {}; sp0.routes.forEach(function (r, k) { allS[k] = 1; });
+  var tS2 = S2X.textWithout(sp0, {}, allS);
+  ck("Visus pjūklo griovelius išjungus — be pjūklo antraštės, tuščia", tS2.empty && !/RA_SCM_SAVKLINGE|CUT-GROOVE/.test(tS2.text));
+  var vS = S2X.viewDoc(sp0);
+  ck("3D: pjūklo praėjimai atskiri keliai, T=82, propjova 3.2", vS.paths.length === 6 && vS.paths.every(function (q) { return q.tool === "82" && q.d === 3.2 && q.pts.length === 2; }));
+  var sBot = S2X.process(stepTxt.SAW_LED_BOTTOM, "SAW_LED_BOTTOM");
+  ck("Pjūklo griovelis apačioje -> 2OP", sBot.programs.length === 2 && sBot.programs[1].routes.length === 1 && sBot.programs[1].routes[0].kind === "saw");
   var sl = S2X.process(await (await fetch("fixtures/step/SYN_SLOT.STEP")).text(), "SYN_SLOT");
   ck("Kiaurinė anga: programa yra (step2xxl rašytų „no machining“)", sl.status === "ok" && sl.programs.length === 1 && sl.programs[0].routes.length === 1, sl.status);
   // reviewer switches items off
@@ -1113,12 +1158,12 @@ async function run(){
     ob.click();
     await new Promise(function (r) { setTimeout(r, 200); });
     ck("Langas atsidaro", !doc.getElementById("pb").hidden);
-    ck("8 operacijų mygtukai", doc.querySelectorAll("#pbTiles [data-add]").length === 8);
+    ck("9 operacijų mygtukai", doc.querySelectorAll("#pbTiles [data-add]").length === 9);
     w.PB.set({ v: 1, name: "TEST", DX: 720, DY: 560, DZ: 18, ops: [] });
     Array.prototype.forEach.call(doc.querySelectorAll("#pbTiles [data-add]"), function (b) { b.click(); });
     await new Promise(function (r) { setTimeout(r, 200); });
-    ck("Visos 8 operacijos pridėtos", w.PB.get().ops.length === 8, w.PB.get().ops.length);
-    ck("Brėžinyje matosi operacijos", doc.querySelectorAll("#pbSvg g.op").length >= 8, doc.querySelectorAll("#pbSvg g.op").length);
+    ck("Visos 9 operacijos pridėtos", w.PB.get().ops.length === 9, w.PB.get().ops.length);
+    ck("Brėžinyje matosi operacijos", doc.querySelectorAll("#pbSvg g.op").length >= 9, doc.querySelectorAll("#pbSvg g.op").length);
     var b = w.PB.built();
     ck("Paruošta be klaidų", b && b.ok && b.programs.length >= 1, b && JSON.stringify(b.check));
     ck("Programų kortelė apačioje", doc.querySelectorAll("#pbProgs .pb-prog").length === (b ? b.programs.length : -1));

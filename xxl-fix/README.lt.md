@@ -58,10 +58,16 @@ python3 serve.py            # tik jei norisi per http://localhost:8748/
 
 Mygtukas **`⬆ STEP → programa`** (arba tiesiog vilkite `.STEP` į langą) atidaro STEP importą.
 Įkelkite vienos ar kelių detalių STEP failus (ExportOnePanel arba SolidWorks → Išsaugoti kaip →
-STEP AP214). XXL Fix pats perskaito geometriją ir **lygiai taip pat kaip step2xxl v2.12**
+STEP AP214). XXL Fix pats perskaito geometriją ir **lygiai taip pat kaip step2xxl v2.14**
 atpažįsta skyles (iš viršaus, kiaurines, galuose, ilgosiose briaunose, žymes, varžtus į
 ekscentriką), griovelius / LED kanalus ir kiaurinius kontūrus, nusprendžia, kiek programų
 reikia (1OP, apversta 2OP, pasukta 90°), ir parodo viską brėžinyje.
+
+Iki 6 mm pločio grioveliai (neoninei LED juostai) pjaunami **pjūklu** (T=82, propjova 3.2 mm) —
+praėjimai nuo sienelės iki sienelės, visada iš didesnio X į mažesnį, pro atvirą galą išbėgama
+kaip SWOOD CAM. Jei griovelis baigiasi plokštės viduje, pjūklas sustoja taip, kad propjova
+baigtųsi ties griovelio galu, o ~28 mm suapvalintą dugną pabaigiate rankomis. 6–15 mm pločio
+griovelių nedaro nei pjūklas, nei freza — rodomi raudonai.
 
 - Dešinėje — kas rasta, programa po programos; kiekvieną grupę galima išjungti varnele.
 - Raudonai — ko staklės padaryti negali (nėra grąžto, kišenė platesnė už frezą, Ø5 ilgojoje
@@ -81,7 +87,8 @@ galima pasidaryti programą be inžinieriaus ir be SolidWorks.
 
 1. **Plokštė** — ilgis X, plotis Y, storis (16 / 18 / 19 / 22 / 25 arba savas).
 2. **Pridėti operaciją** — skylė (Ø5 / 8 / 15 / 35, aklina arba kiaurai), lentynų skylių eilės,
-   vyrių lizdai Ø35, briaunos skylė, griovelis, kampo išpjova, išpjova viduje, apvali kiaurymė.
+   vyrių lizdai Ø35, briaunos skylė, griovelis, **LED griovelis pjūklu** (4–6 mm, išilgai X,
+   per visą plokštę arba dalinis), kampo išpjova, išpjova viduje, apvali kiaurymė.
 3. **Nustatymai** dešinėje — kiekviena vieta įvedama **nuo tos briaunos, nuo kurios matavote**
    (nuo kairės / centre / nuo dešinės, nuo priekio / centre / nuo galo). Pakeitus plokštės dydį,
    skylė lieka toje pačioje vietoje nuo tos briaunos. Kartojimas (kiekis + žingsnis) ir
