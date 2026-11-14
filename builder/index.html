@@ -135,6 +135,11 @@ main{padding-block:18px 40px}
 .nestsheet{margin:0;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px}.nestsheet figcaption{display:flex;gap:10px;align-items:baseline;font-size:13px;margin-bottom:4px}.nestsheet svg{width:100%;height:auto;display:block}
 .nestsheet text{font-family:var(--f-ui,system-ui)}.note.warn{color:#9a3b1d}
 .shfront{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-wrap:wrap;gap:8px 14px;align-items:flex-end}.shfront .note{flex-basis:100%;margin:0}
+.drwbox.verbox{max-width:640px;max-height:min(86vh,900px)}.verbody{padding:14px;overflow:auto}.verlist{display:flex;flex-direction:column;gap:2px}
+.verday{font-weight:600;font-size:13px;color:var(--muted);margin:10px 0 4px}.verrow{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;padding:6px 8px;border-radius:8px;border:1px solid transparent}
+.verrow:hover{background:var(--bg2,#f2f3f0)}.verrow.cur{border-color:var(--line)}.verrow .vt{font-family:var(--f-mono,monospace);font-size:13px}.verrow .va{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.verbtn{padding:3px 8px;font-size:12px;margin-left:6px}
+@media (max-width:640px){.verrow{grid-template-columns:44px 1fr}.verrow .va{grid-column:1/-1}}
 .libsub{margin:6px 0 10px;font:600 16px var(--f-display)}.btn.libon{color:#9a6a00}
 .preset{border:1px solid var(--line);background:var(--panel);border-radius:var(--r);padding:12px;cursor:pointer;text-align:left;display:flex;flex-direction:column;gap:8px}
 .preset:hover{border-color:var(--accent)}
@@ -2210,9 +2215,10 @@ function buildCabinet(c, idx, projName) {
   if (legs.length) hw.push({ item:o.feet ? 'Pėdutės Ø15' : 'Kojelės', qty:legs.length, unit:'vnt.' });
   /* a plinth (cokolis) among the extra parts is drawn at the front, under the carcass (between the sides when they reach the floor) */
   var plx = (c.extras || []).filter(function (x) { return x && (x.kind === 'plinth' || /cokol|plint/i.test(x.name || '')) && +x.L > 0 && +x.W > 0 && !(x.qty !== '' && x.qty != null && !(+x.qty > 0)); })[0], legEff = o.legs ? (o.feet ? R.feet.h : (+c.legH || 100)) : 0;   // only a plinth that is made
-  var inS = hb > 0 && !legEff;   // the sides stand on the floor: the plinth goes between them
+  var inS = hb > 0 && (plx && plx.between != null && plx.between !== '' ? plx.between === true || plx.between === 'true' : !legEff);   // between the sides (they reach below the raised bottom): asked, or when they stand on the floor
   var plX0 = inS ? t : 0, plX1 = inS ? W - t : W; if (plx && +plx.L < plX1 - plX0) { var plM = (plX0 + plX1) / 2; plX0 = plM - +plx.L / 2; plX1 = plM + +plx.L / 2; }   // a shorter plinth: as long as its row says, in the middle
-  var plinth = plx ? { x0:plX0, x1:plX1, z0:-legEff, z1:-legEff + (+plx.W > 0 ? +plx.W : Math.max(40, legEff + hb - 2)), y0:plx.yf !== '' && plx.yf != null && isFinite(+plx.yf) ? Math.max(0, +plx.yf) : inS ? 20 : 50, t:+plx.T || t, mat:plx.mat || mFac } : null;   // its front: yf mm behind the carcass front
+  var plZ0 = inS ? 0 : -legEff;   // between the sides: from their lower end (on legs too), under the carcass: from the floor
+  var plinth = plx ? { x0:plX0, x1:plX1, z0:plZ0, z1:plZ0 + (+plx.W > 0 ? +plx.W : Math.max(40, (inS ? 0 : legEff) + hb - 2)), y0:plx.yf !== '' && plx.yf != null && isFinite(+plx.yf) ? Math.max(0, +plx.yf) : inS ? 20 : 50, t:+plx.T || t, mat:plx.mat || mFac } : null;   // its front: yf mm behind the carcass front
   /* ---- LED profile grooves (c.leds): in the bottom, the top or a side, along the part, a set distance from the front edge.
      at: bottom | top | L | R; side: in (into the cabinet) | out; from: front edge → groove; ends: open (through the part's ends, the profile slides in) | closed */
   var leds = [];
@@ -7375,6 +7381,23 @@ function placeBalloons(items, area, R0) {   // items: { a:[x,y] sheet, n }; ball
   items.forEach(function (it) { it.p = ptOf(it.t); });
   return items;
 }
+/* balloons in two tidy columns, left and right of the picture (as SolidWorks' square auto-balloon layout): each one on the side
+   of its piece, in the order of their height, so the leaders do not cross one another */
+function placeColumns(items, ring, R0, cx) {
+  var gap = 2 * R0 + 1.4, y0 = ring[2] + R0, y1 = ring[3] - R0, cap = Math.max(1, Math.floor((y1 - y0) / gap) + 1);
+  var L0 = items.filter(function (it) { return it.a[0] < cx; }), R1 = items.filter(function (it) { return it.a[0] >= cx; });
+  var byMid = function (a, b) { return Math.abs(a.a[0] - cx) - Math.abs(b.a[0] - cx); };
+  while (L0.length > cap && R1.length < cap) { L0.sort(byMid); R1.push(L0.shift()); }
+  while (R1.length > cap && L0.length < cap) { R1.sort(byMid); L0.push(R1.shift()); }
+  [[L0, ring[0]], [R1, ring[1]]].forEach(function (sd) {
+    var list = sd[0].sort(function (a, b) { return a.a[1] - b.a[1]; }), n = list.length; if (!n) return;
+    var ys = list.map(function (it) { return Math.max(y0, Math.min(y1, it.a[1])); }), g = n > 1 ? Math.min(gap, (y1 - y0) / (n - 1)) : gap;
+    for (var i = 1; i < n; i++) ys[i] = Math.max(ys[i], ys[i - 1] + g);
+    if (ys[n - 1] > y1) { ys[n - 1] = y1; for (var j = n - 2; j >= 0; j--) ys[j] = Math.min(ys[j], ys[j + 1] - g); }
+    list.forEach(function (it, k) { it.p = [sd[1], ys[k]]; });
+  });
+  return L0.concat(R1);
+}
 function fitPic(order, x, y, w, h) {   // scale and offset that put a picture in a box (sheet), centred
   var pb = picBounds(order), s = Math.min(w / Math.max(1, pb[1] - pb[0]), h / Math.max(1, pb[3] - pb[2]));
   return { s:s, m:M(s, x + w / 2 - (pb[0] + pb[1]) / 2 * s, y + h / 2 + (pb[2] + pb[3]) / 2 * s), pb:pb };
@@ -7460,27 +7483,62 @@ function viewsSize(r, s, two) {   // width and height the views take at scale s
   return [w, h];
 }
 /* the cabinet sheet's lists: parts (position numbers as in the exploded view), extra parts, the worktop, fittings (lettered) */
+/* the drawing's parts list, as in the SolidWorks DRAWINGS sheets: identical parts on one line (same kind, size, material and
+   number of edged sides — mirrored left / right drawer sides too), one balloon per line; fittings are the pictured strip */
+function groupName(names) {
+  if (names.every(function (n) { return n === names[0]; })) return names[0];
+  var tk = names.map(function (n) { return String(n).split('-'); }), len = tk[0].length;
+  if (!tk.every(function (a) { return a.length === len; })) return names[0] + ' …';
+  var out = [];
+  for (var i = 0; i < len; i++) {
+    var u = tk.map(function (a) { return a[i]; }).filter(function (v, k, a) { return a.indexOf(v) === k; });
+    if (u.length === 1) { out.push(u[0]); continue; }
+    if (i === len - 1 && u.every(function (v) { return /^[A-ZĄ-Ž]$/i.test(v); })) continue;   // -D / -K: a mirrored pair
+    var base = u.map(function (v) { return v.replace(/\d+$/, ''); });
+    if (base.every(function (b) { return b === base[0]; }) && u.every(function (v) { return /\d$/.test(v); })) {
+      var ds = u.map(function (v) { return +v.slice(base[0].length); }).sort(function (a, b) { return a - b; });
+      var runs = [], st = ds[0];   // 1,2,3,4,13,14 → 1–4,13–14; too long → STALC*
+      for (var k2 = 1; k2 <= ds.length; k2++) if (k2 === ds.length || ds[k2] !== ds[k2 - 1] + 1) { var en = ds[k2 - 1]; runs.push(st === en ? String(st) : st + (en === st + 1 ? ',' : '–') + en); st = ds[k2]; }
+      var rs = runs.join(','); out.push(base[0] + (rs.length > 9 ? '*' : rs));
+    } else out.push(u.join('/'));
+  }
+  return out.join('-');
+}
+function edgeTxt(list) { var n = list.filter(Boolean); return n.length ? n.join(' ') : ''; }
 function cabLists(c, r) {
   var parts = partOrder(r.panels || []), hwList = drawHw(r.hardware), hwRows = hwList.map(function (h, i) { return [LETTER(i), hwText(h.item), String(h.qty), unitText(h.unit)]; });
   var extras = (c.extras || []).filter(function (x) { return x && +x.L > 0 && +x.W > 0 && !(x.qty !== '' && x.qty != null && !(+x.qty > 0)); });   // as in the parts list: no size or quantity 0 → not made
-  var rows = parts.map(function (p, i) { var eb = p.eb || {}; return [String(i + 1), p.short || p.role, nm(p.L) + ' × ' + nm(p.W) + ' × ' + nm(p.T), p.mat || L.none,
-    [eb.y0 ? 'L1' : '', eb.y1 ? 'L2' : '', eb.x0 ? 'W1' : '', eb.x1 ? 'W2' : ''].filter(Boolean).join(' ') || L.none, '1']; });
-  extras.forEach(function (x) { rows.push(['–', (x.name || L.extra), nm(+x.L) + ' × ' + nm(+x.W) + ' × ' + nm(+x.T || +c.thick || 18), x.mat || (c.mat && c.mat.carc) || L.none, [x.e1 ? 'L1' : '', x.e2 ? 'L2' : '', x.e3 ? 'W1' : '', x.e4 ? 'W2' : ''].filter(Boolean).join(' ') || L.none, String(Math.max(1, Math.round(+x.qty || 1)))]); });
+  var groups = [], byKey = {}, posOf = {};
+  parts.forEach(function (p) { var eb = p.eb || {}, nL = (eb.y0 ? 1 : 0) + (eb.y1 ? 1 : 0), nW = (eb.x0 ? 1 : 0) + (eb.x1 ? 1 : 0);
+    var k = [p.role, Math.round(p.L * 10), Math.round(p.W * 10), Math.round(p.T * 10), p.mat || '', nL, nW].join('|');
+    var g = byKey[k]; if (!g) { g = byKey[k] = { members:[], p:p, nL:nL, nW:nW }; groups.push(g); } g.members.push(p); });
+  groups.forEach(function (g, i) { g.nr = i + 1; g.members.forEach(function (p) { posOf[p.name] = g.nr; }); });
+  var eTxt = function (nL, nW) { return edgeTxt([nL ? nL + 'L' : '', nW ? nW + 'W' : '']); };
+  var rows = groups.map(function (g) { var p = g.p; return [String(g.nr), groupName(g.members.map(function (q) { return q.short || q.role; })), String(g.members.length), nm(p.L), nm(p.W), nm(p.T), p.mat || '', eTxt(g.nL, g.nW)]; });
+  extras.forEach(function (x) { var nL = (x.e1 ? 1 : 0) + (x.e2 ? 1 : 0), nW = (x.e3 ? 1 : 0) + (x.e4 ? 1 : 0);
+    rows.push(['–', x.name || L.extra, String(Math.max(1, Math.round(+x.qty || 1))), nm(+x.L), nm(+x.W), nm(+x.T || +c.thick || 18), x.mat || (c.mat && c.mat.carc) || '', eTxt(nL, nW)]); });
   var wp = r.worktop && WT_PIECES ? WT_PIECES.filter(function (q) { return q.ids && q.ids.indexOf(c.id) >= 0; })[0] : null;
   if (wp) { var eb2 = wp.eb || {}, shared = wp.ids.length > 1;   // the piece as it is cut: shared with the neighbours, trimmed in a corner
-    rows.push(['–', shared ? wp.cab + '-' + wp.name.replace(/_/g, '-') : L.wtPart, nm(wp.L) + ' × ' + nm(wp.W) + ' × ' + nm(wp.T), wp.mat || L.none,
-      [eb2.eb1 ? 'L1' : '', eb2.eb2 ? 'L2' : '', eb2.eb3 ? 'W1' : '', eb2.eb4 ? 'W2' : ''].filter(Boolean).join(' ') || L.none, wp.ids[0] === c.id ? '1' : '–']); }
-  else if (r.worktop) { var wt0 = r.worktop; rows.push(['–', L.wtPart, nm(wt0.L) + ' × ' + nm(wt0.W) + ' × ' + nm(wt0.T), wt0.mat || L.none,
-    (wt0.edge ? ['L1', wt0.left > 0 ? 'W1' : '', wt0.right > 0 ? 'W2' : ''].filter(Boolean).join(' ') : '') || L.none, '1']); }
-  return { parts:parts, rows:rows, hwList:hwList, hwRows:hwRows };
+    rows.push(['–', shared ? wp.cab + '-' + wp.name.replace(/_/g, '-') : L.wtPart, wp.ids[0] === c.id ? '1' : '–', nm(wp.L), nm(wp.W), nm(wp.T), wp.mat || '', eTxt((eb2.eb1 ? 1 : 0) + (eb2.eb2 ? 1 : 0), (eb2.eb3 ? 1 : 0) + (eb2.eb4 ? 1 : 0))]); }
+  else if (r.worktop) { var wt0 = r.worktop; rows.push(['–', L.wtPart, '1', nm(wt0.L), nm(wt0.W), nm(wt0.T), wt0.mat || '', wt0.edge ? eTxt(1, (wt0.left > 0 ? 1 : 0) + (wt0.right > 0 ? 1 : 0)) : '']); }
+  return { parts:parts, groups:groups, posOf:posOf, rows:rows, hwList:hwList, hwRows:hwRows };
 }
-var PART_COLS = function () { return [{ w:9, label:L.pos }, { w:30, label:L.part }, { w:36, label:L.size }, { w:72, label:L.mat }, { w:34, label:L.edge }, { w:15, label:L.qty, align:'end' }]; };
+/* the parts table's columns: material and edges only when some line has them; the name column takes what is left */
+var PART_COLS = function (rows, W) {
+  W = W || 196; rows = rows || [];
+  var hasM = rows.some(function (r0) { return r0[6]; }), hasE = rows.some(function (r0) { return r0[7]; });
+  var cols = [{ w:8, label:L.pos, k:0 }, { w:0, label:L.part, k:1 }, { w:10, label:L.unit, align:'end', k:2 }, { w:14, label:'L', align:'end', k:3 }, { w:14, label:'W', align:'end', k:4 }, { w:8, label:'T', align:'end', k:5 }];
+  if (hasM) cols.push({ w:66, label:L.mat, k:6 }); if (hasE) cols.push({ w:16, label:L.edge, k:7 });
+  cols[1].w = W - cols.reduce(function (a, c0) { return a + c0.w; }, 0);
+  return cols;
+};
+function partTable(x, y, rows, o, W) { var cols = PART_COLS(rows, W); return table(x, y, cols, rows.map(function (r0) { return cols.map(function (c0) { return r0[c0.k]; }); }), o); }
 var HW_COLS = function () { return [{ w:9, label:L.pos }, { w:137, label:L.name }, { w:25, label:L.qty, align:'end' }, { w:25, label:L.unit }]; };
 /* views scale for the cabinet sheet and how many list lines fit under the views (2.7 mm a line at the least) */
 function cabPlan(c, r) {
   r = Object.assign({}, r, { dims:dimsOf(r) });
   var ls = cabLists(c, r), LW = 196, top = FR + 12, bottomY = SH - FR - 4, RH = 2.7;
-  var nAll = ls.rows.length + 1 + (ls.hwRows.length ? ls.hwRows.length + 1 : 0), best = null;
+  var nAll = ls.rows.length + 1, best = null;   // the fittings are pictured beside the exploded view, not listed here
   [false, true].forEach(function (two) { for (var i = 0; i < DEN.length; i++) { var sc = 1 / DEN[i], sz = viewsSize(r, sc, two);
     if (sz[0] <= LW && sz[1] <= bottomY - top - (nAll * 3.2 + 16)) { if (!best || sc > best.s + 1e-9) best = { s:sc, two:two }; break; } } });
   var fits = !!best;
@@ -7506,11 +7564,11 @@ function sheetCabList(c, r, nr, meta, rows, from, withHw) {
       var room = Math.floor((yMax[k] - y - 4) / rh) - 1;
       if (room < 2) { if (k === 0) { k = 1; y = y0; continue; } svg += txt(colsX[1], yMax[1] + 3, '…', 3); return; }
       var chunk = list.slice(0, room); list = list.slice(room);
-      svg += txt(colsX[k], y - 1.8, title, 2.8, { bold:true }) + table(colsX[k], y, cols(), chunk, { rh:rh, fs:fs }).svg;
+      svg += txt(colsX[k], y - 1.8, title, 2.8, { bold:true }) + (cols ? table(colsX[k], y, cols(), chunk, { rh:rh, fs:fs }) : partTable(colsX[k], y, chunk, { rh:rh, fs:fs })).svg;
       y += rh * (chunk.length + 1) + 9;
       if (list.length) { if (k === 0) { k = 1; y = y0; } else { svg += txt(colsX[1], yMax[1] + 3, '…', 3); return; } }
     } };
-  put(L.parts, PART_COLS, rows.slice());
+  put(L.parts, null, rows.slice());
   if (withHw && ls.hwRows.length) put(L.hw, HW_COLS, ls.hwRows.slice());
   svg += titleBlock(Object.assign({}, meta, { title:L.cab + ' ' + nr + (c.name ? ' „' + c.name + '“' : '') + ' — ' + L.cont, scale:'—' }));
   return svg + '</svg>';
@@ -7518,31 +7576,35 @@ function sheetCabList(c, r, nr, meta, rows, from, withHw) {
 function sheetCabinet(c, r, nr, meta, plan) {
   plan = plan || cabPlan(c, r);
   r = Object.assign({}, r, { dims:dimsOf(r) });
-  var svg = sheetOpen(), parts = partOrder(r.panels || []), posOf = {};
-  parts.forEach(function (p, i) { posOf[p.name] = i + 1; });
+  var svg = sheetOpen();
   var LX = FR + 8, LW = 196, top = FR + 12, bottomY = SH - FR - 4;
   /* lists */
-  var ls0 = cabLists(c, r), hwList = ls0.hwList, hwRows = plan.hw ? ls0.hwRows : [];
+  var ls0 = cabLists(c, r), hwList = ls0.hwList, posOf = ls0.posOf, hwRows = [];
   var rows = ls0.rows.slice(0, plan.nParts), more = !plan.hw;
-  var nRows = rows.length + 1 + (hwRows.length ? hwRows.length + 1 : 0) + (more ? 1 : 0), best = plan.best;
+  var nRows = rows.length + 1 + (more ? 1 : 0), best = plan.best;
   var vb = viewsBlock(r, best.s, LX + 2, top, best.two, c); svg += vb.svg;
   /* parts and hardware under the views (what does not fit goes on the next sheet) */
-  var yT = vb.bottom + 8, rh = Math.max(2.7, Math.min(4.2, (bottomY - yT - 8) / nRows)), fs = Math.min(2.3, rh * 0.6);
-  svg += txt(LX, yT - 1.8, L.parts, 3, { bold:true });
-  var tp = table(LX, yT, PART_COLS(), rows, { rh:rh, fs:fs });
+  var yT = vb.bottom + 8, rh = Math.max(2.7, Math.min(5, (bottomY - yT - 8) / nRows)), fs = Math.min(2.7, rh * 0.58);
+  svg += txt(LX, yT - 1.8, L.parts, 3.2, { bold:true });
+  var tp = partTable(LX, yT, rows, { rh:rh, fs:fs });
   svg += tp.svg;
   if (more) svg += txt(LX, yT + tp.h + rh * 0.9, L.contNext, Math.min(2.4, fs + 0.2), { bold:true, fill:'#7a4d12' });
   if (hwRows.length) { var yH = yT + tp.h + rh + 4; svg += txt(LX, yH - 1.8, L.hw, 3, { bold:true });
     svg += table(LX, yH, HW_COLS(), hwRows, { rh:rh, fs:fs }).svg; }
   /* exploded assembly on the right */
-  var AX = LX + LW + 10, legH = hwList.length ? Math.ceil(hwList.length / 4) * 15 + 2 : 0, area = [AX + 10, SW - FR - 10, FR + 26, SH - FR - TB.h - 10 - legH];
+  var AX = LX + LW + 10, legH = hwList.length ? Math.ceil(hwList.length / 4) * 15 + 2 : 0, area = [AX + 16, SW - FR - 16, FR + 26, SH - FR - TB.h - 10 - legH];
   svg += line([AX - 4, FR + 4], [AX - 4, SH - FR - 4], 0.15, '#c3c8c5');
   var V = viewIso(ISO_D), boxes = cabBoxes(r, { plinth:false, fit:true, c:c }); explode(r, boxes);
   var order = solve(boxes, V), fp = fitPic(order, area[0] + 4, area[2] + 4, area[1] - area[0] - 8, area[3] - area[2] - 8);
   svg += viewTitle(AX, top, L.expl, L.nts);
   var anchors = {};
   svg += drawBoxes(order, fp.m, { lw:0.26, shade:true, after:connectorLines(r, boxes, V, function (q) { return fp.m(q); }, order, anchors) });
-  var items = order.filter(function (b) { return b.p && posOf[b.p.name]; }).map(function (b) { return { a:fp.m(anchorOf(b, order)), n:posOf[b.p.name] }; });
+  var items = [], gotNr = {};
+  ls0.groups.forEach(function (g) {   // the balloon goes to the piece of the line that is seen best (the biggest one in front)
+    var mine = order.filter(function (b) { return b.p && posOf[b.p.name] === g.nr; });
+    var seen = mine.map(function (b) { return { b:b, a:anchorOf(b, order, true), sz:(b.e[0][1] - b.e[0][0]) * (b.e[2][1] - b.e[2][0]) + (b.e[1][1] - b.e[1][0]) * (b.e[2][1] - b.e[2][0]) }; }).filter(function (q) { return q.a; }).sort(function (x, y) { return y.sz - x.sz; });
+    var a = seen.length ? seen[0].a : mine.length ? anchorOf(mine[mine.length - 1], order) : null;
+    if (a && !gotNr[g.nr]) { gotNr[g.nr] = 1; items.push({ a:fp.m(a), n:g.nr }); } });
   /* fittings: one lettered balloon per line of the fittings list, on one of its pieces */
   var pickFit = function (test) { var cands = order.filter(test); cands.sort(function (a, b) { return (b.e[2][1] - a.e[2][1]) || (a.e[0][0] - b.e[0][0]); });
     for (var i = 0; i < cands.length; i++) { var a = anchorOf(cands[i], order, true); if (a) return fp.m(a); }
@@ -7564,8 +7626,8 @@ function sheetCabinet(c, r, nr, meta, plan) {
       if (vis) a = fp.m(vis.mid); }
     if (a) items.push({ a:a, n:LETTER(i), fit:true });
   });
-  var pbS = [fp.m([fp.pb[0], fp.pb[3]]), fp.m([fp.pb[1], fp.pb[2]])], ring = [Math.max(AX + 4, pbS[0][0] - 8), Math.min(SW - FR - 5, pbS[1][0] + 8), Math.max(FR + 20, pbS[0][1] - 8), Math.min(area[3] + 4, pbS[1][1] + 8)];
-  placeBalloons(items, ring, 3.1).forEach(function (it) { svg += line(it.a, it.p, 0.18, it.fit ? '#7a4d12' : '#3a423e') + '<circle cx="' + f2(it.a[0]) + '" cy="' + f2(it.a[1]) + '" r="0.55" fill="' + (it.fit ? '#7a4d12' : '#3a423e') + '"/>' + (it.fit ? fitBalloon(it.p, it.n, 3.1) : balloon(it.p, it.n, 3.1)); });
+  var pbS = [fp.m([fp.pb[0], fp.pb[3]]), fp.m([fp.pb[1], fp.pb[2]])], ring = [Math.max(AX + 4, pbS[0][0] - 8), Math.min(SW - FR - 5, pbS[1][0] + 8), FR + 22, area[3] + 4];
+  placeColumns(items, ring, 3.1, (pbS[0][0] + pbS[1][0]) / 2).forEach(function (it) { svg += line(it.a, it.p, 0.18, it.fit ? '#7a4d12' : '#3a423e') + '<circle cx="' + f2(it.a[0]) + '" cy="' + f2(it.a[1]) + '" r="0.55" fill="' + (it.fit ? '#7a4d12' : '#3a423e') + '"/>' + (it.fit ? fitBalloon(it.p, it.n, 3.1) : balloon(it.p, it.n, 3.1)); });
   var lg = FR + 16.5, lx = AX, anyConn = (r.panels || []).some(function (p) { return p.edges && p.edges.length; });
   if (anyConn) svg += txt(lx, lg, L.conn, 2.1, { fill:'#55605a' }); lx += tw(L.conn, 2.1) + 3;
   if (anyConn) [[COL.conf, L.cConf], [COL.cam, L.cCam], [COL.dowel, L.cDowel]].forEach(function (k) { svg += line([lx, lg - 0.7], [lx + 6, lg - 0.7], 0.3, k[0], '1.4 0.9') + txt(lx + 7.5, lg, k[1], 2.1, { fill:'#55605a' }); lx += 10 + tw(k[1], 2.1) + 4; });
@@ -7767,7 +7829,7 @@ function sheets(proj, infos, opts) {
     if (only != null && only !== i) return; var inf = infos[i]; if (!inf || !inf.r || !inf.r.panels || !inf.r.panels.length || c.kind === 'panel') return;
     var nm2 = (i + 1) + (c.name ? ' „' + c.name + '“' : ''), plan = cabPlan(c, inf.r);
     list.push({ id:'c' + i, cab:i, title:L.cab + ' ' + nm2, make:function (m) { return sheetCabinet(c, inf.r, i + 1, m, plan); } });
-    if (!plan.hw) list.push({ id:'c' + i + 'b', cab:i, cont:true, title:L.cab + ' ' + nm2 + ' — ' + L.cont, make:function (m) { return sheetCabList(c, inf.r, i + 1, m, plan.restRows, plan.restFrom, true); } });
+    if (!plan.hw) list.push({ id:'c' + i + 'b', cab:i, cont:true, title:L.cab + ' ' + nm2 + ' — ' + L.cont, make:function (m) { return sheetCabList(c, inf.r, i + 1, m, plan.restRows, plan.restFrom, false); } });
   });
   return list.map(function (sh, k) { var svg; try { svg = sh.make(Object.assign({}, meta, { no:k + 1, of:list.length })); } catch (e) { svg = sheetOpen() + txt(30, 40, 'Error: ' + (e && e.message), 5) + '</svg>'; sh.error = String(e && e.stack || e); }
     return { id:sh.id, cab:sh.cab, cont:!!sh.cont, title:sh.title, svg:svg, error:sh.error }; });
@@ -7827,7 +7889,7 @@ function pdf(list, o) {
   return next();
 }
 
-var api = { iconSvg:iconSvg, hwKind:hwKind, hwText:hwText, unitText:unitText, cabPlan:cabPlan, fittingBoxes:fittingBoxes, overlap2:overlap2, sheets:sheets, sheetViews:sheetViews, sheetAssembly:sheetAssembly, pdf:pdf, pdfBytes:pdfBytes, solve:solve, viewIso:viewIso, viewOrtho:viewOrtho, cabBoxes:cabBoxes, pbox:pbox, explode:explode, partOrder:partOrder, TX:TX };
+var api = { iconSvg:iconSvg, hwKind:hwKind, hwText:hwText, unitText:unitText, cabPlan:cabPlan, cabLists:cabLists, groupName:groupName, fittingBoxes:fittingBoxes, overlap2:overlap2, sheets:sheets, sheetViews:sheetViews, sheetAssembly:sheetAssembly, pdf:pdf, pdfBytes:pdfBytes, solve:solve, viewIso:viewIso, viewOrtho:viewOrtho, cabBoxes:cabBoxes, pbox:pbox, explode:explode, partOrder:partOrder, TX:TX };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DBDraw = api;
 })(typeof window !== 'undefined' ? window : this);
 </script>
@@ -8233,7 +8295,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8381,7 +8443,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -8748,8 +8810,119 @@ function viewLib() {
         '<div class="libact"><select data-act-change="libmove" data-v="' + esc(it.id) + '" aria-label="' + esc(t('libMove')) + '">' + catOpts(it.cat) + '</select><button type="button" class="btn ghost danger" data-act="libdel" data-v="' + esc(it.id) + '" aria-label="' + esc(t('del')) + '">' + (S.confirm === 'libdel' + it.id ? esc(t('delSure')) : '✕') + '</button></div></div>'; }).join('') + '</div>'
       : '<p class="note">' + t('libNone') + '</p>') : '<p class="note">' + t('libEmpty') + '</p>') + '</div>';
 }
+/* ----------------------------------------------------------------- project versions
+   Every project keeps its history: while it is being edited a version is kept about every 15 minutes (the last state of each
+   quarter of an hour), and one more when another project is opened or the page is left. Kept: all of the last 2 days, then the
+   last version of each day for half a year, and every version saved by hand with a name. Stored in this browser (IndexedDB, it
+   holds far more than localStorage); with the cloud signed in, the history also goes to the workshop database (cloud.js). */
+var VER = (function () {
+  var db = null, timer = null, dirty = {}, H48 = 2 * 864e5, Q15 = 15 * 60000;
+  function open() { return new Promise(function (res, rej) {
+    if (db) return res(db); if (!window.indexedDB) return rej(new Error('no IndexedDB'));
+    var r = indexedDB.open('dbKurejasVersions', 1);
+    r.onupgradeneeded = function () { r.result.createObjectStore('p', { keyPath:'pid' }); };
+    r.onsuccess = function () { db = r.result; res(db); }; r.onerror = function () { rej(r.error); }; }); }
+  function get(pid) { return open().then(function (d) { return new Promise(function (res) {
+    var q = d.transaction('p').objectStore('p').get(pid); q.onsuccess = function () { res(q.result && Array.isArray(q.result.list) ? q.result.list : []); }; q.onerror = function () { res([]); }; }); }).catch(function () { return []; }); }
+  function put(pid, list) { return open().then(function (d) { return new Promise(function (res) {
+    var tx = d.transaction('p', 'readwrite'); tx.objectStore('p').put({ pid:pid, list:list }); tx.oncomplete = function () { res(true); }; tx.onerror = function () { res(false); }; }); }).catch(function () { return false; }); }
+  function body(p) { var c = clone(p); delete c.updated; var str = JSON.stringify(c), h1 = 5381, h2 = 52711;   // a fingerprint: the same project → the same one
+    for (var i = 0; i < str.length; i++) { var ch = str.charCodeAt(i); h1 = (h1 * 33) ^ ch; h2 = (h2 * 33) ^ ch; } return (h1 >>> 0).toString(36) + (h2 >>> 0).toString(36) + str.length; }
+  function prune(list) {   // newest first
+    var now = Date.now(), keep = [], days = {}, recent = 0;
+    list.forEach(function (v) { var age = now - v.at;
+      if (v.label) { keep.push(v); return; }
+      if (age < H48) { if (recent++ < 100) keep.push(v); return; }
+      if (age > 183 * 864e5) return;
+      var d = new Date(v.at).toDateString(); if (!days[d]) { days[d] = 1; keep.push(v); } });
+    return keep;
+  }
+  /* a version of project p: auto (rolling, one per quarter of an hour) or named by hand */
+  function snap(p, label, why) {
+    if (!p || !p.id || !(p.cabinets || []).length && !label) return Promise.resolve(null);
+    var data = clone(p), bd = body(p);
+    return get(p.id).then(function (list) {
+      var top = list[0];
+      if (!label && top && top.body === bd) return null;   // nothing changed since the last one
+      var v = { at:Date.now(), label:label || '', why:why || '', name:p.name || '', n:(p.cabinets || []).length, data:data, body:bd };
+      if (!label && top && !top.label && !top.why && !why && v.at - top.started < Q15) { v.started = top.started; list[0] = v; }   // still the same quarter of an hour
+      else { v.started = v.at; list.unshift(v); }
+      list = prune(list);
+      return put(p.id, list).then(function () { if (window.BuilderCloud && window.BuilderCloud.verPush) window.BuilderCloud.verPush(p.id, list); return v; });
+    });
+  }
+  function touched() { if (!S.proj) return; dirty[S.proj.id] = 1; clearTimeout(timer); timer = setTimeout(function () { flush(); }, 60000); }   // a minute after editing stops
+  function flush(why) { if (!S.proj || !dirty[S.proj.id]) return Promise.resolve(null); delete dirty[S.proj.id]; clearTimeout(timer); return snap(S.proj, '', why); }
+  document.addEventListener('visibilitychange', function () { if (document.hidden) flush(); });
+  window.addEventListener('pagehide', function () { flush(); });
+  /* the list with the cloud's versions added (from other computers) */
+  function all(pid) {
+    var cl = window.BuilderCloud && window.BuilderCloud.verPull ? window.BuilderCloud.verPull(pid).catch(function () { return []; }) : Promise.resolve([]);
+    return Promise.all([get(pid), cl]).then(function (r) {
+      var local = r[0], seen = {}, out = [];
+      local.concat((r[1] || []).map(function (v) { return Object.assign({}, v, { cloud:true }); })).forEach(function (v) {
+        var k = Math.round(v.at / 1000); if (seen[k] || !v.data) return; seen[k] = 1; out.push(v); });
+      return out.sort(function (a, b) { return b.at - a.at; });
+    });
+  }
+  return { snap:snap, touched:touched, flush:flush, all:all, get:get, put:put };
+})();
+/* the versions window: over the page, its own clicks; restore (the current state is kept as a version first) or open as a copy */
+var VD = { pid:null, list:null, sure:null, busy:false };
+function verOpen(pid) { VD.pid = pid; VD.list = null; VD.sure = null; verPaint();
+  var go = function () { VER.all(pid).then(function (l) { if (VD.pid !== pid) return; VD.list = l; verPaint(); }); };
+  if (S.proj && S.proj.id === pid) VER.flush().then(go, go); else go(); }
+function verClose() { VD.pid = null; var el = document.getElementById('verdlg'); if (el) el.remove(); }
+function verRec(pid) { if (S.proj && S.proj.id === pid) return { data:S.proj, name:S.proj.name }; var r = lib().filter(function (x) { return x.id === pid; })[0]; return r ? { data:r.data, name:r.name } : null; }
+function verPaint() {
+  var el = document.getElementById('verdlg');
+  if (!VD.pid) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'verdlg'; el.className = 'drwover verover'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); document.body.appendChild(el);
+    el.addEventListener('click', verClick); el.addEventListener('keydown', function (e) { if (e.key === 'Escape') verClose(); if (e.key === 'Enter' && e.target.id === 'ver-label') verClick({ target:el.querySelector('[data-vact=save]') }); }); }
+  var rec = verRec(VD.pid), pad = function (n) { return (n < 10 ? '0' : '') + n; }, cur0 = rec ? JSON.stringify(Object.assign({}, rec.data, { updated:null })) : '';
+  var dayOf = function (at) { var d = new Date(at), n = new Date(), y = new Date(Date.now() - 864e5);
+    return d.toDateString() === n.toDateString() ? t('verToday') : d.toDateString() === y.toDateString() ? t('verYest') : d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); };
+  var h = '<div class="drwbox verbox" data-stop="1"><div class="drwbar"><b>🕘 ' + t('verT') + ' — ' + esc(rec && rec.name || t('noName')) + '</b><button type="button" class="btn ghost" data-vact="close" aria-label="' + esc(t('close')) + '">✕</button></div><div class="verbody">' +
+    (S.proj && S.proj.id === VD.pid ? '<div class="row" style="gap:8px;align-items:flex-end;margin-bottom:10px"><label class="f grow" for="ver-label"><span>' + t('verName') + '</span><input id="ver-label" type="text" maxlength="60" placeholder="' + esc(t('verNamePh')) + '" autocomplete="off"></label><button type="button" class="btn pri" data-vact="save">＋ ' + t('verSave') + '</button></div>' : '') +
+    '<p class="note" style="margin:0 0 10px">' + t('verNote') + '</p>';
+  if (!VD.list) h += '<p class="note">…</p>';
+  else if (!VD.list.length) h += '<p class="note empty">' + t('verNone') + '</p>';
+  else { var lastDay = '';
+    h += '<div class="verlist">' + VD.list.map(function (v, i) {
+      var d = new Date(v.at), day = dayOf(v.at), head = day !== lastDay ? '<div class="verday">' + day + '</div>' : ''; lastDay = day;
+      var same = JSON.stringify(Object.assign({}, v.data, { updated:null })) === cur0, sure = VD.sure === i;
+      return head + '<div class="verrow' + (same ? ' cur' : '') + '"><span class="vt">' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + '</span><span class="vl">' +
+        (v.label ? '<b>' + esc(v.label) + '</b> ' : v.why ? '<i>' + esc(v.why) + '</i> ' : '') + '<span class="unit">' + v.n + ' ' + t('cabsN') + (v.name && rec && v.name !== rec.name ? ' · „' + esc(v.name) + '“' : '') + (v.cloud ? ' · ☁' : '') + '</span>' + (same ? ' <span class="badge ok">' + t('verSame') + '</span>' : '') + '</span>' +
+        '<span class="va"><button type="button" class="btn ghost" data-vact="copy" data-i="' + i + '" title="' + esc(t('verCopyT')) + '">' + t('verCopy') + '</button>' +
+        (same ? '' : '<button type="button" class="btn' + (sure ? ' danger' : '') + '" data-vact="restore" data-i="' + i + '">' + (sure ? t('verSure') : t('verRestore')) + '</button>') + '</span></div>';
+    }).join('') + '</div>'; }
+  el.innerHTML = h + '</div></div>';
+  var lb = el.querySelector('#ver-label'); if (lb && !VD.list) lb.focus();
+}
+function verClick(e) {
+  var tEl = e.target && e.target.closest ? e.target.closest('[data-vact]') : null, el = document.getElementById('verdlg');
+  if (!tEl) { if (e.target === el) verClose(); return; }
+  var a = tEl.getAttribute('data-vact'), v = VD.list && VD.list[+tEl.getAttribute('data-i')];
+  if (a === 'close') return verClose();
+  if (a === 'save') { var inp = el.querySelector('#ver-label'), nm0 = (inp && inp.value || '').trim() || t('verHand');
+    VER.snap(S.proj, nm0).then(function () { toast(t('verSaved')); verOpen(VD.pid); }); return; }
+  if (!v) return;
+  if (a === 'copy') { var cp = clone(v.data), d = new Date(v.at); cp.id = uid(); var p2 = function (n) { return (n < 10 ? '0' : '') + n; }; cp.name = (cp.name || t('noName')) + ' (' + d.getFullYear() + '-' + p2(d.getMonth() + 1) + '-' + p2(d.getDate()) + ' ' + p2(d.getHours()) + ':' + p2(d.getMinutes()) + ')'; cp.updated = new Date().toISOString();
+    if (!cp.look && verRec(VD.pid) && verRec(VD.pid).data.look) cp.look = clone(verRec(VD.pid).data.look);
+    libSet([libRec(cp)].concat(lib())); toast(t('verCopied')); if (S.home) render(); return; }
+  if (a === 'restore') {
+    if (VD.sure !== +tEl.getAttribute('data-i')) { VD.sure = +tEl.getAttribute('data-i'); verPaint(); return; }
+    var pid = VD.pid, isOpen = S.proj && S.proj.id === pid, before = verRec(pid);
+    VER.snap(before.data, '', t('verBefore')).then(function () {
+      var np = clone(v.data); np.id = pid; np.updated = new Date().toISOString(); if (!np.look && before.data.look) np.look = clone(before.data.look);   // a version from the cloud has no photos of the materials: keep today's
+      if (isOpen) { var tab0 = S.tab; openProject(np); S.tab = tab0; libSave(); }
+      else libSet([libRec(np)].concat(lib().filter(function (r) { return r.id !== pid; })));
+      toast(t('verDone')); verClose(); render(); });
+  }
+}
 function save() {
   if (!S.proj) return;
+  VER.touched();
   clearTimeout(clibTimer); clibTimer = setTimeout(clibSync, 300);
   if (S.tab !== 'room' && S.roomUndo && S.roomUndo.length) S.roomUndo = [];   // the Baldai undo steps back only through Baldai actions, never over edits made elsewhere
   S.proj.updated = new Date().toISOString();
@@ -8932,7 +9105,7 @@ function render() {
   var h = '<header class="top"><div class="wrap">' +
     '<button class="brand brandbtn" data-act="home" title="' + t('toHome') + '"><div class="logo"><span class="dbl" role="img" aria-label="Dėdės Baldai"></span></div><div><h1>' + t('app') + '</h1><div class="sub">' + t('sub') + '</div></div></button>' +
     '<button class="btn projbtn" data-act="home" title="' + t('toHome') + '">☰ ' + t('projects') + '</button>' +
-    '<label class="projname"><span class="unit">' + t('project') + '</span><input id="projname" type="text" data-bind="p.name" value="' + esc(S.proj.name) + '" placeholder="' + t('projPh') + '" autocomplete="off"' + (S.proj.name ? '' : ' aria-invalid="true"') + '><span class="saved" id="saved" title="' + t('autosaveT') + '">✓ ' + t('autosaved') + '</span></label>' +
+    '<label class="projname"><span class="unit">' + t('project') + '</span><input id="projname" type="text" data-bind="p.name" value="' + esc(S.proj.name) + '" placeholder="' + t('projPh') + '" autocomplete="off"' + (S.proj.name ? '' : ' aria-invalid="true"') + '><span class="saved" id="saved" title="' + t('autosaveT') + '">✓ ' + t('autosaved') + '</span><button type="button" class="btn ghost verbtn" data-act="pver" title="' + esc(t('verT')) + '">🕘 ' + t('verBtn') + '</button></label>' +
     '<nav class="tabs" aria-label="tabs">' +
       tabBtn('cab', t('tCab'), S.proj.cabinets.length) + tabBtn('room', t('tRoom')) + tabBtn('res', t('tRes'), nParts) + tabBtn('nest', t('tNest'), nestCount()) + tabBtn('drw', t('tDrw')) + tabBtn('set', t('tSet')) + '</nav>' +
     '<div class="hbtns">' + (S.admin ? '<button class="btn adminbadge" data-act="tab" data-v="set" title="' + (S.lang === 'lt' ? 'Administratoriaus režimas — kainos matomos' : 'Admin mode — prices shown') + '">€ Admin</button>' : '') + '<button class="btn newbtn" data-act="pnew" title="' + esc(t('prNew2')) + '">＋<span class="nlbl"> ' + t('prNew2') + '</span></button>' + langBtns() + '</div>' +
@@ -9079,7 +9252,10 @@ function plinthBlock(c) {
   var h = '<div class="row plinthrow" style="margin-top:12px;align-items:flex-end;gap:10px"><div class="f"><span>' + t('plL') + '</span><div class="seg" role="group">' +
     [['off', t('plOff')], ['on', t('plOn')]].map(function (o2) { var on = (o2[0] === 'on') === !!x; return '<button type="button" data-act="plinth" data-v="' + o2[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + o2[1] + '</button>'; }).join('') + '</div></div></div>';
   if (x) {
-    var yf0 = x.yf !== '' && x.yf != null && isFinite(num(x.yf)) ? num(x.yf) : (hbOf(c) > 0 && !E.legHeight(engineDef(c)) ? 20 : 50);
+    var hb1 = hbOf(c), btw = hb1 > 0 && (x.between != null && x.between !== '' ? x.between === true || x.between === 'true' : !E.legHeight(engineDef(c)));
+    var yf0 = x.yf !== '' && x.yf != null && isFinite(num(x.yf)) ? num(x.yf) : (btw ? 20 : 50);
+    if (hb1 > 0) h += '<div class="row" style="margin-top:8px"><div class="f"><span>' + t('plWhere') + '</span><div class="seg" role="group">' +
+      [['in', t('plIn')], ['under', t('plUnder')]].map(function (o2) { var on = (o2[0] === 'in') === btw; return '<button type="button" data-act="plinthpos" data-v="' + o2[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + o2[1] + '</button>'; }).join('') + '</div></div></div>';
     h += '<div class="row plfields" style="margin-top:8px;gap:10px">' + fN(t('plH'), b + 'W', x.W, 's') + fN(t('plLen'), b + 'L', x.L, 's') + fN(t('plYf'), b + 'yf', fmt(yf0), 's') + fN(t('cT'), b + 'T', x.T, 's') +
       '<label class="f grow" for="f-pl-mat" style="min-width:160px"><span>' + t('cMat') + '</span><input id="f-pl-mat" type="text" data-bind="' + b + 'mat" list="dl-mat" value="' + esc(x.mat || '') + '" autocomplete="off"></label>';
   }
@@ -10273,6 +10449,7 @@ function viewHome() {
       return '<div class="prow' + (isCur ? ' cur' : '') + '"><button class="prow-main" data-act="popen" data-v="' + esc(r.id) + '"><b>' + esc(r.name || t('noName')) + (isCur ? ' <span class="badge ok">' + t('prOpenNow') + '</span>' : '') + '</b>' +
         '<small>' + r.n + ' ' + t('cabsN') + ' · ' + t('prUpdated') + ' ' + esc(ago(r.updated)) + '</small></button>' +
         '<span class="prow-act"><button class="btn ghost" data-act="pdup" data-v="' + esc(r.id) + '" title="' + t('prDupT') + '">' + t('prDup') + '</button>' +
+        '<button class="btn ghost" data-act="pver" data-v="' + esc(r.id) + '" title="' + t('verT') + '">🕘 ' + t('verBtn') + '</button>' +
         '<button class="btn ghost" data-act="pjson" data-v="' + esc(r.id) + '" title="' + t('prJsonT') + '">.json</button>' +
         '<button class="btn ghost danger" data-act="pdel" data-v="' + esc(r.id) + '">' + (del ? t('delSure') : t('del')) + '</button></span>' +
         '<button class="btn pri prow-open" data-act="popen" data-v="' + esc(r.id) + '">' + t('prOpen') + '</button></div>';
@@ -10681,10 +10858,15 @@ app.addEventListener('click', function (e) {
         var fT0 = num(cc.cnc.facadeT) || 18; cc.extras.push({ kind:'side', side:sd0, fit:'', name:t('exSide'), L:num(cc.H), W:num(cc.D) + fT0, T:fT0, qty:1, mat:cc.mat.facade || cc.mat.carc, e1:true, e2:true, e3:true, e4:true, zb:0, yf:fT0 }); save(); break; }
       cc.extras.push(v === 'plinth' ? { kind:'plinth', name:t('exPlinth'), L:num(cc.W) - (hb0 > 0 && !le0 ? 2 * (num(cc.thick) || 18) : 0), W:Math.max(40, le0 + hb0 - 2), T:num(cc.thick) || 18, qty:1, mat:cc.mat.facade || cc.mat.carc, e1:true }
                                                    : { name:t('exAdd'), L:num(cc.W), W:100, T:num(cc.thick) || 18, qty:1, mat:cc.mat.carc }); save(); break; }
+    case 'plinthpos': { var pq = cur(), pqi = plinthIdx(pq); if (pqi < 0) break; var px = pq.extras[pqi], tq = num(pq.thick) || 18, inq = v === 'in';
+      px.between = inq; if (num(px.L) === num(pq.W) || num(px.L) === num(pq.W) - 2 * tq) px.L = num(pq.W) - (inq ? 2 * tq : 0);   // a full-width plinth keeps fitting
+      var hq = hbOf(pq), lq = E.legHeight(engineDef(pq)), wIn = Math.max(40, hq - 2), wUn = Math.max(40, lq + hq - 2);
+      if (num(px.W) === wIn || num(px.W) === wUn) px.W = inq ? wIn : wUn;   // the height too, unless it was set by hand
+      if (px.yf === '' || px.yf == null) px.yf = inq ? 20 : 50; save(); break; }
     case 'plinth': { var pc0 = cur(), pi0 = plinthIdx(pc0);
       if (v === 'off') { if (pi0 >= 0) { pc0.extras.splice(pi0, 1); save(); } break; }
       if (pi0 < 0) { var hbp = hbOf(pc0), lep = E.legHeight(engineDef(pc0));
-        pc0.extras.push({ kind:'plinth', name:t('exPlinth'), L:num(pc0.W) - (hbp > 0 && !lep ? 2 * (num(pc0.thick) || 18) : 0), W:Math.max(40, lep + hbp - 2), T:num(pc0.thick) || 18, qty:1, mat:pc0.mat.facade || pc0.mat.carc, e1:true }); save(); }
+        pc0.extras.push({ kind:'plinth', name:t('exPlinth'), between:hbp > 0 ? true : undefined, L:num(pc0.W) - (hbp > 0 ? 2 * (num(pc0.thick) || 18) : 0), W:Math.max(40, (hbp > 0 ? 0 : lep) + hbp - 2), T:num(pc0.thick) || 18, qty:1, mat:pc0.mat.facade || pc0.mat.carc, e1:true }); save(); }
       break; }
     case 'rmx': { var xc = cur(), xg = xc.extras.splice(i, 1)[0]; save(); render();
       toast(t('xRemoved'), false, t('undoBtn'), function () { var c2 = S.proj && S.proj.cabinets.filter(function (x) { return x.id === xc.id; })[0]; if (!c2) return; c2.extras.splice(Math.min(i, c2.extras.length), 0, xg); save(); render(); });
@@ -10725,8 +10907,9 @@ app.addEventListener('click', function (e) {
     case 'pdup': { var src = lib().filter(function (r) { return r.id === v; })[0]; if (!src) break; var cp2 = clone(src.data); cp2.id = uid(); cp2.name = (cp2.name || '') + ' ' + t('copySfx'); cp2.updated = new Date().toISOString();
       libSet([libRec(cp2)].concat(lib())); toast(t('prDupDone')); break; }
     case 'pjson': { var rj = lib().filter(function (r) { return r.id === v; })[0]; if (rj) saveFile(E.safeName(rj.name || 'PROJEKTAS') + '_projektas.json', JSON.stringify(rj.data, null, 1)); return; }
-    case 'pnew': if (S.proj) { clearTimeout(libTimer); libSave(); } S.home = true; S.focusNew = true; S.confirm = null; window.scrollTo(0, 0); break;
-    case 'popen': { var rec = lib().filter(function (r) { return r.id === v; })[0]; if (rec) { if (S.proj && S.proj.id !== rec.id) { clearTimeout(libTimer); libSave(); } openProject(rec.data); } break; }
+    case 'pnew': if (S.proj) { clearTimeout(libTimer); libSave(); VER.flush(); } S.home = true; S.focusNew = true; S.confirm = null; window.scrollTo(0, 0); break;
+    case 'popen': { var rec = lib().filter(function (r) { return r.id === v; })[0]; if (rec) { if (S.proj && S.proj.id !== rec.id) { clearTimeout(libTimer); libSave(); VER.flush(); } openProject(rec.data); } break; }
+    case 'pver': verOpen(v || (S.proj && S.proj.id)); return;
     case 'pdel': { if (S.confirm !== 'pdel' + v) { S.confirm = 'pdel' + v; break; } S.confirm = null; libSet(lib().filter(function (r) { return r.id !== v; }));
       if (S.proj && S.proj.id === v) { S.proj = null; try { localStorage.removeItem('dbKurejas.current'); } catch (er) {} } toast(t('prDeleted')); break; }
   }
@@ -10846,7 +11029,7 @@ function saveFile(name, data, type) {
 
 document.documentElement.lang = S.lang;
 render();
-window.__dbk = { S:S, render:render, nestPlan:nestPlan, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
+window.__dbk = { S:S, render:render, nestPlan:nestPlan, VER:VER, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
 })();
 
 </script>

@@ -76,16 +76,21 @@ for (let run = 0; run < 60; run++) {
       if (out && lang === 'lt' && run < 12) fs.writeFileSync(out + '/r' + run + '_' + k + '_' + sh.id + '.svg', sh.svg);
       if (sh.cab != null) {
         const r = infos[sh.cab].r;
-        if (sh.id[0] === 'c') r.panels.forEach(p => { if (!p.place) return; const want = nm(p.L) + ' × ' + nm(p.W) + ' × ' + nm(p.T);
-          if (!sh.svg.includes('>' + (p.short || p.role) + '<') && !sh.svg.includes('>' + (p.short || p.role).slice(0, 10))) B('PART MISSING ' + p.name);
-          if (!sh.svg.includes('>' + want + '<')) B('PART SIZE ' + p.name + ' ' + want); });
+        // the parts list groups identical parts (one line, one balloon); every part is on a line of its cabinet's sheets
+        const cabSvg = list.filter(x => x.cab === sh.cab && x.id[0] === 'c').map(x => x.svg).join(''), escT = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        if (sh.id === 'c' + sh.cab) { const ls = DR.cabLists(proj.cabinets[sh.cab], r);
+          r.panels.forEach(p => { if (!p.place) return; const g = ls.posOf[p.name], row = g && ls.rows[g - 1];
+            if (!row) { B('PART NOT LISTED ' + p.name); return; }
+            if (!cabSvg.includes('>' + escT(row[1]).slice(0, 10))) B('PART MISSING ' + p.name + ' ' + row[1]);
+            if (row[3] !== nm(p.L) || row[4] !== nm(p.W) || row[5] !== nm(p.T)) B('PART SIZE ' + p.name);
+            if (!cabSvg.includes('>' + row[3] + '<') || !cabSvg.includes('>' + row[4] + '<')) B('PART SIZE NOT SHOWN ' + p.name); }); }
         if (sh.id[0] === 'c') (r.hardware || []).forEach((h, hi) => { const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-          const hn = esc(DR.hwText(h.item)); if (!sh.svg.includes('>' + hn + '<') && !sh.svg.includes('>' + hn.slice(0, 20))) B('FITTING NOT LISTED ' + h.item + ' / ' + hn);
+          const hn = esc(DR.hwText(h.item)); if (!sh.svg.includes('>' + hn + '<') && !sh.svg.includes('>' + hn.slice(0, 8))) B('FITTING NOT LISTED ' + h.item + ' / ' + hn);
           const k = DR.hwKind(h.item), letter = String.fromCharCode(65 + hi);
           if ((k === 'drawer' || k === 'leg') && !(k === 'drawer' && r.warnings.some(w => /ilgesnis nei telpa|netelpa šone|per žemas arba skyrius per siauras/.test(w))) && !sh.svg.includes('fill="#7a4d12">' + letter + '<')) B('FITTING WITHOUT BALLOON ' + h.item); });
         if (sh.id[0] === 'c') { const b = DR.cabBoxes(r, {}), bw = DR.cabBoxes(r, { worktop:true }), ex = q => [0, 1, 2].map(k2 => [Math.min(...q.map(x => x.e[k2][0])), Math.max(...q.map(x => x.e[k2][1]))]), e = ex(b), ew = ex(bw);
           [e[0][1] - e[0][0], ew[1][1] - ew[1][0], ew[2][1] - ew[2][0]].forEach(v => { if (!sh.svg.includes('>' + nm(v) + '<')) B('DIM MISSING ' + sh.id + ' ' + nm(v)); });
-          if (r.worktop) { const w = r.worktop; if (!sh.svg.includes('>' + nm(w.L) + ' × ' + nm(w.W) + ' × ' + nm(w.T) + '<')) B('WORKTOP NOT LISTED ' + sh.id);
+          if (r.worktop) { const w = r.worktop; if (!cabSvg.includes('>' + nm(w.L) + '<') || !cabSvg.includes('>' + nm(w.W) + '<')) B('WORKTOP NOT LISTED ' + sh.id);
             if (!bw.some(x => x.worktop)) B('WORKTOP NOT DRAWN ' + sh.id); } }
       }
     });

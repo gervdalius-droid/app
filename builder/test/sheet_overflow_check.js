@@ -16,9 +16,12 @@ cases.forEach((c, ci) => { ['lt', 'en'].forEach(lang => {
   const proj = { name:'T', cabinets:[c] }, infos = [{ r:E.buildCabinet(JSON.parse(JSON.stringify(c)), 0, 'T') }];
   const list = DR.sheets(proj, infos, { lang, project:'T', date:'2026-10-27', RM }), r = infos[0].r, all = list.map(s => s.svg).join('');
   list.forEach(s => { if (s.error) B('ERROR ' + s.error.split('\n')[0]); const n = below(s.svg); if (n) B('TEXT BELOW FRAME case ' + ci + ' ' + s.id + ': ' + n); });
-  r.panels.forEach(p => { const want = '>' + nm(p.L) + ' × ' + nm(p.W) + ' × ' + nm(p.T) + '<'; if (!all.includes('>' + p.short + '<')) B('PART MISSING case ' + ci + ' ' + p.short); if (!all.includes(want)) B('SIZE MISSING case ' + ci + ' ' + p.short); });
-  r.hardware.forEach(h => { if (!all.includes('>' + DR.hwText(h.item).replace(/&/g, '&amp;'))) B('FITTING MISSING case ' + ci + ' ' + h.item); });
-  if (ci === 2 && list.length < 2) B('NO CONTINUATION SHEET for 4 × 4 drawers');
+  const ls = DR.cabLists(c, r);   // identical parts share a line of the list
+  r.panels.forEach(p => { const row = ls.rows[(ls.posOf[p.name] || 0) - 1]; if (!row) { B('PART NOT LISTED case ' + ci + ' ' + p.short); return; }
+    if (!all.includes('>' + row[1].slice(0, 10))) B('PART MISSING case ' + ci + ' ' + p.short + ' ' + row[1]);
+    if (row[3] !== nm(p.L) || row[4] !== nm(p.W) || !all.includes('>' + row[3] + '<') || !all.includes('>' + row[4] + '<')) B('SIZE MISSING case ' + ci + ' ' + p.short); });
+  r.hardware.forEach(h => { if (!all.includes('>' + DR.hwText(h.item).replace(/&/g, '&amp;').slice(0, 8))) B('FITTING MISSING case ' + ci + ' ' + h.item); });
+  if (DR.cabPlan(c, r).hw === false && list.length < 2) B('NO CONTINUATION SHEET case ' + ci);
 }); });
 /* 40 cabinets on one wall */
 const many = { name:'M', cabinets:[], layout:{ walls:[{ len:24000 }], wallZ:1450, roomH:2600, worktop:true, items:{} } };

@@ -191,5 +191,32 @@
   setInterval(function () { if (W.signedIn() && !document.hidden) sync(); }, 60000);
   window.addEventListener("focus", function () { if (W.signedIn()) schedule(300); });
   window.addEventListener("online", function () { if (W.signedIn()) schedule(300); });
-  window.BuilderCloud = { sync: sync, signIn: signIn };
+  /* ---- project versions (the app keeps them in IndexedDB): the history of each project also goes to
+     workspaces row 'builder-ver-<project id>' — without the materials' photos, at most ~3 MB — so a version
+     saved on one computer can be restored on another. Best-effort: a failure never stops the app. ---- */
+  var verTimers = {};
+  function slimVer(v) {
+    var d = JSON.parse(JSON.stringify(v.data || {}));
+    if (d.look) delete d.look;
+    return { at: v.at, started: v.started, label: v.label || "", why: v.why || "", name: v.name || "", n: v.n || 0, body: v.body || "", data: d };
+  }
+  function verPush(pid, list) {
+    if (!W.signedIn() || !pid) return;
+    clearTimeout(verTimers[pid]);
+    verTimers[pid] = setTimeout(function () {
+      var slim = (list || []).map(slimVer), json = JSON.stringify(slim);
+      while (slim.length > 1 && json.length > 3e6) { slim.pop(); json = JSON.stringify(slim); }
+      W.rest("workspaces?on_conflict=id", {
+        method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+        body: JSON.stringify({ id: "builder-ver-" + pid, data: { at: Date.now(), v: slim }, updated_by: "builder" })
+      }).catch(function () {});
+    }, 4000);
+  }
+  function verPull(pid) {
+    if (!W.signedIn() || !pid) return Promise.resolve([]);
+    return W.rest("workspaces?select=data&id=eq.builder-ver-" + encodeURIComponent(pid))
+      .then(function (rows) { var d = rows && rows[0] && rows[0].data; return d && Array.isArray(d.v) ? d.v : []; })
+      .catch(function () { return []; });
+  }
+  window.BuilderCloud = { sync: sync, signIn: signIn, verPush: verPush, verPull: verPull };
 })();
