@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="lt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#e6e8e3">
+<title>Projektų apžvalga · Dėdės Baldai</title>
+<link rel="icon" type="image/png" href="https://app.dedesbaldai.lt/hub/shared/favicon-64.png">
+<link rel="apple-touch-icon" href="https://app.dedesbaldai.lt/hub/shared/touch-180.png">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: one reading column — a summary strip, then projects grouped by what they need (stuck → almost done → in production → design → not started) */
+:root{
+  --bg:#e6e8e3; --surface:#f8f9f6; --ink:#131715; --muted:#59615b; --faint:#8a918b; --line:#c9cec6; --line-2:#dde1da;
+  --accent:#ff4a1c; --run:#2f6fd1; --done:#2e7d4f; --paused:#b3860f; --blocked:#c4321c; --queued:#d3d8d0;
+  --blocked-bg:#f6e3df; --paused-bg:#f4ecd4; --done-bg:#e1eee5;
+  --display:'Schibsted Grotesk',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f1211; --surface:#171b19; --ink:#e9ede8; --muted:#9aa39c; --faint:#6f7871; --line:#323a35; --line-2:#252b28;
+  --accent:#ff6a42; --run:#6ea2f5; --done:#5cb37f; --paused:#d9a93a; --blocked:#ef6a52; --queued:#333b36;
+  --blocked-bg:#3a1f1a; --paused-bg:#352b14; --done-bg:#1b2e22; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f1211; --surface:#171b19; --ink:#e9ede8; --muted:#9aa39c; --faint:#6f7871; --line:#323a35; --line-2:#252b28;
+  --accent:#ff6a42; --run:#6ea2f5; --done:#5cb37f; --paused:#d9a93a; --blocked:#ef6a52; --queued:#333b36;
+  --blocked-bg:#3a1f1a; --paused-bg:#352b14; --done-bg:#1b2e22; color-scheme:dark}
+*{box-sizing:border-box}
+html{color-scheme:light}body{margin:0}[hidden]{display:none!important}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--display);-webkit-font-smoothing:antialiased}
+.wrap{max-width:780px;margin:0 auto;padding-block:20px 56px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:22px}
+button{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+/* head */
+.head{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 20px}
+.head h1{margin:0;font-size:30px;font-weight:800;letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+.head h1 span{display:block;font-size:15px;font-weight:500;color:var(--muted);letter-spacing:0;margin-top:6px}
+.src{font:500 12px/1.4 var(--mono);color:var(--faint);margin-top:8px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)}
+.seg button{border:0;background:none;padding:7px 11px;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:7px 12px;font-size:13.5px;font-weight:600;cursor:pointer}
+.btn:hover{border-color:var(--ink)}
+
+/* summary strip */
+.sum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.sum a{display:flex;flex-direction:column;gap:2px;padding:12px 14px;text-decoration:none;color:var(--ink);border-left:1px solid var(--line-2);min-width:0}
+.sum a:first-child{border-left:0}
+.sum a:hover{background:var(--bg)}
+.sum b{font:700 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.sum small{font-size:12.5px;color:var(--muted);line-height:1.25}
+.sum i{display:inline-block;width:10px;height:4px;margin-right:6px;vertical-align:3px}
+.late{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
+.late b{color:var(--blocked);font-variant-numeric:tabular-nums}
+@media (max-width:620px){.sum{grid-template-columns:repeat(3,minmax(0,1fr))}.sum a:nth-child(4){border-left:0}.sum a:nth-child(n+4){border-top:1px solid var(--line-2)}}
+
+/* groups */
+section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
+section>h2{margin:8px 0 0;display:flex;align-items:baseline;gap:10px;font-size:19px;font-weight:700;letter-spacing:-.01em}
+section>h2 em{font-style:normal;font-weight:500;color:var(--muted);font-size:15px}
+@media (max-width:620px){section>h2{flex-wrap:wrap}section>h2 em{order:3;flex-basis:100%;padding-left:22px;margin-top:-6px}}
+section>h2 .n{font:600 13px/1 var(--mono);color:var(--faint);margin-left:auto}
+section>h2::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--g);flex:none;align-self:center}
+.gsub{margin:-4px 0 2px;color:var(--muted);font-size:13.5px}
+
+/* project card */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.top{display:flex;align-items:flex-start;gap:12px}
+.ttl{flex:1;min-width:0}
+.ttl b{font-size:17px;font-weight:700;line-height:1.25;overflow-wrap:anywhere}
+.ttl small{display:block;font:500 12.5px/1.4 var(--mono);color:var(--faint);margin-top:2px;overflow-wrap:anywhere}
+.kind{display:inline-block;margin-top:6px;font:600 11px/1 var(--mono);letter-spacing:.04em;padding:4px 7px;border-radius:5px;background:color-mix(in srgb,#6f7f99 18%,transparent);color:var(--muted)}
+.due{flex:none;font:600 12.5px/1 var(--mono);padding:6px 8px;border-radius:6px;background:var(--bg);color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.due.l{background:var(--blocked-bg);color:var(--blocked)}
+.due.s{background:var(--paused-bg);color:var(--paused)}
+.strip{display:flex;align-items:center;gap:10px}
+.steps{flex:1;display:flex;gap:3px;min-width:0}
+.steps span{flex:1;height:8px;border-radius:2px;background:var(--queued)}
+.steps .done{background:var(--done)}.steps .running{background:var(--run)}.steps .paused{background:var(--paused)}.steps .blocked{background:var(--blocked)}
+.pct{font:600 12.5px/1 var(--mono);color:var(--muted);font-variant-numeric:tabular-nums;flex:none}
+.txt{display:flex;flex-direction:column;gap:3px}
+.lt{font-size:15.5px;line-height:1.45}
+.en{font-size:14px;line-height:1.45;color:var(--muted)}
+:is(.txt,.need,.cmt) :is(.lt,.en)::before{font:600 10.5px/1 var(--mono);letter-spacing:.06em;color:var(--faint);margin-right:7px;vertical-align:1px}
+body.both :is(.txt,.need,.cmt) .lt::before{content:"LT"}
+body.both :is(.txt,.need,.cmt) .en::before{content:"EN"}
+.due .en{display:none}body.lang-en .due .en{display:inline}body.lang-en .due .lt{display:none}
+body.lang-lt .en,body.lang-en .lt{display:none}
+body.lang-en .en{font-size:15.5px;color:var(--ink)}
+.need{border-radius:8px;padding:9px 12px;background:var(--blocked-bg);display:flex;flex-direction:column;gap:3px}
+.need .h{font:600 11px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--blocked);margin-bottom:3px}
+.need.note{background:var(--paused-bg)}.need.note .h{color:var(--paused)}
+.cmt{border-left:2px solid var(--line);padding:2px 0 2px 11px;display:flex;flex-direction:column;gap:2px}
+.cmt .h{font:600 11px/1.3 var(--mono);color:var(--faint)}
+.cmt .lt,.cmt .en{font-size:13.5px}
+.cmt .lt{color:var(--ink)}
+.addn{align-self:flex-start;border:1px dashed var(--line);background:none;border-radius:8px;padding:6px 10px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer}
+.addn:hover{border-color:var(--ink);color:var(--ink)}
+.ned{display:flex;gap:8px;flex-wrap:wrap}
+.ned input{flex:1 1 240px;min-width:0;font:inherit;font-size:15px;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
+.ned button{border:0;border-radius:8px;padding:9px 14px;font-weight:700;background:var(--ink);color:var(--bg);cursor:pointer}
+.ned .x{background:none;color:var(--muted);border:1px solid var(--line)}
+
+/* search — stays at the top while scrolling */
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.find{position:sticky;top:env(safe-area-inset-top,0px);z-index:6;background:var(--bg);padding-block:8px;margin-block:-8px;display:flex;flex-direction:column;gap:6px}
+.find label{position:relative;display:block}
+.find svg{position:absolute;left:13px;top:50%;transform:translateY(-50%);width:18px;height:18px;stroke:var(--faint);fill:none;stroke-width:2;pointer-events:none}
+.find input{width:100%;font:inherit;font-size:16px;padding:12px 14px 12px 40px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink)}
+.find input:focus{outline:none;border-color:var(--ink);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 35%,transparent)}
+.find .res{font-size:13px;color:var(--muted);min-height:1em}
+.find .res:empty{display:none}
+.find kbd{font:600 11px/1 var(--mono);border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;padding:2px 5px;color:var(--faint)}
+.none{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:22px 16px;text-align:center;color:var(--muted)}
+.none button{margin-top:10px}
+mark{background:color-mix(in srgb,var(--accent) 28%,transparent);color:inherit;border-radius:2px;padding:0 1px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted)}
+.legend i{display:inline-block;width:14px;height:6px;border-radius:2px;margin-right:6px;vertical-align:2px}
+.foot{font-size:13px;color:var(--faint);border-top:1px solid var(--line);padding-top:14px;line-height:1.55}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none}
+.toast.on{opacity:1}
+textarea.copy{position:absolute;left:-9999px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+.nav{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:14px}
+.nav a{color:var(--muted);text-decoration:none;font-weight:600;display:inline-flex;align-items:center;gap:6px;padding:6px 10px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.nav a:hover{color:var(--ink);border-color:var(--ink)}
+.nav .who{margin-left:auto;color:var(--faint);font:500 12.5px/1.3 var(--mono)}
+.nav .who button{font:inherit;color:var(--muted);background:none;border:0;text-decoration:underline;cursor:pointer;padding:0 0 0 6px}
+.free{font-size:14.5px;line-height:1.45;color:var(--ink);overflow-wrap:anywhere}
+.need .by,.cmt .by{font:500 11.5px/1.3 var(--mono);color:var(--faint);margin-top:2px}
+.state{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:28px 16px;text-align:center;color:var(--muted)}
+.src b{color:var(--muted);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <nav class="nav" aria-label="Navigacija"><a href="/hub/shopfloor/">← Hub</a><a href="/shopflow-app/">ShopFlow</a><span class="who" id="who"></span></nav>
+  <header class="head">
+    <div>
+      <h1>Projektų apžvalga<span id="today">Project overview</span></h1>
+      <div class="src" id="src">Kraunama iš ShopFlow… / Loading from ShopFlow…</div>
+    </div>
+    <div class="ctl">
+      <div class="seg" role="group" aria-label="Kalba / Language">
+        <button type="button" data-lang="both" aria-pressed="true">LT + EN</button>
+        <button type="button" data-lang="lt" aria-pressed="false">LT</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <button type="button" class="btn" id="copy">Kopijuoti tekstą / Copy text</button>
+    </div>
+  </header>
+
+  <div class="find" role="search">
+    <label for="q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+      <input type="search" id="q" autocomplete="off" spellcheck="false" placeholder="Ieškoti projekto, kliento, numerio… / Search project, client, number…" aria-label="Ieškoti projektų / Search projects"></label>
+    <div class="res" id="res" aria-live="polite"></div>
+  </div>
+  <nav class="sum" id="sum" aria-label="Santrauka / Summary"></nav>
+  <div class="late" id="late"></div>
+  <div class="legend" aria-hidden="true">
+    <span><i style="background:var(--done)"></i>atlikta / done</span>
+    <span><i style="background:var(--run)"></i>dirbama / in progress</span>
+    <span><i style="background:var(--paused)"></i>pristabdyta / paused</span>
+    <span><i style="background:var(--blocked)"></i>stringa / blocked</span>
+    <span><i style="background:var(--queued)"></i>laukia / waiting</span>
+  </div>
+
+  <main id="groups" style="display:flex;flex-direction:column;gap:26px"><div class="state">Kraunama… / Loading…</div></main>
+
+  <p class="foot">Tekstas sudaromas automatiškai iš ShopFlow etapų, užblokavimo priežasčių ir komentarų. „Ko trūksta?“ – jūsų pastaba, kurios ShopFlow nežino (pvz. trūksta stalviršio).<br>
+  The text is written automatically from ShopFlow steps, block reasons and comments. “What's missing?” is your own note for things ShopFlow doesn't know (e.g. the countertop hasn't arrived). Notes are shared with everyone in the office. Free text (reasons, comments, notes) is shown as written.</p>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>window.WORKSHOP_CLOUD = { slot: "office" };</script>
+<script src="../workers/workshop-auth.js"></script>
+
+<script>
+(function(){
+"use strict";
+var W = window.WorkshopAuth, ME = null;
+function ymd(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+var TODAY = ymd(new Date());
+var P = [], NOTES = {}, LOADED = null;
+function hm(d){return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+function md(ts){var d=new Date(ts);return String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+/* ShopFlow keeps everything in one document (workspaces row "dedes-baldai"); read only what the report needs */
+function toP(orders, stations){
+  var name={};(stations||[]).forEach(function(x){if(x&&x.id)name[x.id]=x.name||"?";});
+  return (orders||[]).filter(function(o){return o&&!o.archived&&!o.shipped&&typeof o.due==="number"&&(o.ops||[]).length;}).map(function(o){
+    var cs=(o.comments||[]).filter(function(c){return c&&c.text;}), last=cs[cs.length-1];
+    return {id:o.id,n:o.num||"",t:o.type==="eng"?"eng":"prod",c:o.client||"",p:o.product||o.num||"",d:ymd(new Date(o.due)),
+      s:(o.ops||[]).map(function(op){return [name[op.stationId]||"?",op.status||"queued",op.blockNote||null];}),
+      k:last?last.text:null,kt:last&&last.ts?md(last.ts):""};
+  });
+}
+function load(quiet){
+  return Promise.all([
+    W.rest("workspaces?id=eq.dedes-baldai&select=orders:data->orders,stations:data->stations"),
+    W.rest("workspaces?id=eq.dedes-apzvalga&select=data")
+  ]).then(function(r){
+    var row=(r[0]||[])[0]||{};P=toP(row.orders,row.stations);
+    var nr=(r[1]||[])[0];NOTES=(nr&&nr.data&&nr.data.notes)||{};
+    LOADED=new Date();TODAY=ymd(LOADED);data=P.map(function(p){return {p:p,a:analyse(p)};});
+    if(editing===null)render();
+    head();
+  }).catch(function(e){
+    if(!quiet){document.getElementById("groups").innerHTML='<div class="state">Nepavyko įkelti ShopFlow duomenų. Patikrinkite ryšį ir atnaujinkite puslapį.<br>Could not load ShopFlow data. Check the connection and reload.</div>';}
+    document.getElementById("src").textContent="Nėra ryšio / Offline"+(LOADED?" · paskutinį kartą "+hm(LOADED):"");
+    console.error(e);
+  });
+}
+function head(){
+  var d=new Date(),LTD=["sekmadienis","pirmadienis","antradienis","trečiadienis","ketvirtadienis","penktadienis","šeštadienis"],END=["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  document.getElementById("today").textContent="Project overview · "+TODAY+", "+LTD[d.getDay()]+" / "+END[d.getDay()];
+  if(LOADED)document.getElementById("src").innerHTML="ShopFlow · atnaujinta / updated <b>"+hm(LOADED)+"</b>";
+  document.getElementById("who").innerHTML=ME?esc(ME.display_name)+'<button type="button" id="out">Atsijungti</button>':"";
+  var o=document.getElementById("out");if(o)o.onclick=function(){W.logout();location.reload();};
+}
+/* notes are one small shared document (dedes-apzvalga, office only): re-read, change one entry, write back */
+function putNote(id,text){
+  return W.rest("workspaces?id=eq.dedes-apzvalga&select=data").then(function(rows){
+    var cur=((rows||[])[0]||{}).data||{};var notes=Object.assign({},cur.notes||{});
+    if(text)notes[id]={t:text,by:ME?ME.display_name:"",at:Date.now()};else delete notes[id];
+    return W.rest("workspaces?on_conflict=id",{method:"POST",headers:{Prefer:"resolution=merge-duplicates,return=minimal"},
+      body:JSON.stringify({id:"dedes-apzvalga",data:Object.assign({},cur,{notes:notes}),updated_by:ME?ME.display_name:"apzvalga"})})
+      .then(function(){NOTES=notes;});
+  });
+}
+var ST = {
+ "Pjovimas":["pjovimas","supjauti","cutting","cut"],
+ "Briaunavimas":["briaunavimas","apklijuoti briaunas","edge banding","edge-band"],
+ "Gręžimas":["gręžimas","išgręžti","drilling","drill"],
+ "Surinkimas":["surinkimas","surinkti","assembly","assemble"],
+ "Apdaila":["apdaila","atlikti apdailą","finishing","finish"],
+ "Išstatymas / KK":["išstatymas (KK)","išstatyti ir patikrinti","set-up (QC)","set-up and checking"],
+ "Pakavimas":["pakavimas","supakuoti","packing","packing"],
+ "Montavimas":["montavimas","sumontuoti","installation","installation"],
+ "Idėja + Projekto info":["projekto info","surinkti projekto info","project brief","project brief"],
+ "Eskizas":["eskizas","padaryti eskizą","sketch","sketch"],
+ "Gamybinis modelis ir brėžiniai":["brėžiniai","paruošti brėžinius","drawings","drawings"],
+ "CAM / Nesting":["CAM / nesting","paruošti CAM","CAM / nesting","prepare CAM"],
+ "Perdavimas į gamybą":["perdavimas į gamybą","perduoti į gamybą","handover to production","hand over to production"]
+};
+var ENNAME = {"Pjovimas":"Cutting","Briaunavimas":"Edge banding","Gręžimas":"Drilling","Surinkimas":"Assembly","Apdaila":"Finishing","Išstatymas / KK":"Set-up / QC","Pakavimas":"Packing","Montavimas":"Installation","Idėja + Projekto info":"Brief + project info","Eskizas":"Sketch","Gamybinis modelis ir brėžiniai":"Production model and drawings","CAM / Nesting":"CAM / Nesting","Perdavimas į gamybą":"Handover to production"};
+var CORE = ["Pjovimas","Briaunavimas","Gręžimas","Surinkimas","Apdaila"], FINAL = ["Išstatymas / KK","Pakavimas","Montavimas"];
+
+function st(name,i){var x=ST[name];return x?x[i]:name.toLowerCase();}
+function list(a,word){if(a.length<2)return a.join("");return a.slice(0,-1).join(", ")+" "+word+" "+a[a.length-1];}
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
+function days(d){return Math.round((Date.parse(d)-Date.parse(TODAY))/864e5);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c];});}
+
+/* merge repeated steps (several boards go through cutting/drilling) into one per step name */
+function stations(p){
+  var m=[],idx={};
+  p.s.forEach(function(x){var k=x[0];if(!(k in idx)){idx[k]=m.length;m.push({name:k,all:[]});}m[idx[k]].all.push(x);});
+  m.forEach(function(g){var ss=g.all.map(function(x){return x[1];});
+    g.status=ss.indexOf("blocked")>=0?"blocked":ss.indexOf("running")>=0?"running":ss.indexOf("paused")>=0?"paused":ss.every(function(s){return s==="done";})?"done":"queued";
+    var b=g.all.filter(function(x){return x[1]==="blocked"&&x[2];})[0];g.note=b?b[2]:null;});
+  return m;
+}
+function analyse(p){
+  var sts=stations(p),done=p.s.filter(function(x){return x[1]==="done";}).length,pct=Math.round(done/p.s.length*100);
+  var blocked=sts.filter(function(g){return g.status==="blocked";}),cur=sts.filter(function(g){return g.status==="running"||g.status==="paused";});
+  var left=sts.filter(function(g){return g.status!=="done";}),doneSt=sts.filter(function(g){return g.status==="done";});
+  var started=p.s.some(function(x){return x[1]!=="queued";});
+  var grp;
+  if(blocked.length)grp="stuck";
+  else if(p.t==="eng")grp="design";
+  else if(!started)grp="waiting";
+  else if(left.length&&left.every(function(g){return FINAL.indexOf(g.name)>=0&&g.status==="queued";}))grp="almost";
+  else grp="prod";
+  return {sts:sts,pct:pct,blocked:blocked,cur:cur,left:left,doneSt:doneSt,grp:grp};
+}
+/* what is finished, in plain words */
+function madePart(p,a,lang){
+  var lt=lang==="lt";
+  var coreIn=a.sts.filter(function(g){return CORE.indexOf(g.name)>=0;});
+  if(p.t==="prod"&&coreIn.length>=3&&coreIn.every(function(g){return g.status==="done";})){
+    var w=[lt?"pagaminta":"made"];
+    a.sts.forEach(function(g){if(g.status!=="done")return;
+      if(g.name==="Išstatymas / KK")w.push(lt?"patikrinta (KK)":"checked (QC)");
+      if(g.name==="Pakavimas")w.push(lt?"supakuota":"packed");});
+    return cap(list(w,lt?"ir":"and"));
+  }
+  if(!a.doneSt.length)return "";
+  return (lt?"Atlikta: ":"Done: ")+list(a.doneSt.map(function(g){return st(g.name,lt?0:2);}),lt?"ir":"and");
+}
+function q(name,lang){return lang==="lt"?"„"+name+"“":(ENNAME[name]||name);}
+function sentence(p,a,lang){
+  var lt=lang==="lt",out=[],made=madePart(p,a,lang);
+  if(a.grp==="almost"){
+    var todo=list(a.left.map(function(g){return st(g.name,lt?1:3);}),lt?"ir":"and");
+    out.push(lt?made+" – liko tik "+todo+".":made+" – only "+todo+" left.");
+    out.push(lt?"Užbaigti reikia labai nedaug.":"Very little needed to finish.");
+  }else if(a.grp==="stuck"){
+    if(made)out.push(made+".");
+    var b=a.blocked.map(function(g){return q(g.name,lang);});
+    out.push(lt?"Sustota etape "+list(b,"ir")+".":"Stuck at "+list(b,"and")+".");
+    var rest=a.left.filter(function(g){return g.status!=="blocked";});
+    if(rest.length&&p.t==="prod")out.push((lt?"Po to liko: ":"After that: ")+list(rest.map(function(g){return st(g.name,lt?0:2);}),lt?"ir":"and")+".");
+  }else if(a.grp==="waiting"){
+    out.push(lt?"Gamyba dar nepradėta.":"Production not started yet.");
+    out.push(lt?"Etapų: "+a.sts.length+".":a.sts.length+" steps planned.");
+  }else if(a.grp==="design"){
+    if(!a.doneSt.length)out.push(lt?"Projektavimas dar nepradėtas.":"Design not started yet.");
+    else{out.push(made+".");var nx=a.left[0];if(nx)out.push((lt?"Toliau – ":"Next: ")+q(nx.name,lang)+".");}
+  }else{
+    if(made)out.push(made+".");
+    if(a.cur.length){
+      var paused=a.cur.every(function(g){return g.status==="paused";});
+      out.push((lt?"Dabar – ":"Now: ")+list(a.cur.map(function(g){return q(g.name,lang);}),lt?"ir":"and")+(paused?(lt?" (pristabdyta)":" (paused)"):"")+".");
+    }
+    var rest2=a.left.filter(function(g){return a.cur.indexOf(g)<0;});
+    if(rest2.length)out.push((lt?"Liko: ":"Left: ")+list(rest2.map(function(g){return st(g.name,lt?0:2);}),lt?"ir":"and")+".");
+    if(a.pct>=75)out.push(lt?"Liko nedaug.":"Not much left.");
+  }
+  return out.join(" ");
+}
+function dueTxt(d,lang){var n=days(d),lt=lang==="lt";
+  if(n<0)return lt?"vėluoja "+(-n)+" d.":(-n)+" days late";
+  if(n===0)return lt?"šiandien":"today";
+  if(n<=3)return lt?"po "+n+" d.":"in "+n+" days";
+  return d.slice(5);}
+
+var GROUPS=[
+ {id:"stuck",lt:"Stringa – reikia sprendimo",en:"Stuck – needs a decision",c:"var(--blocked)",subLt:"Darbas sustojęs. Žemiau – ko reikia, kad judėtų toliau.",subEn:"Work has stopped. Below is what is needed to move on."},
+ {id:"almost",lt:"Beveik baigta",en:"Almost done",c:"var(--done)",subLt:"Pagaminta, liko paskutiniai žingsniai.",subEn:"Made, only the last steps left."},
+ {id:"prod",lt:"Gamyboje",en:"In production",c:"var(--run)"},
+ {id:"design",lt:"Projektavimas",en:"Design",c:"#6f7f99"},
+ {id:"waiting",lt:"Dar nepradėta",en:"Not started yet",c:"var(--queued)"}
+];
+var editing=null;
+var data=[];
+function byDue(x,y){return x.p.d<y.p.d?-1:x.p.d>y.p.d?1:0;}
+
+function card(x){
+  var p=x.p,a=x.a,n=days(p.d),h="";
+  h+='<article class="card" id="p-'+esc(p.n)+'"><div class="top"><div class="ttl"><b>'+esc(p.c||p.p)+'</b><small>'+(p.c&&p.c!==p.p?esc(p.p)+" · ":"")+esc(p.n)+'</small>'+
+     (p.t==="eng"?'<span class="kind" title="ShopFlow: Projektavimo lenta / Design board">Projektavimas / Design</span>':'')+'</div>'+
+     '<span class="due'+(n<0?" l":n<=3?" s":"")+'" title="Terminas / Due '+esc(p.d)+'"><span class="lt">'+esc(dueTxt(p.d,"lt"))+'</span><span class="en">'+esc(dueTxt(p.d,"en"))+'</span></span></div>';
+  h+='<div class="strip"><div class="steps" role="img" aria-label="'+esc(a.sts.map(function(g){return g.name+": "+g.status;}).join(", "))+'">'+
+     p.s.map(function(s){return '<span class="'+s[1]+'" title="'+esc(s[0])+'"></span>';}).join("")+'</div><span class="pct">'+a.pct+'%</span></div>';
+  h+='<div class="txt"><div class="lt">'+esc(sentence(p,a,"lt"))+'</div><div class="en">'+esc(sentence(p,a,"en"))+'</div></div>';
+  a.blocked.forEach(function(g){if(!g.note)return;
+    h+='<div class="need"><span class="h">Reikia / Needed · '+esc(g.name)+'</span><div class="free">'+esc(g.note)+'</div></div>';});
+  var nt=NOTES[p.id];
+  if(nt&&nt.t&&editing!==p.id)h+='<div class="need note"><span class="h">Trūksta / Missing</span><div class="free">'+esc(nt.t)+'</div><div class="by">'+esc([nt.by,nt.at?md(nt.at):""].filter(Boolean).join(" · "))+'</div></div>';
+  if(p.k)h+='<div class="cmt"><span class="h">Paskutinis komentaras / Last comment'+(p.kt?' · '+esc(p.kt):'')+'</span><div class="free">'+esc(p.k)+'</div></div>';
+  if(editing===p.id)h+='<form class="ned" data-id="'+esc(p.id)+'"><input id="note-'+esc(p.id)+'" maxlength="160" autocomplete="off" placeholder="pvz. trūksta stalviršio, spintelės jau surinktos" value="'+esc(nt&&nt.t||"")+'" aria-label="Ko trūksta / What is missing"><button type="submit">Išsaugoti</button><button type="button" class="x" data-cancel>Atšaukti</button></form>';
+  else h+='<button type="button" class="addn" data-edit="'+esc(p.id)+'">'+(nt&&nt.t?"Keisti pastabą / Edit note":"+ Ko trūksta? / What's missing?")+'</button>';
+  return h+'</article>';
+}
+/* search: every word must appear somewhere (number, name, client, the sentences, reasons, comments, your note);
+   accents and case don't matter, so "gelumb" finds "GELUMBAUSKAI" and "lankst" finds "lankstus" */
+var Q="";
+function norm(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
+function hay(x){var p=x.p,a=x.a,G=GROUPS.filter(function(g){return g.id===a.grp;})[0];
+  return norm([p.n,p.p,p.c,p.d,sentence(p,a,"lt"),sentence(p,a,"en"),G.lt,G.en,p.k,NOTES[p.id]&&NOTES[p.id].t,
+    p.s.map(function(s){return s[0]+" "+(s[2]||"");}).join(" "),days(p.d)<0?"veluoja late":""].join(" "));}
+function shown(){var w=norm(Q).split(/\s+/).filter(Boolean);if(!w.length)return data;
+  return data.filter(function(x){var h=hay(x);return w.every(function(t){return h.indexOf(t)>=0;});});}
+function mark(html){var w=norm(Q).split(/\s+/).filter(function(t){return t.length>1;});if(!w.length)return html;
+  /* highlight inside titles only, matching letters with or without accents */
+  return html.replace(/(<b>|<small>)([^<]*)/g,function(m,tag,txt){var n=norm(txt),out="",i=0,hits=[];
+    w.forEach(function(t){var k=n.indexOf(t);while(k>=0){hits.push([k,k+t.length]);k=n.indexOf(t,k+t.length);}});
+    if(!hits.length)return m;hits.sort(function(a,b){return a[0]-b[0];});
+    hits.forEach(function(h){if(h[0]<i)return;out+=txt.slice(i,h[0])+"<mark>"+txt.slice(h[0],h[1])+"</mark>";i=h[1];});
+    return tag+out+txt.slice(i);});}
+function render(){
+  var list=shown(),sum="",g="",late=data.filter(function(x){return days(x.p.d)<0;}).length;
+  GROUPS.forEach(function(G){
+    var xs=list.filter(function(x){return x.a.grp===G.id;}).sort(byDue);
+    sum+='<a href="#g-'+G.id+'"><b>'+xs.length+'</b><small><i style="background:'+G.c+'"></i>'+G.lt+'<br>'+G.en+'</small></a>';
+    if(!xs.length)return;
+    g+='<section id="g-'+G.id+'" style="--g:'+G.c+'"><h2>'+G.lt+' <em>/ '+G.en+'</em><span class="n">'+xs.length+'</span></h2>'+
+       (G.subLt&&!Q?'<p class="gsub"><span class="lt">'+G.subLt+'</span> <span class="en">'+G.subEn+'</span></p>':"")+xs.map(function(x){return mark(card(x));}).join("")+'</section>';
+  });
+  document.getElementById("sum").innerHTML=sum;
+  document.getElementById("late").innerHTML='<b>'+late+'</b> iš '+data.length+' atvirų projektų vėluoja · '+late+' of '+data.length+' open projects are past due';
+  if(!Q&&!data.length)g='<div class="state">Atvirų projektų nėra / No open projects</div>';
+  if(Q&&!list.length)g='<div class="none">Nieko nerasta pagal „'+esc(Q)+'“<br>Nothing found for “'+esc(Q)+'”<br><button type="button" class="btn" data-clear>Rodyti visus / Show all</button></div>';
+  document.getElementById("groups").innerHTML=g;
+  document.getElementById("res").innerHTML=Q?(list.length?'Rasta <b>'+list.length+'</b> iš '+data.length+' · Found '+list.length+' of '+data.length:''):'';
+}
+/* language */
+function setLang(l){document.body.classList.remove("both","lang-lt","lang-en");document.body.classList.add(l==="both"?"both":"lang-"+l);
+  [].forEach.call(document.querySelectorAll("[data-lang]"),function(b){b.setAttribute("aria-pressed",String(b.dataset.lang===l));});
+  try{localStorage.setItem("pa.lang",l);}catch(e){} }
+var L="both";try{L=localStorage.getItem("pa.lang")||"both";}catch(e){}
+setLang(L);head();
+var qi=document.getElementById("q");
+qi.addEventListener("input",function(){Q=qi.value.trim();editing=null;render();});
+qi.addEventListener("keydown",function(e){if(e.key==="Escape"){Q="";qi.value="";render();}});
+document.addEventListener("keydown",function(e){if(e.key==="/"&&!/^(INPUT|TEXTAREA)$/.test((document.activeElement||{}).tagName||"")){e.preventDefault();qi.focus();}});
+document.querySelector(".seg").addEventListener("click",function(e){var b=e.target.closest("[data-lang]");if(b){L=b.dataset.lang;setLang(L);}});
+document.getElementById("groups").addEventListener("click",function(e){
+  var ed=e.target.closest("[data-edit]");if(ed){editing=ed.dataset.edit;render();var i=document.getElementById("note-"+editing);if(i)i.focus();return;}
+  if(e.target.closest("[data-cancel]")){editing=null;render();}
+  if(e.target.closest("[data-clear]")){Q="";qi.value="";render();qi.focus();}
+});
+document.getElementById("groups").addEventListener("submit",function(e){e.preventDefault();var f=e.target,id=f.dataset.id,v=f.querySelector("input").value.trim().slice(0,160);
+  var btn=f.querySelector("button[type=submit]");btn.disabled=true;
+  putNote(id,v).then(function(){editing=null;render();toast("Išsaugota / Saved");},function(err){btn.disabled=false;toast("Nepavyko išsaugoti / Not saved");console.error(err);});});
+/* plain text for WhatsApp / e-mail */
+function plain(){
+  var langs=L==="both"?["lt","en"]:[L],out=[];
+  langs.forEach(function(lg){var lt=lg==="lt";
+    out.push((lt?"PROJEKTŲ APŽVALGA – ":"PROJECT OVERVIEW – ")+TODAY);
+    GROUPS.forEach(function(G){var xs=shown().filter(function(x){return x.a.grp===G.id;}).sort(byDue);if(!xs.length)return;
+      out.push("");out.push((lt?G.lt:G.en).toUpperCase()+" ("+xs.length+")");
+      xs.forEach(function(x){var p=x.p,a=x.a,line="• "+(p.c&&p.c!==p.p?p.c+" · ":"")+p.p+" ("+p.n+", "+dueTxt(p.d,lg)+") – "+sentence(p,a,lg);
+        a.blocked.forEach(function(g){if(g.note)line+=" "+(lt?"Reikia: ":"Needed: ")+g.note;});
+        if(NOTES[p.id]&&NOTES[p.id].t)line+=" "+(lt?"Trūksta: ":"Missing: ")+NOTES[p.id].t;
+        out.push(line);});
+    });
+    out.push("");
+  });
+  return out.join("\n").trim();
+}
+function toast(t){var el=document.getElementById("toast");el.textContent=t;el.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(function(){el.classList.remove("on");},1800);}
+document.getElementById("copy").addEventListener("click",function(){
+  var txt=plain();
+  function fallback(){var ta=document.createElement("textarea");ta.className="copy";ta.value=txt;document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");toast("Nukopijuota / Copied");}catch(e){toast("Pažymėta – kopijuokite / Selected – copy it");}setTimeout(function(){ta.remove();},500);}
+  try{navigator.clipboard.writeText(txt).then(function(){toast("Nukopijuota / Copied");},fallback);}catch(e){fallback();}
+});
+W.requireArea("apzvalga",{title:"Projektų apžvalga"}).then(function(me){
+  ME=me;head();load();
+  setInterval(function(){if(!document.hidden&&editing===null)load(true);},120000);
+  document.addEventListener("visibilitychange",function(){if(!document.hidden&&LOADED&&Date.now()-LOADED>60000&&editing===null)load(true);});
+});
+})();
+</script>
+<script src="/hub/shared/notices.js" defer></script>
+</body>
+</html>

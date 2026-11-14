@@ -339,6 +339,7 @@ a.Z-entry:hover .Z-k,a.Z-entry.hit .Z-k{transform:translateX(-4px)}
 {"id":"cechas","code":"DB-10","group":"production","icon":"floor","url":"https://app.dedesbaldai.lt/hub/cechas/","name":{"lt":"Cecho planas","en":"Shop floor plan"},"desc":{"lt":"Kas kur dirba, staklių būsenos, plokštės ir montavimai – 2D ir 3D","en":"Who works where, machine status, boards and installations, in 2D and 3D"}},
 {"id":"nasumas","code":"DB-11","group":"production","icon":"track","url":"https://app.dedesbaldai.lt/hub/nasumas/","name":{"lt":"Našumas","en":"Performance"},"desc":{"lt":"Vadovams: kiek pagaminta ir darbuotojų našumas pagal normas","en":"For managers: what was made and performance against the norms"}},
 {"id":"prasymai","code":"DB-07","group":"staff","icon":"doc","url":"https://app.dedesbaldai.lt/hub/prasymai/","name":{"lt":"Prašymai","en":"Requests"},"desc":{"lt":"Atostogų, tėvadienių ir mamadienių prašymai: užpildyti, pateikti, atsispausdinti","en":"Leave and parent-day requests: fill in, submit, print"}},
+{"id":"apzvalga","code":"DB-12","group":"office","icon":"report","url":"https://app.dedesbaldai.lt/hub/apzvalga/","name":{"lt":"Projektų apžvalga","en":"Project overview"},"desc":{"lt":"Kas padaryta ir ko trūksta kiekvienam projektui — LT ir EN","en":"What is done and what is left on every project, in LT and EN"}},
 {"id":"offer","code":"DB-08","group":"office","icon":"euro","url":"https://app.dedesbaldai.lt/offer/","name":{"lt":"Pasiūlymai","en":"Offers"},"desc":{"lt":"Savikaina ir pasiūlymai klientams","en":"Costing and customer offers"}},
 {"id":"crm","code":"DB-09","group":"office","icon":"people","url":"https://app.dedesbaldai.lt/hub/crm/","name":{"lt":"CRM","en":"CRM"},"desc":{"lt":"Klientai, užklausos ir kiti žingsniai — viskas vienoje vietoje","en":"Clients, deals and next steps in one place"}}
 ]}</script>
@@ -371,6 +372,7 @@ var ICONS = {
   code:'<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5.5l-3 13"/>',
   track:'<path d="M4 6l1.5 1.5L8 5M11 6h9M4 12l1.5 1.5L8 11M11 12h9M11 18h9"/><circle cx="6" cy="18" r="1.6"/>',
   floor:'<path d="M3 4h18v16H3z"/><rect x="6" y="7" width="5.5" height="4"/><rect x="13" y="13" width="5" height="4"/><circle cx="16" cy="8.8" r="1.5"/><path d="M8.7 14v3.5"/>',
+  report:'<path d="M9 3.5h6v3H9z"/><path d="M7 5H5.5v15.5h13V5H17"/><path d="M8.5 16.5v-3M12 16.5V10M15.5 16.5v-5"/>',
   euro:'<path d="M6 3h9l4 4v14H6zM15 3v4h4"/><path d="M15.3 12.4a3.1 3.1 0 1 0 0 4.2M9.6 13.7h4.4M9.6 15.4h4.4"/>',
   doc:'<path d="M6 3h9l4 4v14H6zM15 3v4h4M9 12h7M9 16h5"/>',
   generic:'<rect x="4" y="4" width="16" height="16"/><path d="M8 12h8M12 8v8"/>'
@@ -416,6 +418,7 @@ try{
   var tp=localStorage.getItem('hub-theme'); if(tp==='light'||tp==='dark') themePref=tp;
 }catch(e){}
 if(filter!=='all' && !GROUPS.some(function(g){return g.id===filter;})) filter='all';
+if(filter==='office') filter='all';   // office apps appear only once Vadyba is confirmed
 var app=document.getElementById('app');
 var reduced=window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -427,10 +430,14 @@ function t(k){return T[lang][k];}
 function pad(n){return String(n).padStart(2,'0');}
 function gname(id){var g=GROUPS.filter(function(x){return x.id===id;})[0];return g?g[lang]:'';}
 function gindex(id){for(var i=0;i<GROUPS.length;i++)if(GROUPS[i].id===id)return i;return 99;}
+/* Office apps (group "office") are shown only when Vadyba is signed in on this device — see the office script below */
+var OFFICE_OK=false;
+function APPS(){return OFFICE_OK?DATA.apps:DATA.apps.filter(function(a){return a.group!=='office';});}
+window.hubOffice=function(ok){ok=!!ok;if(ok===OFFICE_OK)return;OFFICE_OK=ok;if(!ok&&filter==='office')filter='all';render();};
 function ordered(list){return list.map(function(a,i){return [a,i];}).sort(function(x,y){return (gindex(x[0].group)-gindex(y[0].group))||(x[1]-y[1]);}).map(function(p){return p[0];});}
 function visible(){
   var n=q.trim().toLowerCase();
-  return ordered(DATA.apps).filter(function(a){
+  return ordered(APPS()).filter(function(a){
     if(filter!=='all'&&a.group!==filter) return false;
     if(!n) return true;
     return (txt(a.name)+' '+(a.name&&a.name.en||'')+' '+txt(a.desc)+' '+(a.url||'')+' '+(a.code||'')).toLowerCase().indexOf(n)>=0;
@@ -451,7 +458,7 @@ function now(){
           week:isoWeek(d),year:d.getFullYear(),greet:T[lang].g[h<5?0:h<12?1:h<18?2:3]};
 }
 function effTheme(){var a=ROOT.getAttribute('data-theme');if(a==='dark'||a==='light')return a;return window.matchMedia&&matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
-function counts(){var c={all:DATA.apps.length};DATA.apps.forEach(function(a){c[a.group]=(c[a.group]||0)+1;});return c;}
+function counts(){var c={all:APPS().length};APPS().forEach(function(a){c[a.group]=(c[a.group]||0)+1;});return c;}
 function filtersHTML(cls){
   var c=counts();
   return '<div class="'+cls+'" role="group" aria-label="'+(lang==='lt'?'Etapas':'Stage')+'">'+
@@ -479,7 +486,7 @@ function keysHint(list){var n=list.filter(function(x){return x.k&&x.k<=9;}).leng
 
 /* ---------- PHONE: icons with short names, grouped by stage (shown ≤640px instead of the sheet) ---------- */
 function phoneHTML(){
-  var all=keyed(ordered(DATA.apps));
+  var all=keyed(ordered(APPS()));
   return '<nav class="M" aria-label="'+esc(t('sub'))+'">'+GROUPS.map(function(g){
     var xs=all.filter(function(x){return x.a.group===g.id;}); if(!xs.length) return '';
     return '<section class="M-g" data-g="'+g.id+'"><h2>'+esc(g[lang])+'</h2><div class="M-grid">'+xs.map(function(x){
@@ -504,13 +511,13 @@ function renderL(){
   }).join('');
   return '<div class="L">'+
     '<header class="L-head rv" style="--i:0"><div class="brand"><div class="mark">'+MARK+'</div><div><h1>Dėdės Baldai</h1><p class="sub">'+t('sub')+'</p></div></div>'+
-      '<dl class="L-meta"><div><dt>'+t('sheet')+'</dt><dd>2800 × 2070 × 18</dd></div><div><dt>'+t('parts')+'</dt><dd>'+pad(DATA.apps.length)+'</dd></div>'+
+      '<dl class="L-meta"><div><dt>'+t('sheet')+'</dt><dd>2800 × 2070 × 18</dd></div><div><dt>'+t('parts')+'</dt><dd>'+pad(APPS().length)+'</dd></div>'+
       '<div><dt>'+t('week')+'</dt><dd>'+N.week+'</dd></div><div><dt>'+t('time')+'</dt><dd data-clock>'+esc(N.time)+'</dd></div></dl>'+
       controlsHTML()+'</header>'+
     '<div class="L-bar rv" style="--i:1">'+filtersHTML('L-filters')+searchHTML('L-search')+'</div>'+
     phoneHTML()+
     (list.length?'<div class="L-ruler" aria-hidden="true"><span>0</span><span>700</span><span>1400</span><span>2100</span><span>2800 mm</span></div><div class="L-sheet">'+parts+'</div>':emptyHTML())+
-    '<footer class="L-foot"><span class="L-legend">'+t('legend')+':'+GROUPS.map(function(g){return '<span data-g="'+g.id+'"><i></i>'+esc(g[lang])+'</span>';}).join('')+'</span><span>'+keysHint(list)+'</span></footer>'+
+    '<footer class="L-foot"><span class="L-legend">'+t('legend')+':'+GROUPS.filter(function(g){return counts()[g.id];}).map(function(g){return '<span data-g="'+g.id+'"><i></i>'+esc(g[lang])+'</span>';}).join('')+'</span><span>'+keysHint(list)+'</span></footer>'+
   '</div>';
 }
 
@@ -879,12 +886,17 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
   background:var(--surface);color:var(--muted);box-shadow:inset 0 0 0 1px var(--line-2);cursor:pointer}
 #office-pc input{margin:0;accent-color:var(--ink)}
 #office-pc:hover{color:var(--ink)}
-@media print{#office-pc,.lk{display:none}}
+#office-in{width:max-content;margin:4px auto 28px;display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line-2,var(--line));border-radius:999px;background:transparent;color:var(--muted);font:500 12.5px/1 var(--mono,ui-monospace,monospace);cursor:pointer}
+#office-in svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.4}
+#office-in:hover{color:var(--ink);border-color:var(--ink)}
+@media print{#office-pc,#office-in,.lk{display:none}}
 </style>
 <script>
 (function(){
   var KEY='sb-niveinyzkkwtreeeaziv-auth-token-office', IDLE='workshop.office.lastActive', PC='workshop.officeComputer', MIN=10;
-  var OFFICE=['https://app.dedesbaldai.lt/offer/','https://app.dedesbaldai.lt/hub/crm/'];   // Prašymai is open to everyone: workers fill in, office keeps the registry
+  var OFFICE=['https://app.dedesbaldai.lt/offer/','https://app.dedesbaldai.lt/hub/crm/','https://app.dedesbaldai.lt/hub/apzvalga/'];   // Prašymai is open to everyone: workers fill in, office keeps the registry
+  var DEF='sb-niveinyzkkwtreeeaziv-auth-token', API='https://niveinyzkkwtreeeaziv.supabase.co', ROLE='hub.vadyba.v1';
+  var AK='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5pdmVpbnl6a2t3dHJlZWVheml2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU4Mzc2ODgsImV4cCI6MjEwMTQxMzY4OH0.E2LnA_ClFpE1pe_pVPp28M1zOCkzi1RoAIU3bo9PNxk';
   var SHUT='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5h7v5h-7zM4 5.5V3.8a2 2 0 0 1 4 0v1.7"/></svg>';
   var OPEN='<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 5.5h7v5h-7zM4 5.5V3.8a2 2 0 0 1 3.9-.6"/></svg>';
   function ls(k){try{return localStorage.getItem(k);}catch(e){return null;}}
@@ -903,7 +915,38 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
     if(b.innerHTML!==html)b.innerHTML=html;
     a.setAttribute('aria-label',(a.querySelector('h3,h2')||a).textContent.trim()+' — '+label);
   }
+  /* ---- Vadyba only: office apps exist on this screen only while a manager is signed in here ----
+     Counted: a computer ticked "Biuro kompiuteris" (only Vadyba sees the tick), the office sign-in
+     while it is open (it re-locks after 10 min idle), or a workshop sign-in that belongs to a
+     manager (ShopFlow role "manager" / admin). The role is asked from the database once per person
+     and remembered for 12 h. The apps themselves check again (database rules), this only hides. */
+  function sess(k){try{var x=JSON.parse(ls(k)||'null');return x&&x.access_token?x:null;}catch(e){return null;}}
+  function tok(k){var x=sess(k);return x&&(!x.expires_at||x.expires_at>Date.now()/1000+30)?x.access_token:null;}
+  function uid(x){if(x.user&&x.user.id)return x.user.id;try{return JSON.parse(atob(x.access_token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/'))).sub;}catch(e){return null;}}
+  var asking={};
+  function roleOf(k,cb){
+    var x=sess(k),id=x&&uid(x);if(!id||typeof fetch!=='function')return cb(false);
+    var memo={};try{memo=JSON.parse(ls(ROLE)||'{}')||{};}catch(e){}
+    var m=memo[id];if(m&&Date.now()-m.at<12*3600e3)return cb(!!m.ok);
+    var t=tok(k);if(!t)return cb(false);
+    if(asking[id])return cb(false);asking[id]=true;
+    fetch(API+'/rest/v1/rpc/workshop_me',{method:'POST',headers:{apikey:AK,Authorization:'Bearer '+t,'Content-Type':'application/json'},body:'{}'})
+      .then(function(r){return r.ok?r.json():[];}).then(function(rows){
+        var me=rows&&rows[0],ok=!!me&&(me.role==='admin'||me.role==='manager');
+        try{var mm=JSON.parse(ls(ROLE)||'{}')||{};mm[id]={ok:ok,at:Date.now()};localStorage.setItem(ROLE,JSON.stringify(mm));}catch(e){}
+        asking[id]=false;cb(ok);decorate();
+      },function(){asking[id]=false;cb(false);});
+  }
+  function officeAllowed(cb){
+    var st=state();if(st.pc)return cb(true);
+    var keys=(st.locked?[]:[KEY]).concat([DEF]),n=0,any=false;
+    keys.forEach(function(k){roleOf(k,function(ok){any=any||ok;if(++n===keys.length)cb(any);});});
+  }
   function decorate(){
+    officeAllowed(function(ok){
+      if(window.hubOffice)window.hubOffice(ok);
+      lbl.hidden=!ok;inBtn.hidden=ok;
+    });
     var st=state();
     document.querySelectorAll('a[href]').forEach(function(a){
       if(OFFICE.indexOf(a.href.split('?')[0])<0)return;
@@ -924,14 +967,39 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
     clearTimeout(t);t=setTimeout(decorate,30);
   }).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('storage',decorate);window.addEventListener('focus',decorate);setInterval(decorate,15000);
-  var lbl=document.createElement('label');lbl.id='office-pc';
+  var lbl=document.createElement('label');lbl.id='office-pc';lbl.hidden=true;
   lbl.innerHTML='<input type="checkbox"> Biuro kompiuteris';
   lbl.title='Pažymėkite tik biuro kompiuteryje: biuro programos čia neužsirakins. Dirbtuvėse palikite nepažymėtą — tada užsirakina po 10 min. be veiklos.';
   lbl.querySelector('input').addEventListener('change',function(e){
     try{if(e.target.checked){localStorage.setItem(PC,'1');}else{localStorage.removeItem(PC);}localStorage.setItem(IDLE,String(Date.now()));}catch(_){}
     decorate();
   });
-  function add(){document.body.appendChild(lbl);decorate();}
+  /* "Vadyba": the office sign-in (managers' names only) right here, so the office apps appear */
+  var inBtn=document.createElement('button');inBtn.type='button';inBtn.id='office-in';inBtn.hidden=true;
+  inBtn.innerHTML=SHUT+'<span>Vadyba</span>';inBtn.title='Vadybos prisijungimas — biuro programos';
+  function officeAuth(){
+    if(window.__officeAuth)return Promise.resolve(window.__officeAuth);
+    return new Promise(function(res,rej){
+      var prevW=window.WorkshopAuth,prevC=window.WORKSHOP_CLOUD;window.WORKSHOP_CLOUD={slot:'office'};
+      var sc=document.createElement('script');sc.src='../workers/workshop-auth.js?office';
+      sc.onload=function(){window.__officeAuth=window.WorkshopAuth;window.WorkshopAuth=prevW;window.WORKSHOP_CLOUD=prevC;res(window.__officeAuth);};
+      sc.onerror=function(){window.WORKSHOP_CLOUD=prevC;rej(new Error('load'));};
+      document.head.appendChild(sc);
+    });
+  }
+  inBtn.addEventListener('click',function(){
+    officeAuth().then(function(OW){
+      return OW.gate({title:'Vadyba',managers:true,allowSkip:true,skipLabel:'Atšaukti'}).then(function(me){
+        if(!me)return;
+        try{localStorage.setItem(IDLE,String(Date.now()));}catch(e){}
+        return OW.me().then(function(m){
+          if(!(m&&(m.role==='admin'||m.role==='manager'))){OW.logout(true);inBtn.querySelector('span').textContent='Tik vadybai';setTimeout(function(){inBtn.querySelector('span').textContent='Vadyba';},3000);}
+          decorate();
+        });
+      });
+    }).catch(function(){});
+  });
+  function add(){document.body.appendChild(lbl);document.body.appendChild(inBtn);decorate();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',add);else add();
 })();
 </script>
