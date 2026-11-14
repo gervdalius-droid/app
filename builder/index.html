@@ -7483,6 +7483,7 @@ function viewsSize(r, s, two) {   // width and height the views take at scale s
   return [w, h];
 }
 /* the cabinet sheet's lists: parts (position numbers as in the exploded view), extra parts, the worktop, fittings (lettered) */
+var BALLOON_FITTINGS = false;   // the exploded view's balloons: carcass and fronts only (fittings are pictured in the strip below it)
 /* the drawing's parts list, as in the SolidWorks DRAWINGS sheets: identical parts on one line (same kind, size, material and
    number of edged sides — mirrored left / right drawer sides too), one balloon per line; fittings are the pictured strip */
 function groupName(names) {
@@ -7512,7 +7513,8 @@ function cabLists(c, r) {
   parts.forEach(function (p) { var eb = p.eb || {}, nL = (eb.y0 ? 1 : 0) + (eb.y1 ? 1 : 0), nW = (eb.x0 ? 1 : 0) + (eb.x1 ? 1 : 0);
     var k = [p.role, Math.round(p.L * 10), Math.round(p.W * 10), Math.round(p.T * 10), p.mat || '', nL, nW].join('|');
     var g = byKey[k]; if (!g) { g = byKey[k] = { members:[], p:p, nL:nL, nW:nW }; groups.push(g); } g.members.push(p); });
-  groups.forEach(function (g, i) { g.nr = i + 1; g.members.forEach(function (p) { posOf[p.name] = g.nr; }); });
+  groups = groups.filter(function (g) { return !g.p.drawerOf; }).concat(groups.filter(function (g) { return g.p.drawerOf; }));   // carcass and fronts first (they get the balloons), the drawer boxes after
+  groups.forEach(function (g, i) { g.nr = i + 1; g.main = !g.p.drawerOf; g.members.forEach(function (p) { posOf[p.name] = g.nr; }); });
   var eTxt = function (nL, nW) { return edgeTxt([nL ? nL + 'L' : '', nW ? nW + 'W' : '']); };
   var rows = groups.map(function (g) { var p = g.p; return [String(g.nr), groupName(g.members.map(function (q) { return q.short || q.role; })), String(g.members.length), nm(p.L), nm(p.W), nm(p.T), p.mat || '', eTxt(g.nL, g.nW)]; });
   extras.forEach(function (x) { var nL = (x.e1 ? 1 : 0) + (x.e2 ? 1 : 0), nW = (x.e3 ? 1 : 0) + (x.e4 ? 1 : 0);
@@ -7601,6 +7603,7 @@ function sheetCabinet(c, r, nr, meta, plan) {
   svg += drawBoxes(order, fp.m, { lw:0.26, shade:true, after:connectorLines(r, boxes, V, function (q) { return fp.m(q); }, order, anchors) });
   var items = [], gotNr = {};
   ls0.groups.forEach(function (g) {   // the balloon goes to the piece of the line that is seen best (the biggest one in front)
+    if (!g.main) return;   // balloons only on the carcass and the fronts: drawer boxes and fittings are in the lists
     var mine = order.filter(function (b) { return b.p && posOf[b.p.name] === g.nr; });
     var seen = mine.map(function (b) { return { b:b, a:anchorOf(b, order, true), sz:(b.e[0][1] - b.e[0][0]) * (b.e[2][1] - b.e[2][0]) + (b.e[1][1] - b.e[1][0]) * (b.e[2][1] - b.e[2][0]) }; }).filter(function (q) { return q.a; }).sort(function (x, y) { return y.sz - x.sz; });
     var a = seen.length ? seen[0].a : mine.length ? anchorOf(mine[mine.length - 1], order) : null;
@@ -7611,7 +7614,7 @@ function sheetCabinet(c, r, nr, meta, plan) {
     return null; };
   var pickAny = function (fit, pref) { return pickFit(function (b) { return b.fit === fit && pref(b); }) || pickFit(function (b) { return b.fit === fit; }) ||
     (function () { var c0 = order.filter(function (b) { return b.fit === fit; }).pop(); return c0 ? fp.m(anchorOf(c0, order)) : null; })(); };
-  hwList.forEach(function (h, i) {
+  if (BALLOON_FITTINGS) hwList.forEach(function (h, i) {
     var k = hwKind(h.src ? h.src.item : h.item), a = null;
     if (k === 'hinge' && h.part === 'plate') {   // the plate: the lowest one in sight (the hinge takes the highest), so the two letters point at different pieces
       var pc = order.filter(function (b) { return b.fit === 'hinge' && b.plate; }).sort(function (x, y) { return x.e[2][0] - y.e[2][0]; });
