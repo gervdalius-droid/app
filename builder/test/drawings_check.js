@@ -87,7 +87,7 @@ for (let run = 0; run < 60; run++) {
         if (sh.id[0] === 'c') (r.hardware || []).forEach((h, hi) => { const esc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
           const hn = esc(DR.hwText(h.item)); if (!sh.svg.includes('>' + hn + '<') && !sh.svg.includes('>' + hn.slice(0, 8))) B('FITTING NOT LISTED ' + h.item + ' / ' + hn);
           const k = DR.hwKind(h.item), letter = String.fromCharCode(65 + hi);
-          if (false && (k === 'drawer' || k === 'leg') &&   // fittings have no balloons now (carcass and fronts only) !(k === 'drawer' && r.warnings.some(w => /ilgesnis nei telpa|netelpa šone|per žemas arba skyrius per siauras/.test(w))) && !sh.svg.includes('fill="#7a4d12">' + letter + '<')) B('FITTING WITHOUT BALLOON ' + h.item); });
+          if (false && (k === 'drawer' || k === 'leg') && /* fittings have no balloons now (carcass and fronts only) */ !(k === 'drawer' && r.warnings.some(w => /ilgesnis nei telpa|netelpa šone|per žemas arba skyrius per siauras/.test(w))) && !sh.svg.includes('fill="#7a4d12">' + letter + '<')) B('FITTING WITHOUT BALLOON ' + h.item); });
         if (sh.id[0] === 'c') { const b = DR.cabBoxes(r, {}), bw = DR.cabBoxes(r, { worktop:true }), ex = q => [0, 1, 2].map(k2 => [Math.min(...q.map(x => x.e[k2][0])), Math.max(...q.map(x => x.e[k2][1]))]), e = ex(b), ew = ex(bw);
           [e[0][1] - e[0][0], ew[1][1] - ew[1][0], ew[2][1] - ew[2][0]].forEach(v => { if (!sh.svg.includes('>' + nm(v) + '<')) B('DIM MISSING ' + sh.id + ' ' + nm(v)); });
           if (r.worktop) { const w = r.worktop; if (!cabSvg.includes('>' + nm(w.L) + '<') || !cabSvg.includes('>' + nm(w.W) + '<')) B('WORKTOP NOT LISTED ' + sh.id);
