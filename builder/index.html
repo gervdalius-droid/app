@@ -6725,7 +6725,7 @@ var TX = {
        pos:'Poz.', part:'Detalė', size:'L × W × T', mat:'Medžiaga', edge:'Kraštai', qty:'Kiekis', scale:'Mastelis', date:'Data', sheet:'Lapas', project:'Projektas', drawing:'Brėžinys',
        cab:'Spintelė', layout:'Baldų išdėstymas', plan:'Planas', wall:'Siena', elev:'Sienos vaizdas', door:'Durys', window:'Langas', sillH:'palangė', pt_socket:'R', pt_socket2:'RR', pt_cold:'ŠV', pt_hot:'KV', pt_drain:'KAN', ptLegend:'R — rozetė, RR — dviguba rozetė, ŠV / KV — šaltas / karštas vanduo, KAN — kanalizacija; skaičius — taško vidurio aukštis nuo grindų, mm. Apačioje — atstumai nuo sienos pradžios iki taškų vidurio.', list:'Spintelės', nts:'be mastelio', company:'DĖDĖS BALDAI', format:'Formatas',
        views:'vaizdai ir matmenys', assembly:'surinkimas', allFronts:'Visi baldai', name:'Pavadinimas', type:'Tipas', place:'Vieta', nParts:'Detalių', unit:'Vnt.',
-       base:'pastatoma', wallc:'pakabinama', tall:'aukšta', box:'3D konstrukcija', dish:'indaplovės fasadas', legs:'Kojelės', feet:'Pėdutės', frontEdge:'PRIEKIS',
+       base:'pastatoma', wallc:'pakabinama', tall:'aukšta', box:'3D konstrukcija', dish:'indaplovės fasadas', legs:'Kojelės', feet:'Pėdutės', frontEdge:'PRIEKIS', fronts:'Fasadai', gapsBetween:'Tarpai tarp fasadų', flushBottom:'apačioje fasadas lygus su korpusu',
        made:'Spintelių kūrėjas', firstAngle:'Projekcija E (ISO)', conn:'Jungtys:', cConf:'konfirmatai', cCam:'ekscentrikai', cDowel:'kaiščiai', extra:'papildoma',
        data:'Duomenys', joinery:'Jungtys', carcM:'Korpusas', facM:'Fasadai', edgeM:'Kraštai', none:'—', warn:'Pastabos', open:'Atidarymo linijos — viršūnė rankenos pusėje; X — stalčius',
        fromStart:'nuo sienos pradžios', fromS:'Nuo pradžios', worktop:'stalviršis', wtPart:'Stalviršis', cont:'tęsinys', contNext:'Tęsinys kitame lape →', more:'daugiau — žr. spintelių lapus', noLayout:'Spintelės nesudėliotos Baldų skirtuke — rodomi visi fasadai iš eilės.', clear:'šviesos', wallLen:'Siena' },
@@ -6733,7 +6733,7 @@ var TX = {
        pos:'Pos.', part:'Part', size:'L × W × T', mat:'Material', edge:'Edges', qty:'Qty', scale:'Scale', date:'Date', sheet:'Sheet', project:'Project', drawing:'Drawing',
        cab:'Cabinet', layout:'Furniture layout', plan:'Plan', wall:'Wall', elev:'Wall elevation', door:'Door', window:'Window', sillH:'sill', pt_socket:'S', pt_socket2:'SS', pt_cold:'CW', pt_hot:'HW', pt_drain:'DR', ptLegend:'S — socket, SS — double socket, CW / HW — cold / hot water, DR — drain; the number is the height of the point\'s middle above the floor, mm. Below — distances from the wall start to the middle of each point.', list:'Cabinets', nts:'not to scale', company:'DĖDĖS BALDAI', format:'Format',
        views:'views and dimensions', assembly:'assembly', allFronts:'All furniture', name:'Name', type:'Type', place:'Position', nParts:'Parts', unit:'Unit',
-       base:'base', wallc:'wall', tall:'tall', box:'3D construction', dish:'dishwasher front', legs:'Legs', feet:'Feet', frontEdge:'FRONT',
+       base:'base', wallc:'wall', tall:'tall', box:'3D construction', dish:'dishwasher front', legs:'Legs', feet:'Feet', frontEdge:'FRONT', fronts:'Fronts', gapsBetween:'Gaps between the fronts', flushBottom:'at the bottom the front is flush with the carcass',
        made:'Cabinet creator', firstAngle:'Projection E (ISO)', conn:'Joints:', cConf:'confirmats', cCam:'cams', cDowel:'dowels', extra:'extra',
        data:'Data', joinery:'Joints', carcM:'Carcass', facM:'Fronts', edgeM:'Edging', none:'—', warn:'Notes', open:'Opening lines — apex on the handle side; X — drawer',
        fromStart:'from the wall start', fromS:'From start', worktop:'worktop', wtPart:'Worktop', cont:'continued', contNext:'Continued on the next sheet →', more:'more — see the cabinet sheets', noLayout:'Cabinets are not placed in the Furniture tab — all fronts are shown in a row.', clear:'clear', wallLen:'Wall' }
@@ -6752,7 +6752,7 @@ function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b
 function unit(a) { var l = Math.hypot(a[0], a[1], a[2]) || 1; return [a[0] / l, a[1] / l, a[2] / l]; }
 function txt(x, y, s, size, o) {
   o = o || {};
-  return '<text x="' + f2(x) + '" y="' + f2(y) + '" font-family="' + FONT + '" font-size="' + f2(size) + '"' + (o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + (o.bold ? ' font-weight="700"' : '') +
+  return '<text x="' + f2(x) + '" y="' + f2(y) + '" font-family="' + FONT + '" font-size="' + f2(size) + '"' + (o.anchor ? ' text-anchor="' + o.anchor + '"' : '') + (o.bold ? ' font-weight="700"' : '') + (o.italic ? ' font-style="italic"' : '') +
     (o.fill ? ' fill="' + o.fill + '"' : ' fill="#1d2320"') + (o.rot ? ' transform="rotate(' + f2(o.rot) + ' ' + f2(x) + ' ' + f2(y) + ')"' : '') + '>' + esc(s) + '</text>';
 }
 function line(a, b, w, col, dash) { return '<line x1="' + f2(a[0]) + '" y1="' + f2(a[1]) + '" x2="' + f2(b[0]) + '" y2="' + f2(b[1]) + '" stroke="' + (col || COL.line) + '" stroke-width="' + f2(w || 0.25) + '"' + (dash ? ' stroke-dasharray="' + dash + '"' : '') + '/>'; }
@@ -7042,7 +7042,7 @@ function dim(a, b, nr, off, label, o) {
   var th = ang * Math.PI / 180, up = [Math.sin(th), -Math.cos(th)], m = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], w = tw(label, size);
   var along = w + 3 < len ? 0 : (len / 2 + w / 2 + 3) * (o.before ? -1 : 1), lift = 0.9 + (o.push || 0) * (size + 0.8);   // no room between the arrows: beside the end, stepped out
   var tp = [m[0] + u[0] * along + up[0] * lift, m[1] + u[1] * along + up[1] * lift];
-  out += txt(tp[0], tp[1], label, size, { anchor:'middle', fill:col, rot:ang });
+  out += txt(tp[0], tp[1], label, size, { anchor:'middle', fill:col, rot:ang, bold:o.bold, italic:o.italic });
   return out;
 }
 function dimChain(pts, nr, off, o) {   // consecutive dimensions through sheet points pts (with model values in pts[i][2]); figures of short pieces step outwards
@@ -7051,7 +7051,7 @@ function dimChain(pts, nr, off, o) {   // consecutive dimensions through sheet p
     var len = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]), short = tw(nm(v), size) + 3 >= len;
     var nextLong = i + 2 < pts.length && Math.hypot(pts[i + 2][0] - pts[i + 1][0], pts[i + 2][1] - pts[i + 1][1]) > tw(nm(Math.abs(pts[i + 2][2] - pts[i + 1][2])), size) + 3;
     var before = short && nextLong && (i === 0 || Math.abs(pts[i][2] - pts[i - 1][2]) < 0.5);   // the first short piece next to a long one: its figure goes before it, not into the long one
-    k = short ? k + 1 : 0; out += dim(pts[i], pts[i + 1], nr, off, nm(v), Object.assign({}, o, { push:short && !before ? (k - 1) % 3 : 0, before:before })); }
+    k = short ? k + 1 : 0; out += dim(pts[i], pts[i + 1], nr, off, nm(v), Object.assign({}, o, o && o.styleOf ? o.styleOf(i, pts[i][2], pts[i + 1][2]) : {}, { push:short && !before ? (k - 1) % 3 : 0, before:before })); }
   return out;
 }
 
@@ -7211,7 +7211,7 @@ function frontMarks(order, m, V, o) {
     }
     if (b.drawer && o.open !== false)   // a drawer: corner to corner, in the same dashed line as the doors' sign
       s += line(P(x0, z0), P(x1, z1), 0.18, COL.thin, '2.4 1.2') + line(P(x0, z1), P(x1, z0), 0.18, COL.thin, '2.4 1.2');
-    if (o.sizes !== false) {
+    if (o.sizes !== false && !(o.skipSize && o.skipSize(b))) {
       var a = P(x0, z0), c = P(x1, z1), w = Math.abs(c[0] - a[0]), h = Math.abs(c[1] - a[1]), lab = nm(x1 - x0) + ' × ' + nm(z1 - z0);
       var fs = Math.min(2.4, h * 0.42); if (fs > 1.2 && tw(lab, fs) + 2 < w) s += (b.drawer && o.open !== false ? '<rect x="' + f2((a[0] + c[0]) / 2 - tw(lab, fs) / 2 - 0.8) + '" y="' + f2((a[1] + c[1]) / 2 - fs * 0.75) + '" width="' + f2(tw(lab, fs) + 1.6) + '" height="' + f2(fs * 1.4) + '" fill="#fff" fill-opacity="0.85"/>' : '') + txt((a[0] + c[0]) / 2, b.door ? Math.max(a[1], c[1]) - Math.max(fs + 0.8, h * 0.07) : (a[1] + c[1]) / 2 + fs * 0.35, lab, fs, { anchor:'middle', fill:'#4a524d' });
     }
@@ -7442,25 +7442,79 @@ function sheetAssembly(c, r, nr, meta) {
 /* ---------------------------------------------------------------- one cabinet on one sheet
    left: front, without fronts and left views (dimensioned), parts and hardware lists under them;
    right: the exploded assembly with part numbers and connector lines */
+var FD = { front:'#1f5fbf', gap:'#c0392b' };   // the front view: fronts' sizes blue and bold, gaps red and italic (as on the DRAWINGS sheets)
+/* the fronts' own dimensions on the front view: a height chain on the right (gap at the bottom, each front, gaps between, gap at
+   the top — to the carcass), a width chain above (gap left, each front, gap right) and a line of what is where */
+function frontDims(oF, Pf, top3) {
+  var fr = oF.filter(function (b) { return b.front && b.p && !b.worktop; }), cp = oF.filter(function (b) { return b.p && !b.front && !b.p.drawerOf && !b.worktop; });
+  if (!fr.length || !cp.length) return null;
+  var cb = boundsOf(cp), r1 = function (v) { return Math.round(v * 10) / 10; }, out = '';
+  var cols = {}; fr.forEach(function (b) { var k = r1(b.e[0][0]) + '|' + r1(b.e[0][1]); (cols[k] = cols[k] || []).push(b); });
+  var keys = Object.keys(cols), sig = function (k) { return cols[k].map(function (b) { return r1(b.e[2][0]) + ':' + r1(b.e[2][1]); }).sort().join(','); };
+  var maxX = Math.max.apply(null, fr.map(function (b) { return b.e[0][1]; })), rcol = fr.filter(function (b) { return b.e[0][1] > maxX - 1; });   // the stack along the right edge
+  var fitsIn = function (list, ax) { return list.every(function (b) { var a = Pf(ax ? 0 : b.e[0][0], ax ? b.e[2][0] : 0), c = Pf(ax ? 0 : b.e[0][1], ax ? b.e[2][1] : 0);
+    return Math.hypot(c[0] - a[0], c[1] - a[1]) > tw(nm(b.e[ax][1] - b.e[ax][0]), 2.5) + 2.5; }); };   // too small a scale: the sizes stay written on the fronts
+  var isFront = function (list, ax) { return function (i, a, b) { var on = list.some(function (q) { return Math.abs(q.e[ax][0] - Math.min(a, b)) < 0.6 && Math.abs(q.e[ax][1] - Math.max(a, b)) < 0.6; });
+    return on ? { col:FD.front, bold:true, size:2.5 } : { col:FD.gap, italic:true, size:2.1 }; }; };
+  /* heights, right: each front a bold blue dimension; the gaps (to the carcass and between) red figures beside the chain */
+  var xr = Math.max(cb[0][1], top3[0][1]), vs = rcol.slice().sort(function (a, b) { return a.e[2][0] - b.e[2][0]; });
+  var gapMark = function (p0, p1, nr, off, v, horiz) {   // a small red figure off the chain, with a tick to where the gap is
+    var m = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2], a = [m[0] + nr[0] * (off - 1.5), m[1] + nr[1] * (off - 1.5)], b = [m[0] + nr[0] * (off + 2.2), m[1] + nr[1] * (off + 2.2)];
+    return line(a, b, 0.15, FD.gap) + txt(b[0] + nr[0] * 0.8 + (horiz ? 0 : 0.4), b[1] + nr[1] * 0.8 + (horiz ? -0.4 : 0.9), nm(v), 2.2, { fill:FD.gap, italic:true, anchor:horiz ? 'middle' : 'start' }); };
+  var doV = fitsIn(vs, 2);
+  if (doV) vs.forEach(function (b, i) {
+    out += dim(Pf(xr, b.e[2][0]), Pf(xr, b.e[2][1]), [1, 0], 6, nm(b.e[2][1] - b.e[2][0]), { col:FD.front, bold:true, size:2.5 });
+    var g0 = i ? b.e[2][0] - vs[i - 1].e[2][1] : b.e[2][0] - cb[2][0];
+    if (Math.abs(g0) > 0.05) out += gapMark(Pf(xr, b.e[2][0] - g0), Pf(xr, b.e[2][0]), [1, 0], 10.5, Math.abs(g0), false); });
+  var gT = cb[2][1] - vs[vs.length - 1].e[2][1]; if (doV && Math.abs(gT) > 0.05) out += gapMark(Pf(xr, vs[vs.length - 1].e[2][1]), Pf(xr, cb[2][1]), [1, 0], 10.5, Math.abs(gT), false);
+  /* widths, above: the top row of fronts, the same way */
+  var rows = {}; fr.forEach(function (b) { var k = r1(b.e[2][0]) + '|' + r1(b.e[2][1]); (rows[k] = rows[k] || []).push(b); });   // the row with the most fronts side by side (the top one of equals)
+  var row = Object.keys(rows).map(function (k) { return rows[k]; }).sort(function (a, b) { return (b.length - a.length) || (b[0].e[2][1] - a[0].e[2][1]); })[0];
+  var hs = row.slice().sort(function (a, b) { return a.e[0][0] - b.e[0][0]; }), zt = top3[2][1];
+  var doH = fitsIn(hs, 0);
+  if (doH) hs.forEach(function (b, i) {
+    out += dim(Pf(b.e[0][0], zt), Pf(b.e[0][1], zt), [0, -1], 6, nm(b.e[0][1] - b.e[0][0]), { col:FD.front, bold:true, size:2.5 });
+    var g0 = i ? b.e[0][0] - hs[i - 1].e[0][1] : b.e[0][0] - cb[0][0];
+    if (Math.abs(g0) > 0.05) out += gapMark(Pf(b.e[0][0] - g0, zt), Pf(b.e[0][0], zt), [0, -1], 10.5, Math.abs(g0), true); });
+  var gR = cb[0][1] - hs[hs.length - 1].e[0][1]; if (doH && Math.abs(gR) > 0.05) out += gapMark(Pf(hs[hs.length - 1].e[0][1], zt), Pf(cb[0][1], zt), [0, -1], 10.5, Math.abs(gR), true);
+  /* sizes the chains do not give stay written on the front */
+  var zKey = function (b) { return r1(b.e[2][0]) + '|' + r1(b.e[2][1]); }, xKey = function (b) { return r1(b.e[0][0]) + '|' + r1(b.e[0][1]); };
+  var vz = doV ? vs.map(zKey) : [], hx = doH ? hs.map(xKey) : [];
+  var skip = function (b) { return vz.indexOf(zKey(b)) >= 0 && hx.indexOf(xKey(b)) >= 0; };   // both its sizes are on the chains
+  /* gaps between the fronts and the list of the fronts */
+  var between = [];
+  keys.forEach(function (k) { var l = cols[k].slice().sort(function (a, b) { return a.e[2][0] - b.e[2][0]; }); for (var i = 1; i < l.length; i++) between.push(r1(l[i].e[2][0] - l[i - 1].e[2][1])); });
+  row.slice().sort(function (a, b) { return a.e[0][0] - b.e[0][0]; }).forEach(function (b, i, l) { if (i) between.push(r1(b.e[0][0] - l[i - 1].e[0][1])); });
+  vs.forEach(function (b, i) { if (i) between.push(r1(b.e[2][0] - vs[i - 1].e[2][1])); });
+  between = between.filter(function (v, i, a) { return v > 0.05 && a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
+  var sizes = {}; fr.forEach(function (b) { var k = nm(b.e[0][1] - b.e[0][0]) + ' × ' + nm(b.e[2][1] - b.e[2][0]); sizes[k] = (sizes[k] || 0) + 1; });
+  var bot = r1(Math.min.apply(null, fr.map(function (b) { return b.e[2][0]; })) - cb[2][0]);
+  var notes = [{ t:L.fronts + ': ' + Object.keys(sizes).map(function (k) { return k + ' (' + sizes[k] + ')'; }).join(' / '), o:{ bold:true, fill:FD.front } }];
+  if (between.length || Math.abs(bot) < 0.05) notes.push({ t:(between.length ? L.gapsBetween + ': ' + between.map(nm).join(', ') + ' mm' : '') + (Math.abs(bot) < 0.05 ? (between.length ? '; ' : '') + L.flushBottom : ''), o:{ italic:true, fill:FD.gap } });
+  return { svg:out, skip:skip, notes:notes };
+}
 function viewsBlock(r, s, x0, y0, two, c) {   // two: front | left on the first row, without fronts under the front
   var all = cabBoxes(r, { worktop:true }), carc = cabBoxes(r, { fronts:false }), bc = boundsOf(cabBoxes(r, {}));
   var b3 = boundsOf(all), W = b3[0][1] - b3[0][0], Ht = b3[2][1] - b3[2][0], Dt = b3[1][1] - b3[1][0], zMin = b3[2][0];
-  var hasInner = carc.some(function (b) { return b.p; }), svg = '', V, rowH = Ht * s + 40, lab = '1:' + Math.round(1 / s);
-  var yB = y0 + 14 + Ht * s;   // floor line of the first row
+  var hasInner = carc.some(function (b) { return b.p; }), svg = '', V, rowH = Ht * s + 48, lab = '1:' + Math.round(1 / s);
+  x0 += VB_LEFT;   // the overall heights on the left
+  var yB = y0 + 14 + VB_TOP + Ht * s;   // floor line of the first row (the fronts' widths above)
   /* front */
   V = viewOrtho('front'); var oF = solve(cabBoxes(r, { worktop:true }), V), mF = M(s, x0 - b3[0][0] * s, yB + zMin * s);
-  svg += viewTitle(x0, y0, L.front, lab) + drawBoxes(oF, mF, { lw:0.28 }) + frontMarks(oF, mF, V, {});
-  var Pf = function (x, z) { return mF([x, z]); }, H0 = hasInner ? r.dims.H : bc[2][1], wt = r.worktop;   // only a front (dishwasher): its own height, as in its part row
+  var Pf = function (x, z) { return mF([x, z]); }, fd = frontDims(oF, Pf, b3);
+  svg += viewTitle(x0 - VB_LEFT, y0, L.front, lab) + drawBoxes(oF, mF, { lw:0.28 }) + frontMarks(oF, mF, V, { skipSize:fd ? fd.skip : null }) + (fd ? fd.svg : '');
+  var H0 = hasInner ? r.dims.H : bc[2][1], wt = r.worktop;   // only a front (dishwasher): its own height, as in its part row
   svg += dim(Pf(bc[0][0], zMin), Pf(bc[0][1], zMin), [0, 1], 7, nm(bc[0][1] - bc[0][0]), { size:2.3 });
   if (wt && (wt.left > 0.4 || wt.right > 0.4)) svg += dim(Pf(b3[0][0], zMin), Pf(b3[0][1], zMin), [0, 1], 13, nm(W), { size:2.3 });   // the worktop past the sides
   var lv = [zMin, 0, H0].concat(wt ? [wt.z1] : []).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
-  svg += dimChain(lv.map(function (z) { var q = Pf(b3[0][1], z); return [q[0], q[1], z]; }), [1, 0], 6, { size:2.3 });
-  if (lv.length > 2) svg += dim(Pf(b3[0][1], zMin), Pf(b3[0][1], b3[2][1]), [1, 0], 13, nm(b3[2][1] - zMin), { size:2.3 });
-  var xR = x0 + W * s + 30;
+  svg += dimChain(lv.map(function (z) { var q = Pf(b3[0][0], z); return [q[0], q[1], z]; }), [-1, 0], 6, { size:2.3 });
+  if (lv.length > 2) svg += dim(Pf(b3[0][0], zMin), Pf(b3[0][0], b3[2][1]), [-1, 0], 13, nm(b3[2][1] - zMin), { size:2.3 });
+  if (fd) fd.notes.forEach(function (n, i) { svg += txt(x0 - VB_LEFT, yB + 15.5 + i * 3.6, n.t, 2.5, n.o); });
+  var xR = x0 + W * s + 24;
   /* without fronts: next to the front, or under it */
   if (hasInner) {
-    var xi = two ? x0 : xR, yi = two ? yB + 28 + 14 + Ht * s : yB;
-    if (two) svg += viewTitle(x0, yB + 28, L.inner, lab);
+    var xi = two ? x0 : xR, yi = two ? yB + 28 + VB_NOTES + 14 + Ht * s : yB;
+    if (two) svg += viewTitle(x0 - VB_LEFT, yB + 28 + VB_NOTES, L.inner, lab);
     V = viewOrtho('front'); var oI = solve(cabBoxes(r, { fronts:false, plinth:false, fit:true, c:c }), V), mI = M(s, xi - b3[0][0] * s, yi + zMin * s);
     if (!two) svg += viewTitle(xi, y0, L.inner, lab);
     svg += drawBoxes(oI, mI, { lw:0.28 }) + openingDims(oI, function (q) { return mI(q); }, V, { topZ:bc[2][1] });
@@ -7473,13 +7527,14 @@ function viewsBlock(r, s, x0, y0, two, c) {   // two: front | left on the first 
   svg += dim(Pl(dC[1], zMin), Pl(dC[0], zMin), [0, 1], 7, nm(dC[1] - dC[0]), { size:2.3 });
   if (b3[1][0] < dC[0] - 0.5) svg += dim(Pl(b3[1][1], zMin), Pl(b3[1][0], zMin), [0, 1], 13, nm(Dt), { size:2.3 });
   svg += txt(Pl(b3[1][0], zMin)[0], yB + 20, L.frontEdge + ' ▸', 2, { anchor:'end', fill:'#6b736e' });   // the front edge is on the right in this view
-  var bottom = two && hasInner ? yB + 28 + rowH : yB + 24;
+  var bottom = two && hasInner ? yB + 28 + VB_NOTES + rowH - 8 : yB + 24 + VB_NOTES;
   return { svg:svg, bottom:bottom, right:xR + Dt * s };
 }
+var VB_LEFT = 14, VB_TOP = 13, VB_NOTES = 6;   // room for the heights on the left, the fronts' widths above, the fronts' notes below
 function viewsSize(r, s, two) {   // width and height the views take at scale s
   var all = cabBoxes(r, { worktop:true }), b3 = boundsOf(all), W = b3[0][1] - b3[0][0], Ht = b3[2][1] - b3[2][0], Dt = b3[1][1] - b3[1][0];
   var inner = cabBoxes(r, { fronts:false }).some(function (b) { return b.p; });
-  var w = two || !inner ? s * (W + Dt) + 34 : s * (2 * W + Dt) + 44, h = (two && inner ? 2 : 1) * (s * Ht + 14) + (two && inner ? 28 : 0) + 24;
+  var w = (two || !inner ? s * (W + Dt) + 28 : s * (2 * W + Dt) + 38) + VB_LEFT, h = (two && inner ? 2 : 1) * (s * Ht + 14) + VB_TOP + (two && inner ? 28 : 0) + 24 + VB_NOTES;
   return [w, h];
 }
 /* the cabinet sheet's lists: parts (position numbers as in the exploded view), extra parts, the worktop, fittings (lettered) */
