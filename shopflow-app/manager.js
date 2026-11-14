@@ -5088,6 +5088,11 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
         </button>` : ""}
         ${EngLink.engBanner(o)}
         ${EngLink.prodBanner(o)}
+        ${o.type !== "eng" && !o.archived && App.can("orders.create") && typeof SwoodImport !== "undefined" ? `<div class="sw-into sw-top">
+          <button class="btn ${o.swood ? "subtle" : "primary"}" id="od-swood">${icon("import", 14)} <span>${o.swood ? "Add or update a SWOOD report list" : "Attach SWOOD report list"}</span></button>
+          ${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="od-scanlog">${icon("list", 14)} <span>Scans</span></button>` : ""}
+          ${o.swood ? `<div class="sw-lists">${D.swoodLists(o).map(l => `<span class="sw-list-chip" title="${esc(l.file || "")}">${icon("import", 11)} ${esc(l.project)}${l.parts ? ` · ${l.parts} <span>parts</span>` : ""} · ${fmtAgo(l.at)}</span>`).join("")}</div>` : ""}
+        </div>` : ""}
         ${typeof Revisions !== "undefined" ? Revisions.html(o) : ""}
 
         <div class="meta-grid">
@@ -5162,7 +5167,6 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
 
         ${isEng ? this.remarksHtml(o) : ""}
 
-        ${o.type !== "eng" && !o.archived && App.can("orders.create") && typeof SwoodImport !== "undefined" ? `<div class="sw-into">${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="od-scanlog">${icon("list", 14)} Scans</button>` : ""}<button class="btn subtle" id="od-swood">${icon("import", 14)} ${o.swood ? "Re-import SWOOD report list" : "Import SWOOD report list into this project"}</button>${o.swood ? `<span class="t-caption">from ${esc(o.swood.project)} · ${fmtAgo(o.swood.importedAt)}</span>` : ""}</div>` : ""}
         ${this.appliancesHtml(o, canEdit)}
 
         ${this.detailsHtml(o, canEdit)}

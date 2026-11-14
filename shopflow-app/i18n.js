@@ -897,5 +897,13 @@ var LT = {
   "No cabinets found in that file": "Šiame faile spintelių nerasta",
   "Cabinet numbers from the drawings": "Spintelių numeriai iš brėžinių",
   "not found": "nerasta",
-  "Client corrections": "Kliento pataisos"
+  "Client corrections": "Kliento pataisos",
+  "Add or update a SWOOD report list": "Pridėti ar atnaujinti SWOOD sąrašą",
+  "Attach SWOOD report list": "Prisegti SWOOD reportlist",
+  "Add to the lists it has": "Pridėti prie esamų sąrašų",
+  "Replace its list": "Pakeisti esamą sąrašą",
+  "The project has": "Projekte jau yra",
+  "These parts, lines and cabinets are added next to them — nothing already there changes, assembly gets the new cabinets.": "Šios detalės, linijos ir spintelės pridedamos šalia — kas jau yra, nesikeičia, surinkimui pridedamos naujos spintelės.",
+  "For a corrected version of the same list.": "Kai tai pataisyta to paties sąrašo versija.",
+  "The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse. Several lists of one project can be chosen together.": "SWOOD sukurtas .xlsm (ar .xlsx) failas — numeskite čia arba spauskite ir pasirinkite. Galima pasirinkti kelis vieno projekto sąrašus kartu."
 };

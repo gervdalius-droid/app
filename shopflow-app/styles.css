@@ -3262,3 +3262,8 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .rev-pf { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; padding: 3px 8px; border-radius: 8px; background: var(--surface-2, rgba(0,0,0,.05)); }
 .rev-opt { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; margin: 4px 0 10px; }
 .rev-acts .btn { padding: 5.5px 12px; font-size: 12.5px; }
+/* SWOOD report lists at the top of a project */
+.sw-into.sw-top { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.sw-lists { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+.sw-list-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2, rgba(0,0,0,.05)); color: var(--text-2); }
+.sw-mode { margin-top: 8px; }

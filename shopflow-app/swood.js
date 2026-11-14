@@ -810,6 +810,38 @@ var SWOOD = {
   /* One item per board material (qty = pieces of that board), because that is
      what gets nested, cut and counted — and it makes a scanned part increment
      the right line. Assembly/QC/Packing live on a separate module line. */
+  /* several parsed report lists as one */
+  merge(list) {
+    if (list.length === 1) return list[0];
+    var sum = key => {
+      var by = new Map();
+      list.forEach(p => (p[key] || []).forEach(g => {
+        var k = g.name + "|" + g.unit;
+        if (by.has(k)) by.get(k).qty += g.qty; else by.set(k, Object.assign({}, g));
+      }));
+      return [...by.values()];
+    };
+    var seen = new Set(), dup = [];
+    var parts = [];
+    list.forEach(p => p.parts.forEach(x => {
+      if (seen.has(x.code)) dup.push(x.code); else seen.add(x.code);
+      parts.push(Object.assign({}, x, { proj: p.project }));
+    }));
+    var projects = [...new Set(list.map(p => p.project).filter(Boolean))];
+    var warnings = [];
+    list.forEach(p => (p.warnings || []).forEach(w => warnings.push(`${p.fileName || p.project}: ${w}`)));
+    if (dup.length) warnings.push(`${dup.length} part code${dup.length === 1 ? " is" : "s are"} in more than one list (${dup.slice(0, 6).join(", ")}${dup.length > 6 ? "…" : ""}) — scans of those codes can't tell the lists apart`);
+    return {
+      project: projects.join(" + "),
+      parts,
+      boards: sum("boards"),
+      edgeband: sum("edgeband"),
+      hardware: sum("hardware"),
+      warnings,
+      columns: list[0].columns,
+      totalPieces: list.reduce((s, p) => s + (p.totalPieces || 0), 0)
+    };
+  },
   plan(parsed, opts = {}) {
     var byBoard = new Map();
     var _iterator9 = _createForOfIteratorHelper(parsed.parts),
@@ -839,7 +871,7 @@ var SWOOD = {
     try {
       for (_iterator10.s(); !(_step10 = _iterator10.n()).done;) {
         var _p = _step10.value;
-        modules.add(D.cabinetOf(_p, parsed.project) || _p.name);
+        modules.add(D.cabinetOf(_p, _p.proj || parsed.project) || _p.name);
       }
       /* Stages are resolved by name, so this works on a shop's own station list
          and not just the seed's ids. A stage the shop does not have is left out
@@ -918,6 +950,9 @@ var SwoodImport = {
   // an existing project to fill instead of creating one
   open(targetId) {
     this.target = targetId && D.order(targetId) ? targetId : null;
+    this.parsedAll = null;
+    this.fileNames = [];
+    this.mode = "replace";
     this.plan = null;
     this.fileName = "";
     this.scope = 1;
@@ -939,8 +974,8 @@ var SwoodImport = {
     return `<div class="sw-drop" id="sw-drop">
       <span class="ico">${icon("import", 26)}</span>
       <b>Choose the “Report Lists to Excel” file</b>
-      <span class="t-caption">The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse</span>
-      <input type="file" id="sw-file" accept=".xlsm,.xlsx" hidden>
+      <span class="t-caption">The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse. Several lists of one project can be chosen together.</span>
+      <input type="file" id="sw-file" accept=".xlsm,.xlsx" multiple hidden>
     </div>`;
   },
   bind(m) {
@@ -956,12 +991,68 @@ var SwoodImport = {
       drop.ondrop = e => {
         e.preventDefault();
         drop.classList.remove("over");
-        if (e.dataTransfer.files[0]) this.load(e.dataTransfer.files[0], m);
+        if (e.dataTransfer.files.length) this.loadMany([].slice.call(e.dataTransfer.files), m);
       };
-      file.onchange = () => file.files[0] && this.load(file.files[0], m);
+      file.onchange = () => file.files.length && this.loadMany([].slice.call(file.files), m);
     }
     var go = $("#sw-go", m);
     if (go) go.onclick = () => this.create(m);
+  },
+  /* One or several report lists. Several are read one by one and put together
+     into one plan — the parts keep the project they came from, so cabinets are
+     still told apart. */
+  loadMany(files, m) {
+    files = files.filter(f => /\.xls[xm]$/i.test(f.name));
+    if (!files.length) return;
+    if (files.length === 1) return this.load(files[0], m);
+    var body = $("#sw-body", m);
+    var parsedAll = [];
+    var i = 0;
+    var next = () => {
+      if (i >= files.length) return Promise.resolve();
+      var f = files[i++];
+      body.innerHTML = `<div class="sw-busy"><div class="sync-spinner"></div><span>Reading ${esc(f.name)} (${i}/${files.length})…</span></div>`;
+      return f.arrayBuffer().then(buf => SWOOD.parse(buf)).then(p => { p.fileName = f.name; parsedAll.push(p); }).then(next);
+    };
+    return next().then(() => {
+      this.fileName = files.map(f => f.name).join(", ");
+      this.fileNames = files.map(f => f.name);
+      this.parsedAll = parsedAll;
+      this.afterParse(SWOOD.merge(parsedAll), m);
+    }).catch(err => {
+      this.plan = null;
+      body.innerHTML = `<div class="sw-error">${icon("alert", 20)}<div><b>Couldn't read that file</b>
+        <span>${esc(err && err.message || String(err))}</span></div></div>${this.pickHtml()}`;
+      this.bind(m);
+      $("#sw-go", m).disabled = true;
+    });
+  },
+  afterParse(parsed, m) {
+    this.plan = SWOOD.plan(parsed);
+    this.scope = 1;
+    this.lineEdits = {};
+    this.consEdits = {};
+    this.form = {
+      name: this.plan.project,
+      client: "",
+      due: new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10)
+    };
+    if (!this.target) {
+      var sug = this.suggest();
+      if (sug) this.target = sug.id;
+    }
+    this.mode = this.defaultMode();
+    this.render(m);
+    $("#sw-go", m).disabled = false;
+  },
+  /* into a project that already has parts: add next to them, unless this is
+     clearly the same list again (most of its codes are already there) */
+  defaultMode() {
+    var t = this.target ? D.order(this.target) : null;
+    if (!t || !(t.parts || []).length || !this.plan) return "replace";
+    var have = new Set(t.parts.map(p => p.code));
+    var same = this.plan.parts.filter(p => have.has(p.code)).length;
+    return same > this.plan.parts.length / 2 ? "replace" : "add";
   },
   load(f, m) {
     var _this8 = this;
@@ -989,21 +1080,8 @@ var SwoodImport = {
             return _context9.t0.parse.call(_context9.t0, _context9.t1);
           case 12:
             parsed = _context9.sent;
-            _this8.plan = SWOOD.plan(parsed);
-            _this8.scope = 1;
-            _this8.lineEdits = {};
-            _this8.consEdits = {};
-            _this8.form = {
-              name: _this8.plan.project,
-              client: "",
-              due: new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10)
-            };
-            if (!_this8.target) {
-              var sug = _this8.suggest();
-              if (sug) _this8.target = sug.id;
-            }
-            _this8.render(m);
-            $("#sw-go", m).disabled = false;
+            _this8.fileNames = [f.name];
+            _this8.afterParse(parsed, m);
             _context9.next = 28;
             break;
           case 22:
@@ -1089,7 +1167,14 @@ var SwoodImport = {
         <button data-swt="old" class="${t ? "active" : ""}" ${list.length ? "" : "disabled"}>Into an existing project</button>
       </div>
       ${t ? `<select class="select" id="sw-target">${list.map(o => `<option value="${o.id}" ${o.id === t.id ? "selected" : ""}>${esc(o.num)} · ${esc(o.product)}${o.client && o.client !== o.product ? " — " + esc(o.client) : ""}</option>`).join("")}</select>
-        <div class="t-caption"><span>Parts, production lines, steps and materials come from SWOOD. The project keeps its number, name, client, date, files, remarks, appliances and details.</span>${started ? ` <span>Work already done stays: finished steps stay finished, logged time is kept.</span>` : ""}${t.swood ? ` <b>Its earlier SWOOD part list is replaced.</b>` : ""}</div>` : ""}
+        ${(t.parts || []).length ? `<div class="segmented sw-seg sw-mode">
+          <button data-swm="add" class="${this.mode === "add" ? "active" : ""}">${icon("plus", 12)} <span>Add to the lists it has</span></button>
+          <button data-swm="replace" class="${this.mode !== "add" ? "active" : ""}">${icon("refresh", 12)} <span>Replace its list</span></button>
+        </div>
+        <div class="t-caption">${this.mode === "add"
+          ? `<span>The project has</span> ${D.swoodLists(t).map(l => `<b>${esc(l.project)}</b>`).join(", ")}. <span>These parts, lines and cabinets are added next to them — nothing already there changes, assembly gets the new cabinets.</span>`
+          : `<span>For a corrected version of the same list.</span> ${D.swoodLists(t).length > 1 ? `<b>All ${D.swoodLists(t).length} of its SWOOD lists are replaced by what you import now</b> — <span>to correct one list, choose all of its lists here together.</span>` : `<b>Its earlier SWOOD part list is replaced.</b>`}${started ? ` <span>Work already done stays: finished steps stay finished, logged time is kept.</span>` : ""}`}</div>`
+        : `<div class="t-caption"><span>Parts, production lines, steps and materials come from SWOOD. The project keeps its number, name, client, date, files, remarks, appliances and details.</span>${started ? ` <span>Work already done stays: finished steps stay finished, logged time is kept.</span>` : ""}</div>`}` : ""}
     </div>`;
   },
   previewHtml() {
@@ -1219,11 +1304,13 @@ var SwoodImport = {
       this.form.name = name.value;
       if (b.dataset.swt === "new") this.target = null;
       else { var s0 = this.suggest() || this.targets()[0]; this.target = s0 ? s0.id : null; }
+      this.mode = this.defaultMode();
       this.render(m);
       if (typeof I18N !== "undefined") I18N.translate(m);
     });
     var tsel = $("#sw-target", m);
-    if (tsel) tsel.onchange = () => { this.target = tsel.value; this.form.name = name.value; this.render(m); if (typeof I18N !== "undefined") I18N.translate(m); };
+    if (tsel) tsel.onchange = () => { this.target = tsel.value; this.form.name = name.value; this.mode = this.defaultMode(); this.render(m); if (typeof I18N !== "undefined") I18N.translate(m); };
+    $$("[data-swm]", m).forEach(b => b.onclick = () => { this.mode = b.dataset.swm; this.form.name = name.value; this.render(m); if (typeof I18N !== "undefined") I18N.translate(m); });
     name.oninput = () => {
       this.form.name = name.value;
       check();
@@ -1298,16 +1385,35 @@ var SwoodImport = {
       unit: c.unit,
       materialId: c.mat ? c.mat.id : null
     }));
-    var o = M.applySwoodTo(this.target, this.plan, {
+    var adding = this.mode === "add";
+    var o = M[adding ? "addSwoodList" : "applySwoodTo"](this.target, this.plan, {
       scope: this.scope,
       consumables: cons,
-      lineNames: this.lineEdits
+      lineNames: this.lineEdits,
+      fileName: this.fileName
     }, App.me.id);
     if (!o) return;
+    this.recordLists(o, adding);
     Modal.close();
     App.render();
     Drawer.open(o.id);
-    Toast.show(`${o.num}: ${o.parts.length} part codes imported from SWOOD`, { emoji: "import", ms: 5000 });
+    Toast.show(adding ? `${o.num}: +${this.plan.parts.length} part codes · ${D.swoodLists(o).length} SWOOD lists` : `${o.num}: ${o.parts.length} part codes imported from SWOOD`, { emoji: "import", ms: 5000 });
+  },
+  /* several files imported together are still listed one by one on the project */
+  recordLists(o, adding) {
+    var all = this.parsedAll && this.fileNames && this.fileNames.length > 1 ? this.parsedAll : null;
+    if (!o || !o.swood) return;
+    if (!all) {
+      var ls = D.swoodLists(o);
+      if (ls.length && !ls[ls.length - 1].file) ls[ls.length - 1].file = this.fileName;
+      if (!o.swood.lists) o.swood.lists = ls;
+      Store.save();
+      return;
+    }
+    var mine = all.map((p, i) => ({ id: "f" + i, project: p.project, file: p.fileName, at: Date.now(), parts: p.parts.length, pieces: p.totalPieces * (this.scope || 1) }));
+    var before = adding ? D.swoodLists(o).slice(0, -1) : [];
+    o.swood.lists = before.concat(mine).map((l, i) => Object.assign({}, l, { id: "l" + (i + 1) }));
+    Store.save();
   },
   create(m) {
     if (!this.plan) return;
@@ -1330,6 +1436,7 @@ var SwoodImport = {
       consumables: cons,
       lineNames: this.lineEdits
     }, App.me.id);
+    this.recordLists(order, false);
     if (typeof Bridge !== "undefined") {
       var cid = Bridge.resolveClient(order.client);
       if (cid) {

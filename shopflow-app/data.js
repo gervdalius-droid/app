@@ -4792,7 +4792,7 @@ var D = {
     var s = String(p && p.solid || "");
     var name = String(p && p.name || "");
     if (!s) return name;
-    var proj = String(project || "");
+    var proj = String(p && p.proj || project || ""); // a part from a second list knows its own project
     var at = proj ? s.lastIndexOf(proj) : -1;
     if (at < 0) return s.startsWith(name + "_") ? s.slice(name.length + 1) : s; // the old rule
     var before = s.slice(0, at).replace(/_+$/, "");
@@ -4804,6 +4804,12 @@ var D = {
     var type = i >= 0 ? toks.slice(i).join("_") : "";
     if (!type) type = before && toks.length === 1 ? toks[0] : name; // a single piece such as PLINTUSAS
     return (type ? type + "_" : "") + proj + (inst ? "_" + inst[1] : "");
+  },
+  /* every report list a project was built from — older projects have one */
+  swoodLists(o) {
+    if (!o || !o.swood) return [];
+    if (o.swood.lists && o.swood.lists.length) return o.swood.lists;
+    return [{ id: "l1", project: o.swood.project, file: o.swood.file || "", at: o.swood.importedAt, parts: (o.parts || []).length, pieces: o.swood.pieces }];
   },
   /* SWOOD writes "(be medziagos)" when a part has no material assigned — a check, not a material */
   noMaterial(board, notes) {
@@ -5683,6 +5689,7 @@ var M = {
               edges: p.edges,
               notes: p.notes,
               solid: p.solid || "",
+              proj: p.proj || undefined, // set when several report lists make one project
               // which cabinet the part belongs to
               itemId: _item.id
             });
@@ -5824,6 +5831,71 @@ var M = {
      date, files, remarks, appliances and details. Work already done is kept —
      a step finished at a station stays finished there, time logged on a
      station moves to the new step at that station. */
+  /* A second (third…) report list for the same project: its production lines,
+     parts, cabinets and materials are added next to what is there. Nothing
+     already there changes — except that assembly now has more cabinets to do,
+     so a finished assembly step opens again. */
+  addSwoodList(orderId, plan, opts, byId) {
+    var tgt = D.order(orderId);
+    if (!tgt) return null;
+    opts = opts || {};
+    if (!(tgt.parts || []).length) return this.applySwoodTo(orderId, plan, opts, byId);
+    var lists = D.swoodLists(tgt).slice();
+    var seq = Store.state.orderSeq;
+    var tmp = this.createFromSwood(plan, {
+      product: tgt.product, client: tgt.client, due: tgt.due, priority: tgt.priority,
+      scope: opts.scope, consumables: opts.consumables, lineNames: opts.lineNames
+    }, byId);
+    Store.state.orders = Store.state.orders.filter(o => o.id !== tmp.id);
+    Store.state.orderSeq = seq;
+    Store.state.activity = Store.state.activity.filter(a => a.orderId !== tmp.id);
+    tgt = D.order(orderId);
+    var n = lists.length + 1;
+    var tmpPartItems = new Set(tmp.parts.map(p => p.itemId));
+    var tmpAsm = tmp.items.find(i => !tmpPartItems.has(i.id));
+    var asmOp = D.assemblyOp(tgt);
+    var tgtAsm = asmOp ? tgt.items.find(i => i.id === asmOp.itemId) : null;
+    /* the new material lines; a material the project already has gets the list number */
+    var names = new Set(tgt.items.map(i => i.name));
+    var newItems = tmp.items.filter(i => i !== tmpAsm);
+    newItems.forEach(i => { if (names.has(i.name)) i.name = `${i.name} · ${n}`; i.swoodList = n; });
+    var newIds = new Set(newItems.map(i => i.id));
+    var at = tgtAsm ? tgt.items.indexOf(tgtAsm) : tgt.items.length;
+    tgt.items.splice(at, 0, ...newItems);
+    tgt.ops = tgt.ops.concat(tmp.ops.filter(op => newIds.has(op.itemId)));
+    /* codes both lists use would make scans ambiguous — say so in the log */
+    var have = new Set((tgt.parts || []).map(p => p.code));
+    var clash = tmp.parts.filter(p => have.has(p.code)).map(p => p.code);
+    tmp.parts.forEach(p => { if (!p.proj) p.proj = plan.project; });
+    tgt.parts = (tgt.parts || []).concat(tmp.parts);
+    /* cabinets: new ones are added; assembly gets that many more */
+    var keys = new Set(D.orderModules(tgt).map(m => m.key || m.name));
+    var addMods = tmp.modules.filter(m => !keys.has(m.key));
+    tgt.modules = D.sortModules((tgt.modules || []).concat(addMods));
+    if (tgtAsm) {
+      var more = addMods.length ? addMods.reduce((s, m) => s + (m.qty || 1), 0) : 0;
+      if (more) {
+        tgtAsm.qty += more;
+        tgt.ops.filter(op => op.itemId === tgtAsm.id && op.status === "done").forEach(op => { op.status = "paused"; op.completedAt = null; });
+      }
+    } else if (tmpAsm) {
+      tgt.items.push(tmpAsm);
+      tgt.ops = tgt.ops.concat(tmp.ops.filter(op => op.itemId === tmpAsm.id));
+    }
+    tgt.materials = (tgt.materials || []).concat(tmp.materials);
+    tgt.qty = tgt.items.reduce((s, i) => s + i.qty, 0);
+    lists.push({ id: "l" + n, project: plan.project, file: opts.fileName || "", at: Date.now(), parts: tmp.parts.length, pieces: tmp.swood.pieces });
+    tgt.swood = Object.assign({}, tgt.swood, {
+      lists,
+      pieces: lists.reduce((s, l) => s + (l.pieces || 0), 0),
+      modules: tgt.modules.length,
+      importedAt: Date.now(),
+      importedBy: byId
+    });
+    this.log(byId, `added SWOOD report list #${n} **${plan.project}** to ${tgt.num} · ${tmp.parts.length} parts${clash.length ? ` · ${clash.length} part codes also in an earlier list` : ""}`, { orderId: tgt.id });
+    Store.save();
+    return tgt;
+  },
   applySwoodTo(orderId, plan, opts, byId) {
     var tgt = D.order(orderId);
     if (!tgt) return null;
@@ -5887,6 +5959,7 @@ var M = {
     tgt.materials = kept.concat(tmp.materials);
     var had = !!tgt.swood;
     tgt.swood = tmp.swood;
+    tgt.swood.lists = [{ id: "l1", project: plan.project, file: opts.fileName || "", at: Date.now(), parts: tmp.parts.length, pieces: tmp.swood.pieces }];
     this.log(byId, `${had ? "re-imported" : "imported"} SWOOD **${plan.project}** into ${tgt.num} · ${tmp.parts.length} parts`, { orderId: tgt.id });
     Store.save();
     return tgt;
