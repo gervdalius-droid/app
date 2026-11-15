@@ -50,6 +50,12 @@ button{font:inherit;color:inherit}
 
 /* summary strip */
 .sums{display:grid;grid-template-columns:1fr;gap:12px}
+.tabs{display:flex;gap:4px;padding:4px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+.tabs button{flex:1 1 0;min-width:0;border:0;background:none;border-radius:8px;padding:9px 8px;font-size:14.5px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;line-height:1.2}
+.tabs button small{font-size:11.5px;font-weight:500;opacity:.8}
+.tabs button b{font:600 12px/1 var(--mono);opacity:.75;margin-left:5px}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.tabs button:not([aria-selected="true"]):hover{color:var(--ink);background:var(--bg)}
 .ssum{display:flex;flex-direction:column;gap:6px;min-width:0}
 .ssum .st{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;text-decoration:none;color:var(--ink);font-weight:700;font-size:15px;padding:0 2px}
 .ssum .st em{font-style:normal;font-weight:500;color:var(--muted)}
@@ -168,6 +174,7 @@ textarea.copy{position:absolute;left:-9999px}
   </header>
 
   <div class="find" role="search">
+    <div class="tabs" id="tabs" role="tablist" aria-label="Rodyti / Show"></div>
     <label for="q"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
       <input type="search" id="q" autocomplete="off" spellcheck="false" placeholder="Ieškoti projekto, kliento, numerio… / Search project, client, number…" aria-label="Ieškoti projektų / Search projects"></label>
     <div class="res" id="res" aria-live="polite"></div>
@@ -381,8 +388,12 @@ function norm(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\
 function hay(x){var p=x.p,a=x.a,G=GROUPS.filter(function(g){return g.id===a.grp;})[0];
   return norm([p.t==="eng"?"projektavimas engineering":"gamyba manufacturing",p.n,p.p,p.c,p.d,sentence(p,a,"lt"),sentence(p,a,"en"),G.lt,G.en,p.k,NOTES[p.id]&&NOTES[p.id].t,
     p.s.map(function(s){return s[0]+" "+(s[2]||"");}).join(" "),days(p.d)<0?"veluoja late":""].join(" "));}
-function shown(){var w=norm(Q).split(/\s+/).filter(Boolean);if(!w.length)return data;
-  return data.filter(function(x){var h=hay(x);return w.every(function(t){return h.indexOf(t)>=0;});});}
+/* which part to show: "all", "eng" (Projektavimas) or "prod" (Gamyba); remembered on this device */
+var VIEW="all";try{VIEW=localStorage.getItem("pa.view")||"all";}catch(e){}
+if(["all","eng","prod"].indexOf(VIEW)<0)VIEW="all";
+function base(){return VIEW==="all"?data:data.filter(function(x){return x.p.t===VIEW;});}
+function shown(){var w=norm(Q).split(/\s+/).filter(Boolean);if(!w.length)return base();
+  return base().filter(function(x){var h=hay(x);return w.every(function(t){return h.indexOf(t)>=0;});});}
 function mark(html){var w=norm(Q).split(/\s+/).filter(function(t){return t.length>1;});if(!w.length)return html;
   /* highlight inside titles only, matching letters with or without accents */
   return html.replace(/(<b>|<small>)([^<]*)/g,function(m,tag,txt){var n=norm(txt),out="",i=0,hits=[];
@@ -392,8 +403,10 @@ function mark(html){var w=norm(Q).split(/\s+/).filter(function(t){return t.lengt
     return tag+out+txt.slice(i);});}
 function grp(id){return GROUPS.filter(function(G){return G.id===id;})[0];}
 function render(){
-  var list=shown(),sum="",g="",late=data.filter(function(x){return days(x.p.d)<0;}).length;
-  STAGES.forEach(function(S){
+  var B=base(),list=shown(),sum="",g="",late=B.filter(function(x){return days(x.p.d)<0;}).length;
+  var tabs=[["all","Visi","All",data.length]].concat(STAGES.map(function(S){return [S.id,S.lt,S.en,data.filter(function(x){return x.p.t===S.id;}).length];}));
+  document.getElementById("tabs").innerHTML=tabs.map(function(t){return '<button type="button" role="tab" data-view="'+t[0]+'" aria-selected="'+(VIEW===t[0])+'"><span>'+t[1]+'<b>'+t[3]+'</b></span><small>'+t[2]+'</small></button>';}).join("");
+  STAGES.filter(function(S){return VIEW==="all"||S.id===VIEW;}).forEach(function(S){
     var inS=list.filter(function(x){return x.p.t===S.id;}),all=data.filter(function(x){return x.p.t===S.id;});
     var lateS=all.filter(function(x){return days(x.p.d)<0;}).length,cells="",body="";
     S.groups.forEach(function(gid){
@@ -408,11 +421,12 @@ function render(){
     if(inS.length)g+='<div class="stage" id="st-'+S.id+'"><h2 class="stage-h">'+S.lt+' <em>/ '+S.en+'</em><span class="n">'+inS.length+(Q?' / '+all.length:'')+'</span></h2>'+body+'</div>';
   });
   document.getElementById("sum").innerHTML=sum;
-  document.getElementById("late").innerHTML='<b>'+late+'</b> iš '+data.length+' atvirų projektų vėluoja · '+late+' of '+data.length+' open projects are past due';
+  document.getElementById("late").innerHTML='<b>'+late+'</b> iš '+B.length+' atvirų projektų vėluoja · '+late+' of '+B.length+' open projects are past due';
+  if(!Q&&!B.length&&data.length)g='<div class="state">Šioje dalyje atvirų projektų nėra / No open projects here</div>';
   if(!Q&&!data.length)g='<div class="state">Atvirų projektų nėra / No open projects</div>';
   if(Q&&!list.length)g='<div class="none">Nieko nerasta pagal „'+esc(Q)+'“<br>Nothing found for “'+esc(Q)+'”<br><button type="button" class="btn" data-clear>Rodyti visus / Show all</button></div>';
   document.getElementById("groups").innerHTML=g;
-  document.getElementById("res").innerHTML=Q?(list.length?'Rasta <b>'+list.length+'</b> iš '+data.length+' · Found '+list.length+' of '+data.length:''):'';
+  document.getElementById("res").innerHTML=Q?(list.length?'Rasta <b>'+list.length+'</b> iš '+B.length+' · Found '+list.length+' of '+B.length:''):'';
 }
 /* language */
 function setLang(l){document.body.classList.remove("both","lang-lt","lang-en");document.body.classList.add(l==="both"?"both":"lang-"+l);
@@ -420,6 +434,9 @@ function setLang(l){document.body.classList.remove("both","lang-lt","lang-en");d
   try{localStorage.setItem("pa.lang",l);}catch(e){} }
 var L="both";try{L=localStorage.getItem("pa.lang")||"both";}catch(e){}
 setLang(L);head();
+document.getElementById("tabs").addEventListener("click",function(e){var b=e.target.closest("[data-view]");if(!b||b.dataset.view===VIEW)return;
+  VIEW=b.dataset.view;try{localStorage.setItem("pa.view",VIEW);}catch(err){}editing=null;render();
+  var top=document.getElementById("sum");if(top&&top.getBoundingClientRect().top<0)top.scrollIntoView({block:"start"});});
 var qi=document.getElementById("q");
 qi.addEventListener("input",function(){Q=qi.value.trim();editing=null;render();});
 qi.addEventListener("keydown",function(e){if(e.key==="Escape"){Q="";qi.value="";render();}});
@@ -437,7 +454,8 @@ document.getElementById("groups").addEventListener("submit",function(e){e.preven
 function plain(){
   var langs=L==="both"?["lt","en"]:[L],out=[];
   langs.forEach(function(lg){var lt=lg==="lt";
-    out.push((lt?"PROJEKTŲ APŽVALGA – ":"PROJECT OVERVIEW – ")+TODAY);
+    var Sv=STAGES.filter(function(S){return S.id===VIEW;})[0];
+    out.push((lt?"PROJEKTŲ APŽVALGA":"PROJECT OVERVIEW")+(Sv?" · "+(lt?Sv.lt:Sv.en).toUpperCase():"")+" – "+TODAY);
     STAGES.forEach(function(S){var inS=shown().filter(function(x){return x.p.t===S.id;});if(!inS.length)return;
       out.push("");out.push("=== "+(lt?S.lt:S.en).toUpperCase()+" ("+inS.length+") ===");
     S.groups.forEach(function(gid){var G=grp(gid),xs=inS.filter(function(x){return x.a.grp===gid;}).sort(byDue);if(!xs.length)return;
