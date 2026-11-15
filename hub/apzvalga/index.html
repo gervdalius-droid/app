@@ -49,7 +49,13 @@ button{font:inherit;color:inherit}
 .btn:hover{border-color:var(--ink)}
 
 /* summary strip */
-.sum{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
+.sums{display:grid;grid-template-columns:1fr;gap:12px}
+.ssum{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ssum .st{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;text-decoration:none;color:var(--ink);font-weight:700;font-size:15px;padding:0 2px}
+.ssum .st em{font-style:normal;font-weight:500;color:var(--muted)}
+.ssum .st b{font:600 13px/1 var(--mono);color:var(--faint);margin-left:auto}
+.ssum .lt8{font:600 12px/1 var(--mono);color:var(--blocked)}
+.sum{display:grid;grid-template-columns:repeat(var(--n,4),minmax(0,1fr));border:1px solid var(--line);border-radius:12px;background:var(--surface);overflow:hidden}
 .sum a{display:flex;flex-direction:column;gap:2px;padding:12px 14px;text-decoration:none;color:var(--ink);border-left:1px solid var(--line-2);min-width:0}
 .sum a:first-child{border-left:0}
 .sum a:hover{background:var(--bg)}
@@ -58,15 +64,19 @@ button{font:inherit;color:inherit}
 .sum i{display:inline-block;width:10px;height:4px;margin-right:6px;vertical-align:3px}
 .late{display:flex;align-items:center;gap:8px;font-size:14px;color:var(--muted)}
 .late b{color:var(--blocked);font-variant-numeric:tabular-nums}
-@media (max-width:620px){.sum{grid-template-columns:repeat(3,minmax(0,1fr))}.sum a:nth-child(4){border-left:0}.sum a:nth-child(n+4){border-top:1px solid var(--line-2)}}
+@media (max-width:420px){.sum a{padding:10px 9px}.sum b{font-size:22px}.sum small{font-size:11.5px}}
 
 /* groups */
-section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:12px}
-section>h2{margin:8px 0 0;display:flex;align-items:baseline;gap:10px;font-size:19px;font-weight:700;letter-spacing:-.01em}
-section>h2 em{font-style:normal;font-weight:500;color:var(--muted);font-size:15px}
-@media (max-width:620px){section>h2{flex-wrap:wrap}section>h2 em{order:3;flex-basis:100%;padding-left:22px;margin-top:-6px}}
-section>h2 .n{font:600 13px/1 var(--mono);color:var(--faint);margin-left:auto}
-section>h2::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--g);flex:none;align-self:center}
+.stage{display:flex;flex-direction:column;gap:22px;scroll-margin-top:70px}
+.stage-h{margin:6px 0 0;padding-top:16px;border-top:2px solid var(--ink);display:flex;align-items:baseline;gap:10px;font-size:24px;font-weight:800;letter-spacing:-.02em}
+.stage-h em{font-style:normal;font-weight:500;color:var(--muted);font-size:17px}
+.stage-h .n{font:600 14px/1 var(--mono);color:var(--faint);margin-left:auto}
+section{display:flex;flex-direction:column;gap:10px;scroll-margin-top:70px}
+section>h3{margin:8px 0 0;display:flex;align-items:baseline;gap:10px;font-size:19px;font-weight:700;letter-spacing:-.01em}
+section>h3 em{font-style:normal;font-weight:500;color:var(--muted);font-size:15px}
+@media (max-width:620px){section>h3,.stage-h{flex-wrap:wrap}section>h3 em,.stage-h em{order:3;flex-basis:100%;padding-left:22px;margin-top:-6px}.stage-h em{padding-left:0;margin-top:-4px}}
+section>h3 .n{font:600 13px/1 var(--mono);color:var(--faint);margin-left:auto}
+section>h3::before{content:"";width:12px;height:12px;border-radius:3px;background:var(--g);flex:none;align-self:center}
 .gsub{margin:-4px 0 2px;color:var(--muted);font-size:13.5px}
 
 /* project card */
@@ -162,7 +172,7 @@ textarea.copy{position:absolute;left:-9999px}
       <input type="search" id="q" autocomplete="off" spellcheck="false" placeholder="Ieškoti projekto, kliento, numerio… / Search project, client, number…" aria-label="Ieškoti projektų / Search projects"></label>
     <div class="res" id="res" aria-live="polite"></div>
   </div>
-  <nav class="sum" id="sum" aria-label="Santrauka / Summary"></nav>
+  <div class="sums" id="sum" aria-label="Santrauka / Summary"></div>
   <div class="late" id="late"></div>
   <div class="legend" aria-hidden="true">
     <span><i style="background:var(--done)"></i>atlikta / done</span>
@@ -273,8 +283,8 @@ function analyse(p){
   var started=p.s.some(function(x){return x[1]!=="queued";});
   var grp;
   if(blocked.length)grp="stuck";
-  else if(p.t==="eng")grp="design";
   else if(!started)grp="waiting";
+  else if(p.t==="eng")grp="design";
   else if(left.length&&left.every(function(g){return FINAL.indexOf(g.name)>=0&&g.status==="queued";}))grp="almost";
   else grp="prod";
   return {sts:sts,pct:pct,blocked:blocked,cur:cur,left:left,doneSt:doneSt,grp:grp};
@@ -306,6 +316,9 @@ function sentence(p,a,lang){
     out.push(lt?"Sustota etape "+list(b,"ir")+".":"Stuck at "+list(b,"and")+".");
     var rest=a.left.filter(function(g){return g.status!=="blocked";});
     if(rest.length&&p.t==="prod")out.push((lt?"Po to liko: ":"After that: ")+list(rest.map(function(g){return st(g.name,lt?0:2);}),lt?"ir":"and")+".");
+  }else if(a.grp==="waiting"&&p.t==="eng"){
+    out.push(lt?"Projektavimas dar nepradėtas.":"Design not started yet.");
+    out.push((lt?"Pirmas žingsnis – ":"First step: ")+q(a.sts[0].name,lang)+".");
   }else if(a.grp==="waiting"){
     out.push(lt?"Gamyba dar nepradėta.":"Production not started yet.");
     out.push(lt?"Etapų: "+a.sts.length+".":a.sts.length+" steps planned.");
@@ -330,11 +343,15 @@ function dueTxt(d,lang){var n=days(d),lt=lang==="lt";
   if(n<=3)return lt?"po "+n+" d.":"in "+n+" days";
   return d.slice(5);}
 
+var STAGES=[
+ {id:"eng",lt:"Projektavimas",en:"Engineering",groups:["stuck","design","waiting"]},
+ {id:"prod",lt:"Gamyba",en:"Manufacturing",groups:["stuck","almost","prod","waiting"]}
+];
 var GROUPS=[
- {id:"stuck",lt:"Stringa – reikia sprendimo",en:"Stuck – needs a decision",c:"var(--blocked)",subLt:"Darbas sustojęs. Žemiau – ko reikia, kad judėtų toliau.",subEn:"Work has stopped. Below is what is needed to move on."},
+ {id:"stuck",sLt:"Stringa",sEn:"Stuck",lt:"Stringa – reikia sprendimo",en:"Stuck – needs a decision",c:"var(--blocked)",subLt:"Darbas sustojęs. Žemiau – ko reikia, kad judėtų toliau.",subEn:"Work has stopped. Below is what is needed to move on."},
  {id:"almost",lt:"Beveik baigta",en:"Almost done",c:"var(--done)",subLt:"Pagaminta, liko paskutiniai žingsniai.",subEn:"Made, only the last steps left."},
  {id:"prod",lt:"Gamyboje",en:"In production",c:"var(--run)"},
- {id:"design",lt:"Projektavimas",en:"Design",c:"#6f7f99"},
+ {id:"design",lt:"Projektuojama",en:"In design",c:"#6f7f99"},
  {id:"waiting",lt:"Dar nepradėta",en:"Not started yet",c:"var(--queued)"}
 ];
 var editing=null;
@@ -343,8 +360,7 @@ function byDue(x,y){return x.p.d<y.p.d?-1:x.p.d>y.p.d?1:0;}
 
 function card(x){
   var p=x.p,a=x.a,n=days(p.d),h="";
-  h+='<article class="card" id="p-'+esc(p.n)+'"><div class="top"><div class="ttl"><b>'+esc(p.c||p.p)+'</b><small>'+(p.c&&p.c!==p.p?esc(p.p)+" · ":"")+esc(p.n)+'</small>'+
-     (p.t==="eng"?'<span class="kind" title="ShopFlow: Projektavimo lenta / Design board">Projektavimas / Design</span>':'')+'</div>'+
+  h+='<article class="card" id="p-'+esc(p.n)+'"><div class="top"><div class="ttl"><b>'+esc(p.c||p.p)+'</b><small>'+(p.c&&p.c!==p.p?esc(p.p)+" · ":"")+esc(p.n)+'</small>'+'</div>'+
      '<span class="due'+(n<0?" l":n<=3?" s":"")+'" title="Terminas / Due '+esc(p.d)+'"><span class="lt">'+esc(dueTxt(p.d,"lt"))+'</span><span class="en">'+esc(dueTxt(p.d,"en"))+'</span></span></div>';
   h+='<div class="strip"><div class="steps" role="img" aria-label="'+esc(a.sts.map(function(g){return g.name+": "+g.status;}).join(", "))+'">'+
      p.s.map(function(s){return '<span class="'+s[1]+'" title="'+esc(s[0])+'"></span>';}).join("")+'</div><span class="pct">'+a.pct+'%</span></div>';
@@ -363,7 +379,7 @@ function card(x){
 var Q="";
 function norm(t){return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");}
 function hay(x){var p=x.p,a=x.a,G=GROUPS.filter(function(g){return g.id===a.grp;})[0];
-  return norm([p.n,p.p,p.c,p.d,sentence(p,a,"lt"),sentence(p,a,"en"),G.lt,G.en,p.k,NOTES[p.id]&&NOTES[p.id].t,
+  return norm([p.t==="eng"?"projektavimas engineering":"gamyba manufacturing",p.n,p.p,p.c,p.d,sentence(p,a,"lt"),sentence(p,a,"en"),G.lt,G.en,p.k,NOTES[p.id]&&NOTES[p.id].t,
     p.s.map(function(s){return s[0]+" "+(s[2]||"");}).join(" "),days(p.d)<0?"veluoja late":""].join(" "));}
 function shown(){var w=norm(Q).split(/\s+/).filter(Boolean);if(!w.length)return data;
   return data.filter(function(x){var h=hay(x);return w.every(function(t){return h.indexOf(t)>=0;});});}
@@ -374,14 +390,22 @@ function mark(html){var w=norm(Q).split(/\s+/).filter(function(t){return t.lengt
     if(!hits.length)return m;hits.sort(function(a,b){return a[0]-b[0];});
     hits.forEach(function(h){if(h[0]<i)return;out+=txt.slice(i,h[0])+"<mark>"+txt.slice(h[0],h[1])+"</mark>";i=h[1];});
     return tag+out+txt.slice(i);});}
+function grp(id){return GROUPS.filter(function(G){return G.id===id;})[0];}
 function render(){
   var list=shown(),sum="",g="",late=data.filter(function(x){return days(x.p.d)<0;}).length;
-  GROUPS.forEach(function(G){
-    var xs=list.filter(function(x){return x.a.grp===G.id;}).sort(byDue);
-    sum+='<a href="#g-'+G.id+'"><b>'+xs.length+'</b><small><i style="background:'+G.c+'"></i>'+G.lt+'<br>'+G.en+'</small></a>';
-    if(!xs.length)return;
-    g+='<section id="g-'+G.id+'" style="--g:'+G.c+'"><h2>'+G.lt+' <em>/ '+G.en+'</em><span class="n">'+xs.length+'</span></h2>'+
-       (G.subLt&&!Q?'<p class="gsub"><span class="lt">'+G.subLt+'</span> <span class="en">'+G.subEn+'</span></p>':"")+xs.map(function(x){return mark(card(x));}).join("")+'</section>';
+  STAGES.forEach(function(S){
+    var inS=list.filter(function(x){return x.p.t===S.id;}),all=data.filter(function(x){return x.p.t===S.id;});
+    var lateS=all.filter(function(x){return days(x.p.d)<0;}).length,cells="",body="";
+    S.groups.forEach(function(gid){
+      var G=grp(gid),xs=inS.filter(function(x){return x.a.grp===gid;}).sort(byDue),anchor="g-"+S.id+"-"+gid;
+      cells+='<a href="#'+anchor+'"><b>'+xs.length+'</b><small><i style="background:'+G.c+'"></i>'+(G.sLt||G.lt)+'<br>'+(G.sEn||G.en)+'</small></a>';
+      if(!xs.length)return;
+      body+='<section id="'+anchor+'" style="--g:'+G.c+'"><h3>'+G.lt+' <em>/ '+G.en+'</em><span class="n">'+xs.length+'</span></h3>'+
+        (G.subLt&&!Q?'<p class="gsub"><span class="lt">'+G.subLt+'</span> <span class="en">'+G.subEn+'</span></p>':"")+xs.map(function(x){return mark(card(x));}).join("")+'</section>';
+    });
+    sum+='<div class="ssum"><a class="st" href="#st-'+S.id+'">'+S.lt+' <em>/ '+S.en+'</em><b>'+all.length+'</b>'+(lateS?'<span class="lt8">'+lateS+' vėluoja / late</span>':'')+'</a>'+
+         '<nav class="sum" style="--n:'+S.groups.length+'" aria-label="'+S.lt+' / '+S.en+'">'+cells+'</nav></div>';
+    if(inS.length)g+='<div class="stage" id="st-'+S.id+'"><h2 class="stage-h">'+S.lt+' <em>/ '+S.en+'</em><span class="n">'+inS.length+(Q?' / '+all.length:'')+'</span></h2>'+body+'</div>';
   });
   document.getElementById("sum").innerHTML=sum;
   document.getElementById("late").innerHTML='<b>'+late+'</b> iš '+data.length+' atvirų projektų vėluoja · '+late+' of '+data.length+' open projects are past due';
@@ -414,12 +438,15 @@ function plain(){
   var langs=L==="both"?["lt","en"]:[L],out=[];
   langs.forEach(function(lg){var lt=lg==="lt";
     out.push((lt?"PROJEKTŲ APŽVALGA – ":"PROJECT OVERVIEW – ")+TODAY);
-    GROUPS.forEach(function(G){var xs=shown().filter(function(x){return x.a.grp===G.id;}).sort(byDue);if(!xs.length)return;
-      out.push("");out.push((lt?G.lt:G.en).toUpperCase()+" ("+xs.length+")");
+    STAGES.forEach(function(S){var inS=shown().filter(function(x){return x.p.t===S.id;});if(!inS.length)return;
+      out.push("");out.push("=== "+(lt?S.lt:S.en).toUpperCase()+" ("+inS.length+") ===");
+    S.groups.forEach(function(gid){var G=grp(gid),xs=inS.filter(function(x){return x.a.grp===gid;}).sort(byDue);if(!xs.length)return;
+      out.push("");out.push((lt?G.lt:G.en)+" ("+xs.length+")");
       xs.forEach(function(x){var p=x.p,a=x.a,line="• "+(p.c&&p.c!==p.p?p.c+" · ":"")+p.p+" ("+p.n+", "+dueTxt(p.d,lg)+") – "+sentence(p,a,lg);
         a.blocked.forEach(function(g){if(g.note)line+=" "+(lt?"Reikia: ":"Needed: ")+g.note;});
         if(NOTES[p.id]&&NOTES[p.id].t)line+=" "+(lt?"Trūksta: ":"Missing: ")+NOTES[p.id].t;
         out.push(line);});
+    });
     });
     out.push("");
   });
