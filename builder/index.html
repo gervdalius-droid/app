@@ -1821,16 +1821,16 @@ function buildCabinet(c, idx, projName) {
     var Hi = topFull ? H - 2*t : (backH ? H - 2*t : H - t);
     var jbi = joint('back', Hi, 'back', 'nugara viduje'); backType = jbi.has('confirmat') ? 'confirmat' : jbi.type;
     if (cols === 1) {
-      var Li = W - 2*t, pi = panel(nm('NUGARA'), 'NUGARA', Li, Hi, t, 'tarp šonų, išorė viršuje, apatinis kraštas Y=0');
+      var Li = W - 2*t, pi = panel(nm('NUGARA'), 'NUGARA', Li, Hi, t, 'tarp šonų, vidinė pusė viršuje, apatinis kraštas Y=0');
       seam('back', [t, yBk - t/2, t], Z, Hi);
       endJoint(pi, Li, jbi, 'A', function (a) { return { x:a, yf:yBk - t/2 }; });
-      place(pi, [t, yBk, t], X, Z, Y); pi.mat = mBack; backPanels.push(pi);
+      place(pi, [t, yBk - t, t], X, Z, neg(Y)); pi.mat = mBack; backPanels.push(pi);   // face A = the inner face: the cams are inside the cabinet, nothing shows from behind
     } else for (var kc = 0; kc < cols; kc++) {
       if (!inBack(kc)) continue;
-      var Lk = ix1(kc) - ix0(kc), pc = panel(nm('NUGARA' + (kc + 1)), 'NUGARA', Lk, Hi, t, 'kolona ' + (kc + 1) + ', tarp šono/pertvaros, išorė viršuje, apatinis kraštas Y=0');
+      var Lk = ix1(kc) - ix0(kc), pc = panel(nm('NUGARA' + (kc + 1)), 'NUGARA', Lk, Hi, t, 'kolona ' + (kc + 1) + ', tarp šono/pertvaros, vidinė pusė viršuje, apatinis kraštas Y=0');
       endJoint(pc, Lk, jbi, 'A', function (a) { return { x:a, yf:yBk - t/2 }; }, tgL(kc), tgR(kc));
       seamS('back', 'L', [ix0(kc), yBk - t/2, t], Z, Hi); seamS('back', 'R', [ix1(kc), yBk - t/2, t], Z, Hi);
-      place(pc, [ix0(kc), yBk, t], X, Z, Y); pc.mat = mBack; backPanels.push(pc);
+      place(pc, [ix0(kc), yBk - t, t], X, Z, neg(Y)); pc.mat = mBack; backPanels.push(pc);
     }
   }
   /* plaušas (HDF): nailed on the back, no CNC work; neighbouring columns with plaušas share one sheet */
