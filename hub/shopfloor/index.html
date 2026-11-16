@@ -889,7 +889,20 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
 #office-in{width:max-content;margin:4px auto 28px;display:flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line-2,var(--line));border-radius:999px;background:transparent;color:var(--muted);font:500 12.5px/1 var(--mono,ui-monospace,monospace);cursor:pointer}
 #office-in svg{width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:1.4}
 #office-in:hover{color:var(--ink);border-color:var(--ink)}
-@media print{#office-pc,#office-in,.lk{display:none}}
+/* waiting requests — same box as the number badge, filled with the accent so it is seen */
+.nb{display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 9px 0 8px;margin-left:auto;
+  font:600 11px/1 'IBM Plex Mono',ui-monospace,Menlo,monospace;letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;
+  color:var(--on-accent);background:var(--accent);border-radius:min(var(--r),7px)}
+.nb svg{width:13px;height:13px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nb + .kbd,.nb + .lk{margin-left:6px !important}
+.nb.float{position:absolute;top:12px;right:12px;z-index:2}
+a.nb-host{position:relative}
+.M-ico{position:relative}
+.nb.dot{position:absolute;top:-7px;right:-7px;height:22px;min-width:22px;padding:0 6px;margin:0;justify-content:center;
+  border-radius:999px;font-size:12px;letter-spacing:0;box-shadow:0 0 0 2px var(--bg)}
+@media (prefers-reduced-motion:no-preference){.nb{animation:nb-in .35s cubic-bezier(.3,.7,.1,1)}}
+@keyframes nb-in{from{transform:scale(.6);opacity:0}}
+@media print{#office-pc,#office-in,.lk,.nb{display:none}}
 </style>
 <script>
 (function(){
@@ -942,10 +955,50 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
     var keys=(st.locked?[]:[KEY]).concat([DEF]),n=0,any=false;
     keys.forEach(function(k){roleOf(k,function(ok){any=any||ok;if(++n===keys.length)cb(any);});});
   }
+  /* ---- Prašymai: how many requests wait for a decision (Vadyba only) ----
+     Sent by workers but not yet taken into the registry + registry ones still "Pateiktas".
+     Asked at most once a minute; the database decides who may read them. */
+  var REQ='https://app.dedesbaldai.lt/hub/prasymai/', NB='hub.prasymai.waiting', BELL='<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 11.5V7a4 4 0 0 1 8 0v4.5l1.2 1.3H2.8zM6.6 14.2a1.6 1.6 0 0 0 2.8 0"/></svg>';
+  var waitN=+(ls(NB)||0)||0, waitAt=0, waitBusy=false, waitOk=false;
+  function waitFetch(){
+    if(waitBusy||Date.now()-waitAt<60000||typeof fetch!=='function')return;
+    var st=state(),t=(!st.locked&&tok(KEY))||tok(DEF);if(!t)return;
+    waitBusy=true;waitAt=Date.now();
+    var h={apikey:AK,Authorization:'Bearer '+t};
+    function get(q){return fetch(API+'/rest/v1/'+q,{headers:h}).then(function(r){if(!r.ok)throw new Error(r.status);return r.json();});}
+    Promise.all([get('prasymai_inbox?select=id'),get('workspaces?id=eq.dedes-prasymai&select=r:data->requests')]).then(function(x){
+      var reg=(x[1][0]&&x[1][0].r)||{},n=0,seen={};
+      Object.keys(reg).forEach(function(k){var r=reg[k];seen[k]=1;if(r&&(r.status||'pateiktas')==='pateiktas')n++;});
+      (x[0]||[]).forEach(function(i){if(!seen[i.id])n++;});
+      waitN=n;try{localStorage.setItem(NB,String(n));}catch(e){}
+      waitBusy=false;paintWait();
+    },function(){waitBusy=false;});
+  }
+  function paintWait(){
+    var n=waitOk?waitN:0;
+    document.querySelectorAll('a[href]').forEach(function(a){
+      if(a.href.split(/[?#]/)[0]!==REQ)return;
+      var b=a.querySelector('.nb');
+      if(!n){if(b)b.remove();a.classList.remove('nb-host');return;}
+      var phone=a.querySelector('.M-ico'),txt=n>99?'99+':String(n);
+      if(!b){b=document.createElement('span');
+        if(phone){b.className='nb dot';phone.appendChild(b);}
+        else{var k=a.querySelector('.lk')||a.querySelector('.kbd');
+          if(k&&k.parentNode){b.className='nb';k.parentNode.insertBefore(b,k);}else{b.className='nb float';a.classList.add('nb-host');a.appendChild(b);}}}
+      var en=document.documentElement.lang==='en',one=n%10===1&&n%100!==11,few=n%10>=2&&(n%100<10||n%100>20);
+      var word=en?'new':one?'naujas':few?'nauji':'naujų';
+      var html=phone?txt:BELL+'<span>'+txt+' '+word+'</span>';
+      if(b.innerHTML!==html)b.innerHTML=html;
+      var say=en?n+' waiting for a decision':n+' laukia sprendimo';
+      b.setAttribute('role','status');b.setAttribute('aria-label',say);b.title=say;
+    });
+  }
+  window.addEventListener('focus',function(){waitAt=Math.min(waitAt,Date.now()-45000);});
   function decorate(){
     officeAllowed(function(ok){
       if(window.hubOffice)window.hubOffice(ok);
       lbl.hidden=!ok;inBtn.hidden=ok;
+      waitOk=ok;if(ok)waitFetch();paintWait();
     });
     var st=state();
     document.querySelectorAll('a[href]').forEach(function(a){
@@ -963,7 +1016,7 @@ a[data-locked]:hover [class*="-ico"],a[data-locked]:focus-visible [class*="-ico"
     var cb=document.querySelector('#office-pc input');if(cb)cb.checked=!!st.pc;
   }
   var t=null;new MutationObserver(function(m){
-    if(m.every(function(x){return x.target.closest&&x.target.closest('.lk');}))return;   // ignore our own badge updates
+    if(m.every(function(x){return x.target.closest&&x.target.closest('.lk,.nb');}))return;   // ignore our own badge updates
     clearTimeout(t);t=setTimeout(decorate,30);
   }).observe(document.documentElement,{childList:true,subtree:true});
   window.addEventListener('storage',decorate);window.addEventListener('focus',decorate);setInterval(decorate,15000);
