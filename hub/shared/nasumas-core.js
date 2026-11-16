@@ -114,7 +114,11 @@
         var h = stdH(cfg, cat, qty), done = op.status === "done";
         g.ops.push({ qty: qty, stdH: h, done: done, at: +op.completedAt || 0, who: (Array.isArray(op.assigneeIds) && op.assigneeIds.length ? op.assigneeIds : (op.assigneeId ? [op.assigneeId] : [])), logged: +op.loggedMs || 0 });
         g.qty += qty; g.stdH += h;
-        if (done) { g.doneQty += qty; g.doneH += h; g.at = Math.max(g.at, +op.completedAt || 0); } else g.allDone = false;
+        /* a running step counts for the pieces already marked (the Startech scans raise qtyDone as they go) */
+        var iq = 0; (o.items || []).forEach(function (i) { if (i && i.id === op.itemId) iq = +i.qty || 0; });
+        var frac = done ? 1 : (iq > 0 ? Math.min(1, Math.max(0, (+op.qtyDone || 0) / iq)) : 0);
+        if (frac > 0) { g.doneQty += qty * frac; g.doneH += h * frac; }
+        if (done) g.at = Math.max(g.at, +op.completedAt || 0); else g.allDone = false;
       });
       ORDER.forEach(function (c) { if (by[c]) out.push(by[c]); });
     });
@@ -136,11 +140,16 @@
       var mine = sess.filter(function (x) { return x.cats.indexOf(g.cat) >= 0 && prMatches(x.pr, g.order) && x.a <= lim; });
       var tot = 0; mine.forEach(function (x) { tot += x.ms; });
       job.started = tot > 0 || g.doneH > 0; job.actualMs = tot;
-      if (g.doneH > 0 && tot >= 6e5) {
+      /* Live: while a step is still running, the marked time earns normed hours one for one until the
+         step's norm is used up (so it shows 100 % while inside the norm and drops once over it).
+         When the step is marked done the real figure replaces it: the whole norm ÷ the whole time. */
+      var liveH = g.allDone ? g.doneH : Math.max(g.doneH, Math.min(g.stdH, tot / 36e5));
+      job.live = !g.allDone && tot > 0; job.creditH = liveH;
+      if (liveH > 0 && tot >= 6e5) {
         job.measured = true;
         mine.forEach(function (x) {
           var f = x.ms / tot;
-          credits.push({ n: x.n, t: x.a, cat: g.cat, label: g.label, h: g.doneH * f, qty: g.doneQty * f, ms: x.ms, measured: true, open: !g.allDone });
+          credits.push({ n: x.n, t: x.a, cat: g.cat, label: g.label, h: liveH * f, qty: (g.stdH > 0 ? g.qty * liveH / g.stdH : 0) * f, ms: x.ms, measured: true, open: !g.allDone });
           if (job.people.indexOf(x.n) < 0) job.people.push(x.n);
         });
       } else if (g.doneH > 0) {
@@ -157,7 +166,7 @@
           if (timed) { job.actualMs += op.logged; job.measured = true; }
         });
       }
-      job.eff = job.measured && job.actualMs > 0 ? job.doneH / (job.actualMs / 36e5) : null;
+      job.eff = job.measured && job.actualMs > 0 ? (job.creditH || job.doneH) / (job.actualMs / 36e5) : null;
       jobs.push(job);
     });
     /* finishing and packing have no norm: the time counts as worked hours, one for one.

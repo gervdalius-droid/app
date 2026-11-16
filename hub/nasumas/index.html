@@ -127,7 +127,7 @@ async function loadAll(){
     /* stretches still open on the plan right now */
     var now=Date.now();Object.keys(st.people||{}).forEach(function(pid){var p=st.people[pid],at=p&&(p.at||p.pat);if(!at||!(+p.ts>0)||p.pz)return;
       var a=+p.ts,e=new Date(a).setHours(17,0,0,0),b=a<e?Math.min(now,e):Math.min(now,new Date(a).setHours(23,59,59,0)),id=pid+'_'+a;
-      if(!all[id])all[id]={n:String(p.n||''),s:at,pr:String(p.pr||''),a:a,b:Math.max(a,b)}});
+      if(!all[id])all[id]={n:String(p.n||''),s:at,pr:String(p.pr||''),a:a,b:Math.max(a,b),live:1}});
     D={orders:Array.isArray(sf.orders)?sf.orders:[],members:Array.isArray(sf.members)?sf.members:[],stations:Array.isArray(sf.stations)?sf.stations:[],
       sessions:Object.keys(all).map(function(k){return all[k]}),items:lay.items||{},breaks:Array.isArray(st.breaks)?st.breaks:DEF_BREAKS,
       saved:res[2]&&res[2][0]&&res[2][0].data||null,at:Date.now()};
@@ -143,6 +143,7 @@ function vResults(){
   var r=calc(period),t=r.team,rg=range(period);
   var P=[['today',L('Šiandien','Today')],['yest',L('Vakar','Yesterday')],['week',L('Ši savaitė','This week')],['lweek',L('Praeita savaitė','Last week')],['month',L('Šis mėnuo','This month')],['lmonth',L('Praeitas mėnuo','Last month')]];
   var h='<div class="row">'+P.map(function(p){return'<button type="button" class="chip'+(period===p[0]?' on':'')+'" data-per="'+p[0]+'">'+p[1]+'</button>'}).join('')+'</div>';
+  h+=nowCard();
   h+='<div class="tiles">'+
     tile(L('Komandos našumas','Team performance'),pct(t.perf),t.perf==null?L('nėra baigtų normuotų darbų su pažymėtu laiku','no finished normed work with marked time'):L('normuotos h ÷ faktinės h','normed h ÷ actual h'),pc(t.perf))+
     tile(L('Normuotos valandos','Normed hours'),num(t.earnedH)+' h',num(t.measuredH)+' h '+L('per','in')+' '+hrs(t.normedMs)+' h'+(t.hoursH>0?' · '+L('iš jų apdaila ir pakavimas ','incl. finishing and packing ')+num(t.hoursH)+' h':'')+(t.looseH>0?' · '+num(t.looseH)+' h '+L('be pažymėto laiko','without marked time'):''))+
@@ -160,12 +161,31 @@ function vResults(){
   if(!jobs.length)h+='<p class="note">'+L('Šiuo laikotarpiu baigtų ar vykstančių normuotų etapų nėra.','No finished or running normed steps in this period.')+'</p>';
   else{h+='<div class="scroll"><table><thead><tr><th>'+L('Projektas','Project')+'</th><th>'+L('Etapas','Step')+'</th><th class="r">'+L('Kiekis','Quantity')+'</th><th class="r">'+L('Norma, h','Norm, h')+'</th><th class="r">'+L('Faktas, h','Actual, h')+'</th><th>'+L('Našumas','Performance')+'</th><th>'+L('Kas','Who')+'</th><th>'+L('Būsena','Status')+'</th></tr></thead><tbody>';
     jobs.forEach(function(j){var u=N.DEF.ops[j.cat].unit;
-      var stt=j.allDone?'<span class="pill good">'+L('baigta','done')+' '+dshort(j.at)+'</span>':j.doneH>0?'<span class="pill mid">'+L('dalis baigta','partly done')+'</span>':'<span class="pill na">'+L('vyksta','running')+'</span>';
+      var stt=j.allDone?'<span class="pill good">'+L('baigta','done')+' '+dshort(j.at)+'</span>':j.live?'<span class="pill mid">'+L('vyksta','running')+'</span>':j.doneH>0?'<span class="pill mid">'+L('dalis baigta','partly done')+'</span>':'<span class="pill na">'+L('vyksta','running')+'</span>';
       h+='<tr><td><b>'+esc(j.label)+'</b></td><td>'+esc(opName(j.cat))+'</td><td class="r">'+num(j.qty)+' '+u+'</td><td class="r">'+num(j.stdH)+'</td><td class="r">'+(j.actualMs?hrs(j.actualMs):'–')+'</td><td>'+(j.eff!=null?'<div class="perf">'+meter(j.eff)+'<span class="pv '+pc(j.eff)+'">'+pct(j.eff)+'</span></div>':'<span class="na">'+(j.doneH>0?L('laikas nepažymėtas','no time marked'):'–')+'</span>')+'</td><td>'+esc(j.people.join(', ')||'–')+'</td><td>'+stt+'</td></tr>'});
     h+='</tbody></table></div>'}
   h+='</section>';
   return h;
 }
+/* who is working right now, and whether that work is counted — so a quiet screen explains itself */
+function nowCard(){
+  var live=D.sessions.filter(function(x){return x.live&&Date.now()-x.b<12e4});
+  var h='<section class="card"><h2>'+L('Dabar dirba','Working now')+'</h2>';
+  if(!live.length)return h+'<p class="note">'+L('Plane šiuo metu niekas nepažymėtas.','Nobody is marked on the plan right now.')+'</p></section>';
+  var G=N.groups(D.orders,D.stations,D.cfg);
+  h+='<div class="scroll"><table><thead><tr><th>'+L('Darbuotojas','Worker')+'</th><th>'+L('Vieta','Place')+'</th><th>'+L('Projektas','Project')+'</th><th class="r">'+L('Nuo','Since')+'</th><th class="r">'+L('Laikas, h','Time, h')+'</th><th>'+L('Kaip skaičiuojama','How it counts')+'</th></tr></thead><tbody>';
+  live.sort(function(a,b){return a.n.localeCompare(b.n,'lt')}).forEach(function(x){
+    var it=D.items[x.s]||{},cats=N.placeCats(it),hc=(it.t==='desk'||it.t==='booth')?N.hourCat(it.n,it.t):null,how;
+    var g=G.filter(function(q){return cats.indexOf(q.cat)>=0&&N.norm(x.pr)&&(N.norm(x.pr)===N.norm(q.label)||N.norm(x.pr).indexOf(N.norm(q.order.num)+' ')===0)})[0];
+    if(hc)how='<span class="pill good">'+L('darbo valandos','worked hours')+'</span>';
+    else if(g)how=g.allDone?'<span class="pill na">'+L('etapas jau užbaigtas ShopFlow','step already finished in ShopFlow')+'</span>':'<span class="pill good">'+L('pagal normą: ','by norm: ')+esc(opName(g.cat))+' '+num(g.stdH)+' h</span>';
+    else if(!x.pr)how='<span class="pill mid">'+L('projektas nepasirinktas','no project chosen')+'</span>';
+    else if(!cats.length)how='<span class="pill na">'+L('vieta nenormuojama','place has no norm')+'</span>';
+    else how='<span class="pill mid">'+L('projektas be reportlist','project has no report list')+'</span>';
+    h+='<tr><td><b>'+esc(x.n)+'</b></td><td>'+esc(it.n||NAMES[it.t]||x.s)+'</td><td>'+esc(x.pr||'–')+'</td><td class="r">'+new Date(x.a).toLocaleTimeString('lt-LT',{hour:'2-digit',minute:'2-digit'})+'</td><td class="r">'+hrs(N.netMs(x.a,x.b,D.breaks))+'</td><td>'+how+'</td></tr>'});
+  return h+'</tbody></table></div><p class="note">'+L('Puslapis atsinaujina kas minutę. Vykstantis normuotas etapas skaičiuojamas iš karto: pažymėtas laikas įskaitomas, kol neviršija etapo normos; pažymėjus etapą baigtu ShopFlow, lieka tikslus rezultatas.','The page refreshes every minute. A running normed step counts straight away: the marked time is credited until it passes the step’s norm; once the step is marked done in ShopFlow the exact result stays.')+'</p></section>';
+}
+var NAMES={altendorf:'Altendorf',felder:'Felder',olimpic:'SCM Olimpic',startech:'SCM Startech',volter:'Volter CNC',vitap:'Vitap',blum:'Blum',booth:'Dažymo kamera',laser:'Lazeris',oproom:'CNC operatorių kambarys'};
 function tile(l,v,s,c){return'<div class="tile"><div class="tl">'+l+'</div><div class="tv '+(c||'')+'">'+v+'</div><div class="ts">'+(s||'')+'</div></div>'}
 
 function vProjects(){
@@ -244,7 +264,7 @@ $('#reload').onclick=function(){if(!busy)loadAll()};
     await WA.gate({lang:lang,title:'Našumas',opaque:true,managers:true});me=await WA.me();
   }
   await loadAll();
-  setInterval(function(){if(!document.hidden&&!busy&&!draft)loadAll()},180000);
+  setInterval(function(){if(!document.hidden&&!busy&&!draft)loadAll()},60000);
 })();
 </script>
 </body>
