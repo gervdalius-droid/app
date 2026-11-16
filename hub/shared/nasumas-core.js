@@ -178,6 +178,13 @@
       var cats = placeCats(it), sm = cats.indexOf("pjov") >= 0 ? /(\d+(?:[.,]\d+)?)\s*(?:plok|pl\b|pl\.|lak[sš]t|lap|sheet|board)/i.exec(String(x.nt || "")) : null;
       return { n: String(x.n), s: x.s, sn: x.sn || "", pr: x.pr || "", a: +x.a, b: +x.b, ms: netMs(+x.a, +x.b, breaks), cats: cats, sheets: sm ? parseFloat(sm[1].replace(",", ".")) : 0, nt: String(x.nt || ""), hcat: it && (it.t === "desk" || it.t === "booth") ? hourCat(it.n, it.t) : null };
     });
+    /* A note stays on the person on the plan until it is changed, so the same text turning up on a later
+       day is the old note carried over, not new boards: it counts only on the first day it appears. */
+    var seenNote = {};
+    sess.slice().sort(function (p, q) { return p.a - q.a; }).forEach(function (x) {
+      if (!(x.sheets > 0)) return; var k = norm(x.n) + "|" + norm(x.nt), d = dayOf(x.a);
+      if (!seenNote[k]) seenNote[k] = d; else if (seenNote[k] !== d) x.sheets = 0;
+    });
     var G = groups(opts.orders, opts.stations, cfg), credits = [], jobs = [];
     G.forEach(function (g) {
       var job = { label: g.label, cat: g.cat, qty: g.qty, stdH: g.stdH, doneQty: g.doneQty, doneH: g.doneH, allDone: g.allDone, at: g.at, actualMs: 0, people: [], measured: false, started: false };
