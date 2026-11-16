@@ -3267,3 +3267,6 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .sw-lists { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
 .sw-list-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 3px 9px; border-radius: 999px; background: var(--surface-2, rgba(0,0,0,.05)); color: var(--text-2); }
 .sw-mode { margin-top: 8px; }
+/* a file not in the cloud yet: its preview at full size, the reason on top */
+.fv-body img.fv-thumb-big { width: auto; height: auto; min-width: min(100%, 900px); max-width: 100%; max-height: 100%; object-fit: contain; image-rendering: auto; }
+.fv-missing-bar { position: absolute; left: 50%; top: 8px; transform: translateX(-50%); display: flex; gap: 8px; align-items: flex-start; max-width: min(640px, 92%); padding: 9px 14px; border-radius: 10px; background: rgba(20,20,20,.82); color: #fff; font-size: 13px; line-height: 1.4; box-shadow: 0 4px 18px rgba(0,0,0,.35); }

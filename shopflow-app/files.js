@@ -34,7 +34,7 @@ var Files = {
   // a phone photo, not a CAD archive
   FULL_PX: 2000,
   // plenty to read a dimension off a drawing
-  THUMB_PX: 220,
+  THUMB_PX: 400,
   BUCKET: "shopflow",
   _db: null,
   _urls: new Map(),
@@ -324,6 +324,11 @@ var Files = {
     if (typeof window === "undefined") return;
     window.addEventListener("online", () => this.flush());
     setTimeout(() => this.flush(), 4000); // after sync has had a chance to sign in
+    /* and again every two minutes while anything this device holds is still not up —
+       a failed upload (no signal, storage briefly down) must not wait for a reload */
+    setInterval(() => {
+      if (D.files().some(f => f.store !== "stored" && this.here(f))) this.flush();
+    }, 120000);
   },
   /* Which device holds the full copy. Not identity — just "was it this one". */
   DEV_KEY: "shopflow.device",
@@ -573,10 +578,16 @@ var Files = {
               _context8.next = 16;
               break;
             }
-            body.innerHTML = `<div class="fv-missing">${icon("cloud-off", 26)}
-        <b>The full file is not on this device</b>
-        <span>${_this7.storage() ? "It was added on another device and has not finished uploading there yet." : "It was added on another device, and the shop's file storage is not set up — see SETUP-CLOUD.md."}</span>
-        ${f.thumb ? `<img src="${f.thumb}" alt="${esc(f.name)}">` : ""}</div>`;
+            var who = D.member(f.by);
+            var lt = typeof I18N !== "undefined" && I18N.lang === "lt";
+            var why = _this7.storage() ? lt ? `Pilnas failas dar neįkeltas į debesį. Jį įkels įrenginys, kuriame jis pridėtas${who ? ` (${who.name})` : ""} — kai ten bus atidarytas ShopFlow. Kol kas rodoma sumažinta peržiūra.` : `The full file has not reached the cloud yet. The device it was added on${who ? ` (${who.name})` : ""} uploads it the next time ShopFlow is open there. Showing the preview until then.` : lt ? "Failas pridėtas kitame įrenginyje, o failų saugykla nesukonfigūruota." : "It was added on another device, and the shop's file storage is not set up.";
+            /* the preview, as large as the screen allows — a small copy is still
+               readable, and a stamp-sized one helps nobody */
+            body.innerHTML = `${f.thumb ? `<img src="${f.thumb}" class="fv-thumb-big" alt="${esc(f.name)}">` : ""}
+        <div class="fv-missing-bar">${icon("cloud-off", 15)} <span>${esc(why)}</span></div>`;
+            if (f.thumb) {
+              $("#fv-dl", root).href = f.thumb;
+            }
             return _context8.abrupt("return");
           case 16:
             $("#fv-dl", root).href = url;
