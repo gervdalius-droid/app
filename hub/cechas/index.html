@@ -2499,8 +2499,9 @@ async function normBest(){
   try{if(!window.Nasumas||mode!=='db')return[];
     const [sf,cf]=await Promise.all([WA.rest('workspaces?id=eq.'+SF_ROW+'&select=orders:data->orders,members:data->members,stations:data->stations'),WA.rest('workspaces?id=eq.'+ROW+'-nasumas&select=data').catch(()=>[])]),r=sf&&sf[0];
     if(!r)return[];
+    const cfg=Nasumas.cfgOf(cf&&cf[0]&&cf[0].data),nest=await WA.rest('fabflow_projects?select=name,parts:data->parts&updated_at=gte.'+new Date(Date.now()-200*864e5).toISOString()+'&order=updated_at.desc').catch(()=>[]);
     const list=await sessionsIn(dayStart()-45*864e5,Date.now());
-    return Nasumas.best({orders:r.orders||[],members:r.members||[],stations:r.stations||[],sessions:list,items:LAY().items,breaks:breakList(),cfg:Nasumas.cfgOf(cf&&cf[0]&&cf[0].data),from:dayStart(),to:Date.now()+1});
+    return Nasumas.best({orders:Nasumas.attachNesting(r.orders||[],nest,cfg.links),members:r.members||[],stations:r.stations||[],sessions:list,items:LAY().items,breaks:breakList(),cfg,from:dayStart(),to:Date.now()+1});
   }catch(e){return[]}
 }
 async function showShout(manual,chain){

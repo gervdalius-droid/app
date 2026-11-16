@@ -22,6 +22,8 @@
   "use strict";
   var DEF = {
     dayHours: 8, hourCost: 12.5, minShoutH: 2,
+    sheetM2: 5.8,   /* one full board, 2800 × 2070: a note "16 plokštės" on a saw / CNC stretch = 16 × this */
+    links: {},      /* order number → nesting project name ("-" = do not link); empty = match by name */
     ops: {
       pjov: { lt: "Pjovimas", en: "Cutting", unit: "m²", perDay: 92, sale: 3.6 },
       briaun: { lt: "Briaunavimas", en: "Edge banding", unit: "m", perDay: 333.33, sale: 1 },
@@ -51,6 +53,8 @@
       if (o.sale != null && +o.sale >= 0) c.ops[k].sale = +o.sale;
       if (isObj(s.def) && typeof s.def[k] === "string") c.def[k] = s.def[k];
     });
+    if (+s.sheetM2 > 0) c.sheetM2 = +s.sheetM2;
+    if (isObj(s.links)) Object.keys(s.links).forEach(function (k) { if (typeof s.links[k] === "string" && s.links[k]) c.links[k] = s.links[k]; });
     HOURS.forEach(function (k) { var o = isObj(s.ops) && isObj(s.ops[k]) ? s.ops[k] : {}; if (o.sale != null && +o.sale >= 0) c.ops[k].sale = +o.sale; });
     return c;
   }
@@ -98,6 +102,46 @@
   function dayOf(ms) { var d = new Date(ms), p = function (x) { return (x < 10 ? "0" : "") + x; }; return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()); }
   function endOfDay(ms) { var d = new Date(ms); d.setHours(23, 59, 59, 999); return d.getTime(); }
 
+  /* ---- projects with no report list in ShopFlow: take the parts from the nesting app's project ----
+     Matched by name: the same name, or the same words shortened ("GelumbauskoMiegSP" ↔ "GEL_MIEG_SP");
+     a manager can pick or remove the link by hand (cfg.links). nest = [{name, parts}] */
+  function toks(v) {
+    return String(v || "").replace(/([a-z\u00e0-\u017f])([A-Z0-9])/g, "$1 $2").replace(/([A-Za-z])(\d)/g, "$1 $2").replace(/([A-Z]+)([A-Z][a-z])/g, "$1 $2")
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(Boolean);
+  }
+  function nameFit(a, b) {
+    var x = toks(a), y = toks(b); if (!x.length || !y.length) return 0;
+    if (x.join("") === y.join("")) return 2;
+    if (x.length !== y.length || x.length < 2) return 0;
+    for (var i = 0; i < x.length; i++) if (x[i].indexOf(y[i]) !== 0 && y[i].indexOf(x[i]) !== 0) return 0;
+    return 1;
+  }
+  function nestFor(o, nest, links) {
+    var pick = links && links[o.num];
+    if (pick === "-") return null;
+    var i, n, best = null, lvl = 0, tie = false;
+    if (pick) { for (i = 0; i < nest.length; i++) if (nest[i].name === pick) return { p: nest[i], auto: false }; return null; }
+    for (i = 0; i < nest.length; i++) {
+      n = nest[i]; if (!n || !Array.isArray(n.parts) || !n.parts.length) continue;
+      var f = Math.max(nameFit(o.product, n.name), nameFit(o.num, n.name));
+      if (f > lvl) { best = n; lvl = f; tie = false; } else if (f && f === lvl) tie = true;
+    }
+    return best && !(tie && lvl < 2) ? { p: best, auto: true } : null;
+  }
+  function attachNesting(orders, nest, links) {
+    nest = Array.isArray(nest) ? nest : [];
+    return (orders || []).map(function (o) {
+      if (!o || o.type === "eng" || (Array.isArray(o.parts) && o.parts.length)) return o;
+      var m = nestFor(o, nest, links); if (!m) return o;
+      var c = {}; for (var k in o) c[k] = o[k];
+      c.nest = m.p.name; c.nestAuto = m.auto;
+      c.parts = m.p.parts.filter(function (p) { return p && +p.l > 0 && +p.w > 0; }).map(function (p) {
+        var e = p.eb || {}; return { l: +p.l, w: +p.w, qty: Math.max(1, +p.qty || 1), name: p.name || "", board: p.mat || "", edges: [e.eb1 || "", e.eb2 || "", e.eb3 || "", e.eb4 || ""] };
+      });
+      return c;
+    });
+  }
+
   /* ---- the steps of every order that has a report list, grouped per order and step kind ---- */
   function groups(orders, stations, cfg) {
     var stName = {}; (stations || []).forEach(function (s) { if (s && s.id) stName[s.id] = s.name || s.id; });
@@ -108,7 +152,7 @@
       (o.ops || []).forEach(function (op) {
         if (!op) return; var cat = catOfStation(stName[op.stationId] || op.stationId); if (!cat) return;
         var own = o.parts.filter(function (p) { return p && p.itemId === op.itemId; });
-        var parts = own.length ? own : (cat === "sur" ? o.parts : []);
+        var parts = own.length ? own : (cat === "sur" || o.nest ? o.parts : []);
         var qty = sumQty(parts, cat); if (!(qty > 0)) return;
         var g = by[cat] = by[cat] || { order: o, label: label(o), cat: cat, ops: [], qty: 0, stdH: 0, doneQty: 0, doneH: 0, at: 0, allDone: true };
         var h = stdH(cfg, cat, qty), done = op.status === "done";
@@ -131,13 +175,14 @@
     var memName = {}; (opts.members || []).forEach(function (m) { if (m && m.id) memName[m.id] = m.name || ""; });
     var sess = (opts.sessions || []).filter(function (x) { return x && !x.del && +x.b > +x.a && x.n; }).map(function (x) {
       var it = items[x.s];
-      return { n: String(x.n), s: x.s, sn: x.sn || "", pr: x.pr || "", a: +x.a, b: +x.b, ms: netMs(+x.a, +x.b, breaks), cats: placeCats(it), hcat: it && (it.t === "desk" || it.t === "booth") ? hourCat(it.n, it.t) : null };
+      var cats = placeCats(it), sm = cats.indexOf("pjov") >= 0 ? /(\d+(?:[.,]\d+)?)\s*(?:plok|pl\b|pl\.|lak[sš]t|lap|sheet|board)/i.exec(String(x.nt || "")) : null;
+      return { n: String(x.n), s: x.s, sn: x.sn || "", pr: x.pr || "", a: +x.a, b: +x.b, ms: netMs(+x.a, +x.b, breaks), cats: cats, sheets: sm ? parseFloat(sm[1].replace(",", ".")) : 0, nt: String(x.nt || ""), hcat: it && (it.t === "desk" || it.t === "booth") ? hourCat(it.n, it.t) : null };
     });
     var G = groups(opts.orders, opts.stations, cfg), credits = [], jobs = [];
     G.forEach(function (g) {
       var job = { label: g.label, cat: g.cat, qty: g.qty, stdH: g.stdH, doneQty: g.doneQty, doneH: g.doneH, allDone: g.allDone, at: g.at, actualMs: 0, people: [], measured: false, started: false };
       var lim = g.allDone && g.at ? endOfDay(g.at) : Infinity;
-      var mine = sess.filter(function (x) { return x.cats.indexOf(g.cat) >= 0 && prMatches(x.pr, g.order) && x.a <= lim; });
+      var mine = sess.filter(function (x) { return x.cats.indexOf(g.cat) >= 0 && !(x.sheets > 0 && g.cat === "pjov") && prMatches(x.pr, g.order) && x.a <= lim; });
       var tot = 0; mine.forEach(function (x) { tot += x.ms; });
       job.started = tot > 0 || g.doneH > 0; job.actualMs = tot;
       /* Live: while a step is still running, the marked time earns normed hours one for one until the
@@ -172,6 +217,11 @@
     /* finishing and packing have no norm: the time counts as worked hours, one for one.
        Finishing = time marked on the plan at the paint booth or a sanding / finishing desk.
        Packing = a packing desk on the plan, plus the ShopFlow timer of finished packing steps. */
+    /* boards counted by hand: a note like "16 plokštės" on a saw / CNC stretch is that many full boards cut.
+       The same note carried over several stretches of one day counts once, against all their time. */
+    var SH = {};
+    sess.forEach(function (x) { if (!(x.sheets > 0)) return; var k = norm(x.n) + "|" + dayOf(x.a) + "|" + norm(x.nt); (SH[k] = SH[k] || { n: x.n, t: x.a, sheets: x.sheets, ms: 0, pr: x.pr }).ms += x.ms; });
+    Object.keys(SH).forEach(function (k) { var e = SH[k], q = e.sheets * cfg.sheetM2; if (e.ms >= 6e4) credits.push({ n: e.n, t: e.t, cat: "pjov", label: e.pr, h: stdH(cfg, "pjov", q), qty: q, ms: e.ms, measured: true, open: false, sheets: e.sheets }); });
     sess.forEach(function (x) { if (x.hcat && x.ms >= 6e4) credits.push({ n: x.n, t: x.a, cat: x.hcat, label: x.pr, h: x.ms / 36e5, qty: x.ms / 36e5, ms: x.ms, measured: true, open: false }); });
     var stN = {}; (opts.stations || []).forEach(function (s) { if (s && s.id) stN[s.id] = s.name || ""; });
     (opts.orders || []).forEach(function (o) {
@@ -209,5 +259,5 @@
     var r = compute(opts), min = (r.cfg.minShoutH || 2) * 36e5;
     return r.people.filter(function (p) { return p.perf != null && p.normedMs >= min; }).sort(function (a, b) { return b.perf - a.perf; });
   }
-  root.Nasumas = { DEF: DEF, ORDER: ORDER, HOURS: HOURS, ALL: ALL, hourCat: hourCat, cfgOf: cfgOf, compute: compute, best: best, groups: groups, partQty: partQty, stdH: stdH, netMs: netMs, dayOf: dayOf, norm: norm, placeCats: placeCats, catOfStation: catOfStation };
+  root.Nasumas = { DEF: DEF, ORDER: ORDER, HOURS: HOURS, ALL: ALL, hourCat: hourCat, attachNesting: attachNesting, nameFit: nameFit, cfgOf: cfgOf, compute: compute, best: best, groups: groups, partQty: partQty, stdH: stdH, netMs: netMs, dayOf: dayOf, norm: norm, placeCats: placeCats, catOfStation: catOfStation };
 })(typeof window !== "undefined" ? window : globalThis);
