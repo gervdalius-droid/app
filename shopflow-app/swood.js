@@ -948,7 +948,17 @@ var SwoodImport = {
 
   target: null,
   // an existing project to fill instead of creating one
+  /* the engineering handoff: the manufacturing project is made from the report
+     list — same name, client and date as the engineering project */
+  openHandoff(engId, handoff) {
+    this.open(null);
+    this.handoff = Object.assign({ engId: engId }, handoff || {});
+    var eng = D.order(engId);
+    var h2 = document.querySelector(".sw-modal header h2");
+    if (h2 && eng) h2.textContent = (typeof I18N !== "undefined" && I18N.lang === "lt" ? "Perdavimas į gamybą · " : "Handoff to production · ") + eng.num + " — " + (typeof I18N !== "undefined" && I18N.lang === "lt" ? "prisekite reportlist" : "attach the report list");
+  },
   open(targetId) {
+    this.handoff = null;
     this.target = targetId && D.order(targetId) ? targetId : null;
     this.parsedAll = null;
     this.fileNames = [];
@@ -1037,7 +1047,13 @@ var SwoodImport = {
       client: "",
       due: new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10)
     };
-    if (!this.target) {
+    var eng = this.handoff ? D.order(this.handoff.engId) : null;
+    if (eng) {
+      this.form.name = eng.product;
+      this.form.client = eng.client || "";
+      if (eng.due) this.form.due = new Date(eng.due).toISOString().slice(0, 10);
+    }
+    if (!this.target && !eng) {
       var sug = this.suggest();
       if (sug) this.target = sug.id;
     }
@@ -1293,7 +1309,7 @@ var SwoodImport = {
       go = $("#sw-go", m);
     var check = () => {
       var v = name.value.trim();
-      var bad = this.target ? "" : !v ? "Give the project a name" : D.projectNameTaken(v) ? "A project with that name already exists — import into it instead (above)" : "";
+      var bad = this.target ? "" : !v ? "Give the project a name" : D.projectNameTaken(v, this.handoff && this.handoff.engId) ? "A project with that name already exists — import into it instead (above)" : "";
       warn.textContent = bad;
       go.disabled = !!bad;
       var gt = $("#sw-go-t", m);
@@ -1394,10 +1410,19 @@ var SwoodImport = {
     }, App.me.id);
     if (!o) return;
     this.recordLists(o, adding);
+    if (this.handoff) this.afterHandoff(o);
     Modal.close();
     App.render();
     Drawer.open(o.id);
     Toast.show(adding ? `${o.num}: +${this.plan.parts.length} part codes · ${D.swoodLists(o).length} SWOOD lists` : `${o.num}: ${o.parts.length} part codes imported from SWOOD`, { emoji: "import", ms: 5000 });
+  },
+  afterHandoff(prod) {
+    var h = this.handoff;
+    this.handoff = null;
+    if (!h || !h.engId) return;
+    M.finishHandoff(h.engId, prod.id, { checks: h.checks, notifyIds: h.notifyIds }, App.me.id);
+    var names = (h.notifyIds || []).map(id => (D.member(id) || {}).name).filter(Boolean);
+    setTimeout(() => Toast.show((typeof I18N !== "undefined" && I18N.lang === "lt" ? "Perduota į gamybą" : "Handed off to production") + (names.length ? " — " + (typeof I18N !== "undefined" && I18N.lang === "lt" ? "pranešta: " : "notified ") + names.join(", ") : ""), { emoji: "factory", ms: 5000 }), 600);
   },
   /* several files imported together are still listed one by one on the project */
   recordLists(o, adding) {
@@ -1419,7 +1444,7 @@ var SwoodImport = {
     if (!this.plan) return;
     if (this.target) return this.createInto(m);
     var name = $("#sw-name", m).value.trim();
-    if (D.projectNameTaken(name) || !name) return;
+    if (D.projectNameTaken(name, this.handoff && this.handoff.engId) || !name) return;
     var dueVal = $("#sw-due", m).value;
     var cons = this.consRows().filter(c => c.qty > 0 && c.name).map(c => ({
       name: c.name,
@@ -1437,6 +1462,13 @@ var SwoodImport = {
       lineNames: this.lineEdits
     }, App.me.id);
     this.recordLists(order, false);
+    if (this.handoff) {
+      if (this.handoff.engId) {
+        var eng = D.order(this.handoff.engId);
+        if (eng && eng.customerId && !order.customerId) order.customerId = eng.customerId;
+      }
+      this.afterHandoff(order);
+    }
     if (typeof Bridge !== "undefined") {
       var cid = Bridge.resolveClient(order.client);
       if (cid) {

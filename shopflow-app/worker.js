@@ -46,7 +46,7 @@ var Wkr = {
   tabHtml() {
     switch (App.workerTab) {
       case "my":
-        return this.myWork();
+        return (typeof EngFlow !== "undefined" ? EngFlow.workerBanner() : "") + this.myWork();
       case "station":
         return this.stationView();
       case "flow":
@@ -75,6 +75,7 @@ var Wkr = {
     if (App.workerTab === "board") WB.bind(root);
     // Personal to-dos on My Work
     if (App.workerTab === "my") Todo.bind(root);
+    if (App.workerTab === "my" && typeof EngFlow !== "undefined") EngFlow.bindWorker(root);
   },
   /* Just the task actions — shared with the cockpit's "My Work" page, which
      has no worker top bar or tab bar to wire up. */

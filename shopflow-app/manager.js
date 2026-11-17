@@ -1387,6 +1387,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
       </div>
       <div class="title">${esc(order.product)}</div>
       ${typeof Revisions !== "undefined" ? Revisions.cardChip(order) : ""}
+      ${typeof EngFlow !== "undefined" ? EngFlow.cardChip(order) : ""}
       ${showClient ? `<div class="client">${esc(order.client)}</div>` : ""}
       <div class="oc-lines">${ops.map(line).join("")}</div>
       ${blocked.length ? `<div class="blocked-note">${icon("ban", 12)} ${esc(blocked.map(op => op.blockNote || "Blocked").join(" · "))}</div>` : ""}
@@ -1425,6 +1426,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
       </div>
       <div class="title">${esc(order.product)}</div>
       ${typeof Revisions !== "undefined" ? Revisions.cardChip(order) : ""}
+      ${typeof EngFlow !== "undefined" ? EngFlow.cardChip(order) : ""}
       ${showClient || item && item.qty > 1 ? `<div class="client">${showClient ? esc(order.client) : ""}${showClient && item && item.qty > 1 ? " · " : ""}${item && item.qty > 1 ? `${item.qty} ${esc(order.unit)}` : ""}</div>` : ""}
       ${op && (op.group || multi) ? `<div class="row" style="gap:5px;flex-wrap:wrap">
         ${op.group ? `<span class="task-tag">${esc(op.group)}</span>` : ""}
@@ -4148,6 +4150,10 @@ var Notif = {
     eng_link: "link",
     eng_link_ok: "check",
     client_rev: "pencil",
+    draw_check: "badge",
+    draw_ok: "check",
+    draw_remarks: "alert",
+    handoff_ready: "factory",
     client_rev_ok: "check",
     eng_link_no: "x"
   },
@@ -4226,7 +4232,7 @@ var Notif = {
     });
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       try {
-        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : n.type === "client_rev" ? I18N.t("Client corrections") : "Update"), {
+        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : n.type === "client_rev" ? I18N.t("Client corrections") : n.type === "draw_check" ? I18N.t("Drawings to check") : n.type === "handoff_ready" ? I18N.t("Ready for production") : "Update"), {
           body: n.text
         });
       } catch (e) {}
@@ -5093,6 +5099,7 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
           ${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="od-scanlog">${icon("list", 14)} <span>Scans</span></button>` : ""}
           ${o.swood ? `<div class="sw-lists">${D.swoodLists(o).map(l => `<span class="sw-list-chip" title="${esc(l.file || "")}">${icon("import", 11)} ${esc(l.project)}${l.parts ? ` · ${l.parts} <span>parts</span>` : ""} · ${fmtAgo(l.at)}</span>`).join("")}</div>` : ""}
         </div>` : ""}
+        ${typeof EngFlow !== "undefined" ? EngFlow.html(o) : ""}
         ${typeof Revisions !== "undefined" ? Revisions.html(o) : ""}
 
         <div class="meta-grid">
@@ -5911,9 +5918,10 @@ Confirm.del('comment','komentarą',Confirm.nm((o.comments || []).find(x => x.id 
         });
       };
       var handoff = $("#od-handoff", el);
-      if (handoff) handoff.onclick = () => this.handoffModal(o.id);
+      if (handoff) handoff.onclick = () => typeof EngFlow !== "undefined" ? EngFlow.handoffModal(o.id) : this.handoffModal(o.id);
       EngLink.bind(el, o);
       if (typeof Revisions !== "undefined") Revisions.bind(el, o);
+      if (typeof EngFlow !== "undefined") EngFlow.bind(el, o);
       var approve = $("#od-approve", el);
       if (approve) approve.onclick = () => {
         var engineers = M.confirmClientApproval(o.id, App.me.id);

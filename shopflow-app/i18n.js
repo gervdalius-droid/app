@@ -905,5 +905,8 @@ var LT = {
   "The project has": "Projekte jau yra",
   "These parts, lines and cabinets are added next to them — nothing already there changes, assembly gets the new cabinets.": "Šios detalės, linijos ir spintelės pridedamos šalia — kas jau yra, nesikeičia, surinkimui pridedamos naujos spintelės.",
   "For a corrected version of the same list.": "Kai tai pataisyta to paties sąrašo versija.",
-  "The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse. Several lists of one project can be chosen together.": "SWOOD sukurtas .xlsm (ar .xlsx) failas — numeskite čia arba spauskite ir pasirinkite. Galima pasirinkti kelis vieno projekto sąrašus kartu."
+  "The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse. Several lists of one project can be chosen together.": "SWOOD sukurtas .xlsm (ar .xlsx) failas — numeskite čia arba spauskite ir pasirinkite. Galima pasirinkti kelis vieno projekto sąrašus kartu.",
+  "Drawings Check": "Brėžinių patikra",
+  "Drawings to check": "Brėžiniai patikrai",
+  "Ready for production": "Paruošta gamybai"
 };

@@ -315,6 +315,13 @@ var ENG_STATIONS = [{
   estMins: 60,
   kind: "eng"
 }, {
+  id: "eg-check",
+  name: "Drawings Check",
+  icon: "🔎",
+  ic: "badge",
+  estMins: 30,
+  kind: "eng"
+}, {
   id: "eg-cam",
   name: "CNC Programs",
   icon: "💾",
@@ -1947,6 +1954,13 @@ var Store = {
         if (m.reorderQty === undefined) m.reorderQty = null;
       });
       s.v = 18;
+    }
+    /* the drawings check (between client approval and CNC programs) — a shop
+       made before it existed gets the station, next to client approval */
+    if (s.stations && !s.stations.find(x => x.id === "eg-check")) {
+      var tpl = ENG_STATIONS.find(x => x.id === "eg-check");
+      var at = s.stations.findIndex(x => x.id === "eg-appr");
+      s.stations.splice(at >= 0 ? at + 1 : s.stations.length, 0, _objectSpread({}, tpl));
     }
     this.save();
   },
@@ -7954,6 +7968,122 @@ var M = {
     });
     Store.save();
     return engineers;
+  },
+  /* ---------- drawings check → CNC → handoff ----------
+     The engineer submits the finished drawings; a manager (Ricardas or DB —
+     either one) confirms them or sends them back with remarks. Only confirmed
+     drawings go on to the report list and CNC programs, and the handoff to
+     production needs the report list and the OneDrive folders in order. */
+  drawReviews(o) {
+    return o && o.drawReviews || [];
+  },
+  drawState(o) {
+    var r = this.drawReviews(o);
+    return r.length ? r[r.length - 1].status : "none";
+  },
+  _ensureCheckOp(o) {
+    if (!o || o.type !== "eng") return null;
+    if (!D.station("eg-check")) {
+      var tpl = ENG_STATIONS.find(x => x.id === "eg-check");
+      var at = Store.state.stations.findIndex(x => x.id === "eg-appr");
+      Store.state.stations.splice(at >= 0 ? at + 1 : Store.state.stations.length, 0, Object.assign({}, tpl));
+    }
+    var op = o.ops.find(x => x.stationId === "eg-check");
+    if (op) return op;
+    var item = o.items[0];
+    op = { id: uid("op"), itemId: item ? item.id : null, group: null, stationId: "eg-check", estMins: 30, status: "queued", qtyDone: 0, assigneeId: null, loggedMs: 0, startedAt: null, completedAt: null, blockNote: null };
+    var before = o.ops.findIndex(x => x.stationId === "eg-cam" || x.stationId === "eg-hand");
+    o.ops.splice(before >= 0 ? before : o.ops.length, 0, op);
+    return op;
+  },
+  _finishOp(op) {
+    if (!op || op.status === "done") return;
+    op.status = "done";
+    op.qtyDone = 1;
+    op.completedAt = Date.now();
+  },
+  _reopenOp(op) {
+    if (!op || op.status !== "done") return;
+    op.status = "paused";
+    op.qtyDone = 0;
+    op.completedAt = null;
+  },
+  reviewers() {
+    return Store.state.members.filter(m => m.role === "manager" && !m.archived).map(m => m.id);
+  },
+  submitDrawings(orderId, { note, fileIds }, byId) {
+    var o = D.order(orderId);
+    if (!o) return null;
+    if (!o.drawReviews) o.drawReviews = [];
+    var r = { id: uid("dr"), n: o.drawReviews.length + 1, at: Date.now(), by: byId, note: String(note || "").trim(), files: (fileIds || []).slice(), status: "pending" };
+    o.drawReviews.push(r);
+    r.files.forEach(id => { var f = D.file(id); if (f) f.drawId = r.id; });
+    /* the design is finished; the check step is what is open now */
+    this._finishOp(o.ops.find(x => x.stationId === "eg-design"));
+    var chk = this._ensureCheckOp(o);
+    if (chk && chk.status === "done") this._reopenOp(chk);
+    var who = D.member(byId);
+    var ids = this.reviewers().filter(id => id !== byId);
+    r.notified = ids;
+    ids.forEach(id => this.notify(id, {
+      type: "draw_check",
+      orderId: o.id,
+      text: this._ltText(`${who ? who.name : "The engineer"} sent the drawings of ${o.num} for checking${r.n > 1 ? ` (version ${r.n})` : ""} — confirm or return them with remarks`, `${who ? who.name : "Inžinierius"} pateikė ${o.num} brėžinius patikrai${r.n > 1 ? ` (${r.n} versija)` : ""} — patvirtinkite arba grąžinkite su pastabomis`)
+    }, byId));
+    this.log(byId, `sent the drawings of ${o.num} for checking (v${r.n})`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
+  reviewDrawings(orderId, revId, ok, { note, fileIds }, byId) {
+    var o = D.order(orderId);
+    var r = this.drawReviews(o).find(x => x.id === revId);
+    if (!r || r.status !== "pending") return null;
+    r.status = ok ? "ok" : "remarks";
+    r.reviewBy = byId;
+    r.reviewAt = Date.now();
+    r.reviewNote = String(note || "").trim();
+    r.reviewFiles = (fileIds || []).slice();
+    r.reviewFiles.forEach(id => { var f = D.file(id); if (f) f.drawId = r.id; });
+    var chk = this._ensureCheckOp(o);
+    if (ok) this._finishOp(chk);
+    else this._reopenOp(o.ops.find(x => x.stationId === "eg-design"));
+    var who = D.member(byId);
+    var to = [r.by].concat(D.orderResponsible(o)).filter((id, i, a) => id && id !== byId && a.indexOf(id) === i);
+    to.forEach(id => this.notify(id, {
+      type: ok ? "draw_ok" : "draw_remarks",
+      orderId: o.id,
+      text: ok
+        ? this._ltText(`${who ? who.name : "A manager"} confirmed the drawings of ${o.num} — go on with the report list and CNC programs`, `${who ? who.name : "Vadovas"} patvirtino ${o.num} brėžinius — galite ruošti reportlist ir CNC programas`)
+        : this._ltText(`${who ? who.name : "A manager"} returned the drawings of ${o.num} with remarks`, `${who ? who.name : "Vadovas"} grąžino ${o.num} brėžinius su pastabomis`)
+    }, byId));
+    this.log(byId, ok ? `confirmed the drawings of ${o.num} (v${r.n})` : `returned the drawings of ${o.num} with remarks (v${r.n})`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
+  /* the engineering project became a manufacturing one (made from its report list) */
+  finishHandoff(engId, prodId, { checks, notifyIds }, byId) {
+    var eng = D.order(engId), prod = D.order(prodId);
+    if (!eng || !prod) return null;
+    prod.fromEngId = eng.id;
+    eng.handedOffTo = prod.id;
+    eng.handoff = { at: Date.now(), by: byId, checks: checks || [], prodId: prod.id };
+    ["oneDriveUrl", "portfolioId", "notes"].forEach(k => { if (eng[k] && !prod[k]) prod[k] = eng[k]; });
+    if (!prod.client && eng.client) prod.client = eng.client;
+    this._finishOp(eng.ops.find(x => x.stationId === "eg-cam"));
+    this._finishOp(eng.ops.find(x => x.stationId === "eg-hand"));
+    eng.archived = true;
+    eng.archivedAt = Date.now();
+    Store.state.prefs = Store.state.prefs || {};
+    Store.state.prefs.handoffNotify = (notifyIds || []).slice();
+    var who = D.member(byId);
+    (notifyIds || []).filter(id => id !== byId).forEach(id => this.notify(id, {
+      type: "handoff_ready",
+      orderId: prod.id,
+      text: this._ltText(`${prod.num} · ${prod.product} is ready for production — ${who ? who.name : "the engineer"} handed it off with drawings, report list and CNC programs in OneDrive`, `${prod.num} · ${prod.product} paruoštas gamybai — ${who ? who.name : "inžinierius"} perdavė: brėžiniai, reportlist ir CNC programos OneDrive`)
+    }, byId));
+    this.log(byId, `handed off **${eng.num}** to production → **${prod.num}** (from its report list)`, { orderId: prod.id });
+    Store.save();
+    return prod;
   },
   /* ---------- client corrections on a design ----------
      The concept went to the client, the client came back with a marked-up PDF
