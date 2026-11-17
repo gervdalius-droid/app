@@ -662,6 +662,10 @@ body.print-mode{background:#fff}
       <div id="trim-saw-wrap"><label class="fl">🪚 Saw trim (mm)</label><input id="trim" type="number" value="15" min="0" max="100" title="Edge trim for saw sheets"></div>
       <div id="trim-cnc-wrap"><label class="fl">🤖 CNC trim (mm)</label><input id="trim-cnc" type="number" value="15" min="0" max="100" title="Edge trim for CNC sheets (often less since CNC clamping uses interior surface)"></div>
     </div>
+    <label style="display:flex;gap:7px;align-items:flex-start;margin-top:8px;font-size:11px;cursor:pointer" title="Each part's length (ILGIS) runs along the sheet's length. A part is turned only when that saves a sheet or fits more parts.">
+      <input type="checkbox" id="len-first" checked onchange="lengthFirstSave()" style="margin:2px 0 0;width:15px;height:15px;min-height:0;flex:0 0 auto;padding:0">
+      <span><b data-i18n="lenFirst">Place parts lengthwise first</b><br><span style="color:#667085" data-i18n="lenFirstSub">Part length along the sheet length; turned only if it saves a sheet</span></span>
+    </label>
   </div>
   <div>
     <div class="sec" data-i18n="importFile">Import SWOOD file or DXF parts</div>
@@ -4039,6 +4043,8 @@ var I18N={
     matPh:'Type or pick a material',
     matDone:'✓ Material {m} set on {n} part(s)',
     ppCodeHint:'Scan when this sheet starts on the CNC',
+    lenFirst:'Place parts lengthwise first',
+    lenFirstSub:'Part length along the sheet length; turned only if it saves a sheet',
     ppCodeTip:'Sheet code: project + sheet number',
     ncTitle:'🤖 CNC programs (.nc)',
     ncSub:'Same G-code as your VCarve files — ready for the machine, one per CNC sheet.',
@@ -4362,6 +4368,8 @@ var I18N={
     matPh:'Įrašykite arba pasirinkite',
     matDone:'✓ Medžiaga {m} priskirta: {n} det.',
     ppCodeHint:'Nuskenuokite, kai plokštė pradedama CNC',
+    lenFirst:'Pirmiausia dėti detales išilgai',
+    lenFirstSub:'Detalės ilgis išilgai plokštės ilgio; pasukama tik jei taip sutaupoma plokštė',
     ppCodeTip:'Plokštės kodas: projektas + plokštės nr.',
     ncTitle:'🤖 CNC programos (.nc)',
     ncSub:'Toks pat G-kodas kaip jūsų VCarve failai — iškart į staklę, po vieną kiekvienai CNC plokštei.',
@@ -5181,6 +5189,7 @@ function collectProjectState(){
       trim:parseInt((document.getElementById('trim')||{}).value||15),
       trimCnc:parseInt((document.getElementById('trim-cnc')||{}).value||15),
       machineMode:getMachineMode(),
+      lengthFirst:lengthFirstOn(),
       trimInputs:getSettingsTrim()
     },
     // Quote/pricing settings (pricing per material lives on boards[*])
@@ -5265,6 +5274,7 @@ function applyProjectState(d){
       var trimEl=document.getElementById('trim');if(trimEl&&d.settings.trim!=null)trimEl.value=d.settings.trim;
       var trimCncEl=document.getElementById('trim-cnc');if(trimCncEl&&d.settings.trimCnc!=null)trimCncEl.value=d.settings.trimCnc;
       var modeEl=document.getElementById('machine-mode');if(modeEl&&d.settings.machineMode)modeEl.value=d.settings.machineMode;
+      var lfEl=document.getElementById('len-first');if(lfEl&&typeof d.settings.lengthFirst==='boolean')lfEl.checked=d.settings.lengthFirst;
       onMachineModeChange(); // hide/show kerf+trim inputs to match restored mode
     }
     // Restore quote/pricing UI settings
@@ -11894,6 +11904,24 @@ function mqFill(id, extra){
 // Pack-ordering strategies. The algorithm tries each and keeps the best.
 // More strategies = better chance of hitting an efficient packing at the
 // cost of more CPU time (linear in number of strategies).
+// "Place parts lengthwise first": among layouts that place the same parts on
+// the same number of sheets, keep the one with the most part area lying
+// lengthwise — the part's length (l / ILGIS) along the sheet's length. It never
+// costs a sheet: a turned part still wins when it saves one or fits more parts.
+function lengthFirstOn(){ var e=document.getElementById('len-first'); return !e || e.checked; }
+function lengthFirstSave(){ try{ localStorage.setItem('nest.lengthFirst', lengthFirstOn()?'1':'0'); }catch(e){} try{ scheduleSave(); }catch(e){} }
+(function(){ try{ var v=localStorage.getItem('nest.lengthFirst'); if(v!==null){ var apply=function(){ var e=document.getElementById('len-first'); if(e) e.checked=(v==='1'); }; if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',apply); else apply(); } }catch(e){} })();
+function _lengthwiseArea(res){
+  var a=0;
+  res.forEach(function(l){
+    var sheetLongX=(l.uw>=l.uh);
+    l.placements.forEach(function(p){
+      var lAlongX=!p.rot;                     // rot is relative to the real part
+      if(lAlongX===sheetLongX) a+=p.pw*p.ph;
+    });
+  });
+  return a;
+}
 var _RECT_STRATEGIES = [
   // Area decreasing (classic First Fit Decreasing)
   function(a, b){ return (b.l*b.w) - (a.l*a.w); },
@@ -11923,7 +11951,8 @@ function _rectTryAll(partsList, uw, uh, kerf, color, usedTrim, grainLocked){
   // take no sheet space of their own — what a hand-made CNC layout does.
   var _riders=_cutoutRiders(partsList, uw, uh, kerf, grainLocked);
   partsList=_riders.rest;
-  var bestLayouts=null, bestEff=-1, bestPlacedIds=null, bestBboxArea=Infinity;
+  var bestLayouts=null, bestEff=-1, bestPlacedIds=null, bestBboxArea=Infinity, bestLenA=-1;
+  var lenFirst=lengthFirstOn();
   // Build id→original-part map once so we can re-link placements after
   // packing on cloned-with-swapped-dims lists (otherwise the placement's
   // .part references a temporary clone, which breaks rendering / labels).
@@ -11964,11 +11993,14 @@ function _rectTryAll(partsList, uw, uh, kerf, color, usedTrim, grainLocked){
     });
     var bestPlacedCount=bestLayouts?bestLayouts.reduce(function(a,l){return a+l.placements.length;},0):-1;
     var EPS=1e-6;
+    var lenA=lenFirst?_lengthwiseArea(res):0;
+    var tie=(placedCount===bestPlacedCount && Math.abs(e-bestEff)<=EPS);
     var better = (placedCount>bestPlacedCount)
               || (placedCount===bestPlacedCount && e>bestEff+EPS)
-              || (placedCount===bestPlacedCount && Math.abs(e-bestEff)<=EPS && bboxArea < (typeof bestBboxArea==='undefined'?Infinity:bestBboxArea));
+              || (tie && lenA>bestLenA+1)
+              || (tie && Math.abs(lenA-bestLenA)<=1 && bboxArea < (typeof bestBboxArea==='undefined'?Infinity:bestBboxArea));
     if(better){
-      bestEff=e; bestLayouts=res; bestBboxArea=bboxArea;
+      bestEff=e; bestLayouts=res; bestBboxArea=bboxArea; bestLenA=lenA;
       var ids={};
       res.forEach(function(l){l.placements.forEach(function(pl){ids[pl.part.id]=true;});});
       bestPlacedIds=ids;
@@ -12055,8 +12087,10 @@ function _rectTryAll(partsList, uw, uh, kerf, color, usedTrim, grainLocked){
     var e = tot>0 ? used/tot : 0;
     var placedCount = gridRes.reduce(function(a,l){return a+l.placements.length;},0);
     var bestPlacedCount = bestLayouts ? bestLayouts.reduce(function(a,l){return a+l.placements.length;},0) : -1;
-    if(placedCount > bestPlacedCount || (placedCount === bestPlacedCount && e > bestEff)){
-      bestEff = e; bestLayouts = gridRes;
+    var gLen = lenFirst ? _lengthwiseArea(gridRes) : 0;
+    if(placedCount > bestPlacedCount || (placedCount === bestPlacedCount && e > bestEff + 1e-6)
+       || (placedCount === bestPlacedCount && Math.abs(e-bestEff) <= 1e-6 && gLen > bestLenA + 1)){
+      bestEff = e; bestLayouts = gridRes; bestLenA = gLen;
       var ids = {};
       gridRes.forEach(function(l){l.placements.forEach(function(pl){ids[pl.part.id]=true;});});
       bestPlacedIds = ids;
