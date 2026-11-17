@@ -25,15 +25,15 @@ Dėdės Baldai workshop tool: enter a cabinet the way the offer app does (size, 
 - Construction: confirmats / cams + dowels / dowels per joint, top rails (surišimo juostos), back on or inside, fixed shelves, oven supports.
 - **Jungtys 3D**: pick up a connector card (with a cutaway picture of the konfirmatas / ekscentrikas / kaištis) and drop it on a joint, move connectors along a joint, drag them off to remove; left and right sides together or separately; full-screen mode for easier dragging.
 - Extra operations: leg marks, Blum TANDEM / TANDEMBOX runner marks, TANDEMBOX front fixing, hinge cups and plates, shelf-support holes.
-- Separate downloads: every `.XXL` program on its own (from the part list, the part view, per cabinet or all at once — no ZIP needed), the `.xlsm` and `.csv`.
-- Output (ZIP): `.XXL` programs for the SCM Startech CN Plus (5 mm long-edge bores as a separate turned program), the ReportLists `.xlsm` filled exactly like the SolidWorks macro DB_PartList v18 (same template, labels, QR codes, pictures — imports into the nesting app), `.csv` and the project `.json`.
+- Separate downloads: every `.XXL` program on its own (from the part list, the part view, per cabinet or all at once — no ZIP needed), the `.xlsx` and `.csv`.
+- Output (ZIP): `.XXL` programs for the SCM Startech CN Plus (5 mm long-edge bores as a separate turned program), the ReportLists `.xlsx` filled exactly like the SolidWorks macro DB_PartList v20 (same template, labels, QR codes, pictures with the grain arrow; PARTLIST grouped by thickness, thinnest first; no macros; opens at the top; material/thickness mismatches marked yellow — imports into the nesting app), `.csv` and the project `.json`.
 
 ## Source
 | File | |
 |---|---|
 | `src/engine.js` | cabinet → panels, holes, edge bores, joints; `.XXL` writer |
 | `src/export.js` | project part list, hardware, report input |
-| `src/report.js`, `src/report_tpl.js` | ReportLists `.xlsm` on the DB_PartList v18 template (`tpl/`) |
+| `src/report.js`, `src/report_tpl.js` | ReportLists `.xlsx` as DB_PartList v20, on the ReportLists template (`tpl/`) |
 | `src/iso.js` | 3D connector editor |
 | `src/room.js` | whole-kitchen editor (plan, front, 3D) |
 | `src/art.js`, `src/photos.js` | connector pictures and product photos |

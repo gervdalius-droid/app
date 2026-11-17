@@ -2973,7 +2973,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 </script>
 <script>
 /* =====================================================================
-   export.js — project → part list workbook (.xlsm) and CNC programs.
+   export.js — project → part list workbook (.xlsx, the fallback when the ReportLists template cannot be filled) and CNC programs.
 
    The workbook copies the layout of a SWOOD report closely enough for the
    nesting app (FabFlow Nesting) to import it exactly like a SWOOD .xlsm:
@@ -3157,7 +3157,7 @@ function workbookEntries(sheetList) {
   var e = {};
   e['[Content_Types].xml'] = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
     '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
-    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/>' +
+    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
     sheetList.map(function (s, i) { return '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'; }).join('') +
     '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
     '<Override PartName="/xl/sharedStrings.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sharedStrings+xml"/></Types>';
@@ -8004,16 +8004,22 @@ window.DB_REPORT_TEMPLATE_B64="UEsDBBQAAAAIACJJT12+FM1nvAIAAAEhAAATAAAAW0NvbnRlb
 </script>
 <script>
 /* =====================================================================
-   report.js — ReportLists_to_Excel.xlsm exactly as the SolidWorks macro
-   DB_PartList v18 writes it: the same template workbook (a previous
-   report), the same PARTLIST rows and groups, the same LABEL blocks
-   (1OP / 2OP QR, LAMINUOJASI texts, sizes, material, solid name) and the
-   same black-only label pictures (outline 0.75 pt, banded edges 2.25 pt,
-   holes as ovals – dashed when drilled from the other face, edge bores
-   as dashed rectangles). EDGEBAND, STOCK_CORE, HARDWARE(_LIST) filled,
-   SUMMARY pivots refreshed when Excel opens the file.
+   report.js — ReportLists_to_Excel.xlsx exactly as the SolidWorks macro
+   DB_PartList v20 writes it: the same template workbook (a previous
+   report), saved without macros (.xlsx: no VBA, no macro buttons), every
+   sheet opening at A1 with PARTLIST in front; PARTLIST grouped by
+   thickness, thinnest first (as SWOOD), L / W along the grain; the same
+   LABEL blocks (1OP / 2OP QR — 2OP only for a second operation,
+   LAMINUOJASI texts, sizes, material, solid name) and the same black-only
+   pictures (outline 0.75 pt, banded edges 2.25 pt, holes as ovals ≥ 2.5 pt –
+   dashed when drilled from the other face, edge bores as dashed
+   rectangles, a black double arrow along the grain). A material whose
+   thickness (the "18mm" in its name) is not the part's: the row is yellow
+   and NOTES says PATIKRINTI. Row heights whole pixels (no drifting
+   pictures). EDGEBAND, STOCK_CORE, HARDWARE(_LIST) filled, SUMMARY pivots
+   refreshed when Excel opens the file.
 
-   The layout rules were measured on a v18 report (DiG_Virtuve, Oct 2026):
+   The layout rules were measured on a v18 report (DiG_Virtuve, Oct 2026), unchanged in v20:
      PARTLIST picture box 120.5 × 54 pt, centre B+63.25 pt / row top+32.2 pt
      LABEL    picture box 109   × 54 pt, centre C+57.5  pt / 3rd label row+30 pt
      scale = min(box width / LENGTH, 54 / WIDTH), LENGTH horizontal, F edge at the bottom
@@ -8138,8 +8144,13 @@ Shapes.prototype.oval = function (name, cx, cy, dia, dash) {
   this.out.push(anchor(this.g, x, y, dia, dia, '<xdr:sp macro="" textlink=""><xdr:nvSpPr><xdr:cNvPr id="' + (this.id++) + '" name="' + name + '"/><xdr:cNvSpPr/></xdr:nvSpPr><xdr:spPr>' + xfrm(x, y, dia, dia) +
     '<a:prstGeom prst="ellipse"><a:avLst/></a:prstGeom><a:solidFill><a:srgbClr val="FFFFFF"/></a:solidFill><a:ln w="6350"><a:solidFill><a:srgbClr val="000000"/></a:solidFill>' + (dash ? '<a:prstDash val="dash"/>' : '') + '</a:ln></xdr:spPr>' + STY_SP + '</xdr:sp>'));
 };
+Shapes.prototype.arrow = function (name, x1, y1, x2, y2, wEmu) {   // double arrow (grain): triangles at both ends
+  var x = Math.min(x1, x2), y = Math.min(y1, y2), w = Math.abs(x2 - x1), h = Math.abs(y2 - y1);
+  this.out.push(anchor(this.g, x, y, w, h, '<xdr:cxnSp macro=""><xdr:nvCxnSpPr><xdr:cNvPr id="' + (this.id++) + '" name="' + name + '"/><xdr:cNvCxnSpPr/></xdr:nvCxnSpPr><xdr:spPr>' + xfrm(x, y, w, h) +
+    '<a:prstGeom prst="line"><a:avLst/></a:prstGeom><a:ln w="' + wEmu + '"><a:solidFill><a:srgbClr val="000000"/></a:solidFill><a:headEnd type="triangle"/><a:tailEnd type="triangle"/></a:ln></xdr:spPr>' + STY_LN + '</xdr:cxnSp>'));
+};
 /* one panel picture: box centre (cx, cy), box size bw × bh; part = { L, W, pic:{holes, edges}, eb:{F,B,L,R} } */
-var MIN_MARK = 2.4, W_OUT = 9525, W_EB = 44450, W_DASH = 6350, EB_OFF = 3.2;   // edge band bar 3.5 pt, 3.2 pt outside the outline
+var MIN_MARK = 2.5, W_OUT = 9525, W_EB = 44450, W_DASH = 6350, EB_OFF = 3.2;   // edge band bar 3.5 pt, 3.2 pt outside the outline
 function drawPanel(sh, tag, part, cx, cy, bw, bh) {
   var L = +part.L, W = +part.W; if (!(L > 0 && W > 0)) return;
   var pad = EB_OFF + 2, s = Math.min((bw - 2*pad)/L, (bh - 2*pad)/W), pw = L*s, ph = W*s, x0 = cx - pw/2, y0 = cy - ph/2, x1 = x0 + pw, y1 = y0 + ph, k = 0;
@@ -8166,15 +8177,24 @@ function drawPanel(sh, tag, part, cx, cy, bw, bh) {
   if (eb.R) sh.line(nm(), x1 + o, y0 - (eb.B ? o : 0), x1 + o, y1 + (eb.F ? o : 0), W_EB);
   if (eb.B) sh.line(nm(), x0 - (eb.L ? o : 0), y0 - o, x1 + (eb.R ? o : 0), y0 - o, W_EB);
   if (eb.F) sh.line(nm(), x0 - (eb.L ? o : 0), y1 + o, x1 + (eb.R ? o : 0), y1 + o, W_EB);
+  /* grain: a black double arrow through the middle, 0.6 of the picture — the part's L is along the grain, drawn horizontal */
+  var gh = (part.grainVert ? ph : pw)*0.3, gx = (x0 + x1)/2, gy = (y0 + y1)/2;
+  if (gh >= 2) { if (part.grainVert) sh.arrow(nm(), gx, gy - gh, gx, gy + gh, W_OUT); else sh.arrow(nm(), gx - gh, gy, gx + gh, gy, W_OUT); }
 }
 
-/* ----------------------------------------------------------------- order (as the macro: thickness ↓, material, length ↓, width ↓, part code) */
+/* ----------------------------------------------------------------- order (as the macro v20 / SWOOD: thickness ↑, material, length ↓, width ↓, part code) */
 function binCmp(a, b) { a = String(a); b = String(b); return a < b ? -1 : a > b ? 1 : 0; }   // VBA binary text compare
 function sortParts(parts) {
   return parts.slice().sort(function (a, b) {
-    return (b.T - a.T) || binCmp(a.mat, b.mat) || (b.L - a.L) || (b.W - a.W) || binCmp(a.dbpart, b.dbpart);
+    return (Math.round(a.T*10) - Math.round(b.T*10)) || binCmp(a.mat.toUpperCase(), b.mat.toUpperCase()) || (b.L - a.L) || (b.W - a.W) || binCmp(a.dbpart, b.dbpart);
   });
 }
+/* "KARKASAI 18mm" → 18, "16MM PLOKSTE" → 16, "U16003 VV" → 0 (the number must be followed by mm), as ThicknessFromName */
+function thkFromName(nm) { var m = /(\d+(?:[.,]\d+)?)\s*mm/i.exec(String(nm || '')); return m ? parseFloat(m[1].replace(',', '.')) : 0; }
+function numText(v) { return String(Math.round(v*10)/10); }
+/* whole screen pixels (0.75 pt): Excel lays shapes on pixel-rounded rows, so fractional heights let pictures drift */
+function pxH(h) { return Math.max(0.75, Math.round(h/0.75)*0.75); }
+function pxAttrs(a) { return a.replace(/ ht="([\d.]+)"/, function (m, h) { return ' ht="' + pxH(+h) + '"'; }); }
 function qrF(id) { return { f:'_xlfn.IMAGE("https://quickchart.io/qr?text=' + encodeURIComponent(id).replace(/%2F/g, '/') + '")' }; }
 
 /* ----------------------------------------------------------------- main */
@@ -8204,8 +8224,32 @@ async function buildReport(tplBytes, pj, opts) {
   var proj = pj.project || 'PROJEKTAS';
   var parts = sortParts(pj.parts.map(function (p) {
     return { solid:p.solid, dbpart:p.dbpart, name:p.name, mat:p.mat || '', L:+p.L, W:+p.W, T:+p.T, qty:Math.max(1, Math.round(+p.qty || 1)),
-             eb:p.eb || {}, ebInfo:p.ebInfo || {}, stockRef:p.stockRef || '', progs:p.progs || [], pic:p.pic || null };
+             eb:p.eb || {}, ebInfo:p.ebInfo || {}, stockRef:p.stockRef || '', progs:p.progs || [], pic:p.pic || null, grainVert:!!p.grainVert };
   }));
+  /* material check (v20): a material whose thickness is not the part's is flagged — yellow row, NOTES "PATIKRINTI: …" */
+  var nFlag = 0;
+  parts.forEach(function (p) {
+    var mt = thkFromName(p.mat);
+    if (mt > 0 && Math.abs(mt - p.T) > 0.3) { p.flag = true; nFlag++; p.note = 'PATIKRINTI: MEDZIAGA ' + p.mat + ' (' + numText(mt) + ' mm) NEATITINKA STORIO ' + numText(p.T) + ' mm'; }
+  });
+  /* yellow (FFFF99) copies of the styles a flagged row uses */
+  var stylesXml = await rd('xl/styles.xml'), yellowOf = {}, yFill = null;
+  var yellow = function (sid) {
+    if (sid == null || !stylesXml) return sid;
+    if (yellowOf[sid] !== undefined) return yellowOf[sid];
+    if (yFill === null) {
+      var fm = /<fills count="(\d+)">/.exec(stylesXml); if (!fm) return sid;
+      yFill = +fm[1];
+      stylesXml = stylesXml.replace(/<fills count="\d+">([\s\S]*?)<\/fills>/, function (m0, body) { return '<fills count="' + (yFill + 1) + '">' + body + '<fill><patternFill patternType="solid"><fgColor rgb="FFFFFF99"/><bgColor indexed="64"/></patternFill></fill></fills>'; });
+    }
+    var xm = /<cellXfs count="\d+">([\s\S]*?)<\/cellXfs>/.exec(stylesXml); if (!xm) return sid;
+    var xfs = xm[1].match(/<xf\b[^>]*?(?:\/>|>[\s\S]*?<\/xf>)/g) || [], src = xfs[+sid]; if (!src) return sid;
+    var nx = / fillId="\d+"/.test(src) ? src.replace(/ fillId="\d+"/, ' fillId="' + yFill + '"') : src.replace('<xf ', '<xf fillId="' + yFill + '" ');
+    nx = / applyFill="\d"/.test(nx) ? nx.replace(/ applyFill="\d"/, ' applyFill="1"') : nx.replace('<xf ', '<xf applyFill="1" ');
+    stylesXml = stylesXml.replace(/<cellXfs count="\d+">([\s\S]*?)<\/cellXfs>/, function (m0, body) { return '<cellXfs count="' + (xfs.length + 1) + '">' + body + nx + '</cellXfs>'; });
+    yellowOf[sid] = String(xfs.length);
+    return yellowOf[sid];
+  };
   var drawingOf = async function (sheetFile) {
     var rels = await rd(sheetFile.replace('worksheets/', 'worksheets/_rels/') + '.rels');
     var m = rels && /Target="\.\.\/drawings\/(drawing\d+\.xml)"/.exec(rels);
@@ -8220,14 +8264,15 @@ async function buildReport(tplBytes, pj, opts) {
   var out = [], heights = {};
   for (var r = 1; r <= 9; r++) if (plRows[r]) {
     var put = {}; if (r === 1) put[10] = proj; if (r === 5) put[17] = proj;
-    out.push(moveRow(plRows[r], r, put, function () { return false; }, sst));
-    heights[r] = +((/ ht="([\d.]+)"/.exec(plRows[r].attrs) || [0, 15])[1]);
+    var hr = { attrs:pxAttrs(plRows[r].attrs), cells:plRows[r].cells };
+    out.push(moveRow(hr, r, put, function () { return false; }, sst));
+    heights[r] = +((/ ht="([\d.]+)"/.exec(hr.attrs) || [0, 15])[1]);
   }
   var gFirst = plRows[10], gNext = plRows[12] || plRows[10], dRow = plRows[11] || plRows[13];
   var settingsCells = {};   // template cells right of the table in rows 10-12 (SETTINGS_* switches)
   [10, 11, 12].forEach(function (rr) { settingsCells[rr] = (plRows[rr] ? plRows[rr].cells : []).filter(function (c) { return c.col >= 24 && c.col <= 28 && c.col !== 27; }); });   // AA holds the template's last part name (another customer's) — left out
   var ds = styleMap(dRow), gs1 = styleMap(gFirst), gs2 = styleMap(gNext);
-  var dAttrs = dRow.attrs, gAttrs = gFirst.attrs;
+  var dAttrs = pxAttrs(dRow.attrs), gAttrs = pxAttrs(gFirst.attrs);
   var merges = [], plPics = [], row = 10, lastKey = null, firstGroup = true;
   var rowCells = function (rr, list) {   // append the template settings cells for rows 10-12
     (settingsCells[rr] || []).forEach(function (c) { list.push({ col:c.col, x:c.xml.replace(/r="[A-Z]+\d+"/, 'r="' + colName(c.col) + rr + '"') }); });
@@ -8235,19 +8280,19 @@ async function buildReport(tplBytes, pj, opts) {
     return list.map(function (o) { return o.x; }).join('');
   };
   parts.forEach(function (p) {
-    var key = p.T + '|' + p.mat;
+    var key = String(Math.round(p.T*10));   // one group per thickness (v20, as SWOOD); the materials are sorted inside it
     if (key !== lastKey) {
       lastKey = key; var gsm = firstGroup ? gs1 : gs2; firstGroup = false;
       var list = [{ col:1, x:cEmpty('A' + row, gsm[1]) }, { col:2, x:cell('B' + row, gsm[2], (Math.round(p.T*10)/10) + ' mm', sst) }];
       for (var c = 3; c <= 18; c++) list.push({ col:c, x:cEmpty(colName(c) + row, gsm[c]) });
       for (var c2 = 19; c2 <= 23; c2++) if (gsm[c2]) list.push({ col:c2, x:cEmpty(colName(c2) + row, gsm[c2]) });
-      out.push(rowXml(row, gAttrs, rowCells(row, list))); heights[row] = +((/ ht="([\d.]+)"/.exec(gAttrs) || [0, 24.9])[1]);
+      out.push(rowXml(row, gAttrs, rowCells(row, list))); heights[row] = +((/ ht="([\d.]+)"/.exec(gAttrs) || [0, 24.75])[1]);
       merges.push('B' + row + ':R' + row); row++;
     }
     var v = { 1:{ f:'D' + row, str:1 }, 2:'', 3:p.solid, 4:p.dbpart, 5:p.name, 6:p.mat, 7:p.L, 8:p.W, 9:p.T, 10:p.qty,
-              11:p.eb.F || '', 12:p.eb.B || '', 13:p.eb.L || '', 14:p.eb.R || '', 15:'', 16:p.name, 17:p.solid, 18:{ f:'$Q$5&""&(ROW()-9)', str:1 } };
+              11:p.eb.F || '', 12:p.eb.B || '', 13:p.eb.L || '', 14:p.eb.R || '', 15:'', 16:p.note || p.name, 17:p.solid, 18:{ f:'$Q$5&""&(ROW()-9)', str:1 } };
     var list2 = [];
-    for (var c3 = 1; c3 <= 18; c3++) list2.push({ col:c3, x:cell(colName(c3) + row, ds[c3], v[c3], sst) });
+    for (var c3 = 1; c3 <= 18; c3++) list2.push({ col:c3, x:cell(colName(c3) + row, p.flag && c3 >= 3 && c3 <= 17 ? yellow(ds[c3]) : ds[c3], v[c3], sst) });
     for (var c4 = 19; c4 <= 23; c4++) if (ds[c4]) list2.push({ col:c4, x:cEmpty(colName(c4) + row, ds[c4]) });
     out.push(rowXml(row, dAttrs, rowCells(row, list2))); heights[row] = +((/ ht="([\d.]+)"/.exec(dAttrs) || [0, 60])[1]);
     plPics.push({ row:row, part:p }); row++;
@@ -8298,6 +8343,7 @@ async function buildReport(tplBytes, pj, opts) {
         if (i === 9) { put[1 + off] = 'MAT: ' + p.mat; put[4 + off] = p.solid; }
       };
       side(L, 0); side(R, 7);
+      tr = { attrs:pxAttrs(tr.attrs), cells:tr.cells };
       lout.push(moveRow(tr, rnum, put, function (c) { return labelArea(c) && !(i === 1 && (c === 1 || c === 6 || c === 8 || c === 13)); }, sst));
       lheights[rnum] = +((/ ht="([\d.]+)"/.exec(tr.attrs) || [0, 15])[1]);
     }
@@ -8355,9 +8401,43 @@ async function buildReport(tplBytes, pj, opts) {
   await fillList('HARDWARE_LIST', 8, 3, { lastCol:8, rows:hwRows });
   await fillList('HARDWARE', 8, 3, { lastCol:8, rows:hwRows });
 
+  if (yFill !== null) wr('xl/styles.xml', stylesXml);
+  if (opts.info) opts.info.flagged = nFlag;
+
+  /* ================= every sheet opens at A1, PARTLIST in front (v20 ResetViews) ================= */
+  var order = []; wbXml.replace(/<sheet name="([^"]+)"/g, function (_, n) { order.push(n); return _; });
+  for (var si = 0; si < order.length; si++) {
+    var sp = sheetPath[order[si]], sx = sp && await rd(sp); if (!sx) continue;
+    sx = sx.replace(/<sheetView\b([^>]*?)(\/?)>/, function (m0, a, sl) {
+      a = a.replace(/ topLeftCell="[^"]*"/, '').replace(/ tabSelected="[^"]*"/, '');
+      if (order[si] === 'PARTLIST') a = ' tabSelected="1"' + a;
+      return '<sheetView' + a + sl + '>';
+    });
+    if (!/<pane\b/.test(sx)) sx = sx.replace(/<selection\b[^>]*\/>/, '<selection activeCell="A1" sqref="A1"/>');
+    wr(sp, sx);
+  }
+  var plIdx = Math.max(0, order.indexOf('PARTLIST'));
+  wbXml = wbXml.replace(/<workbookView\b([^>]*?)\/>/, function (m0, a) { return '<workbookView' + attr(attr(a, 'activeTab', plIdx), 'firstSheet', 0) + '/>'; });
+
+  /* ================= .xlsx: no macros (v20 OUT_SUFFIX) — VBA, its relations and the macro buttons' links go ================= */
+  if (opts.xlsx !== false) {
+    var ctx = await rd('[Content_Types].xml'), wrx = await rd('xl/_rels/workbook.xml.rels');
+    Object.keys(zip.files).forEach(function (n) { if (/^xl\/vbaProject[^/]*\.bin$/i.test(n) || /^xl\/_rels\/vbaProject[^/]*\.rels$/i.test(n)) zip.remove(n); });
+    wrx = wrx.replace(/<Relationship [^>]*Target="vbaProject[^"]*"[^>]*\/>/g, '');
+    ctx = ctx.replace(/<Override PartName="\/xl\/vbaProject[^"]*"[^>]*\/>/g, '').replace(/<Default Extension="bin" ContentType="application\/vnd\.ms-office\.vbaProject"\/>/g, '')
+             .replace('application/vnd.ms-excel.sheet.macroEnabled.main+xml', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml');
+    if (!/Extension="bin"/.test(ctx)) ctx = ctx.replace('<Default ', '<Default Extension="bin" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.printerSettings"/><Default ');
+    wr('[Content_Types].xml', ctx); wr('xl/_rels/workbook.xml.rels', wrx);
+    var mf = Object.keys(zip.files).filter(function (n) { return /^xl\/(worksheets|drawings)\/[^/]+\.(xml|vml)$/.test(n); });
+    for (var mi = 0; mi < mf.length; mi++) {
+      var mx = await rd(mf[mi]); if (!mx || !/macro="[^"]|FmlaMacro/.test(mx)) continue;
+      wr(mf[mi], mx.replace(/ macro="[^"]+"/g, function (m0) { return /^xl\/drawings\/[^/]+\.xml$/.test(mf[mi]) ? ' macro=""' : ''; }).replace(/<x:FmlaMacro>[^<]*<\/x:FmlaMacro>/g, ''));
+    }
+  }
+
   /* ================= workbook: recalc + pivots on open, version name ================= */
   wbXml = wbXml.replace(/<calcPr([^>]*?)\/>/, function (m, a) { return '<calcPr' + attr(a, 'fullCalcOnLoad', '1') + '/>'; });
-  var ver = opts.version || 'v18-kurejas';
+  var ver = opts.version || 'v20-kurejas';
   if (/<definedName name="DB_PartList_Version"/.test(wbXml)) wbXml = wbXml.replace(/(<definedName name="DB_PartList_Version"[^>]*>)[^<]*</, '$1"' + esc(ver) + '"<');
   else wbXml = wbXml.replace('</definedNames>', '<definedName name="DB_PartList_Version">"' + esc(ver) + '"</definedName></definedNames>');
   wr('xl/workbook.xml', wbXml);
@@ -8398,7 +8478,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', topKind:'Viršaus tipas', bKind:'Tipas', bcBotL:'Apačioje', bcBotOn:'Stovi ant dugno', bcBotCov:'Dengia dugną (dugnas trumpesnis)', bcTopL:'Viršuje', bcTopOn:'Po viršumi (stogu)', bcTopCov:'Dengia viršų (viršus trumpesnis)', bcRailOn:'Po surišimo juosta', bcRailCov:'Dengia juostą (juosta paslinkta)', plFitT:'pritaikymas tarpais', plGl:'Tarpas kairėje', plGr:'Tarpas dešinėje', plGt:'Iki dugno', plGb:'Nuo grindų', plFitBtn:'Pritaikyti: tarp šonų po 1 mm, 4 mm iki dugno', plFitOff:'Nustatyti dydį ranka', plFitNote:'Užpildžius tarpus, cokolio ilgis ir aukštis skaičiuojami patys ir keičiasi kartu su spintele. Paveikslėlyje kraštus galima tempti.', plDragT:'Tempkite — cokolio kraštas (tarpas)', plSnap0:'be tarpo', mTop:'Viršus (stogas)', mTopPh:'kaip korpusas', mdT:'Medžiagos — tempkite ant plokštės 3D vaizde', mdChipT:'Tempkite ant plokštės dešinėje', mdNote:'Numesta ant fasado — fasadų medžiaga, ant stogo — viršaus, ant nugaros — nugaros, ant kitų plokščių — korpuso. Fasadų medžiaga ant šono — matomas šonas.', mdWt:'Stalviršis', mdNone:'Čia nėra plokštės', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau (kai dugnas pakeltas — iki šonų apačios). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', topKind:'Viršaus tipas', bKind:'Tipas', bcBotL:'Apačioje', bcBotOn:'Stovi ant dugno', bcBotCov:'Dengia dugną (dugnas trumpesnis)', bcTopL:'Viršuje', bcTopOn:'Po viršumi (stogu)', bcTopCov:'Dengia viršų (viršus trumpesnis)', bcRailOn:'Po surišimo juosta', bcRailCov:'Dengia juostą (juosta paslinkta)', plFitT:'pritaikymas tarpais', plGl:'Tarpas kairėje', plGr:'Tarpas dešinėje', plGt:'Iki dugno', plGb:'Nuo grindų', plFitBtn:'Pritaikyti: tarp šonų po 1 mm, 4 mm iki dugno', plFitOff:'Nustatyti dydį ranka', plFitNote:'Užpildžius tarpus, cokolio ilgis ir aukštis skaičiuojami patys ir keičiasi kartu su spintele. Paveikslėlyje kraštus galima tempti.', plDragT:'Tempkite — cokolio kraštas (tarpas)', plSnap0:'be tarpo', mTop:'Viršus (stogas)', mTopPh:'kaip korpusas', mdT:'Medžiagos — tempkite ant plokštės 3D vaizde', mdChipT:'Tempkite ant plokštės dešinėje', mdNote:'Numesta ant fasado — fasadų medžiaga, ant stogo — viršaus, ant nugaros — nugaros, ant kitų plokščių — korpuso. Fasadų medžiaga ant šono — matomas šonas.', mdWt:'Stalviršis', mdNone:'Čia nėra plokštės', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau (kai dugnas pakeltas — iki šonų apačios). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsx kaip DB_PartList ataskaita) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsx ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8443,16 +8523,16 @@ lt:{
  colTooWide:'Kolonų pločiai netelpa į spintelės plotį — kolonos padalintos po lygiai', numBad:'Netinkamas skaičius', numRange:'Leidžiama {a}–{b}', numSome:'Kai kurios reikšmės nebuvo skaičiai — praleistos', perLenBad:'Patikrinkite formatą: „450: 35,195,420; 500: 35,227,470“', wtWallNote:'Tai pakabinama spintelė — ar tikrai reikia stalviršio? Jis bus detalių sąraše.', wtL:'Stalviršis', wtNo:'Nėra', wtYes:'Yra', wtMat:'Stalviršio medžiaga', wtT:'Storis', wtOver:'Už fasadų', wtLeft:'Kairėje už šono', wtRight:'Dešinėje už šono', wtEdge:'Stalviršio kraštas', wtSize:'Stalviršis', wtNote:'Gretimų spintelių stalviršiai (Baldų skirtuke vienas šalia kito, ta pati medžiaga ir storis) detalių sąraše sujungiami į vieną gabalą. Kraštas klijuojamas priekyje ir galuose, kurie kyšo už šono.', setWt:'Stalviršių sąrašas', mCarc:'Karkasas', mFac:'Fasadai', mBack:'Nugara', eCarc:'Karkaso kraštas', eFac:'Fasado kraštas', legH:'Kojelių aukštis',
  sketch:'Eskizas', parts:'Detalių', progs:'Programų', warns:'Pastabos', toRes:'Detalės ir CNC →',
  noCab:'Projekte dar nėra spintelių.', firstCab:'Sukurkite pirmą spintelę',
- rTitle:'Detalių sąrašas ir CNC programos', zipAll:'⤓ Viskas (ZIP)', xlsm:'Sąrašas .xlsm', csv:'Sąrašas .csv', print:'Spausdinti sąrašą', json:'Projektas .json',
- zipNote:'ZIP: visos .XXL programos, .xlsm sąrašas nesting programai (kaip SWOOD ataskaita), .csv ir projekto failas.',
+ rTitle:'Detalių sąrašas ir CNC programos', zipAll:'⤓ Viskas (ZIP)', xlsm:'Sąrašas .xlsx', csv:'Sąrašas .csv', print:'Spausdinti sąrašą', json:'Projektas .json',
+ zipNote:'ZIP: visos .XXL programos, .xlsx sąrašas nesting programai (kaip DB_PartList v20 ataskaita), .csv ir projekto failas.',
  cDet:'Detalė', cCab:'Sp.', cMat:'Medžiaga', cL:'Ilgis', cW:'Plotis', cT:'Stor.', cQ:'Kiek.', cEdge:'Kraštai', cProg:'Programos',
  noProg:'be CNC', pick:'Pasirinkite detalę — pamatysite brėžinį ir programą.',
  lgA:'iš viršaus', lgB:'iš apačios (2OP)', lgT:'kiaurai', lgM:'žymė', lgE:'krašte', lgEb:'briauna',
  copy:'Kopijuoti', copied:'Nukopijuota', hw:'Furnitūra', hwNote:'Kiekiai iš konstrukcijos — patikrinkite prieš užsakydami.',
  allWarn:'Pastabos', none:'Nėra',
  setTitle:'Nustatymai', setLead:'Taikoma visiems projektams šioje naršyklėje.',
- tplTitle:'ReportLists šablonas', tplLead:'Sąrašas .xlsm pildomas į šį šabloną taip pat, kaip SolidWorks makrokomanda DB_PartList (v18): tie patys lapai, etiketės, QR ir paveikslėliai.',
- tplBuiltIn:'Įdiegtas: DB_PartList v18 ataskaita (DiG_Virtuve)', tplOwn:'Jūsų šablonas: ', tplUpload:'Įkelti kitą ataskaitą (.xlsm)', tplReset:'Grąžinti įdiegtą', tplBad:'Tai ne ReportLists ataskaita — nėra PARTLIST ir LABEL lapų.', tplOk:'Šablonas pakeistas', tplSession:'Šablonas naudojamas tik šiai sesijai (naršyklė neleido išsaugoti).',
+ tplTitle:'ReportLists šablonas', tplLead:'Sąrašas .xlsx pildomas į šį šabloną taip pat, kaip SolidWorks makrokomanda DB_PartList v20: tie patys lapai, etiketės, QR ir paveikslėliai su struktūros rodykle, detalės sugrupuotos pagal storį (ploniausios pirma), be makrokomandų, atsidaro nuo viršaus. Medžiaga, kurios storis neatitinka detalės, pažymima geltonai (NOTES: PATIKRINTI).',
+ tplBuiltIn:'Įdiegtas: ReportLists šablonas (DiG_Virtuve ataskaita), pildomas kaip DB_PartList v20', tplOwn:'Jūsų šablonas: ', tplUpload:'Įkelti kitą ataskaitą (.xlsm / .xlsx)', tplReset:'Grąžinti įdiegtą', tplBad:'Tai ne ReportLists ataskaita — nėra PARTLIST ir LABEL lapų.', tplOk:'Šablonas pakeistas', tplSession:'Šablonas naudojamas tik šiai sesijai (naršyklė neleido išsaugoti).',
  rptFallback:'ReportLists šablono nepavyko užkrauti (reikia interneto JSZip bibliotekai) — sukurtas paprastas sąrašas.', building:'Ruošiama…',
  setMats:'Medžiagų sąrašas', setEdges:'Kraštų sąrašas', setMatsL:'Po vieną eilutėje — bus siūloma pildant.',
  setTypes:'Numatyta konstrukcija pagal tipą', setTypesL:'Naujai spintelei parenkama pagal tipą. Darbuotojui keisti nereikės.',
@@ -8546,7 +8626,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', topKind:'Top type', bKind:'Type', bcBotL:'At the bottom', bcBotOn:'Stands on the bottom', bcBotCov:'Covers the bottom (shorter bottom)', bcTopL:'At the top', bcTopOn:'Under the top', bcTopCov:'Covers the top (shorter top)', bcRailOn:'Under the back rail', bcRailCov:'Covers the rail (rail moved forward)', plFitT:'fitted by gaps', plGl:'Gap left', plGr:'Gap right', plGt:'To the bottom', plGb:'From the floor', plFitBtn:'Fit: between the sides 1 mm each, 4 mm under the bottom', plFitOff:'Set the size by hand', plFitNote:'With the gaps filled, the plinth\'s length and height follow the cabinet by themselves. The edges in the picture can be dragged.', plDragT:'Drag — the plinth\'s edge (gap)', plSnap0:'no gap', mTop:'Top (STOGAS)', mTopPh:'as the carcass', mdT:'Materials — drag onto a board in the 3-D view', mdChipT:'Drag onto a board on the right', mdNote:'Dropped on a front — the fronts\' material, on the top — the top\'s, on the back — the back\'s, on other boards — the carcass. The fronts\' material on a side — a visible side.', mdWt:'Worktop', mdNone:'No board here', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower (with a raised bottom, down to the sides\' bottom). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', topKind:'Top type', bKind:'Type', bcBotL:'At the bottom', bcBotOn:'Stands on the bottom', bcBotCov:'Covers the bottom (shorter bottom)', bcTopL:'At the top', bcTopOn:'Under the top', bcTopCov:'Covers the top (shorter top)', bcRailOn:'Under the back rail', bcRailCov:'Covers the rail (rail moved forward)', plFitT:'fitted by gaps', plGl:'Gap left', plGr:'Gap right', plGt:'To the bottom', plGb:'From the floor', plFitBtn:'Fit: between the sides 1 mm each, 4 mm under the bottom', plFitOff:'Set the size by hand', plFitNote:'With the gaps filled, the plinth\'s length and height follow the cabinet by themselves. The edges in the picture can be dragged.', plDragT:'Drag — the plinth\'s edge (gap)', plSnap0:'no gap', mTop:'Top (STOGAS)', mTopPh:'as the carcass', mdT:'Materials — drag onto a board in the 3-D view', mdChipT:'Drag onto a board on the right', mdNote:'Dropped on a front — the fronts\' material, on the top — the top\'s, on the back — the back\'s, on other boards — the carcass. The fronts\' material on a side — a visible side.', mdWt:'Worktop', mdNone:'No board here', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower (with a raised bottom, down to the sides\' bottom). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsx as a DB_PartList report) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsx and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -8591,16 +8671,16 @@ en:{
  colTooWide:'The column widths do not fit the cabinet width — the columns are split equally', numBad:'Not a number', numRange:'Allowed {a}–{b}', numSome:'Some values were not numbers — left out', perLenBad:'Check the format: “450: 35,195,420; 500: 35,227,470”', wtWallNote:'This is a wall cabinet — does it really need a worktop? It goes into the part list.', wtL:'Worktop', wtNo:'None', wtYes:'Yes', wtMat:'Worktop material', wtT:'Thickness', wtOver:'Past the fronts', wtLeft:'Past the left side', wtRight:'Past the right side', wtEdge:'Worktop edge', wtSize:'Worktop', wtNote:'Worktops of cabinets standing side by side in the Furniture tab (same material and thickness) are joined into one piece in the part list. The edge goes on the front and on ends that stick out past a side.', setWt:'Worktop list', mCarc:'Carcass', mFac:'Fronts', mBack:'Back', eCarc:'Carcass edge', eFac:'Front edge', legH:'Leg height',
  sketch:'Sketch', parts:'Parts', progs:'Programs', warns:'Notes', toRes:'Parts & CNC →',
  noCab:'No cabinets in this project yet.', firstCab:'Create the first cabinet',
- rTitle:'Part list and CNC programs', zipAll:'⤓ Everything (ZIP)', xlsm:'List .xlsm', csv:'List .csv', print:'Print list', json:'Project .json',
- zipNote:'ZIP: all .XXL programs, the .xlsm list for the nesting app (like a SWOOD report), a .csv and the project file.',
+ rTitle:'Part list and CNC programs', zipAll:'⤓ Everything (ZIP)', xlsm:'List .xlsx', csv:'List .csv', print:'Print list', json:'Project .json',
+ zipNote:'ZIP: all .XXL programs, the .xlsx list for the nesting app (like a DB_PartList v20 report), a .csv and the project file.',
  cDet:'Part', cCab:'Cab.', cMat:'Material', cL:'Length', cW:'Width', cT:'Thk.', cQ:'Qty', cEdge:'Edges', cProg:'Programs',
  noProg:'no CNC', pick:'Pick a part to see its drawing and program.',
  lgA:'from top', lgB:'from below (2OP)', lgT:'through', lgM:'mark', lgE:'in edge', lgEb:'edgeband',
  copy:'Copy', copied:'Copied', hw:'Hardware', hwNote:'Quantities come from the construction — check before ordering.',
  allWarn:'Notes', none:'None',
  setTitle:'Settings', setLead:'Applies to every project in this browser.',
- tplTitle:'ReportLists template', tplLead:'The .xlsm list is filled into this template the same way the SolidWorks macro DB_PartList (v18) does: same sheets, labels, QR and pictures.',
- tplBuiltIn:'Built in: DB_PartList v18 report (DiG_Virtuve)', tplOwn:'Your template: ', tplUpload:'Load another report (.xlsm)', tplReset:'Back to built-in', tplBad:'This is not a ReportLists report — there are no PARTLIST and LABEL sheets.', tplOk:'Template changed', tplSession:'Template used for this session only (the browser would not store it).',
+ tplTitle:'ReportLists template', tplLead:'The .xlsx list is filled into this template the same way the SolidWorks macro DB_PartList v20 does: same sheets, labels, QR and pictures with the grain arrow, parts grouped by thickness (thinnest first), no macros, opening at the top. A material whose thickness is not the part\'s is marked yellow (NOTES: PATIKRINTI).',
+ tplBuiltIn:'Built in: ReportLists template (DiG_Virtuve report), filled as DB_PartList v20', tplOwn:'Your template: ', tplUpload:'Load another report (.xlsm / .xlsx)', tplReset:'Back to built-in', tplBad:'This is not a ReportLists report — there are no PARTLIST and LABEL sheets.', tplOk:'Template changed', tplSession:'Template used for this session only (the browser would not store it).',
  rptFallback:'The ReportLists template could not be loaded (JSZip needs internet) — a plain list was made instead.', building:'Preparing…',
  setMats:'Material list', setEdges:'Edgeband list', setMatsL:'One per line — offered while filling in.',
  setTypes:'Default construction per type', setTypesL:'A new cabinet gets these by type. The workshop does not need to change them.',
@@ -10487,12 +10567,12 @@ function viewNest() {
   });
   return h + '<p class="note">' + t('nestNote') + '</p></section>';
 }
-/* the whole project to the Nesting app (same site): the .xlsm it reads, handed over through this browser's storage */
+/* the whole project to the Nesting app (same site): the .xlsx it reads, handed over through this browser's storage */
 function nestHandoff() {
   var pj = buildProjectAll(), w = window.open('about:blank', '_blank');
   xlsmBytes(pj).then(function (bytes) {
     var b = '', u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); for (var i = 0; i < u8.length; i += 0x8000) b += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-    try { localStorage.setItem('dbNestHandoff', JSON.stringify({ name:projName() + '.xlsm', b64:btoa(b), at:Date.now() })); }
+    try { localStorage.setItem('dbNestHandoff', JSON.stringify({ name:projName() + '_ReportLists_to_Excel.xlsx', b64:btoa(b), at:Date.now() })); }
     catch (e) { if (w) w.close(); toast(t('nestHandFail'), true); return; }
     var url = (location.pathname.indexOf('/builder') >= 0 ? location.pathname.replace(/\/builder\/?.*$/, '/nesting/') : '/nesting/') + '?from=builder';
     if (w) w.location.href = url; else location.href = url;
@@ -11270,11 +11350,11 @@ function csvOf(pj) {
   return '﻿' + rows.map(function (r) { return r.map(q).join(';'); }).join('\r\n') + '\r\n';
 }
 function plainXlsm(pj) { return Z.zip(Z.fromEntries(X.workbookEntries(X.sheets(pj)))); }
-/* ReportLists exactly as DB_PartList v18 writes it (report.js on the built-in or the user's template) */
+/* ReportLists exactly as DB_PartList v20 writes it (report.js on the built-in or the user's template): .xlsx, no macros */
 function xlsmBytes(pj) {
   var b64 = S.tplB64 || window.DB_REPORT_TEMPLATE_B64;
   if (!window.DBReport || !window.JSZip || !b64) { toast(t('rptFallback'), true); return Promise.resolve(plainXlsm(pj)); }
-  return window.DBReport.buildReport(b64ToBytes(b64), X.reportInput(pj), { version:'v18-kurejas-' + VERSION })
+  return window.DBReport.buildReport(b64ToBytes(b64), X.reportInput(pj), { version:'v20-kurejas-' + VERSION, xlsx:true })
     .catch(function (e) { console.error(e); toast(t('rptFallback'), true); return plainXlsm(pj); });
 }
 function zipAll(pj) {
@@ -11286,7 +11366,7 @@ function zipAll(pj) {
 function zipFiles(pj, xl, pdf) {
   var base = pj.project, files = [];
   pj.files.forEach(function (f) { files.push({ name:base + '_XXL/' + f.name, data:f.text }); });
-  files.push({ name:base + '_ReportLists_to_Excel.xlsm', data:xl });
+  files.push({ name:base + '_ReportLists_to_Excel.xlsx', data:xl });
   files.push({ name:base + '_detales.csv', data:csvOf(pj) });
   if (pdf) files.push({ name:base + '_brezinai.pdf', data:pdf });
   var pjCopy = clone(S.proj); if (!S.admin) delete pjCopy.pricing;   // prices stay with the admin
@@ -11299,7 +11379,7 @@ function download(kind) {
   if (kind === 'zip' || kind === 'xlsm') {
     if (S.busy) { toast(t('building')); return; }   // one at a time: a second click does not start a second ZIP
     S.busy = true; toast(t('building'));
-    (kind === 'zip' ? zipAll(pj) : xlsmBytes(pj)).then(function (u) { S.busy = false; saveFile(kind === 'zip' ? base + '_CNC.zip' : base + '_ReportLists_to_Excel.xlsm', u); }, function (er) { S.busy = false; toast(String(er && er.message || er), true); });
+    (kind === 'zip' ? zipAll(pj) : xlsmBytes(pj)).then(function (u) { S.busy = false; saveFile(kind === 'zip' ? base + '_CNC.zip' : base + '_ReportLists_to_Excel.xlsx', u); }, function (er) { S.busy = false; toast(String(er && er.message || er), true); });
     return;
   }
   if (kind === 'csv') { name = base + '_detales.csv'; data = csvOf(pj); }
