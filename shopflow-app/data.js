@@ -3319,7 +3319,8 @@ var D = {
   statusLabelFor(order, st) {
     if (order.type === "eng") {
       if (st === "ready") return "Complete";
-      if (st === "shipped") return "Delivered";
+      if (st === "shipped") return order.handedOffTo ? "Handed off to production" : "Delivered";
+      if (st === "running") return M.drawState && M.drawState(order) === "pending" ? "Drawings check" : "In engineering";
     }
     return this.statusLabel[st] || st;
   },

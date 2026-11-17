@@ -4643,7 +4643,7 @@ var OrderDetail = {
       </header>
       <div class="modal-body sheet">
         <div class="sheet-facts">
-          <div><span class="t-label">Status</span>${pillHtml(st, D.statusLabel[st])}</div>
+          <div><span class="t-label">Status</span>${pillHtml(st, D.statusLabelFor(o, st))}</div>
           <div><span class="t-label">Due</span><b class="${due.cls === "overdue" ? "bad" : ""}">${due.label}</b></div>
           <div><span class="t-label">${isEng ? "Stage" : "Now at"}</span><b>${esc(cur ? (D.station(cur.stationId) || {}).name || "—" : "—")}</b></div>
           <div><span class="t-label">Progress</span><b>${p.done}/${p.total} <span>tasks</span></b></div>

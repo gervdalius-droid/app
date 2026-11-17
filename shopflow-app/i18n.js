@@ -908,5 +908,8 @@ var LT = {
   "The .xlsm (or .xlsx) SWOOD writes next to the project — drop it here or click to browse. Several lists of one project can be chosen together.": "SWOOD sukurtas .xlsm (ar .xlsx) failas — numeskite čia arba spauskite ir pasirinkite. Galima pasirinkti kelis vieno projekto sąrašus kartu.",
   "Drawings Check": "Brėžinių patikra",
   "Drawings to check": "Brėžiniai patikrai",
-  "Ready for production": "Paruošta gamybai"
+  "Ready for production": "Paruošta gamybai",
+  "In engineering": "Projektuojama",
+  "Handed off to production": "Perduota į gamybą",
+  "Drawings check": "Brėžinių patikra"
 };
