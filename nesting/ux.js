@@ -44,3 +44,62 @@ document.addEventListener('DOMContentLoaded',function(){
  let resizeTimer;window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(layouts.length&&view==='layout')renderCanvas(curSheet);},100);});translate();setView('layout');
 });
 })();
+
+/* Laptop fit: fold the left panel into a narrow strip so the sheet gets the room.
+   Manual choice is remembered; on screens up to 1600 px the panel also folds by
+   itself when a layout appears, unless the user chose to keep it open. */
+(function(){
+'use strict';
+const KEY='nest.sideFolded';
+const TXT={en:{fold:'Hide panel',unfold:'Show panel',parts:'Parts',materials:'Materials',cutting:'Cutting',generate:'Generate layout'},
+           lt:{fold:'Slėpti skydelį',unfold:'Rodyti skydelį',parts:'Detalės',materials:'Plokštės',cutting:'Pjovimas',generate:'Generuoti išdėstymą'}};
+function tx(k){ const l=(typeof _lang!=='undefined'&&_lang==='lt')?'lt':'en'; return TXT[l][k]; }
+function pref(){ try{ return localStorage.getItem(KEY); }catch(e){ return null; } }
+function setPref(v){ try{ localStorage.setItem(KEY,v); }catch(e){} }
+function refit(){ setTimeout(()=>window.dispatchEvent(new Event('resize')),30); }
+function fold(on, manual){
+  document.body.classList.toggle('ux-folded', !!on);
+  if(manual) setPref(on?'1':'0');
+  sync(); refit();
+}
+function sync(){
+  const mini=document.querySelector('.ux-mini'); if(!mini) return;
+  mini.querySelector('[data-a=unfold]').title=tx('unfold');
+  ['parts','materials','cutting'].forEach(s=>{ const b=mini.querySelector('[data-s='+s+']'), src=document.getElementById('ux-step-'+s);
+    if(b){ b.title=tx(s); b.classList.toggle('on', !!(src&&src.getAttribute('aria-selected')==='true')); } });
+  mini.querySelector('[data-a=gen]').title=tx('generate');
+  const f=document.querySelector('.ux-fold'); if(f){ f.title=tx('fold'); f.setAttribute('aria-label',tx('fold')); }
+}
+function setup(){
+  const side=document.querySelector('.side'), head=document.querySelector('.ux-side-head');
+  if(!side||!head||document.querySelector('.ux-mini')) return !!document.querySelector('.ux-mini');
+  const btn=document.createElement('button'); btn.type='button'; btn.className='ux-fold'; btn.textContent='‹';
+  btn.onclick=()=>fold(true,true); head.appendChild(btn);
+  const mini=document.createElement('div'); mini.className='ux-mini';
+  mini.innerHTML='<button type="button" data-a="unfold">›</button><span class="ux-mini-sep"></span>'
+    +'<button type="button" class="ux-mini-step" data-s="parts">1</button>'
+    +'<button type="button" class="ux-mini-step" data-s="materials">2</button>'
+    +'<button type="button" class="ux-mini-step" data-s="cutting">3</button>'
+    +'<button type="button" class="ux-mini-gen" data-a="gen">▶</button>';
+  mini.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    if(b.dataset.a==='unfold') fold(false,true);
+    else if(b.dataset.s){ fold(false,true); const s=document.getElementById('ux-step-'+b.dataset.s); if(s) s.click(); }
+    else if(b.dataset.a==='gen'){ const g=document.getElementById('ux-generate'); if(g) g.click(); }
+  });
+  side.insertBefore(mini, side.firstChild);
+  if(pref()==='1') fold(true,false); else sync();
+  // fold by itself when a layout appears on a laptop-size screen
+  let had=(typeof layouts!=='undefined'&&layouts.length>0);
+  const stats=document.getElementById('stats');
+  if(stats) new MutationObserver(()=>{
+    const has=(typeof layouts!=='undefined'&&layouts.length>0);
+    if(has&&!had&&innerWidth<=1600&&innerWidth>760&&pref()!=='0') fold(true,false);
+    had=has;
+  }).observe(stats,{attributes:true,attributeFilter:['style']});
+  const st=document.querySelector('.ux-steps'); if(st) new MutationObserver(sync).observe(st,{attributes:true,subtree:true,attributeFilter:['aria-selected','class']});
+  const oldLang=window.setLanguage; if(typeof oldLang==='function') window.setLanguage=function(){ const r=oldLang.apply(this,arguments); sync(); return r; };
+  return true;
+}
+let tries=0; (function wait(){ if(setup()||++tries>60) return; setTimeout(wait,100); })();
+})();
