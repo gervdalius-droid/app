@@ -46,8 +46,9 @@ document.addEventListener('DOMContentLoaded',function(){
 })();
 
 /* Laptop fit: fold the left panel into a narrow strip so the sheet gets the room.
-   Manual choice is remembered; on screens up to 1600 px the panel also folds by
-   itself when a layout appears, unless the user chose to keep it open. */
+   On screens up to 1600 px it folds by itself whenever a layout appears —
+   generated, opened from History, or already there when the page loads.
+   Folding with ‹ is remembered (start folded next time); opening clears that. */
 (function(){
 'use strict';
 const KEY='nest.sideFolded';
@@ -59,7 +60,7 @@ function setPref(v){ try{ localStorage.setItem(KEY,v); }catch(e){} }
 function refit(){ setTimeout(()=>window.dispatchEvent(new Event('resize')),30); }
 function fold(on, manual){
   document.body.classList.toggle('ux-folded', !!on);
-  if(manual) setPref(on?'1':'0');
+  if(manual) setPref(on?'1':'');
   sync(); refit();
 }
 function sync(){
@@ -88,15 +89,21 @@ function setup(){
     else if(b.dataset.a==='gen'){ const g=document.getElementById('ux-generate'); if(g) g.click(); }
   });
   side.insertBefore(mini, side.firstChild);
-  if(pref()==='1') fold(true,false); else sync();
-  // fold by itself when a layout appears on a laptop-size screen
-  let had=(typeof layouts!=='undefined'&&layouts.length>0);
+  const laptop=()=>innerWidth<=1600&&innerWidth>760;
+  const hasLayout=()=>typeof layouts!=='undefined'&&layouts.length>0;
+  if(pref()==='1'||(hasLayout()&&laptop())) fold(true,false); else sync();
+  // fold by itself when a layout appears (generate, History, cloud load)
+  let had=hasLayout();
   const stats=document.getElementById('stats');
   if(stats) new MutationObserver(()=>{
-    const has=(typeof layouts!=='undefined'&&layouts.length>0);
-    if(has&&!had&&innerWidth<=1600&&innerWidth>760&&pref()!=='0') fold(true,false);
+    const has=hasLayout();
+    if(has&&!had&&laptop()) fold(true,false);
     had=has;
   }).observe(stats,{attributes:true,attributeFilter:['style']});
+  // a project opened from History / the cloud: fold once its layouts are shown
+  const oldApply=window.applyProjectState;
+  if(typeof oldApply==='function') window.applyProjectState=function(){ const r=oldApply.apply(this,arguments);
+    setTimeout(()=>{ if(hasLayout()&&laptop()) fold(true,false); had=hasLayout(); },50); return r; };
   const st=document.querySelector('.ux-steps'); if(st) new MutationObserver(sync).observe(st,{attributes:true,subtree:true,attributeFilter:['aria-selected','class']});
   const oldLang=window.setLanguage; if(typeof oldLang==='function') window.setLanguage=function(){ const r=oldLang.apply(this,arguments); sync(); return r; };
   return true;
