@@ -140,6 +140,14 @@ main{padding-block:18px 40px}
 .verrow:hover{background:var(--bg2,#f2f3f0)}.verrow.cur{border-color:var(--line)}.verrow .vt{font-family:var(--f-mono,monospace);font-size:13px}.verrow .va{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .verbtn{padding:3px 8px;font-size:12px;margin-left:6px}
 @media (max-width:640px){.verrow{grid-template-columns:44px 1fr}.verrow .va{grid-column:1/-1}}
+.plfit .btn{white-space:normal;text-align:left}.plfit{display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,46%);gap:14px;align-items:start;margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}.plpic{border:1px solid var(--line);border-radius:10px;background:var(--sunk);padding:6px;overflow:hidden}.plpic svg{overflow:hidden}.plpic svg{width:100%;height:auto;display:block;max-height:260px}
+@media (max-width:760px){.plfit{grid-template-columns:1fr}}
+.matdock{margin:0 0 12px;padding:10px 12px;border:1px dashed var(--line2);border-radius:10px;background:var(--sunk)}.mdchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.mdchip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 5px;border:1px solid var(--line2);border-radius:999px;background:var(--panel);font-size:13px;cursor:grab;user-select:none}
+.mdchip i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(0,0,0,.2);flex:none}.mdchip:active{cursor:grabbing}
+body.mddrag #assembly-preview{outline:3px dashed #e8820c;outline-offset:2px;border-radius:12px}
+.mdtip{position:fixed;z-index:9999;pointer-events:none;background:#1d2320;color:#fff;font-size:12.5px;padding:4px 8px;border-radius:6px;white-space:nowrap}
+.f.dd select{min-width:150px;padding:8px 30px 8px 10px;font:inherit;font-weight:600;background:var(--panel)}
 .fghs .fgh{stroke:#e8820c;stroke-opacity:.55;stroke-linecap:round;touch-action:none}.fghs .fgh:hover{stroke-opacity:.95}.fghs .fgtip{fill:#a55a00;font-weight:700;paint-order:stroke;stroke:#fff;stroke-width:5px}
 .fgblk{margin-top:10px}
 .campick{background:none;border:1px dashed transparent;border-radius:8px;padding:2px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:1px;font:inherit}
@@ -1397,7 +1405,7 @@ function buildCabinet(c, idx, projName) {
   var out = [], warn = [], hw = [];
   var warnOnce = function (w) { if (warn.indexOf(w) < 0) warn.push(w); };
   var mat = c.mat || {}, ed = c.edge || {};
-  var mCarc = mat.carc || '', mFac = mat.facade || mCarc, mBack = mat.back || mCarc;
+  var mCarc = mat.carc || '', mFac = mat.facade || mCarc, mBack = mat.back || mCarc, mTop = mat.top || mCarc;   // mTop: a full top (STOGAS) in its own board
   var eCarc = ed.carc || '', eFac = ed.facade || '';
   var fT = +o.facadeT || 18;
   /* the fronts' gaps (o.fg, mm; empty = the rule): l / r at the sides, mid between fronts, top under the top / rails, bot = where the
@@ -1487,6 +1495,14 @@ function buildCabinet(c, idx, projName) {
   var backH = rl.back === 'h' || rl.back === 'hv', backV = rl.back === 'v' || rl.back === 'hv';
   if (!topFull && rl.front === 'none' && rl.back === 'none') warn.push('viršuje nėra nei viršaus, nei juostų — karkasas nesurištas');
   var bkIn = anyInside && +o.backInset > 0 ? Math.min(+o.backInset, Math.max(0, Dside - t - 100)) : 0;   // an inside back set forward from the sides' back edge (room for a wall rail, pipes, an uneven wall)
+  /* an inside back (in every column) may cover the bottom between the sides and / or the top between them or the flat back rail:
+     it then runs down to the carcass bottom / up to its top, and that board stops at the back's front face */
+  var bcv = o.backCover || {}, allIn = anyInside && colBacks.every(function (b, k) { return inBack(k); });
+  var covB = allIn && bin && !rl.bottom && !shortBot && !!bcv.bottom, covT = allIn && !!bcv.top && (tin || (!topFull && backH && !backV && cols === 1));
+  if (allIn && bcv.bottom && !covB) warnOnce('nugara dengia dugną tik kai dugnas tarp šonų ir per visą gylį — nugara stovi ant dugno');
+  if (allIn && bcv.top && !covT) warnOnce('nugara dengia viršų tik kai viršus tarp šonų arba gulsčia galinė juosta (be pertvarų) — nugara po viršumi');
+  if (covB) Dbot = Dside - t - bkIn;
+  var DtopIn = covT && tin ? Dside - t - bkIn : Dside, yRB = covT && !tin ? Dside - t - bkIn : Dside;   // the shortened top between the sides; the flat back rail moved forward
   if (anyInside && +o.backInset > bkIn + 0.5) warn.push('nugaros atitraukimas sumažintas iki ' + num(bkIn) + ' mm — spintelė per sekli');
   var yBk = Dside - bkIn;                          // the inside back's rear face
   var clearBackK = function (k) { return inBack(k) ? t + bkIn : (backV || rl.bottom) ? t : 0; };   // shelves stop in front of an inside back / standing back rails
@@ -1782,8 +1798,8 @@ function buildCabinet(c, idx, projName) {
     }
     if (backH) {
       pBH = panel(nm('JUOSTA_GALAS_H'), 'JUOSTA_GALAS_H', Lr, rw, t, 'gulscia, viršus viršuje, galinis kraštas Y=0');
-      endJoint(pBH, Lr, joint('railB', rw, 'rail', 'galinė juosta'), 'A', function (a) { return { x:hx, yf:Dside - a }; }); seam('railB', [t, Dside, H - t/2], neg(Y), rw);
-      place(pBH, [t, Dside, H], X, neg(Y), Z);
+      endJoint(pBH, Lr, joint('railB', rw, 'rail', 'galinė juosta'), 'A', function (a) { return { x:hx, yf:yRB - a }; }); seam('railB', [t, yRB, H - t/2], neg(Y), rw);
+      place(pBH, [t, yRB, H], X, neg(Y), Z);
     }
     if (backV) {
       var zv = backH ? H - t - rw : H - rw;
@@ -1831,19 +1847,19 @@ function buildCabinet(c, idx, projName) {
     }
     place(pk, [0, D, 0], X, Z, Y); pk.mat = mBack; backPanels.push(pk);
   } else if (anyInside) {
-    var Hi = topFull ? H - 2*t : (backH ? H - 2*t : H - t);
+    var Hi = (topFull ? H - 2*t : (backH ? H - 2*t : H - t)) + (covB ? t : 0) + (covT ? t : 0), zB0 = covB ? 0 : t;   // zB0: where the back starts
     var jbi = joint('back', Hi, 'back', 'nugara viduje'); backType = jbi.has('confirmat') ? 'confirmat' : jbi.type;
     if (cols === 1) {
       var Li = W - 2*t, pi = panel(nm('NUGARA'), 'NUGARA', Li, Hi, t, 'tarp šonų, vidinė pusė viršuje, apatinis kraštas Y=0');
-      seam('back', [t, yBk - t/2, t], Z, Hi);
-      endJoint(pi, Li, jbi, camOut.back ? 'B' : 'A', function (a) { return { x:a, yf:yBk - t/2 }; });
-      place(pi, [t, yBk - t, t], X, Z, neg(Y)); pi.mat = mBack; backPanels.push(pi);   // face A = the inner face: the cams are inside the cabinet, nothing shows from behind
+      seam('back', [t, yBk - t/2, zB0], Z, Hi);
+      endJoint(pi, Li, jbi, camOut.back ? 'B' : 'A', function (a) { return { x:a + zB0 - t, yf:yBk - t/2 }; });
+      place(pi, [t, yBk - t, zB0], X, Z, neg(Y)); pi.mat = mBack; backPanels.push(pi);   // face A = the inner face: the cams are inside the cabinet, nothing shows from behind
     } else for (var kc = 0; kc < cols; kc++) {
       if (!inBack(kc)) continue;
       var Lk = ix1(kc) - ix0(kc), pc = panel(nm('NUGARA' + (kc + 1)), 'NUGARA', Lk, Hi, t, 'kolona ' + (kc + 1) + ', tarp šono/pertvaros, vidinė pusė viršuje, apatinis kraštas Y=0');
-      endJoint(pc, Lk, jbi, camOut.back ? 'B' : 'A', function (a) { return { x:a, yf:yBk - t/2 }; }, tgL(kc), tgR(kc));
-      seamS('back', 'L', [ix0(kc), yBk - t/2, t], Z, Hi); seamS('back', 'R', [ix1(kc), yBk - t/2, t], Z, Hi);
-      place(pc, [ix0(kc), yBk - t, t], X, Z, neg(Y)); pc.mat = mBack; backPanels.push(pc);
+      endJoint(pc, Lk, jbi, camOut.back ? 'B' : 'A', function (a) { return { x:a + zB0 - t, yf:yBk - t/2 }; }, tgL(kc), tgR(kc));
+      seamS('back', 'L', [ix0(kc), yBk - t/2, zB0], Z, Hi); seamS('back', 'R', [ix1(kc), yBk - t/2, zB0], Z, Hi);
+      place(pc, [ix0(kc), yBk - t, zB0], X, Z, neg(Y)); pc.mat = mBack; backPanels.push(pc);
     }
   }
   /* plaušas (HDF): nailed on the back, no CNC work; neighbouring columns with plaušas share one sheet */
@@ -1880,8 +1896,8 @@ function buildCabinet(c, idx, projName) {
   });
 
   /* ---- sides */
-  var jBot = joint('bottom', Dbot, 'carc', 'dugnas'), jTop = topFull ? joint('top', Dside, 'carc', 'viršus') : null;
-  if (bin) seam('bottom', [t, 0, t/2], Y, Dbot); else seam('bottom', [t/2, 0, t], Y, Dbot); if (tin) seam('top', [t, 0, H - t/2], Y, Dside); else if (topFull) seam('top', [t/2, 0, H - t], Y, Dside);
+  var jBot = joint('bottom', Dbot, 'carc', 'dugnas'), jTop = topFull ? joint('top', tin ? DtopIn : Dside, 'carc', 'viršus') : null;
+  if (bin) seam('bottom', [t, 0, t/2], Y, Dbot); else seam('bottom', [t/2, 0, t], Y, Dbot); if (tin) seam('top', [t, 0, H - t/2], Y, DtopIn); else if (topFull) seam('top', [t/2, 0, H - t], Y, Dside);
   /* the bottom: under the sides (full width), or between them — then its ends are joined to the sides like a fixed shelf */
   var pBot = panel(nm('DUGNAS'), 'DUGNAS', bin ? W - 2*t : W, Dbot, t, (bin ? 'tarp šonų, viršus viršuje, priekis Y=0' : 'viršus viršuje, priekis Y=0') + (shortBot ? ', sutrumpintas: gale ' + num(Dside - Dbot) + ' mm laisva' : '')), dxB = bin ? t : 0;
   if (bin) { endJoint(pBot, W - 2*t, jBot, camOut.bottom ? 'B' : 'A', function (a) { return { x:-t/2, yf:a }; }); U('dugnas tarp šonų'); }
@@ -1895,7 +1911,7 @@ function buildCabinet(c, idx, projName) {
   };
   /* the top between the sides (o.topMount 'inside'): its ends are joined to the sides like the bottom between them — drilled before the sides are */
   var pTopIn = null;
-  if (tin) { pTopIn = panel(nm('VIRSUS'), 'VIRSUS', W - 2*t, Dside, t, 'tarp šonų, apačia viršuje (gręžiama iš apačios), priekis Y=0'); endJoint(pTopIn, W - 2*t, jTop, camOut.top ? 'A' : 'B', function (a) { return { x:H - 1.5*t, yf:a }; }); U('viršus tarp šonų'); }
+  if (tin) { pTopIn = panel(nm('VIRSUS'), 'VIRSUS', W - 2*t, DtopIn, t, 'tarp šonų, apačia viršuje (gręžiama iš apačios), priekis Y=0'); endJoint(pTopIn, W - 2*t, jTop, camOut.top ? 'A' : 'B', function (a) { return { x:H - 1.5*t, yf:a }; }); U('viršus tarp šonų'); }
   var mkSide = function (role, right) {
     var p = panel(nm(role), role, Lside, Dside, t, 'vidinė pusė viršuje, apatinis kraštas X=0, priekis ' + (right ? 'Y=DY' : 'Y=0'));
     var Yf = function (y) { return right ? Dside - y : y; };   // mirror for the right side
@@ -2102,7 +2118,7 @@ function buildCabinet(c, idx, projName) {
     var pt = pTopIn || panel(nm('VIRSUS'), 'VIRSUS', W + 2 * ovS, Dtop, t, 'apačia viršuje (gręžiama iš apačios), priekis Y=0');   // panel x = cabinet x − dxT
     if (!tin) faceJoint(pt, jTop, 'B', [t/2 + ovS, W - t/2 + ovS], off);
     for (var kt = 0; kt < cols - 1; kt++) faceJoint(pt, { L:jPT[kt].L, R:jPT[kt].L }, 'B', [bnd[kt + 1] - dxT], off + y0p);
-    place(pt, [dxT, -off, H], X, Y, Z); pt.mat = mCarc; pt.eb.y0 = eCarc;
+    place(pt, [dxT, -off, H], X, Y, Z); pt.mat = mTop; pt.eb.y0 = eCarc;
     if ((hungC || tallC) && !tin) { if (vis.L) pt.eb.x0 = eVis; if (vis.R) pt.eb.x1 = eVis; }   // over the sides: its ends show at a visible side of a tall or hung cabinet
     out.push(pt);
   } else railPanels.forEach(function (p) { out.push(p); });
@@ -2233,7 +2249,13 @@ function buildCabinet(c, idx, projName) {
   var inS = hb > 0 && (plx && plx.between != null && plx.between !== '' ? plx.between === true || plx.between === 'true' : !legEff);   // between the sides (they reach below the raised bottom): asked, or when they stand on the floor
   var plX0 = inS ? t : 0, plX1 = inS ? W - t : W; if (plx && +plx.L < plX1 - plX0) { var plM = (plX0 + plX1) / 2; plX0 = plM - +plx.L / 2; plX1 = plM + +plx.L / 2; }   // a shorter plinth: as long as its row says, in the middle
   var plZ0 = inS ? 0 : -legEff;   // between the sides: from their lower end (on legs too), under the carcass: from the floor
-  var plinth = plx ? { x0:plX0, x1:plX1, z0:plZ0, z1:plZ0 + (+plx.W > 0 ? +plx.W : Math.max(40, (inS ? 0 : legEff) + hb - 2)), y0:plx.yf !== '' && plx.yf != null && isFinite(+plx.yf) ? Math.max(0, +plx.yf) : inS ? 20 : 50, t:+plx.T || t, mat:plx.mat || mFac } : null;   // its front: yf mm behind the carcass front
+  /* a plinth fitted by its gaps (gl / gr to the sides — their inner faces between them, outer under the carcass —, gt under the bottom
+     board, gb above the floor): its size follows the cabinet (the row's L / W are kept in step by the app) */
+  var plGv = function (k) { var v = plx && plx[k]; return v === '' || v == null || !isFinite(+v) ? null : +v; };
+  var plFit = plx && ['gl', 'gr', 'gt', 'gb'].some(function (k) { return plGv(k) != null; }), plZ1 = null;
+  if (plFit) { plX0 = (inS ? t : 0) + Math.max(0, plGv('gl') || 0); plX1 = (inS ? W - t : W) - Math.max(0, plGv('gr') || 0); plZ0 += Math.max(0, plGv('gb') || 0); plZ1 = (inS ? hb : 0) - Math.max(0, plGv('gt') || 0);
+    if (plX1 - plX0 < 50 || plZ1 - plZ0 < 20) { warnOnce('cokolis netelpa su nurodytais tarpais'); plFit = false; plZ1 = null; } }
+  var plinth = plx ? { x0:plX0, x1:plX1, z0:plZ0, z1:plZ1 != null ? plZ1 : plZ0 + (+plx.W > 0 ? +plx.W : Math.max(40, (inS ? 0 : legEff) + hb - 2)), fit:!!plFit, between:inS, top:inS ? hb : 0, floor:inS ? 0 : -legEff, sideIn:inS ? t : 0, y0:plx.yf !== '' && plx.yf != null && isFinite(+plx.yf) ? Math.max(0, +plx.yf) : inS ? 20 : 50, t:+plx.T || t, mat:plx.mat || mFac } : null;   // its front: yf mm behind the carcass front
   /* ---- LED profile grooves (c.leds): in the bottom, the top or a side, along the part, a set distance from the front edge.
      at: bottom | top | L | R; side: in (into the cabinet) | out; from: front edge → groove; ends: open (through the part's ends, the profile slides in) | closed */
   var leds = [];
@@ -4251,7 +4273,7 @@ const V={px:0,py:0,yaw:.52,pitch:.32,zoom:1,open:.65,mode:'assembly',hardware:tr
 const J={cab:null,key:null,side:'L',scope:'side',index:null};
 const BX={cab:null,sel:null};   // 3D construction: the selected board
 const COARSE=!!(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches);   // a touch screen: the hints speak of fingers
-let FRAME=null,liveUntil=0;const RGB={};   // the last rasterised picture (pixels + depth + pick buffers) — a re-render of the same view reuses it
+let FRAME=null,liveUntil=0;const RGB={};let CUR_PK=0;const PICKS=new WeakMap();   // CUR_PK: the part the faces being added belong to (index into PKS + 1); PICK: the last picture's part buffer   // the last rasterised picture (pixels + depth + pick buffers) — a re-render of the same view reuses it
 let observer;
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const add=(a,b)=>a.map((v,i)=>v+b[i]), sub=(a,b)=>a.map((v,i)=>v-b[i]), mul=(a,s)=>a.map(v=>v*s), dot=(a,b)=>a.reduce((s,v,i)=>s+v*b[i],0), cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]], unit=a=>mul(a,1/(Math.hypot(...a)||1));
@@ -4370,7 +4392,7 @@ function mount(el,c,r,lang,hooks={}){
  if(b.hasAttribute('data-j-even')&&side.pos.length>=3){const first=side.pos[0],last=side.pos[side.pos.length-1];commitPositions(side.pos.map((v,i)=>Math.round((first+(last-first)*i/(side.pos.length-1))*10)/10));}
  if(b.hasAttribute('data-j-reset'))hooks.onReset(j.key,j.single||J.scope==='both'?null:J.side);
  });
- function face(points,color,wood=false,metal=false,front=false,tx=null){const normal=unit(cross(sub(points[1],points[0]),sub(points[2],points[0])));faces.push({p:points,color,wood,metal,front,n:normal,tx});}
+ function face(points,color,wood=false,metal=false,front=false,tx=null){const normal=unit(cross(sub(points[1],points[0]),sub(points[2],points[0])));faces.push({p:points,color,wood,metal,front,n:normal,tx,pk:CUR_PK});}
  // tex: { name: the board's material, g: which box axis is its length (the grain) } — with a photo for that material (DBLook) the faces carry where it lies
  function box(o,size,color,transform,wood=false,metal=false,front=false,tex=null){if(size.some(v=>v<=0))return;const [x,y,z]=size;let p=[[0,0,0],[x,0,0],[x,y,0],[0,y,0],[0,0,z],[x,0,z],[x,y,z],[0,y,z]].map(q=>{q=add(o,q);return transform?transform(q):q;});
   let TXA=null;if(tex&&tex.name&&window.DBLook&&window.DBLook.has(tex.name)){const tf=transform||(q=>q),P0=tf(o);TXA={P0,axes:[0,1,2].map(k=>{const e=[0,0,0];e[k]=1;return unit(sub(tf(add(o,e)),P0));})};}
@@ -4381,7 +4403,7 @@ function mount(el,c,r,lang,hooks={}){
  // A maker's part (STEP model, window.DBFit): its triangles mapped into the cabinet; mirrored parts keep their faces outward.
  function meshFaces(name,part,map,color,transform,mirrored){const F=window.DBFit,ms=F&&F.mesh(name,part);if(!ms)return false;const v=ms.v,t=ms.t,P=new Array(v.length/3);
   for(let i=0;i<P.length;i++){const q=map(v[3*i],v[3*i+1],v[3*i+2]);P[i]=transform?transform(q):q;}
-  for(let i=0;i<t.length;i+=3){const a=P[t[i]],b=P[mirrored?t[i+2]:t[i+1]],c=P[mirrored?t[i+1]:t[i+2]],n=cross(sub(b,a),sub(c,a)),l=Math.hypot(n[0],n[1],n[2]);if(l<1e-9)continue;faces.push({p:[a,b,c],color,metal:true,mesh:true,n:[n[0]/l,n[1]/l,n[2]/l]});}
+  for(let i=0;i<t.length;i+=3){const a=P[t[i]],b=P[mirrored?t[i+2]:t[i+1]],c=P[mirrored?t[i+1]:t[i+2]],n=cross(sub(b,a),sub(c,a)),l=Math.hypot(n[0],n[1],n[2]);if(l<1e-9)continue;faces.push({p:[a,b,c],color,metal:true,mesh:true,n:[n[0]/l,n[1]/l,n[2]/l],pk:CUR_PK});}
   return true;}
  // The faces of the side / partition boards left and right of a point (where runners are screwed on).
  function opening(xc,zc){let L=null,R=null;(r.panels||[]).forEach(p=>{if(!p.place||p.drawerOf||/^(DURYS|FASADAS)$/.test(p.role))return;const q=p.place,cs=[];[0,p.L].forEach(a=>[0,p.W].forEach(b=>[0,p.T].forEach(c0=>cs.push(add(q.o,add(mul(q.u,a),add(mul(q.v,b),mul(q.n,-c0))))))));
@@ -4511,19 +4533,21 @@ function mount(el,c,r,lang,hooks={}){
    if(hooks.toast)hooks.toast(lim?L('Netinkama reikšmė — leidžiama ','Not a usable value — allowed ')+lim[0]+'…'+lim[1]+' mm':L('Netinkama reikšmė','Not a usable value'));return;}}
   boxDo(cc=>{if(id&&id[0]==='i'){const it=cc.box.inner.find(q=>'i'+q.id===id);if(!it)return;it[k]=k==='T'&&!String(raw).trim()?'':k==='col'?+raw:numIn(raw);}else if(id){const s=cc.box.boards[id];s[k]=k==='T'&&!String(raw).trim()?'':numIn(raw);}});});
  renderEditor();
- function scene(){faces=[];guides=[];
+ let PKS=[];const pkOf=o=>{PKS.push(o);return PKS.length;};
+ function scene(){faces=[];guides=[];PKS=[];CUR_PK=0;
  // Actual panel placement, including panel rotations performed by the manufacturing engine.
- (r.panels||[]).forEach(p=>{if(!p.place||p.drawerOf||/^(DURYS|FASADAS)$/.test(p.role))return;let q=p.place;const tf=v=>add(q.o,add(mul(q.u,v[0]),add(mul(q.v,v[1]),mul(q.n,-v[2]))));const bi=isBox?r.box.boards.findIndex(b=>b.name===p.name):-1,sel=V.boards&&bi>=0&&r.box.boards[bi].id===BX.sel,k0=faces.length;box([0,0,0],[p.L,p.W,p.T],sel?'#9fd0b4':mat(p.mat,'#e5e2da'),tf,!sel&&wood(p.mat),false,false,sel?null:{name:p.mat,g:0});for(let k=k0;k<faces.length;k++)faces[k].bid=bi+1;});
- faces.forEach(f=>f.carcass=true);
+ (r.panels||[]).forEach(p=>{if(!p.place||p.drawerOf||/^(DURYS|FASADAS)$/.test(p.role))return;CUR_PK=pkOf({kind:'panel',role:p.role,name:p.name});let q=p.place;const tf=v=>add(q.o,add(mul(q.u,v[0]),add(mul(q.v,v[1]),mul(q.n,-v[2]))));const bi=isBox?r.box.boards.findIndex(b=>b.name===p.name):-1,sel=V.boards&&bi>=0&&r.box.boards[bi].id===BX.sel,k0=faces.length;box([0,0,0],[p.L,p.W,p.T],sel?'#9fd0b4':mat(p.mat,'#e5e2da'),tf,!sel&&wood(p.mat),false,false,sel?null:{name:p.mat,g:0});for(let k=k0;k<faces.length;k++)faces[k].bid=bi+1;});
+ CUR_PK=0;faces.forEach(f=>f.carcass=true);
  (r.legs||[]).forEach(l=>{if(l.feet){cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.5,l.h,'#343b3a');return;}cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.5,l.h,'#343b3a');cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.68,8,'#272e2c');cylinder([l.x,l.y,-12],[0,0,1],30,12,'#414844');});
- {const pl=(r.visual||{}).plinth;if(pl&&V.mode==='assembly'&&!V.edit)box([pl.x0,pl.y0,pl.z0],[pl.x1-pl.x0,pl.t,pl.z1-pl.z0],mat(pl.mat,'#d5cbbd'),null,wood(pl.mat),false,true,{name:pl.mat,g:0});}
- {const wt=r.worktop;if(wt&&V.mode==='assembly'&&!V.edit)box([wt.x0,wt.y0,wt.z0],[wt.L,wt.y1-wt.y0,wt.T],mat(wt.mat,'#c99a66'),null,!wt.mat||wood(wt.mat),false,true,{name:wt.mat,g:0});}   // the cabinet's worktop
+ {const pl=(r.visual||{}).plinth;CUR_PK=pl?pkOf({kind:'plinth'}):0;if(pl&&V.mode==='assembly'&&!V.edit)box([pl.x0,pl.y0,pl.z0],[pl.x1-pl.x0,pl.t,pl.z1-pl.z0],mat(pl.mat,'#d5cbbd'),null,wood(pl.mat),false,true,{name:pl.mat,g:0});}
+ {const wt=r.worktop;CUR_PK=wt?pkOf({kind:'worktop'}):0;if(wt&&V.mode==='assembly'&&!V.edit)box([wt.x0,wt.y0,wt.z0],[wt.L,wt.y1-wt.y0,wt.T],mat(wt.mat,'#c99a66'),null,!wt.mat||wood(wt.mat),false,true,{name:wt.mat,g:0});}   // the cabinet's worktop
  if(V.mode==='assembly'&&!V.edit&&window.DBEngine.sidePanels)window.DBEngine.sidePanels(c).forEach(q=>box([q.x0,q.y0,q.z0],[q.x1-q.x0,q.y1-q.y0,q.z1-q.z0],mat(q.mat,'#d5cbbd'),null,wood(q.mat),false,true,{name:q.mat,g:2}));   // side panels (extra parts set beside the cabinet), the grain up
- if(V.edit||V.hardware)installedHardware();
+ CUR_PK=0;if(V.edit||V.hardware)installedHardware();
  if(V.edit)return;
  const fronts=(r.panels||[]).filter(p=>p.role==='FASADAS'||p.role==='DURYS'),meta=r.visual||{doors:[],drawers:[]};
  let fi=0,di=0;
  fronts.forEach(p=>{
+ CUR_PK=pkOf({kind:'panel',role:p.role,name:p.name});
  let door=p.role==='DURYS',m=door?meta.doors[di++]:meta.drawers[fi++];
  if(!m){let corners=[[0,0],[p.L,0],[0,p.W],[p.L,p.W]].map(([a,b])=>add(p.place.o,add(mul(p.place.u,a),mul(p.place.v,b))));m={x:Math.min(...corners.map(q=>q[0])),z:Math.min(...corners.map(q=>q[2])),bottom:0,w:Math.max(...corners.map(q=>q[0]))-Math.min(...corners.map(q=>q[0])),h:Math.max(...corners.map(q=>q[2]))-Math.min(...corners.map(q=>q[2])),hingeLeft:p.hingeLeft,ys:[],fixed:true};}
  const fg=Math.abs(p.place.u[0])>.5?0:2;   // the front's grain: along its length (as cut), across or up
@@ -4533,7 +4557,7 @@ function mount(el,c,r,lang,hooks={}){
  const travel=Math.min(+section.rail||500,d.D-45)*.8*V.open;
  const angle=(m.hinged===false?0:V.open)*Math.PI*.55,hinge=m.hingeLeft?x:x+w,sign=m.hingeLeft?-1:1;
  const tf=door?q=>{let xx=q[0]-hinge;return [hinge+xx*Math.cos(angle)-q[1]*Math.sin(sign*angle),xx*Math.sin(sign*angle)+q[1]*Math.cos(angle),q[2]];}:q=>[q[0],q[1]-travel,q[2]];
- if(V.mode==='assembly')box([x,-t,z],[w,t,h],mat(p.mat,'#d5cbbd'),tf,wood(p.mat),false,true,{name:p.mat,g:fg});
+ if(V.mode==='assembly')box([x,-t,z],[w,t,h],mat(p.mat,'#d5cbbd'),tf,wood(p.mat),false,true,{name:p.mat,g:fg});CUR_PK=0;
  const own=door?[]:(r.panels||[]).filter(q=>q.drawerOf===p.name&&q.place);
  if(own.length){   // GTV / DTC: the real board box (its parts) and two side-mount runners, moving with the front
  own.forEach(q=>{const pq=q.place,tq=v=>tf(add(pq.o,add(mul(pq.u,v[0]),add(mul(pq.v,v[1]),mul(pq.n,-v[2])))));box([0,0,0],[q.L,q.W,q.T],q.role==='STALC_DUGNAS'&&/HDF/i.test(q.mat||'')?'#e4e1da':mat(q.mat,'#e5e2da'),tq,wood(q.mat),false,false,{name:q.mat,g:0});});
@@ -4614,11 +4638,11 @@ function mount(el,c,r,lang,hooks={}){
  let fk=pixelW*31+pixelH;const mixK=v=>{fk=(Math.imul(fk,16777619)^(v|0))|0;};
  [V.yaw,V.pitch,V.zoom,V.px,V.py,scale,panX,panY,V.edit?1:0,V.wire?1:0,window.DBLook?window.DBLook.version():0].forEach(v=>mixK(Math.round(v*1e4)));
  for(let i=0;i<faces.length;i++){const f=faces[i];mixK((f.metal?1:0)|(f.wood?2:0)|(f.front?4:0)|(f.carcass?8:0)|(f.tx?16:0)|((f.bid||0)<<5));for(let j=0;j<f.color.length;j++)mixK(f.color.charCodeAt(j));for(let j=0;j<f.p.length;j++){const q=f.p[j];mixK(Math.round(q[0]*64));mixK(Math.round(q[1]*64));mixK(Math.round(q[2]*64));}}
- let frame,depths,idbuf;
- if(FRAME&&FRAME.key===fk&&FRAME.w===pixelW&&FRAME.h===pixelH){frame=new ImageData(new Uint8ClampedArray(FRAME.px),pixelW,pixelH);depths=FRAME.depths;idbuf=FRAME.idbuf;pickBuf={idbuf,pixelW,pixelH,ratio};}
+ let frame,depths,idbuf,pkbuf;
+ if(FRAME&&FRAME.key===fk&&FRAME.w===pixelW&&FRAME.h===pixelH){frame=new ImageData(new Uint8ClampedArray(FRAME.px),pixelW,pixelH);depths=FRAME.depths;idbuf=FRAME.idbuf;pkbuf=FRAME.pkbuf;pickBuf={idbuf,pixelW,pixelH,ratio};PICKS.set(canvas,{canvas,pkbuf,pixelW,pixelH,ratio,parts:PKS});}
  else{
  frame=ctx.getImageData(0,0,pixelW,pixelH);const pixels=frame.data;
- depths=new Float32Array(pixelW*pixelH);depths.fill(Infinity);idbuf=new Uint8Array(pixelW*pixelH);pickBuf={idbuf,pixelW,pixelH,ratio};
+ depths=new Float32Array(pixelW*pixelH);depths.fill(Infinity);idbuf=new Uint8Array(pixelW*pixelH);pkbuf=new Uint16Array(pixelW*pixelH);pickBuf={idbuf,pixelW,pixelH,ratio};PICKS.set(canvas,{canvas,pkbuf,pixelW,pixelH,ratio,parts:PKS});
  const lightDirection=unit([-1,-2,3]),EPS=.00001;
  for(let fi=0;fi<faces.length;fi++){const f=faces[fi];
  if(V.edit&&V.wire&&f.carcass)continue;
@@ -4654,7 +4678,7 @@ function mount(el,c,r,lang,hooks={}){
  let nj=0;
  for(let x=lo;x<=hi;x++){
  const t=x-xmin,u=u0+du*t,v=v0+dv*t,w=1-u-v;if(u<-EPS||v<-EPS||w<-EPS)continue;
- const z=u*a[2]+v*b[2]+w*cc[2],idx=y*pixelW+x;if(z>=depths[idx])continue;depths[idx]=z;idbuf[idx]=bid;
+ const z=u*a[2]+v*b[2]+w*cc[2],idx=y*pixelW+x;if(z>=depths[idx])continue;depths[idx]=z;idbuf[idx]=bid;pkbuf[idx]=f.pk||0;
  let factor=light,highlight=0;
  if(metal){const wy=u*WA[1]+v*WB[1]+w*WC[1],wz=u*WA[2]+v*WB[2]+w*WC[2];factor+=.10*Math.sin(wy*.017+wz*.008);}
  if(wood){const wx=u*WA[0]+v*WB[0]+w*WC[0],wy=u*WA[1]+v*WB[1]+w*WC[1],wz=u*WA[2]+v*WB[2]+w*WC[2];factor+=.025*Math.sin(wx*.65+wy*.12+Math.sin(wz*.016)*.9);}
@@ -4670,7 +4694,7 @@ function mount(el,c,r,lang,hooks={}){
  }
  }
  }
- FRAME={key:fk,w:pixelW,h:pixelH,px:new Uint8ClampedArray(pixels),depths,idbuf};
+ FRAME={key:fk,w:pixelW,h:pixelH,px:new Uint8ClampedArray(pixels),depths,idbuf,pkbuf};
  }
  ctx.save();ctx.setTransform(1,0,0,1,0,0);ctx.putImageData(frame,0,0);ctx.restore();
  if(V.edit&&V.wire){ctx.save();ctx.strokeStyle='#688878';ctx.lineWidth=.65;ctx.globalAlpha=.4;faces.filter(f=>f.carcass).forEach(f=>{path(f.p.map(projection));ctx.stroke();});ctx.restore();}
@@ -4699,7 +4723,12 @@ function mount(el,c,r,lang,hooks={}){
  observer=new ResizeObserver(schedule);observer.observe(canvas);draw();
 }
 // Prevent old closure listeners from accumulating when live numeric inputs refresh the mount.
-window.DBAssembly={view:V,mount:function(el,c,r,lang,hooks){let clean=el.cloneNode(false);el.replaceWith(clean);mount(clean,c,r,lang,hooks);},setBoards:function(on){V.boards=!!on;if(on){V.edit=false;V.mode='assembly';}}};
+/* the part under a point of the page (drag and drop of a material): {kind:'panel', role, name} / {kind:'plinth'} / {kind:'worktop'} or null */
+function pickAt(x,y){const at=document.elementFromPoint(x,y),box=at&&at.closest?at.closest('.av'):null,cv=at&&at.tagName==='CANVAS'?at:box&&box.querySelector('canvas'),P=cv&&PICKS.get(cv);if(!P||!P.pkbuf)return null;const rc=P.canvas.getBoundingClientRect(),px=Math.round((x-rc.left)*P.ratio),py=Math.round((y-rc.top)*P.ratio);
+ if(px<0||py<0||px>=P.pixelW||py>=P.pixelH)return null;let k=P.pkbuf[py*P.pixelW+px];
+ if(!k){for(let d=1;d<=4&&!k;d++)for(const [dx,dy] of [[d,0],[-d,0],[0,d],[0,-d]]){const qx=px+dx,qy=py+dy;if(qx>=0&&qy>=0&&qx<P.pixelW&&qy<P.pixelH&&P.pkbuf[qy*P.pixelW+qx]){k=P.pkbuf[qy*P.pixelW+qx];break;}}}
+ return k?P.parts[k-1]||null:null;}
+window.DBAssembly={view:V,pickAt:pickAt,mount:function(el,c,r,lang,hooks){let clean=el.cloneNode(false);el.replaceWith(clean);mount(clean,c,r,lang,hooks);},setBoards:function(on){V.boards=!!on;if(on){V.edit=false;V.mode='assembly';}}};
 })();
 </script>
 <script>
@@ -8369,7 +8398,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau (kai dugnas pakeltas — iki šonų apačios). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', topKind:'Viršaus tipas', bKind:'Tipas', bcBotL:'Apačioje', bcBotOn:'Stovi ant dugno', bcBotCov:'Dengia dugną (dugnas trumpesnis)', bcTopL:'Viršuje', bcTopOn:'Po viršumi (stogu)', bcTopCov:'Dengia viršų (viršus trumpesnis)', bcRailOn:'Po surišimo juosta', bcRailCov:'Dengia juostą (juosta paslinkta)', plFitT:'pritaikymas tarpais', plGl:'Tarpas kairėje', plGr:'Tarpas dešinėje', plGt:'Iki dugno', plGb:'Nuo grindų', plFitBtn:'Pritaikyti: tarp šonų po 1 mm, 4 mm iki dugno', plFitOff:'Nustatyti dydį ranka', plFitNote:'Užpildžius tarpus, cokolio ilgis ir aukštis skaičiuojami patys ir keičiasi kartu su spintele. Paveikslėlyje kraštus galima tempti.', plDragT:'Tempkite — cokolio kraštas (tarpas)', plSnap0:'be tarpo', mTop:'Viršus (stogas)', mTopPh:'kaip korpusas', mdT:'Medžiagos — tempkite ant plokštės 3D vaizde', mdChipT:'Tempkite ant plokštės dešinėje', mdNote:'Numesta ant fasado — fasadų medžiaga, ant stogo — viršaus, ant nugaros — nugaros, ant kitų plokščių — korpuso. Fasadų medžiaga ant šono — matomas šonas.', mdWt:'Stalviršis', mdNone:'Čia nėra plokštės', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau (kai dugnas pakeltas — iki šonų apačios). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsm kaip SWOOD) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsm ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8517,7 +8546,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower (with a raised bottom, down to the sides\' bottom). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', topKind:'Top type', bKind:'Type', bcBotL:'At the bottom', bcBotOn:'Stands on the bottom', bcBotCov:'Covers the bottom (shorter bottom)', bcTopL:'At the top', bcTopOn:'Under the top', bcTopCov:'Covers the top (shorter top)', bcRailOn:'Under the back rail', bcRailCov:'Covers the rail (rail moved forward)', plFitT:'fitted by gaps', plGl:'Gap left', plGr:'Gap right', plGt:'To the bottom', plGb:'From the floor', plFitBtn:'Fit: between the sides 1 mm each, 4 mm under the bottom', plFitOff:'Set the size by hand', plFitNote:'With the gaps filled, the plinth\'s length and height follow the cabinet by themselves. The edges in the picture can be dragged.', plDragT:'Drag — the plinth\'s edge (gap)', plSnap0:'no gap', mTop:'Top (STOGAS)', mTopPh:'as the carcass', mdT:'Materials — drag onto a board in the 3-D view', mdChipT:'Drag onto a board on the right', mdNote:'Dropped on a front — the fronts\' material, on the top — the top\'s, on the back — the back\'s, on other boards — the carcass. The fronts\' material on a side — a visible side.', mdWt:'Worktop', mdNone:'No board here', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower (with a raised bottom, down to the sides\' bottom). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsm as from SWOOD) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsm and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -9173,6 +9202,9 @@ function render() {
   if (!(S.sel >= 0 && S.sel < S.proj.cabinets.length)) S.sel = Math.max(0, S.proj.cabinets.length - 1);   // never point past the list (after an undo elsewhere)
   if (window.DBLook) window.DBLook.set(S.proj.look);
   var pj = null, cabInfo = S.proj.cabinets.map(function (c, i) { return buildOne(i); });
+  cabInfo.forEach(function (inf, i) {   // a plinth fitted by its gaps: its row's length and height as the cabinet makes them
+    var pl = inf && inf.r && inf.r.visual && inf.r.visual.plinth, c = S.proj.cabinets[i], k = pl && pl.fit ? plinthIdx(c) : -1; if (k < 0) return;
+    var x = c.extras[k], L = Math.round((pl.x1 - pl.x0) * 10) / 10, H = Math.round((pl.z1 - pl.z0) * 10) / 10; if (Math.abs(+x.L - L) > 0.05 || Math.abs(+x.W - H) > 0.05) { x.L = L; x.W = H; } });
   try { localStorage.setItem('dbKurejas.ui', JSON.stringify({ id:S.proj.id, tab:S.tab, sel:S.sel })); } catch (er) {}
   S._info = cabInfo;
   var nParts = partCount(cabInfo);
@@ -9358,6 +9390,30 @@ function frontArtOf(c, r, extra) {
 }
 /* the fronts' outer edges as drag handles on the front picture (its units are mm, y down from the cabinet top): bottom, top, left,
    right; dragged, they set the gaps (c.cnc.fg), snapping to the carcass bottom, the sides' bottom edge, the sides' outer faces */
+/* the cabinet's front picture with the plinth's edges as handles (step 6) */
+/* the plinth fitted by its gaps (step 6, under the extra parts' table): the gaps, the fit button, the picture with handles */
+function plinthFitBlock(c) {
+  var i = plinthIdx(c); if (i < 0 || c.dishwasher) return '';
+  var x = c.extras[i], b = 'c.extras.' + i + '.';
+  var gE = function (label, k) { var id = 'f-pl-' + k; return '<label class="f n s" for="' + id + '"><span>' + label + '</span><input id="' + id + '" inputmode="decimal" type="text" data-bind="' + b + k + '" data-num="1" data-empty="1" value="' + esc(x[k] == null ? '' : x[k]) + '" autocomplete="off"></label>'; };
+  var fitted = ['gl', 'gr', 'gt', 'gb'].some(function (k) { return x[k] !== '' && x[k] != null; });
+  return '<div class="plfit"><div class="plfit-f"><div class="lbl">' + t('exPlinth') + ' — ' + t('plFitT') + '</div><div class="row" style="gap:10px;align-items:flex-end;flex-wrap:wrap">' +
+    gE(t('plGl'), 'gl') + gE(t('plGr'), 'gr') + gE(t('plGt'), 'gt') + gE(t('plGb'), 'gb') + '</div>' +
+    '<div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap"><button type="button" class="btn" data-act="plfit" data-v="' + i + '">⇔ ' + t('plFitBtn') + '</button>' +
+    (fitted ? '<button type="button" class="btn ghost" data-act="plfit" data-v="' + i + ':off">' + t('plFitOff') + '</button>' : '') + '</div>' +
+    '<p class="note" style="margin:6px 0 0">' + t('plFitNote') + '</p></div>' + plinthPic(c) + '</div>';
+}
+function plinthPic(c) {
+  var inf = cur() === c && S._info && S._info[S.sel], r = inf && inf.r, pl = r && r.visual && r.visual.plinth; if (!pl || !window.DBFront) return '';
+  var legH = E.legHeight(engineDef(c)), art = window.DBFront.svg(c, r, { legs:legH > 0, legH:legH, type:cabKind(c), label:t('exPlinth') }), H = +r.dims.H, W = +r.dims.W, n = function (v) { return (Math.round(v * 10) / 10).toString(); }, hw = Math.max(6, W / 70);
+  var bar = function (k, x1, y1, x2, y2, cur0) { return '<line class="fgh" data-plh="' + k + '" x1="' + n(x1) + '" y1="' + n(y1) + '" x2="' + n(x2) + '" y2="' + n(y2) + '" stroke-width="' + n(hw) + '" style="cursor:' + cur0 + '"><title>' + esc(t('plDragT')) + '</title></line>'; };
+  var mx = (pl.x0 + pl.x1) / 2, my = H - (pl.z0 + pl.z1) / 2, lw = (pl.x1 - pl.x0) * 0.3, lh = Math.max(8, (pl.z1 - pl.z0) * 0.35);
+  var hs = '<g class="fghs">' + bar('gt', mx - lw, H - pl.z1, mx + lw, H - pl.z1, 'ns-resize') + bar('gb', mx - lw, H - pl.z0, mx + lw, H - pl.z0, 'ns-resize') +
+    bar('gl', pl.x0, my - lh, pl.x0, my + lh, 'ew-resize') + bar('gr', pl.x1, my - lh, pl.x1, my + lh, 'ew-resize') + '<text class="fgtip" x="0" y="0" font-size="' + n(Math.max(14, W / 34)) + '"></text></g>';
+  var y0v = H - (pl.top + 160), y1v = H - pl.floor + 14;   // the lower part of the cabinet, where the plinth is, close up
+  art = art.replace(/viewBox="[^"]*"/, 'viewBox="' + n(-20) + ' ' + n(y0v) + ' ' + n(W + 40) + ' ' + n(y1v - y0v) + '"');
+  return '<div class="plpic">' + art.replace(/<\/svg>\s*$/, hs + '</svg>') + '</div>';
+}
 function fgFronts(r) {
   var v = r.visual || {}, fr = (v.drawers || []).map(function (f) { return { x0:f.x, x1:f.x + f.w, z0:f.bottom, z1:f.bottom + f.h }; })
     .concat((v.doors || []).map(function (d) { return { x0:d.x, x1:d.x + d.w, z0:d.z, z1:d.z + d.h }; }));
@@ -9375,6 +9431,10 @@ function fgHandles(r) {
 }
 var FGD = null;   // a handle being dragged
 document.addEventListener('pointerdown', function (ev) {
+  var pel = ev.target && ev.target.closest ? ev.target.closest('[data-plh]') : null;
+  if (pel) { var cp = cur(), ip = S._info && S._info[S.sel], rp = ip && ip.r, pl = rp && rp.visual && rp.visual.plinth; if (!cp || !pl) return; ev.preventDefault(); ev.stopPropagation();
+    var sv = pel.ownerSVGElement; FGD = { pl:true, el:pel, k:pel.getAttribute('data-plh'), svg:sv, inv:sv.getScreenCTM().inverse(), r:rp, p:pl, v:null, tip:sv.querySelector('.fgtip') };
+    try { pel.setPointerCapture(ev.pointerId); } catch (x) {} return; }
   var el = ev.target && ev.target.closest ? ev.target.closest('[data-fgh]') : null; if (!el) return;
   var c = cur(), inf = S._info && S._info[S.sel], r = inf && inf.r; if (!c || !r || !r.fgaps) return;
   ev.preventDefault(); ev.stopPropagation();
@@ -9384,12 +9444,25 @@ document.addEventListener('pointerdown', function (ev) {
 }, true);
 document.addEventListener('pointermove', function (ev) {
   if (!FGD) return;
+  if (FGD.pl) {   // a plinth edge: the gap to the side, to the bottom board, to the floor
+    var pt2 = FGD.svg.createSVGPoint(); pt2.x = ev.clientX; pt2.y = ev.clientY; var q2 = pt2.matrixTransform(FGD.inv), Hh = +FGD.r.dims.H, Ww = +FGD.r.dims.W, P = FGD.p, k2 = FGD.k, v2, sn2 = null, side = P.sideIn;
+    if (k2 === 'gl') v2 = q2.x - side; else if (k2 === 'gr') v2 = (Ww - side) - q2.x; else if (k2 === 'gt') v2 = P.top - (Hh - q2.y); else v2 = (Hh - q2.y) - P.floor;
+    v2 = Math.max(0, Math.min(v2, k2 === 'gl' || k2 === 'gr' ? 200 : 150));
+    [[0, t('plSnap0')], [1, ''], [4, ''], [k2 === 'gt' ? 2 : 3, '']].forEach(function (s0) { if (sn2 == null && Math.abs(v2 - s0[0]) < 7 * Math.abs(FGD.inv.a || 1)) { v2 = s0[0]; sn2 = s0[1]; } });
+    v2 = Math.round(v2 * 2) / 2; FGD.v = v2;
+    var y2, x2;
+    if (k2 === 'gt' || k2 === 'gb') { y2 = k2 === 'gt' ? Hh - (P.top - v2) : Hh - (P.floor + v2); FGD.el.setAttribute('y1', y2); FGD.el.setAttribute('y2', y2); }
+    else { x2 = k2 === 'gl' ? side + v2 : Ww - side - v2; FGD.el.setAttribute('x1', x2); FGD.el.setAttribute('x2', x2); }
+    if (FGD.tip) { FGD.tip.setAttribute('x', k2 === 'gl' ? side + v2 + 20 : k2 === 'gr' ? Ww - side - v2 - 20 : (P.x0 + P.x1) / 2); FGD.tip.setAttribute('y', k2 === 'gt' ? Hh - P.top - 14 : k2 === 'gb' ? Hh - P.floor + 34 : Hh - (P.z0 + P.z1) / 2 - 30);
+      FGD.tip.setAttribute('text-anchor', k2 === 'gr' ? 'end' : k2 === 'gl' ? 'start' : 'middle'); FGD.tip.textContent = ({ gl:t('plGl'), gr:t('plGr'), gt:t('plGt'), gb:t('plGb') })[k2] + ': ' + fmt(v2) + (sn2 ? ' — ' + sn2 : ''); }
+    return;
+  }
   var pt = FGD.svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; var q = pt.matrixTransform(FGD.inv), r = FGD.r, H = +r.dims.H, W = +r.dims.W, g = r.fgaps, k = FGD.k, v, snaps, sn = null;
   if (k === 'bot') { v = (H - q.y) - g.hb; snaps = [[0, t('fgSnapBot')], [g.botMin, t('fgSnapSide')]]; v = Math.max(g.botMin, Math.min(v, FGD.e.z1 - g.hb - 120)); }
   else if (k === 'top') { v = q.y; snaps = [[0, t('fgSnapTop')], [g.mid, ''], [r.fgaps.top, '']]; v = Math.max(0, Math.min(v, 80)); }
   else if (k === 'l') { v = q.x; snaps = [[0, t('fgSnapOut')], [3, ''], [+r.dims.t / 2, '']]; v = Math.max(0, Math.min(v, 40)); }
   else { v = W - q.x; snaps = [[0, t('fgSnapOut')], [3, ''], [+r.dims.t / 2, '']]; v = Math.max(0, Math.min(v, 40)); }
-  snaps.forEach(function (s0) { if (sn == null && Math.abs(v - s0[0]) < Math.max(4, W / 120)) { v = s0[0]; sn = s0[1]; } });
+  snaps.forEach(function (s0) { if (sn == null && Math.abs(v - s0[0]) < Math.max(2, 7 * Math.abs(FGD.inv.a || 1))) { v = s0[0]; sn = s0[1]; } });
   v = Math.round(v * 2) / 2; FGD.v = v;
   var el = FGD.el, e = FGD.e, a, tx, ty;
   if (k === 'bot' || k === 'top') { var y = k === 'bot' ? H - (v + g.hb) : v; el.setAttribute('y1', y); el.setAttribute('y2', y); tx = (e.x0 + e.x1) / 2; ty = k === 'bot' ? y - 12 : y + 40; }
@@ -9398,7 +9471,9 @@ document.addEventListener('pointermove', function (ev) {
 });
 document.addEventListener('pointerup', function () {
   if (!FGD) return; var d = FGD; FGD = null; if (d.v == null) return;
-  var c = cur(); if (!c) return; c.cnc.fg = Object.assign({}, c.cnc.fg || {}); c.cnc.fg[d.k] = d.v; save(); render();
+  var c = cur(); if (!c) return;
+  if (d.pl) { var pk = plinthIdx(c); if (pk < 0) return; var xp = c.extras[pk]; ['gl', 'gr', 'gt', 'gb'].forEach(function (k) { if (xp[k] === '' || xp[k] == null) xp[k] = 0; }); xp[d.k] = d.v; save(); render(); return; }
+  c.cnc.fg = Object.assign({}, c.cnc.fg || {}); c.cnc.fg[d.k] = d.v; save(); render();
 });
 /* the fronts' gaps as fields under the picture: empty = the rule; a button sends the fronts down to the sides' bottom edge */
 function fgBlock(c) {
@@ -9450,12 +9525,12 @@ function viewEditor(c) {
     '<div class="bgrp"><div class="bgt">' + t('bgBase') + '</div>' +
     '<div class="row"><div class="f"><span>' + t('supL') + '</span>' + seg(b + 'cnc.support', !o.legs ? 'none' : o.feet ? 'feet' : 'legs', [['legs', t('supLegs')], ['feet', t('supFeet')], ['none', t('supNone')]]) + '</div>' +
       (o.legs ? '<button type="button" class="btn ghost supgo" data-act="goto" data-v="st-ops">' + t('supEdit') + ' →</button>' : '') + '</div>' +
-    '<div class="row bottomrow" style="margin-top:10px"><div class="f"><span>' + t('botMount') + '</span>' + seg(b + 'cnc.bottom', bIn ? 'inside' : 'under', [['under', t('botUnder')], ['inside', t('botInside')]]) + '</div>' +
+    '<div class="row bottomrow" style="margin-top:10px">' + dd(b + 'cnc.bottom', bIn ? 'inside' : 'under', [['under', t('botUnder')], ['inside', t('botInside')]], t('botMount')) +
       (bIn ? fN(t('botZ'), b + 'cnc.bottomZ', o.bottomZ || 0, 's') : '') + botDepthField(c) + camPick('bottom', bottomPic(bIn, bCam), bCam) + '</div>' + plinthBlock(c) + '</div>' +
-    '<div class="bgrp"><div class="bgt">' + t('top') + '</div><div class="row">' + seg(b + 'cnc.top', o.top, [['rails', t('topRails')], ['full', t('topFull')]]) + '</div>' +
-      (o.top === 'full' ? '<div class="row bottomrow" style="margin-top:10px"><div class="f"><span>' + t('topMount') + '</span>' + seg(b + 'cnc.topMount', o.topMount === 'inside' ? 'inside' : 'over', [['over', t('topOn')], ['inside', t('topInside')]]) + '</div>' +
+    '<div class="bgrp"><div class="bgt">' + t('top') + '</div><div class="row bottomrow" style="gap:10px;align-items:flex-end">' + dd(b + 'cnc.top', o.top, [['rails', t('topRails')], ['full', t('topFull')]], t('topKind')) +
+      (o.top === 'full' ? dd(b + 'cnc.topMount', o.topMount === 'inside' ? 'inside' : 'over', [['over', t('topOn')], ['inside', t('topInside')]], t('topMount')) +
         (o.topMount !== 'inside' ? chk(b + 'cnc.topOverFacade', o.topOverFacade, t('topOver')) : '') + camPick('top', topPic(o.topMount === 'inside', tCam), tCam) + '</div>' +
-        (o.topMount !== 'inside' ? '<div class="row topov" style="margin-top:10px;gap:10px;align-items:flex-end">' + fN(o.topOverFacade ? t('topOvFf') : t('topOvF'), b + 'cnc.topOvF', o.topOvF || 0, 's') + fN(t('topOvS'), b + 'cnc.topOvS', o.topOvS || 0, 's') + fN(t('topOvB'), b + 'cnc.topOvB', o.topOvB || 0, 's') + '</div><p class="note" style="margin:4px 0 0">' + t('topOvNote') + '</p>' : '') : railsEditor(c)) + '</div>' +
+        (o.topMount !== 'inside' ? '<div class="row topov" style="margin-top:10px;gap:10px;align-items:flex-end">' + fN(o.topOverFacade ? t('topOvFf') : t('topOvF'), b + 'cnc.topOvF', o.topOvF || 0, 's') + fN(t('topOvS'), b + 'cnc.topOvS', o.topOvS || 0, 's') + fN(t('topOvB'), b + 'cnc.topOvB', o.topOvB || 0, 's') + '</div><p class="note" style="margin:4px 0 0">' + t('topOvNote') + '</p>' : '') : '</div>' + railsEditor(c)) + '</div>' +
     '<div class="bgrp">' + visBlock(c) + '</div>' +
     '<div class="bgrp mainset">' + backBlock(c) + worktopBlock(c) + '</div>' +
     '<div class="bgrp"><div class="lbl">' + t('jMain') + ' <span class="unit">· ' + t('jMainL') + '</span></div><div class="choices">' +
@@ -9684,7 +9759,7 @@ function extrasBlock(c) {
     return '<tr' + (x.kind === 'side' ? ' class="xsidehead"' : '') + '>' + cell('name', 'xt') + cell('L', 'xn') + cell('W', 'xn') + cell('T', 'xn') + cell('qty', 'xn') + cell('mat', 'xt', 'dl-mat') + '<td data-l="' + esc(t('exEdges')) + '" class="xc-eb"><span class="ebs">' + eb + '</span></td><td class="xc-rm"><button class="xbtn" data-act="rmx" data-i="' + i + '" aria-label="' + t('rm') + '" title="' + t('rm') + '">✕</button></td></tr>' + side + plin;
   }).join('');
   return (c.extras.length ? '<div class="tablewrap xtab"><table><thead><tr><th>' + t('exName') + '</th><th class="n">' + t('cL') + '</th><th class="n">' + t('cW') + '</th><th class="n">' + t('cT') + '</th><th class="n">' + t('cQ') + '</th><th>' + t('cMat') + '</th><th>' + t('exEdges') + '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>' : '<p class="note" style="margin:0 0 8px">' + t('exNone') + '</p>') +
-    '<div class="row" style="margin-top:10px"><button class="btn" data-act="addx" data-v="part">＋ ' + t('exAdd') + '</button><button class="btn" data-act="addx" data-v="plinth">＋ ' + t('exPlinth') + '</button><button class="btn" data-act="addx" data-v="side">＋ ' + t('exSideAdd') + '</button></div>';
+    '<div class="row" style="margin-top:10px"><button class="btn" data-act="addx" data-v="part">＋ ' + t('exAdd') + '</button><button class="btn" data-act="addx" data-v="plinth">＋ ' + t('exPlinth') + '</button><button class="btn" data-act="addx" data-v="side">＋ ' + t('exSideAdd') + '</button></div>' + plinthFitBlock(c);
 }
 /* a loose panel (Baldai: Plokštė): its size, material, edges; where it stands is set in Baldai */
 function panelEditor(c) {
@@ -9757,13 +9832,63 @@ function opRow(bind, on, title, desc, verified, applies, more) {
 function matsBlock(c) {
   var b = 'c.', hasFront = c.dishwasher || c.sections.some(function (s) { return s.kind === 'drawers' || s.kind === 'doors'; }) || !!(c.kind === 'box' && c.box && c.box.fronts && c.box.fronts.length);
   var req = function (html, val) { return html.replace('<span>', '<span>').replace('</span>', ' <i class="req" aria-hidden="true">*</i></span>').replace('type="text"', 'type="text" required' + (val ? '' : ' aria-invalid="true"')); };
-  return '<p class="note reqnote"><i class="req">*</i> ' + t('reqNote') + '</p><div class="row">' + (c.dishwasher ? fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat') : req(fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat'), c.mat.carc)) + (hasFront ? req(fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat'), c.mat.facade) : fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat')) + (c.dishwasher ? '' : fT(t('mBack'), b + 'mat.back', c.mat.back, 'dl-mat')) + '</div>' +
+  return matDock(c) + '<p class="note reqnote"><i class="req">*</i> ' + t('reqNote') + '</p><div class="row">' + (c.dishwasher ? fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat') : req(fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat'), c.mat.carc)) + (hasFront ? req(fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat'), c.mat.facade) : fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat')) + (c.dishwasher ? '' : fT(t('mBack'), b + 'mat.back', c.mat.back, 'dl-mat')) + (!c.dishwasher && c.kind !== 'box' && c.cnc && c.cnc.top === 'full' ? fT(t('mTop'), b + 'mat.top', c.mat.top || '', 'dl-mat').replace('type="text"', 'type="text" placeholder="' + esc(c.mat.carc || t('mTopPh')) + '"') : '') + '</div>' +
     '<div class="row" style="margin-top:10px">' + fT(t('eCarc'), b + 'edge.carc', c.edge.carc, 'dl-edge') + fT(t('eFac'), b + 'edge.facade', c.edge.facade, 'dl-edge') + '</div>' +
     '<div class="lookwrap"><h4>' + t('lookT') + '</h4><p class="note">' + t('lookL') + '</p>' + lookBlock(lookNames([c])) + '</div>';
 }
 /* how the board materials look in the 3-D views: a texture photo or a colour, per material name (S.proj.look, see DBLook) */
 /* the realistic picture's material arrows: a cabinet's front / carcass / worktop material set from there; the names to step through
    (those with a texture or colour first, then the project's and the settings' materials) */
+/* materials dragged onto the boards of the 3-D picture: each lands in the cabinet's setting the board takes its material from */
+function matDock(c) {
+  var names = pickMats().slice(0, 24); if (!names.length) return '';
+  var col = function (n) { try { return window.DBLook && window.DBLook.color ? window.DBLook.color(n, S.proj.look) : null; } catch (e) { return null; } };
+  return '<div class="matdock"><div class="lbl">' + t('mdT') + '</div><div class="mdchips">' + names.map(function (n) { var cc = col(n);
+    return '<span class="mdchip" draggable="true" data-mdmat="' + esc(n) + '" title="' + esc(t('mdChipT')) + '"><i style="background:' + esc(cc || '#d9d6cf') + '"></i>' + esc(n) + '</span>'; }).join('') + '</div><p class="note" style="margin:4px 0 0">' + t('mdNote') + '</p></div>';
+}
+function matTarget(c, part) {   // which setting a board's material comes from: [key, label]
+  if (!part) return null;
+  if (part.kind === 'worktop') return ['worktop', t('mdWt')];
+  if (part.kind === 'plinth') return ['plinth', t('exPlinth')];
+  var role = part.role || '';
+  if (role === 'FASADAS' || role === 'DURYS') return ['facade', t('mFac')];
+  if (role === 'VIRSUS' && c.cnc && c.cnc.top === 'full') return ['top', t('mTop')];
+  if (role === 'NUGARA' || role === 'PLAUSAS') return ['back', t('mBack')];
+  if (role === 'KAIRE' || role === 'DESINE') return ['side' + (role === 'KAIRE' ? 'L' : 'R'), t('mCarc')];
+  return ['carc', t('mCarc')];
+}
+function dropMat(c, part, name) {
+  var tg = matTarget(c, part); if (!tg || !name) return;
+  var k = tg[0], lab = tg[1];
+  if (k === 'worktop') { c.worktop = c.worktop || {}; c.worktop.mat = name; }
+  else if (k === 'plinth') { var pi = plinthIdx(c); if (pi >= 0) c.extras[pi].mat = name; }
+  else if (k === 'sideL' || k === 'sideR') {   // a side in the fronts' material: a visible side; otherwise the carcass
+    if (name === c.mat.facade && name !== c.mat.carc) { c.vis = Object.assign({}, c.vis || {}); c.vis[k === 'sideL' ? 'L' : 'R'] = true; lab = k === 'sideL' ? t('visL') : t('visR'); }
+    else c.mat.carc = name;
+  } else c.mat[k] = name;
+  save(); render(); toast('„' + name + '“ → ' + lab);
+}
+var MD = { name:null, tip:null };
+document.addEventListener('dragstart', function (e) {
+  var ch = e.target && e.target.closest ? e.target.closest('[data-mdmat]') : null; if (!ch) return;
+  MD.name = ch.getAttribute('data-mdmat'); try { e.dataTransfer.setData('text/plain', MD.name); e.dataTransfer.effectAllowed = 'copy'; } catch (x) {}
+  document.body.classList.add('mddrag');
+});
+document.addEventListener('dragend', function () { MD.name = null; document.body.classList.remove('mddrag'); if (MD.tip) MD.tip.remove(); MD.tip = null; });
+var mdOver = function (e) { var ap = document.getElementById('assembly-preview'); return MD.name && ap && e.target && ap.contains(e.target) ? ap : null; };
+document.addEventListener('dragover', function (e) {
+  var ap = mdOver(e); if (!ap) return; e.preventDefault(); try { e.dataTransfer.dropEffect = 'copy'; } catch (x) {}
+  var c = cur(), part = window.DBAssembly && window.DBAssembly.pickAt ? window.DBAssembly.pickAt(e.clientX, e.clientY) : null, tg = c ? matTarget(c, part) : null;
+  if (!MD.tip) { MD.tip = document.createElement('div'); MD.tip.className = 'mdtip'; document.body.appendChild(MD.tip); }
+  MD.tip.style.left = (e.clientX + 14) + 'px'; MD.tip.style.top = (e.clientY + 14) + 'px';
+  MD.tip.textContent = tg ? '„' + MD.name + '“ → ' + tg[1] : t('mdNone');
+});
+document.addEventListener('drop', function (e) {
+  var ap = mdOver(e); if (!ap) return; e.preventDefault();
+  var c = cur(), part = window.DBAssembly && window.DBAssembly.pickAt ? window.DBAssembly.pickAt(e.clientX, e.clientY) : null, name = MD.name;
+  if (MD.tip) MD.tip.remove(); MD.tip = null; MD.name = null; document.body.classList.remove('mddrag');
+  if (c && part) dropMat(c, part, name); else toast(t('mdNone'), true);
+});
 function setMatOf(c, part, name) {
   if (part === 'worktop') { c.worktop = c.worktop || {}; c.worktop.mat = name; } else { c.mat = c.mat || {}; c.mat[part] = name; }
   save(); render();
@@ -9775,7 +9900,7 @@ function pickMats() {
 }
 function lookNames(cabs) {
   var out = []; cabs.forEach(function (c) { if (!c) return; var m = c.mat || {};
-    [m.facade, m.carc, m.back].concat((c.extras || []).map(function (x) { return x && x.mat; })).concat(c.worktop && c.worktop.on ? [c.worktop.mat] : [])
+    [m.facade, m.carc, m.back, m.top].concat((c.extras || []).map(function (x) { return x && x.mat; })).concat(c.worktop && c.worktop.on ? [c.worktop.mat] : [])
       .forEach(function (n) { n = String(n || '').trim(); if (n && out.indexOf(n) < 0) out.push(n); }); });
   return out;
 }
@@ -9856,17 +9981,29 @@ function lookTexture(name, file) {
 /* the cabinet's own worktop: yes / no, material, thickness, overhangs */
 function reqF(html, val) { return html.replace('</span>', ' <i class="req" aria-hidden="true">*</i></span>').replace('type="text"', 'type="text" required' + (val ? '' : ' aria-invalid="true"')); }
 /* the cabinet's back(s): none / fibreboard / solid per column, and whether a solid back sits outside (on the back edges) or inside */
+/* a drop-down bound like seg(): compact for the construction settings */
+function dd(bind, val, opts, label) {
+  var id = 'f-' + bind.replace(/[^\w]+/g, '-');
+  return '<label class="f dd" for="' + id + '">' + (label ? '<span>' + label + '</span>' : '') + '<select id="' + id + '" data-bind="' + bind + '">' +
+    opts.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('') + '</select></label>';
+}
 function backBlock(c) {
   var o = c.cnc, b = 'c.cnc.', nC = colsOf(c), bs = (o.backs || []).slice(0, nC), anyS = bs.indexOf('solid') >= 0, allS = bs.length === nC && bs.every(function (x) { return x === 'solid'; });
   var mount = allS && o.backMount !== 'inside' ? 'top' : 'inside', h = '<div class="lbl" style="margin-top:14px">' + t('backOf') + '</div><div class="row bottomrow">';
-  for (var k = 0; k < nC; k++) h += '<div class="f">' + (nC > 1 ? '<span>' + colName(nC, k) + '</span>' : '') + seg(b + 'backs.' + k, bs[k] || 'none', [['none', t('bNone')], ['hdf', t('bHdf')], ['solid', t('bSolid')]]) + '</div>';
-  if (anyS) h += '<div class="f"><span>' + t('backMountL') + '</span>' + seg(b + 'backMount', allS ? (o.backMount === 'inside' ? 'inside' : 'top') : 'inside', [['top', t('bTop')], ['inside', t('bIn')]]) + '</div>';
+  for (var k = 0; k < nC; k++) h += dd(b + 'backs.' + k, bs[k] || 'none', [['none', t('bNone')], ['hdf', t('bHdf')], ['solid', t('bSolid')]], nC > 1 ? colName(nC, k) : t('bKind'));
+  if (anyS) h += dd(b + 'backMount', allS ? (o.backMount === 'inside' ? 'inside' : 'top') : 'inside', [['top', t('bTop')], ['inside', t('bIn')]], t('backMountL'));
   var inf1 = S._info && S._info[S.sel], jb = cur() === c && inf1 && inf1.r ? (inf1.r.joints || []).filter(function (j) { return j.key === 'back'; })[0] : null;
   var bfix = jb ? (jb.split ? 'mixed' : jb.type) : (mount === 'top' && o.backFix === 'cam' ? 'cam' : 'confirmat');   // how the solid back is fixed, as the engine has it
-  if (anyS) h += '<div class="f"><span>' + t('bFixL') + '</span>' + seg(b + 'backJoint', bfix, [['confirmat', t('jtConf')], ['cam', t('jtCam')], ['dowel', t('jtDowel')]]) + '</div>';
+  if (anyS) h += dd(b + 'backJoint', bfix === 'mixed' ? 'confirmat' : bfix, [['confirmat', t('jtConf')], ['cam', t('jtCam')], ['dowel', t('jtDowel')]], t('bFixL'));
   var kind = anyS ? (mount === 'top' ? 'out' : 'in') : bs.indexOf('hdf') >= 0 ? 'hdf' : 'none';
   var kCam = kind === 'in' && bfix === 'cam' ? ((o.camOut || {}).back ? 'out' : 'in') : null;
   h += camPick('back', backPic(kind, kCam), kCam) + '</div>';
+  if (allS && mount === 'inside') {   // the inside back's ends: on the bottom / under the top, or covering them (the bottom / top stop at the back)
+    var cv = o.backCover || {}, canB = o.bottom === 'inside', canT = o.top === 'full' ? o.topMount === 'inside' : (o.rails && (o.rails.back === 'h') && nC === 1);
+    if (canB || canT) h += '<div class="row bkcov" style="margin-top:10px;gap:10px;align-items:flex-end">' +
+      (canB ? dd(b + 'backCover.bottom', cv.bottom ? 'true' : 'false', [['false', t('bcBotOn')], ['true', t('bcBotCov')]], t('bcBotL')) : '') +
+      (canT ? dd(b + 'backCover.top', cv.top ? 'true' : 'false', [['false', o.top === 'full' ? t('bcTopOn') : t('bcRailOn')], ['true', o.top === 'full' ? t('bcTopCov') : t('bcRailCov')]], t('bcTopL')) : '') + '</div>';
+  }
   if (anyS && mount === 'inside') {   // the inside back: how far in from the back edge (or, the same thing, where its front face is from the cabinet front)
     var tb0 = bs.indexOf('hdf') >= 0 ? (+E.R.hdf.t || 3) : 0, t0 = num(c.thick) || 18, inset = Math.max(0, num(o.backInset) || 0), fromF = num(c.D) - tb0 - inset - t0;
     h += '<div class="row bkin" style="margin-top:10px;align-items:flex-end;gap:10px">' + fN(t('bkInset'), b + 'backInset', fmt(inset), 's') +
@@ -10813,7 +10950,7 @@ function numOrNull(v) {
 }
 var NUM_LIMITS = [   // [binding, min, max, whole number]
   [/^c\.(W|H|D|dishWidth)$/, 50, 6000], [/^c\.thick$/, 6, 60], [/^c\.cnc\.facadeT$/, 6, 60], [/^c\.legH$/, 0, 400], [/^c\.cnc\.bottomZ$/, 0, 2000], [/^c\.cnc\.bottomD$/, 0, 2000], [/^c\.leds\.\d+\.from$/, 0, 3000], [/^c\.cnc\.railW$/, 30, 400],
-  [/^c\.colW\.\d+$/, 50, 6000], [/^c\.shelfSb$/, -150, 150], [/^c\.cnc\.backInset$/, 0, 1000], [/^c\.cnc\.topOv[FSB]$/, 0, 300], [/^c\.cnc\.fg\.(l|r|mid|top)$/, 0, 100], [/^c\.cnc\.fg\.bot$/, -1500, 1500], [/^c\.sections\.\d+\.nDrawers$/, 1, 12, true], [/^c\.sections\.\d+\.nDoors$/, 1, 6, true], [/^c\.sections\.\d+\.shelves$/, 0, 12, true], [/^c\.sections\.\d+\.height$/, 0, 6000],
+  [/^c\.colW\.\d+$/, 50, 6000], [/^c\.shelfSb$/, -150, 150], [/^c\.cnc\.backInset$/, 0, 1000], [/^c\.cnc\.topOv[FSB]$/, 0, 300], [/^c\.cnc\.fg\.(l|r|mid|top)$/, 0, 100], [/^c\.cnc\.fg\.bot$/, -1500, 1500], [/^c\.extras\.\d+\.g[lrtb]$/, 0, 500], [/^c\.sections\.\d+\.nDrawers$/, 1, 12, true], [/^c\.sections\.\d+\.nDoors$/, 1, 6, true], [/^c\.sections\.\d+\.shelves$/, 0, 12, true], [/^c\.sections\.\d+\.height$/, 0, 6000],
   [/^c\.sections\.\d+\.frontH\.\d+$/, 0, 3000], [/^c\.sections\.\d+\.shelfPos\.\d+$/, 0, 6000],
   [/^c\.box\.fronts\.\d+\.nDrawers$/, 1, 8, true], [/^c\.box\.boards\.\w+\.inset$/, 0, 3000], [/^c\.box\.boards\.\w+\.T$/, 3, 60], [/^c\.box\.inner\.\d+\.T$/, 3, 60], [/^c\.box\.inner\.\d+\.(x|z)$/, 0, 6000],
   [/^c\.worktop\.T$/, 6, 120], [/^c\.extras\.\d+\.(L|W)$/, 1, 6000], [/^c\.extras\.\d+\.T$/, 1, 120], [/^c\.extras\.\d+\.qty$/, 0, 999, true], [/^c\.extras\.\d+\.zb$/, -5000, 5000], [/^c\.extras\.\d+\.yf$/, -300, 300], [/^c\.worktop\.(left|right)$/, 0, 1000], [/^c\.worktop\.over$/, -100, 300],
@@ -11013,6 +11150,10 @@ app.addEventListener('click', function (e) {
         var fT0 = num(cc.cnc.facadeT) || 18; cc.extras.push({ kind:'side', side:sd0, fit:'', name:t('exSide'), L:num(cc.H), W:num(cc.D) + fT0, T:fT0, qty:1, mat:cc.mat.facade || cc.mat.carc, e1:true, e2:true, e3:true, e4:true, zb:0, yf:fT0 }); save(); break; }
       cc.extras.push(v === 'plinth' ? { kind:'plinth', name:t('exPlinth'), L:num(cc.W) - (hb0 > 0 && !le0 ? 2 * (num(cc.thick) || 18) : 0), W:Math.max(40, le0 + hb0 - 2), T:num(cc.thick) || 18, qty:1, mat:cc.mat.facade || cc.mat.carc, e1:true }
                                                    : { name:t('exAdd'), L:num(cc.W), W:100, T:num(cc.thick) || 18, qty:1, mat:cc.mat.carc }); save(); break; }
+    case 'plfit': { var cf = cur(), pv = String(v).split(':'), xf = cf && cf.extras[+pv[0]]; if (!xf) break;
+      if (pv[1] === 'off') ['gl', 'gr', 'gt', 'gb'].forEach(function (k) { delete xf[k]; });
+      else { if (hbOf(cf) > 0) xf.between = true; xf.gl = 1; xf.gr = 1; xf.gt = 4; xf.gb = 0; }   // between the sides with 1 mm at each, 4 mm under the bottom board
+      save(); break; }
     case 'fgbot': { var cg = cur(), ig = S._info && S._info[S.sel], rg = ig && ig.r; if (!cg) break;
       if (v === 'reset') cg.cnc.fg = {}; else if (rg && rg.fgaps) { cg.cnc.fg = Object.assign({}, cg.cnc.fg || {}); cg.cnc.fg.bot = rg.fgaps.botMin; }
       save(); break; }
@@ -11188,7 +11329,7 @@ function saveFile(name, data, type) {
 
 document.documentElement.lang = S.lang;
 render();
-window.__dbk = { S:S, render:render, nestPlan:nestPlan, VER:VER, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
+window.__dbk = { S:S, render:render, nestPlan:nestPlan, VER:VER, dropMat:dropMat, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
 })();
 
 </script>
