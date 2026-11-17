@@ -911,5 +911,6 @@ var LT = {
   "Ready for production": "Paruošta gamybai",
   "In engineering": "Projektuojama",
   "Handed off to production": "Perduota į gamybą",
-  "Drawings check": "Brėžinių patikra"
+  "Drawings check": "Brėžinių patikra",
+  "Design draft": "Eskizas"
 };

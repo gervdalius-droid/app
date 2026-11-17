@@ -34,13 +34,65 @@ var EngFlow = {
     return (ids || []).map(id => D.file(id)).filter(Boolean);
   },
 
-  /* chip on the board card */
+  /* two review rounds share one look: the design draft (vadyba checks it and
+     sends it to the client) and the finished drawings (vadyba confirms them) */
+  kinds() {
+    var L = (en, lt) => this._lt(en, lt);
+    return {
+      draft: {
+        list: o => M.draftReviews(o),
+        okStatus: "sent",
+        submit: (id, res) => M.submitDraft(id, res, App.me.id),
+        review: (id, rid, ok, res) => M.reviewDraft(id, rid, ok, res, App.me.id),
+        title: { pending: L("Design draft waiting for vadyba", "Eskizas laukia vadybos peržiūros"), sent: L("Design draft sent to the client", "Eskizas išsiųstas klientui"), remarks: L("Design draft returned with remarks", "Eskizas grąžintas su pastabomis") },
+        okBy: L("Sent to the client by", "Klientui išsiuntė"),
+        okBtn: L("Checked — sent to the client", "Peržiūrėta — išsiųsta klientui"),
+        okToast: L("Marked as sent to the client — the engineer is told", "Pažymėta: išsiųsta klientui — inžinieriui pranešta"),
+        next: L("Client's answer: add it as client corrections, or confirm the client approved.", "Kliento atsakymą įkelkite kaip kliento pataisas arba patvirtinkite, kad klientas patvirtino."),
+        submitBtn: L("Upload a design draft for vadyba…", "Įkelti eskizą vadybai…"),
+        resubmitBtn: L("Upload the corrected draft…", "Įkelti pataisytą eskizą…"),
+        againBtn: L("Upload a new draft version…", "Įkelti naują eskizo versiją…"),
+        modalTitle: L("Design draft for vadyba", "Eskizas vadybai"),
+        filesLabel: L("The draft — PDF, renders, screenshots", "Eskizas — PDF, vizualizacijos, nuotraukos"),
+        noteLabel: L("Note for vadyba (optional)", "Pastaba vadybai (nebūtina)"),
+        sendLabel: L("Send to vadyba", "Siųsti vadybai"),
+        sentToast: L("Sent to vadyba", "Išsiųsta vadybai"),
+        remarksTitle: L("Remarks on the draft", "Pastabos eskizui")
+      },
+      draw: {
+        list: o => M.drawReviews(o),
+        okStatus: "ok",
+        submit: (id, res) => M.submitDrawings(id, res, App.me.id),
+        review: (id, rid, ok, res) => M.reviewDrawings(id, rid, ok, res, App.me.id),
+        title: { pending: L("Drawings waiting for a check", "Brėžiniai laukia patikros"), ok: L("Drawings confirmed", "Brėžiniai patvirtinti"), remarks: L("Drawings returned with remarks", "Brėžiniai grąžinti su pastabomis") },
+        okBy: L("Confirmed by", "Patvirtino"),
+        okBtn: L("Confirm", "Patvirtinti"),
+        okToast: L("Drawings confirmed — the engineer is told", "Brėžiniai patvirtinti — inžinieriui pranešta"),
+        next: L("Next: report list and CNC programs, then hand off.", "Toliau: reportlist ir CNC programos, tada perdavimas."),
+        submitBtn: L("Send drawings for checking…", "Pateikti brėžinius patikrai…"),
+        resubmitBtn: L("Send corrected drawings for checking…", "Pateikti pataisytus brėžinius patikrai…"),
+        againBtn: "",
+        modalTitle: L("Send drawings for checking", "Pateikti brėžinius patikrai"),
+        filesLabel: L("The drawings — PDF from the SolidWorks macro", "Brėžiniai — PDF iš SolidWorks makro"),
+        noteLabel: L("Note for the check (optional)", "Pastaba tikrintojui (nebūtina)"),
+        sendLabel: L("Send for checking", "Pateikti patikrai"),
+        sentToast: L("Sent for checking", "Pateikta patikrai"),
+        remarksTitle: L("Remarks on the drawings", "Pastabos brėžiniams")
+      }
+    };
+  },
+
+  /* chip on the board card — the drawings once they exist, else the draft */
   cardChip(o) {
     if (!o || o.type !== "eng" || o.archived) return "";
     var st = M.drawState(o);
     if (st === "pending") return `<div class="ef-chip wait">${icon("badge", 11)} ${esc(this._lt("Drawings to check", "Brėžiniai patikrai"))}</div>`;
     if (st === "remarks") return `<div class="ef-chip bad">${icon("alert", 11)} ${esc(this._lt("Drawings: remarks", "Brėžiniai: pastabos"))}</div>`;
     if (st === "ok") return `<div class="ef-chip ok">${icon("check", 11)} ${esc(this._lt("Drawings confirmed", "Brėžiniai patvirtinti"))}</div>`;
+    var ds = M.draftState(o);
+    if (ds === "pending") return `<div class="ef-chip wait">${icon("pencil", 11)} ${esc(this._lt("Draft for vadyba", "Eskizas vadybai"))}</div>`;
+    if (ds === "remarks") return `<div class="ef-chip bad">${icon("alert", 11)} ${esc(this._lt("Draft: remarks", "Eskizas: pastabos"))}</div>`;
+    if (ds === "sent") return `<div class="ef-chip ok">${icon("send", 11)} ${esc(this._lt("Draft at the client", "Eskizas pas klientą"))}</div>`;
     return "";
   },
 
@@ -51,43 +103,49 @@ var EngFlow = {
       var p = D.order(o.handedOffTo);
       return p ? `<div class="ef-card ok"><div class="ef-head">${icon("factory", 15)} <b>${esc(this._lt("Handed off to production", "Perduota į gamybą"))}</b> <span class="grow"></span><button class="link" data-ef-open="${p.id}">${esc(p.num)} →</button></div></div>` : "";
     }
-    var all = M.drawReviews(o);
+    var drawingsStarted = M.drawReviews(o).length > 0;
+    /* once drawings are being checked the draft stage is over — its history stays */
+    var out = this.sectionHtml(o, "draft", drawingsStarted) + this.sectionHtml(o, "draw", false);
+    return out ? `<div class="ef-panel">${out}</div>` : "";
+  },
+  sectionHtml(o, kind, quiet) {
+    var K = this.kinds()[kind];
+    var all = K.list(o);
     var last = all[all.length - 1];
     var st = last ? last.status : "none";
     var out = "";
-    if (last) out += this.roundHtml(o, last, true);
-    if (st === "none" || st === "remarks") {
-      if (this.canSubmit(o) && !o.archived) out += `<button class="btn ${st === "remarks" ? "primary" : "ghost"} project-link-btn" id="ef-submit">${icon("send", 15)} ${esc(st === "remarks" ? this._lt("Send corrected drawings for checking…", "Pateikti pataisytus brėžinius patikrai…") : this._lt("Send drawings for checking…", "Pateikti brėžinius patikrai…"))}</button>`;
+    if (last && !quiet) out += this.roundHtml(o, kind, last, true);
+    if (!quiet && this.canSubmit(o) && !o.archived) {
+      var label = st === "none" ? K.submitBtn : st === "remarks" ? K.resubmitBtn : st === K.okStatus ? K.againBtn : "";
+      if (label) out += `<button class="btn ${st === "remarks" ? "primary" : "ghost"} project-link-btn" data-ef-submit="${kind}">${icon(kind === "draft" ? "pencil" : "send", 15)} ${esc(label)}</button>`;
     }
-    var older = all.slice(0, -1).reverse();
-    if (older.length) out += `<details class="rev-hist"><summary>${esc(this._lt("Earlier versions", "Ankstesnės versijos"))} (${older.length})</summary>${older.map(r => this.roundHtml(o, r, false)).join("")}</details>`;
-    return out ? `<div class="ef-panel">${out}</div>` : "";
+    var older = (quiet ? all : all.slice(0, -1)).slice().reverse();
+    if (older.length) out += `<details class="rev-hist"><summary>${esc(kind === "draft" ? this._lt("Design drafts", "Eskizai") : this._lt("Earlier drawing versions", "Ankstesnės brėžinių versijos"))} (${older.length})</summary>${older.map(r => this.roundHtml(o, kind, r, false)).join("")}</details>`;
+    return out;
   },
-  roundHtml(o, r, current) {
+  roundHtml(o, kind, r, current) {
+    var K = this.kinds()[kind];
     var by = D.member(r.by);
     var rv = r.reviewBy ? D.member(r.reviewBy) : null;
     var fs = this.files(r.files);
     var rfs = this.files(r.reviewFiles);
-    var cls = r.status === "ok" ? "ok" : r.status === "remarks" ? "bad" : "wait";
-    var title = r.status === "pending" ? this._lt("Drawings waiting for a check", "Brėžiniai laukia patikros") : r.status === "ok" ? this._lt("Drawings confirmed", "Brėžiniai patvirtinti") : this._lt("Drawings returned with remarks", "Brėžiniai grąžinti su pastabomis");
+    var cls = r.status === K.okStatus ? "ok" : r.status === "remarks" ? "bad" : "wait";
     var acts = "";
     if (current && r.status === "pending" && this.isReviewer() && !o.archived) {
       acts = `<div class="rev-acts">
-        <button class="btn primary sm" data-ef-ok="${r.id}">${icon("check", 13)} ${esc(this._lt("Confirm", "Patvirtinti"))}</button>
-        <button class="btn ghost sm" data-ef-back="${r.id}">${icon("pencil", 13)} ${esc(this._lt("Return with remarks…", "Grąžinti su pastabomis…"))}</button>
+        <button class="btn primary sm" data-ef-ok="${kind}:${r.id}">${icon(kind === "draft" ? "send" : "check", 13)} ${esc(K.okBtn)}</button>
+        <button class="btn ghost sm" data-ef-back="${kind}:${r.id}">${icon("pencil", 13)} ${esc(this._lt("Return with remarks…", "Grąžinti su pastabomis…"))}</button>
       </div>`;
     }
-    if (current && r.status === "ok" && !o.archived && App.can("orders.finish")) {
-      acts = `<div class="rev-acts"><span class="t-caption">${esc(this._lt("Next: report list and CNC programs, then hand off.", "Toliau: reportlist ir CNC programos, tada perdavimas."))}</span></div>`;
-    }
+    if (current && r.status === K.okStatus && !o.archived) acts = `<div class="rev-acts"><span class="t-caption">${esc(K.next)}</span></div>`;
     return `<div class="ef-card ${current ? cls : ""}">
       <div class="ef-head">
-        <b>${esc(title)}</b> <span class="t-caption">v${r.n} · ${esc(by ? by.name : "")} · ${fmtAgo(r.at)}</span>
+        <b>${esc(K.title[r.status] || "")}</b> <span class="t-caption">v${r.n} · ${esc(by ? by.name : "")} · ${fmtAgo(r.at)}</span>
       </div>
       ${r.note ? `<div class="rev-note">${esc(r.note)}</div>` : ""}
       ${fs.length ? Files.chipsHtml(fs, { canEdit: false }) : ""}
       ${r.status !== "pending" ? `<div class="ef-answer">
-        <div class="t-caption">${esc(r.status === "ok" ? this._lt("Confirmed by", "Patvirtino") : this._lt("Remarks from", "Pastabos nuo"))} ${esc(rv ? rv.name : "")} · ${fmtAgo(r.reviewAt)}</div>
+        <div class="t-caption">${esc(r.status === K.okStatus ? K.okBy : this._lt("Remarks from", "Pastabos nuo"))} ${esc(rv ? rv.name : "")} · ${fmtAgo(r.reviewAt)}</div>
         ${r.reviewNote ? `<div class="rev-note">${esc(r.reviewNote)}</div>` : ""}
         ${rfs.length ? Files.chipsHtml(rfs, { canEdit: false }) : ""}
       </div>` : ""}
@@ -100,40 +158,48 @@ var EngFlow = {
       App.render();
       Drawer.refresh();
     };
+    var kinds = this.kinds();
     $$(".ef-card", el).forEach(c => Files.bindChips(c, {}));
-    var sub = $("#ef-submit", el);
-    if (sub) sub.onclick = () => this.noteModal({
-      title: this._lt("Send drawings for checking", "Pateikti brėžinius patikrai") + " · " + o.num,
-      noteLabel: this._lt("Note for the check (optional)", "Pastaba tikrintojui (nebūtina)"),
-      filesLabel: this._lt("The drawings — PDF from the SolidWorks macro", "Brėžiniai — PDF iš SolidWorks makro"),
-      needFile: true,
-      who: M.reviewers().filter(id => id !== App.me.id),
-      okLabel: this._lt("Send for checking", "Pateikti patikrai"),
-      orderId: o.id
-    }).then(res => {
-      if (!res) return;
-      M.submitDrawings(o.id, res, App.me.id);
-      Toast.show(this._lt("Sent for checking", "Pateikta patikrai"), { emoji: "check" });
-      redraw();
+    $$("[data-ef-submit]", el).forEach(b => b.onclick = () => {
+      var K = kinds[b.dataset.efSubmit];
+      this.noteModal({
+        title: K.modalTitle + " · " + o.num,
+        noteLabel: K.noteLabel,
+        filesLabel: K.filesLabel,
+        needFile: true,
+        who: M.reviewers().filter(id => id !== App.me.id),
+        okLabel: K.sendLabel,
+        orderId: o.id
+      }).then(res => {
+        if (!res) return;
+        K.submit(o.id, res);
+        Toast.show(K.sentToast, { emoji: "check" });
+        redraw();
+      });
     });
     $$("[data-ef-ok]", el).forEach(b => b.onclick = () => {
-      M.reviewDrawings(o.id, b.dataset.efOk, true, {}, App.me.id);
-      Toast.show(this._lt("Drawings confirmed — the engineer is told", "Brėžiniai patvirtinti — inžinieriui pranešta"), { emoji: "check" });
+      var k = b.dataset.efOk.split(":");
+      kinds[k[0]].review(o.id, k[1], true, {});
+      Toast.show(kinds[k[0]].okToast, { emoji: "check" });
       redraw();
     });
-    $$("[data-ef-back]", el).forEach(b => b.onclick = () => this.noteModal({
-      title: this._lt("Remarks on the drawings", "Pastabos brėžiniams") + " · " + o.num,
-      noteLabel: this._lt("What has to be fixed", "Ką reikia pataisyti"),
-      filesLabel: this._lt("Marked-up PDF, screenshots (optional)", "PDF su pastabomis, nuotraukos (nebūtina)"),
-      needNote: true,
-      okLabel: this._lt("Return to the engineer", "Grąžinti inžinieriui"),
-      orderId: o.id
-    }).then(res => {
-      if (!res) return;
-      M.reviewDrawings(o.id, b.dataset.efBack, false, res, App.me.id);
-      Toast.show(this._lt("Returned with remarks", "Grąžinta su pastabomis"), { emoji: "check" });
-      redraw();
-    }));
+    $$("[data-ef-back]", el).forEach(b => b.onclick = () => {
+      var k = b.dataset.efBack.split(":");
+      var K = kinds[k[0]];
+      this.noteModal({
+        title: K.remarksTitle + " · " + o.num,
+        noteLabel: this._lt("What has to be fixed", "Ką reikia pataisyti"),
+        filesLabel: this._lt("Marked-up PDF, screenshots (optional)", "PDF su pastabomis, nuotraukos (nebūtina)"),
+        needNote: true,
+        okLabel: this._lt("Return to the engineer", "Grąžinti inžinieriui"),
+        orderId: o.id
+      }).then(res => {
+        if (!res) return;
+        K.review(o.id, k[1], false, res);
+        Toast.show(this._lt("Returned with remarks", "Grąžinta su pastabomis"), { emoji: "check" });
+        redraw();
+      });
+    });
     $$("[data-ef-open]", el).forEach(b => b.onclick = () => Drawer.open(b.dataset.efOpen));
   },
 
@@ -192,7 +258,7 @@ var EngFlow = {
         save.onclick = () => {
           var note = $("#ef-note", modal).value;
           if (opt.needFile && !picked.length) {
-            Toast.show(this._lt("Add the drawings PDF", "Pridėkite brėžinių PDF"), { emoji: "alert" });
+            Toast.show(this._lt("Add the file", "Pridėkite failą"), { emoji: "alert" });
             return;
           }
           if (opt.needNote && !note.trim() && !picked.length) {

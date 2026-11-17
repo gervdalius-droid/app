@@ -4151,6 +4151,9 @@ var Notif = {
     eng_link_ok: "check",
     client_rev: "pencil",
     draw_check: "badge",
+    draft_check: "pencil",
+    draft_sent: "send",
+    draft_remarks: "alert",
     draw_ok: "check",
     draw_remarks: "alert",
     handoff_ready: "factory",
@@ -4232,7 +4235,7 @@ var Notif = {
     });
     if (typeof Notification !== "undefined" && Notification.permission === "granted") {
       try {
-        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : n.type === "client_rev" ? I18N.t("Client corrections") : n.type === "draw_check" ? I18N.t("Drawings to check") : n.type === "handoff_ready" ? I18N.t("Ready for production") : "Update"), {
+        new Notification(Store.state.shopName + " · " + (n.type === "client_ok" ? "Client approved" : n.type === "eng_link" ? I18N.t("Confirm same project") : n.type === "client_rev" ? I18N.t("Client corrections") : n.type === "draw_check" ? I18N.t("Drawings to check") : n.type === "draft_check" ? I18N.t("Design draft") : n.type === "handoff_ready" ? I18N.t("Ready for production") : "Update"), {
           body: n.text
         });
       } catch (e) {}

@@ -8061,6 +8061,59 @@ var M = {
     Store.save();
     return r;
   },
+  /* ---------- design draft (eskizas) → vadyba → client ----------
+     Before anything goes to the client, vadyba looks at the engineer's draft:
+     back to him with remarks, or approved and sent to the client. */
+  draftReviews(o) {
+    return o && o.draftReviews || [];
+  },
+  draftState(o) {
+    var r = this.draftReviews(o);
+    return r.length ? r[r.length - 1].status : "none";
+  },
+  submitDraft(orderId, { note, fileIds }, byId) {
+    var o = D.order(orderId);
+    if (!o) return null;
+    if (!o.draftReviews) o.draftReviews = [];
+    var r = { id: uid("df"), n: o.draftReviews.length + 1, at: Date.now(), by: byId, note: String(note || "").trim(), files: (fileIds || []).slice(), status: "pending" };
+    o.draftReviews.push(r);
+    r.files.forEach(id => { var f = D.file(id); if (f) f.draftId = r.id; });
+    var who = D.member(byId);
+    var ids = this.reviewers().filter(id => id !== byId);
+    r.notified = ids;
+    ids.forEach(id => this.notify(id, {
+      type: "draft_check",
+      orderId: o.id,
+      text: this._ltText(`${who ? who.name : "The engineer"} added a design draft for ${o.num}${r.n > 1 ? ` (version ${r.n})` : ""} — check it and send it to the client, or return it with remarks`, `${who ? who.name : "Inžinierius"} įkėlė ${o.num} eskizą${r.n > 1 ? ` (${r.n} versija)` : ""} — peržiūrėkite ir išsiųskite klientui arba grąžinkite su pastabomis`)
+    }, byId));
+    this.log(byId, `added a design draft for ${o.num} (v${r.n})`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
+  /* sent = checked and sent to the client; otherwise back with remarks */
+  reviewDraft(orderId, revId, sent, { note, fileIds }, byId) {
+    var o = D.order(orderId);
+    var r = this.draftReviews(o).find(x => x.id === revId);
+    if (!r || r.status !== "pending") return null;
+    r.status = sent ? "sent" : "remarks";
+    r.reviewBy = byId;
+    r.reviewAt = Date.now();
+    r.reviewNote = String(note || "").trim();
+    r.reviewFiles = (fileIds || []).slice();
+    r.reviewFiles.forEach(id => { var f = D.file(id); if (f) f.draftId = r.id; });
+    var who = D.member(byId);
+    var to = [r.by].concat(D.orderResponsible(o)).filter((id, i, a) => id && id !== byId && a.indexOf(id) === i);
+    to.forEach(id => this.notify(id, {
+      type: sent ? "draft_sent" : "draft_remarks",
+      orderId: o.id,
+      text: sent
+        ? this._ltText(`${who ? who.name : "A manager"} sent the design draft of ${o.num} to the client`, `${who ? who.name : "Vadovas"} išsiuntė ${o.num} eskizą klientui`)
+        : this._ltText(`${who ? who.name : "A manager"} returned the design draft of ${o.num} with remarks`, `${who ? who.name : "Vadovas"} grąžino ${o.num} eskizą su pastabomis`)
+    }, byId));
+    this.log(byId, sent ? `sent the design draft of ${o.num} to the client (v${r.n})` : `returned the design draft of ${o.num} with remarks (v${r.n})`, { orderId: o.id });
+    Store.save();
+    return r;
+  },
   /* the engineering project became a manufacturing one (made from its report list) */
   finishHandoff(engId, prodId, { checks, notifyIds }, byId) {
     var eng = D.order(engId), prod = D.order(prodId);
