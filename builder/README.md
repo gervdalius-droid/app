@@ -27,6 +27,7 @@ Dėdės Baldai workshop tool: enter a cabinet the way the offer app does (size, 
 - Extra operations: leg marks, Blum TANDEM / TANDEMBOX runner marks, TANDEMBOX front fixing, hinge cups and plates, shelf-support holes.
 - Cargo pull-out as its own section / front kind (fitting: DTC Pure Pro): one front on the cargo frame, no hinges or shelves, the cargo for the cabinet width in the fittings list, the front marked as a pull-out (X) on drawings.
 - A visible part (e.g. a hung cabinet's bottom, a top) can be banded with the fronts' edge (part view: "Matoma detalė — kraštai pagal fasadą"); its label says PAGAL FASADA on those edges.
+- A visible side (front material) of a cabinet without legs goes down with fronts that reach below the carcass; with the bottom under the sides, the bottom goes between that side.
 - Fronts can reach below the carcass ("Apačia nuo dugno" minus, e.g. −20 on a wall cabinet), shown in the front picture.
 - Blum MERIVOBOX drawers: height N / M / K / E (auto: the highest of N, M and E with the gallery railing that fits; BOXCAP on request), the 16 mm base (LW − 51) × (NL − 26) and back (LW − 51) × 60.5 / 83 / 121 / 184 as parts, cabinet profile marks (editable, not yet verified on a real MERIVOBOX), front on screw-on brackets (no drilling).
 - Separate downloads: every `.XXL` program on its own (from the part list, the part view, per cabinet or all at once — no ZIP needed), the `.xlsx` and `.csv`.
