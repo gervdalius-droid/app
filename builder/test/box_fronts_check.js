@@ -10,7 +10,7 @@ const box = p => { const pts = []; for (const a of [0, p.L]) for (const b of [0,
 let bad = 0, cabs = 0, nF = 0, nDr = 0, nDoor = 0; const K = {};
 const B = m => { bad++; if (bad < 15) console.log(m); const k = m.split(' ').slice(0, 2).join(' '); K[k] = (K[k] || 0) + 1; };
 let seed = 13; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }; const pick = a => a[Math.floor(rnd() * a.length)];
-const HW = ['BLUM TANDEMBOX', 'BLUM TANDEM', 'GTV KULKINIAI H45', 'DTC KULKINIAI H45', 'DTC PASLĖPTI'];
+const HW = ['BLUM TANDEMBOX', 'BLUM MERIVOBOX', 'BLUM TANDEM', 'GTV KULKINIAI H45', 'DTC KULKINIAI H45', 'DTC PASLĖPTI'];
 for (let run = 0; run < 2500; run++) {
   const W = pick([600, 900, 1200]), H = pick([720, 900, 2100]), D = pick([560, 600]), t = 18;
   const boards = {}; E.BOX_IDS.forEach(id => { boards[id] = { on:id !== 'front' && (id === 'back' ? rnd() < 0.8 : true), inset:0, T:'' }; });

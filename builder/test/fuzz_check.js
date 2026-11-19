@@ -6,7 +6,7 @@ let seed = +process.argv[3] || 1; const rnd = () => { seed = (seed * 16807) % 21
 const K = {}; let bad = 0; const B = (m, c) => { bad++; const k = m.split(' ').slice(0, 3).join(' '); if (!K[k]) { K[k] = 0; console.log(m, JSON.stringify(c).slice(0, 1500)); } K[k]++; };
 const weird = [600, 600, 450, 300, 900, 1200, 150, 80, 3000, '', 0, -100, '600', 'abc', null, 2400];
 const fin = v => typeof v === 'number' && isFinite(v);
-const HW = ['BLUM TANDEMBOX', 'BLUM TANDEM', 'GTV KULKINIAI H45', 'DTC KULKINIAI H45', 'DTC PASLĖPTI', 'KT. PASLĖPTO MONTAVIMO', 'GUOLINIAI'];
+const HW = ['BLUM TANDEMBOX', 'BLUM MERIVOBOX', 'BLUM TANDEM', 'GTV KULKINIAI H45', 'DTC KULKINIAI H45', 'DTC PASLĖPTI', 'KT. PASLĖPTO MONTAVIMO', 'GUOLINIAI'];
 function cab() {
   const cols = pick([1, 1, 2, 3, 4, 0, '']), secs = [];
   const nS = Math.floor(rnd() * 5);
