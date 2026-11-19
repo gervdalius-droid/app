@@ -1303,7 +1303,10 @@ function merivoParts(ctx, warnOnce) {
            hw:[{ item:'BLUM MERIVOBOX ' + pk.code + ' L=' + rail, qty:1, unit:'kompl.' }].concat(pk.ext ? [{ item:pk.ext === 'rail' ? 'BLUM MERIVOBOX galerija L=' + rail : 'BLUM MERIVOBOX BOXCAP L=' + rail, qty:1, unit:'kompl.' }] : []) };
 }
 function underDeduct(bt) { var d = R.under.ded; return d !== '' && d != null && +d > 0 ? +d : Math.round((42 + Math.max(0, bt - 16) * 7 / 3) * 2) / 2; }   // 16 → 42, 19 → 49
-var DOOR_HW   = ["BLUM LANKSTAI", "BLUM TIP-ON", "KT. LANKSTAI", "BE FURNITŪROS"];
+var DOOR_HW   = ["BLUM LANKSTAI", "BLUM TIP-ON", "KT. LANKSTAI", "CARGO DTC PURE PRO", "BE FURNITŪROS"];
+/* a cargo pull-out instead of hinges: one front on the cargo frame (no hinge holes, no shelves — the cargo has its own
+   baskets); the frame is screwed on with its own template, so nothing is drilled. Fitting = the cargo for the cabinet width. */
+function isCargo(h) { return /^CARGO\b/i.test(String(h || '')); }
 var hingesPerDoor = function (h) { return h <= 900 ? 2 : h <= 1500 ? 3 : h <= 2000 ? 4 : 5; };   // same rule as the offer app
 /* hinge positions along a door of height h, from its bottom edge: outer ones R.hinge.fromEnd from the ends, rest evenly between */
 function hingeYs(h, nSet) { var n = +nSet >= 2 ? Math.round(+nSet) : hingesPerDoor(h), e = Math.min(R.hinge.fromEnd, h*0.25), ys = []; for (var q = 0; q < n; q++) ys.push(e + (h - 2*e)*q/(n - 1)); return ys; }
@@ -1553,8 +1556,12 @@ function buildCabinet(c, idx, projName) {
   var zTop0 = H - (tOver ? t : (topFull ? 0 : R.facade.zoneGapRails));   // by the rule the top gap is this + gap (each front's gap is above it)
   var topRef = H - (tOver ? t : 0);   // the top gap is measured from here: the cabinet top, or the underside of a top that covers the fronts
   var zTopF = fg.top === '' || fg.top == null || !isFinite(+fg.top) ? zTop0 : topRef - Math.max(0, +fg.top) + gap;
-  var zBotF = Math.max(-hb, fgv('bot', 0));   // the fronts' bottom: below the raised bottom at most to the sides' bottom edges
-  if (fgv('bot', 0) < -hb - 0.5) warnOnce('fasadai gali nusileisti tik iki šonų apačios (' + num(-hb) + ' mm nuo dugno)');
+  /* the fronts' bottom: from the bottom board's face; minus = lower — below a raised bottom to the sides' bottom edges and on
+     past them (a hung cabinet's fronts reaching below the carcass as a grip, a base cabinet's over its legs, stopping 10 mm
+     above the floor) */
+  var legHf = legHeight(c), botLow = -hb - (legHf > 0 ? Math.max(0, legHf - 10) : 300);
+  var zBotF = Math.max(botLow, fgv('bot', 0));
+  if (fgv('bot', 0) < botLow - 0.5) warnOnce('fasadai gali nusileisti tik ' + num(-botLow) + ' mm žemiau dugno' + (legHf > 0 ? ' (10 mm virš grindų)' : ''));
   var Hz = zTopF - zBotF;   // facade zone height
   var runners = [], facades = [], doors = [], shelves = [];
   for (var colN = 0; colN < cols; colN++) (function (col) {
@@ -1586,9 +1593,10 @@ function buildCabinet(c, idx, projName) {
            no hinges, no hinge holes; the niche gets fixed shelves (below) instead of adjustable ones */
         var fridge = !!s.fridge;
         if (+s.innerDrawers > 0 && !fridge) warn.push(lbl(si) + ': vidiniai stalčiai už durų dar nepalaikomi — nebraižomi ir negręžiami');
-        var hingedSec = !fridge && s.hinge !== 'BE FURNITŪROS';
+        var cargo = !fridge && isCargo(s.hinge), hingedSec = !fridge && !cargo && s.hinge !== 'BE FURNITŪROS';
         if (hingedSec && !o.hinges) warn.push(lbl(si) + ': durys — lankstų skylės išjungtos (gręžiama rankomis)');
-        var nd = fridge ? Math.max(1, Math.min(3, Math.round(+s.nDoors || 2))) : Math.max(1, Math.round(+s.nDoors || 1)), horiz = fridge || s.doorSplit === 'h', hs = s.hingeSide || 'auto';
+        /* cargo: one front, no shelves — the section's door count and shelves stay saved for when it goes back to doors */
+        var nd = fridge ? Math.max(1, Math.min(3, Math.round(+s.nDoors || 2))) : cargo ? 1 : Math.max(1, Math.round(+s.nDoors || 1)), horiz = fridge || (!cargo && s.doorSplit === 'h'), hs = s.hingeSide || 'auto';
         var dsp = horiz ? splitFronts(secH, nd, s.frontH, gap) : null, dzs = [0];
         if (dsp) { dsp.mods.forEach(function (m) { dzs.push(dzs[dzs.length - 1] + m); }); if (dsp.note) warn.push(lbl(si) + ': ' + dsp.note); }
         for (var k = 0; k < nd; k++) {
@@ -1607,8 +1615,9 @@ function buildCabinet(c, idx, projName) {
           var fits = !hingedSec || (hingesFit(dh, o.hingeFix === 'press', nH) && ys.every(function (y, q) { return q === 0 || ys[q] - ys[q-1] >= hr0.cupD + 3; }));
           if (hingedSec && o.hinges && !fits) warnOnce('durys ' + num(dw) + '×' + num(dh) + ': per žemos lankstams — lankstų skylės nepridėtos');
           if (hingedSec && o.hinges && fits && hingeYs(dh, nH).some(function (y, q) { return Math.abs(y - ys[q]) > 0.01; })) warnOnce('durys ' + num(dw) + '×' + num(dh) + ': lankstas perkeltas, kad plokštelė nepatektų po viršumi/juosta');
-          doors.push({ w:dw, h:dh, x:dx, z:dz, sec:si, hingeLeft:hl, hinged:hingedSec && fits, ys:ys, col:col, fridge:fridge });
-          if (hingedSec && s.hinge) hw.push({ item:s.hinge, qty:nH || hingesPerDoor(dh), unit:'vnt.' });
+          doors.push({ w:dw, h:dh, x:dx, z:dz, sec:si, hingeLeft:cargo ? undefined : hl, hinged:hingedSec && fits, ys:ys, col:col, fridge:fridge, cargo:cargo });
+          if (cargo) hw.push({ item:String(s.hinge).toUpperCase() + ' W=' + Math.round(cols > 1 ? FW + 2 * gap : W), qty:1, unit:'kompl.' });
+          else if (hingedSec && s.hinge) hw.push({ item:s.hinge, qty:nH || hingesPerDoor(dh), unit:'vnt.' });
         }
       }
       if (s.kind === 'oven' && +s.shelves > 0) {   // appliance support shelves: niche bottom, then niche top (as in the offer app)
@@ -1619,7 +1628,7 @@ function buildCabinet(c, idx, projName) {
       } else if (s.kind === 'doors' && s.fridge) {   // the fridge niche: its floor (when something is under it) and its ceiling, fixed, open at the back for the air
         if (yCur >= t) shelves.push({ z:yCur, sec:si, fixed:true, oven:true, fridge:true, col:col });
         if (yCur + secH <= t + Lside - t) shelves.push({ z:yCur + secH - t, sec:si, fixed:true, oven:true, fridge:true, col:col });
-      } else if ((s.kind === 'doors' || s.kind === 'open') && +s.shelves > 0) {
+      } else if ((s.kind === 'doors' || s.kind === 'open') && +s.shelves > 0 && !(s.kind === 'doors' && !s.fridge && isCargo(s.hinge))) {
         var ns = Math.round(+s.shelves), z0 = Math.max(yCur, t), z1 = Math.min(yCur + secH, topFull ? H - t : H - t);
         var manual = s.shelfMode === 'manual' && Array.isArray(s.shelfPos);
         for (var m = 0; m < ns; m++) {
@@ -2276,7 +2285,7 @@ function buildCabinet(c, idx, projName) {
   /* ---- doors */
   doors.forEach(function (d, i) {
     var drill = o.hinges && d.hinged;
-    var p = panel(nm('DURYS' + (i + 1)), 'DURYS', d.w, d.h, fT, drill ? 'vidinė pusė viršuje, apatinis kraštas Y=0, lankstai ' + (d.hingeLeft ? 'X=0' : 'X=DX') + ' pusėje' : d.fridge ? 'šaldytuvo fasadas — tvirtinamas prie šaldytuvo durų (be lankstų)' : 'durys be lankstų skylių');
+    var p = panel(nm('DURYS' + (i + 1)), 'DURYS', d.w, d.h, fT, d.cargo ? 'vidinė pusė viršuje, apatinis kraštas Y=0; cargo fasadas — tvirtinamas prie cargo rėmo (be gręžimo)' : drill ? 'vidinė pusė viršuje, apatinis kraštas Y=0, lankstai ' + (d.hingeLeft ? 'X=0' : 'X=DX') + ' pusėje' : d.fridge ? 'šaldytuvo fasadas — tvirtinamas prie šaldytuvo durų (be lankstų)' : 'durys be lankstų skylių');
     if (drill) {
       var hr = R.hinge, xc = d.hingeLeft ? hr.cupFromEdge : d.w - hr.cupFromEdge, dir = d.hingeLeft ? 1 : -1;
       d.ys.forEach(function (y) {
@@ -2287,7 +2296,7 @@ function buildCabinet(c, idx, projName) {
       p.warnings.push('lankstų puodelių skylės pagal Blum katalogą — NEPATIKRINTA su SWOOD modeliu');
     }
     place(p, [d.x, 0, d.z], X, Z, Y); p.mat = mFac; p.eb = { y0:eFac, y1:eFac, x0:eFac, x1:eFac };
-    p.hingeLeft = d.hingeLeft; p.sec = d.sec;   // for drawings (room view): which side the door opens from, and its section (to flip it there)
+    p.hingeLeft = d.cargo ? undefined : d.hingeLeft; p.sec = d.sec; if (d.cargo) { p.cargo = true; p.drawer = true; }   // for drawings (room view): which side the door opens from, and its section (to flip it there)
     out.push(p);
   });
   shelfPanels.forEach(function (p) { out.push(p); });
@@ -2373,7 +2382,7 @@ function buildCabinet(c, idx, projName) {
     return { at:q.at, e:[0, 1, 2].map(function (k) { return [Math.min.apply(null, pts.map(function (v) { return v[k]; })), Math.max.apply(null, pts.map(function (v) { return v[k]; }))]; }) };
   }).filter(Boolean);
   return { panels:out, warnings:warn, hardware:mergeHw(hw), legs:legs, joints:jointsInfo, seams:seams, visual:{ doors:doors, drawers:facades, plinth:plinth, hb:hb, leds:ledVis }, dims:{ W:W, H:Htot, D:D, t:t },
-    fgaps:{ l:sideGapL, r:sideGapR, mid:gap, top:topRef - zTopF + gap, bot:zBotF, hb:hb, botMin:-hb } };
+    fgaps:{ l:sideGapL, r:sideGapR, mid:gap, top:topRef - zTopF + gap, bot:zBotF, hb:hb, botMin:-hb, botLow:botLow } };
 }
 
 /* ----------------------------------------------------------------- 3D construction (c.kind 'box')
@@ -2728,7 +2737,7 @@ function buildBox(c, idx, projName) {
           else hw.push({ item:'BLUM MERIVOBOX L=' + rail, qty:1, unit:'kompl.' }); }
       }
     } else {
-      var nd = Math.max(1, Math.min(2, Math.round(+fr0.nDoors || 1))), hs = fr0.hingeSide || 'auto', hinge = fr0.hinge || 'BLUM LANKSTAI', hinged = hinge !== 'BE FURNITŪROS';
+      var hinge = fr0.hinge || 'BLUM LANKSTAI', cargoF = isCargo(hinge), nd = cargoF ? 1 : Math.max(1, Math.min(2, Math.round(+fr0.nDoors || 1))), hs = fr0.hingeSide || 'auto', hinged = hinge !== 'BE FURNITŪROS' && !cargoF;
       var dw = (FW - (nd - 1) * gapF) / nd, hr = R.hinge, clr = hr.plateSpacing / 2 + hr.plateD / 2 + 3, nH = +fr0.hingeN >= 2 ? Math.min(6, Math.round(+fr0.hingeN)) : 0;
       for (var d = 0; d < nd; d++) {
         var dx = x0 + d * (dw + gapF), hl = nd === 2 ? d === 0 : hs === 'right' ? false : hs === 'left' ? true : !(Lb && !Lb.outer && Rb && Rb.outer) ;
@@ -2746,9 +2755,10 @@ function buildBox(c, idx, projName) {
           pd.warnings.push('lankstų puodelių skylės pagal Blum katalogą — NEPATIKRINTA su SWOOD modeliu');
           if (inset) pd.warnings.push('įleistos durys: reikia įleistų durų lankstų; plokštelės žymės ' + num(hr.plateFromFront + fT) + ' mm nuo priekio — NEPATIKRINTA');
         }
-        pd.hingeLeft = hl; pd.sec = fi; pd.boxFront = true; out.push(pd);
-        vDoors.push({ w:dw, h:FH, x:dx, z:z0, hingeLeft:hl, hinged:hinged && fits && !!hb, ys:ys, col:col, sec:fi, hx:hx, inset:inset });
-        if (hinged) hw.push({ item:hinge, qty:nH || hingesPerDoor(FH), unit:'vnt.' });
+        pd.hingeLeft = cargoF ? undefined : hl; pd.sec = fi; pd.boxFront = true; if (cargoF) { pd.cargo = true; pd.drawer = true; pd.note += '; cargo fasadas — tvirtinamas prie cargo rėmo (be gręžimo)'; } out.push(pd);
+        vDoors.push({ w:dw, h:FH, x:dx, z:z0, hingeLeft:cargoF ? undefined : hl, hinged:hinged && fits && !!hb, ys:ys, col:col, sec:fi, hx:hx, inset:inset, cargo:cargoF });
+        if (cargoF) hw.push({ item:String(hinge).toUpperCase() + ' W=' + Math.round(cx[1] - cx[0] + 2 * t), qty:1, unit:'kompl.' });
+        else if (hinged) hw.push({ item:hinge, qty:nH || hingesPerDoor(FH), unit:'vnt.' });
       }
     }
   });
@@ -3548,11 +3558,11 @@ function cabinetSVG(c,r){
           const idn=Math.max(0,Math.floor(num(sec.innerDrawers))), pos=sec.innerPos||'bottom';
           const zoneH=idn>0?((num(sec.innerH)>0)?Math.min(num(sec.innerH),secH):secH):0;
           const shBot=(idn>0&&pos==='bottom')?hB+zoneH:hB, shTop=(idn>0&&pos==='top')?hT-zoneH:hT;
-          const sh=num(sec.shelves);
+          const sh=/^CARGO/i.test(String(sec.hinge||''))?0:num(sec.shelves);
           for(let q=1;q<=sh;q++){const hh=shBot+(shTop-shBot)*q/(sh+1);s+=slab(fx0,hh-t_/2,0,fx1,hh+t_/2,D,PK,W_SHELF);}
           if(idn>0){const z0=(pos==='top')?hT-zoneH:hB, dep=Math.max(40,Math.min(D-t_,num(sec.innerRail)||D));
             for(let d=0;d<idn;d++){const y0=z0+zoneH*d/idn,y1=z0+zoneH*(d+1)/idn;s+=drawerBox3D(fx0,fx1,y0,y1,dep,sec.innerHw,true);}}
-          const hinged=!eq(sec.hinge,'BE FURNITŪROS'), tipOn=/TIP-ON/i.test(String(sec.hinge||''));
+          const hinged=!eq(sec.hinge,'BE FURNITŪROS')&&!/^CARGO/i.test(String(sec.hinge||'')), tipOn=/TIP-ON/i.test(String(sec.hinge||''));
           const hsV=sec.hingeSide||'auto';
           // one leaf: hinges on hingeLeft side, handle on the opening edge (none for TIP-ON)
           const leaf=(x0,y0,x1,y1,hingeLeft,handleY)=>{
@@ -4070,7 +4080,8 @@ function svg(c, r, o) {
   var carc = matColor(c.mat && c.mat.carc, '#efefeb'), fac = matColor(c.mat && c.mat.facade, '#e7e5df'), back = matColor((c.mat && c.mat.back) || (c.mat && c.mat.carc), carc);
   var hdf = '#e4e1da', wall = '#cfcbc2', woodF = WOOD.test((c.mat && c.mat.facade) || ''), woodC = WOOD.test((c.mat && c.mat.carc) || '');
   var bnd = o.bnd || [0, W], nC = bnd.length - 1;
-  var vbH = H + legH + 14, s = '';
+  var vis0 = r.visual || {}, frLow = Math.min.apply(null, [0].concat((vis0.drawers || []).map(function (f) { return +f.bottom || 0; }), (vis0.doors || []).map(function (d) { return +d.z || 0; })));
+  var vbH = H + Math.max(legH, -frLow) + 14, s = '';   // fronts reaching below the carcass (a hung cabinet's grip) stay in the picture
   var wt = r.worktop, vx0 = wt ? Math.min(0, wt.x0) : 0, vW = wt ? Math.max(W, wt.x1) - vx0 : W, wtT = wt ? wt.T : 0;
   s += '<svg class="fr-svg" viewBox="' + n(vx0) + ' ' + n(-4 - wtT) + ' ' + n(vW) + ' ' + n(vbH + wtT) + '" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + (o.label || '') + '">';
   /* ---- shared paints */
@@ -4161,6 +4172,15 @@ function svg(c, r, o) {
     }
     s += '</g>';
   });
+  /* ---- fronts reaching below the carcass (a hung cabinet's grip): the carcass bottom dashed across them, the overhang written in it */
+  var cBot = -((r.fgaps && +r.fgaps.hb) || 0);
+  if (frLow < cBot - 0.5) {
+    var ov = cBot - frLow, fsz = Math.max(14, Math.min(42, W / 15)), lab = '↓ ' + n(ov) + ' mm';
+    s += '<rect x="0" y="' + n(Y(cBot)) + '" width="' + n(W) + '" height="' + n(ov) + '" fill="#b4291f" fill-opacity=".22"/>' +
+      '<line x1="0" y1="' + n(Y(cBot)) + '" x2="' + n(W) + '" y2="' + n(Y(cBot)) + '" stroke="#b4291f" stroke-width="2" stroke-dasharray="7 5" vector-effect="non-scaling-stroke"/>' +
+      '<rect x="' + n(W / 2 - fsz * 2.1) + '" y="' + n(Y(cBot) - fsz * 1.45) + '" width="' + n(fsz * 4.2) + '" height="' + n(fsz * 1.3) + '" rx="' + n(fsz * 0.3) + '" fill="#fff" fill-opacity=".9"/>' +
+      '<text x="' + n(W / 2) + '" y="' + n(Y(cBot) - fsz * 0.45) + '" text-anchor="middle" font-size="' + n(fsz) + '" font-weight="700" fill="#b4291f" font-family="system-ui,sans-serif">' + lab + '</text>';
+  }
   /* ---- columns: problems, the one being edited, click targets */
   for (var k3 = 0; k3 < nC; k3++) {
     var cx0 = bnd[k3], cx1 = bnd[k3 + 1];
@@ -4613,7 +4633,8 @@ function mount(el,c,r,lang,hooks={}){
  const section=m.box?{hw:m.hw,rail:m.rail}:(c.sections||[]).filter(s=>(+s.col||0)===(m.col||0))[m.sec]||{};
  const travel=Math.min(+section.rail||500,d.D-45)*.8*V.open;
  const angle=(m.hinged===false?0:V.open)*Math.PI*.55,hinge=m.hingeLeft?x:x+w,sign=m.hingeLeft?-1:1;
- const tf=door?q=>{let xx=q[0]-hinge;return [hinge+xx*Math.cos(angle)-q[1]*Math.sin(sign*angle),xx*Math.sin(sign*angle)+q[1]*Math.cos(angle),q[2]];}:q=>[q[0],q[1]-travel,q[2]];
+ const cargo=door&&!!m.cargo;   // a cargo pull-out: the front slides out with its baskets
+ const tf=door&&!cargo?q=>{let xx=q[0]-hinge;return [hinge+xx*Math.cos(angle)-q[1]*Math.sin(sign*angle),xx*Math.sin(sign*angle)+q[1]*Math.cos(angle),q[2]];}:q=>[q[0],q[1]-travel,q[2]];
  if(V.mode==='assembly')box([x,-t,z],[w,t,h],mat(p.mat,'#d5cbbd'),tf,wood(p.mat),false,true,{name:p.mat,g:fg});CUR_PK=0;
  const own=door?[]:(r.panels||[]).filter(q=>q.drawerOf===p.name&&q.place);
  if(own.length){   // GTV / DTC: the real board box (its parts) and two side-mount runners, moving with the front
@@ -4630,6 +4651,11 @@ function mount(el,c,r,lang,hooks={}){
  if(V.hardware&&rtA.ball){const ER=window.DBEngine.R,sz=own.filter(q=>q.role==='STALC_SONAS').map(q=>{const P=q.place;return Math.min(...[0,q.L].flatMap(a=>[0,q.W].map(b=>P.o[2]+a*P.u[2]+b*P.v[2])));}),ax=sz.length?Math.min(...sz)+ +ER.ball.boxBelow:Math.max((d.t||18)+ +ER.ball.up,z+ +ER.ball.up),cl=+ER.ball.clear,ex=own.filter(q=>q.role==='STALC_SONAS').map(q=>{const c0=q.place.o[0],c1=c0+q.place.n[0]*-q.T;return [Math.min(c0,c1),Math.max(c0,c1)];});
  if(ex.length===2){const xs=ex.sort((a,b)=>a[0]-b[0]),dep=Math.max(...own.map(q=>q.role==='STALC_SONAS'?q.L:0));
  [[xs[0][0]-cl,xs[0][0]],[xs[1][1],xs[1][1]+cl]].forEach(([a,b])=>{box([a+.5,2,ax-22.5],[b-a-1,dep-2,45],'#b9c0c4',null,false,true);box([a+1.5,2-travel*.5,ax-17],[b-a-3,dep-6,34],'#cdd3d6',null,false,true);});}}
+ } else if(cargo){   // cargo: a frame behind the front with wire baskets, on a runner under it
+ const dep=Math.max(200,Math.min(500,d.D-60)),bx=x+Math.min(25,w*.12),bw=Math.max(40,w-2*Math.min(25,w*.12)),z0c=Math.max(z+20,(d.t||18)+12),z1c=z+h-30,nb=Math.max(2,Math.min(6,Math.round((z1c-z0c)/260)+1)),chrome='#c9ced2',dark='#8e979c';
+ box([bx,4,z0c],[bw,8,z1c-z0c],dark,tf,false,true);box([bx,dep-8,z0c],[bw,8,z1c-z0c],dark,tf,false,true);
+ for(let q=0;q<nb;q++){const zb=z0c+(z1c-z0c-70)*q/Math.max(1,nb-1);box([bx,12,zb],[bw,dep-20,3],chrome,tf,false,true);[bx,bx+bw-3].forEach(sx=>box([sx,12,zb],[3,dep-20,60],chrome,tf,false,true));box([bx,12,zb],[bw,3,45],chrome,tf,false,true);box([bx,dep-15,zb],[bw,3,60],chrome,tf,false,true);}
+ if(V.hardware)box([bx+bw/2-18,6,z0c-14],[36,Math.min(+section.rail||dep,dep),12],'#858e93',null,false,true);
  } else if(!door&&realDrawer(m,section,x,z,w,h,tf,travel)){
  } else if(!door){
  // TANDEM is a wooden box on concealed runners; TANDEMBOX uses antaro-style metal sides.
@@ -5541,7 +5567,7 @@ function fronts(i) {   // fronts of cabinet i from the engine: rectangles in cab
     if (!p.place || (p.role !== 'FASADAS' && p.role !== 'DURYS')) return;
     var q = p.place, pt = function (a, b) { return [q.o[0] + a * q.u[0] + b * q.v[0], q.o[2] + a * q.u[2] + b * q.v[2]]; };
     var cs = [pt(0, 0), pt(p.L, 0), pt(0, p.W), pt(p.L, p.W)], xs = cs.map(function (v) { return v[0]; }), zs = cs.map(function (v) { return v[1]; });
-    out.push({ x0:Math.min.apply(null, xs), x1:Math.max.apply(null, xs), z0:Math.min.apply(null, zs), z1:Math.max.apply(null, zs), door:p.role === 'DURYS', drawer:!!p.drawer, left:p.hingeLeft, sec:p.sec, box:!!p.boxFront });
+    out.push({ x0:Math.min.apply(null, xs), x1:Math.max.apply(null, xs), z0:Math.min.apply(null, zs), z1:Math.max.apply(null, zs), door:p.role === 'DURYS' && !p.cargo, drawer:!!p.drawer, left:p.hingeLeft, sec:p.sec, box:!!p.boxFront });
   });
   return out;
 }
@@ -8549,7 +8575,7 @@ var T = {
 lt:{
  app:'Spintelių kūrėjas', sub:'Dėdės Baldai · detalės ir CNC be inžinieriaus',
  project:'Projektas', projPh:'PROJEKTO_KODAS',
- verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', topKind:'Viršaus tipas', bKind:'Tipas', bcBotL:'Apačioje', bcBotOn:'Stovi ant dugno', bcBotCov:'Dengia dugną (dugnas trumpesnis)', bcTopL:'Viršuje', bcTopOn:'Po viršumi (stogu)', bcTopCov:'Dengia viršų (viršus trumpesnis)', bcRailOn:'Po surišimo juosta', bcRailCov:'Dengia juostą (juosta paslinkta)', plFitT:'pritaikymas tarpais', plGl:'Tarpas kairėje', plGr:'Tarpas dešinėje', plGt:'Iki dugno', plGb:'Nuo grindų', plFitBtn:'Pritaikyti: tarp šonų po 1 mm, 4 mm iki dugno', plFitOff:'Nustatyti dydį ranka', plFitNote:'Užpildžius tarpus, cokolio ilgis ir aukštis skaičiuojami patys ir keičiasi kartu su spintele. Paveikslėlyje kraštus galima tempti.', plDragT:'Tempkite — cokolio kraštas (tarpas)', plSnap0:'be tarpo', mTop:'Viršus (stogas)', mTopPh:'kaip korpusas', mdT:'Medžiagos — tempkite ant plokštės 3D vaizde', mdChipT:'Tempkite ant plokštės dešinėje', mdNote:'Numesta ant fasado — fasadų medžiaga, ant stogo — viršaus, ant nugaros — nugaros, ant kitų plokščių — korpuso. Fasadų medžiaga ant šono — matomas šonas.', mdWt:'Stalviršis', mdNone:'Čia nėra plokštės', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau (kai dugnas pakeltas — iki šonų apačios). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsx kaip DB_PartList ataskaita) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsx ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
+ verBtn:'Versijos', verT:'Projekto versijos', verName:'Versijos pavadinimas', verNamePh:'pvz. Prieš kliento pakeitimus', verSave:'Išsaugoti versiją', verHand:'Išsaugota ranka', verSaved:'Versija išsaugota', verNote:'Versijos saugomos automatiškai: redaguojant — maždaug kas 15 min., ir kai atidaromas kitas projektas. Laikoma: visos per 2 paskutines dienas, senesnės — paskutinė kiekvienos dienos (pusę metų), ranka išsaugotos — visada. ☁ — iš debesies (kito kompiuterio).', verNone:'Versijų dar nėra — pirmoji atsiras po pakeitimų.', verToday:'Šiandien', verYest:'Vakar', verSame:'kaip dabar', verRestore:'Atkurti', verSure:'Tikrai atkurti?', verCopy:'Kaip kopiją', verCopyT:'Atidaro šią versiją kaip naują projektą — dabartinis lieka nepakeistas', verCopied:'Versija pridėta kaip naujas projektas', verBefore:'prieš atkūrimą', verDone:'Versija atkurta — ankstesnė būsena išsaugota kaip versija', topKind:'Viršaus tipas', bKind:'Tipas', bcBotL:'Apačioje', bcBotOn:'Stovi ant dugno', bcBotCov:'Dengia dugną (dugnas trumpesnis)', bcTopL:'Viršuje', bcTopOn:'Po viršumi (stogu)', bcTopCov:'Dengia viršų (viršus trumpesnis)', bcRailOn:'Po surišimo juosta', bcRailCov:'Dengia juostą (juosta paslinkta)', plFitT:'pritaikymas tarpais', plGl:'Tarpas kairėje', plGr:'Tarpas dešinėje', plGt:'Iki dugno', plGb:'Nuo grindų', plFitBtn:'Pritaikyti: tarp šonų po 1 mm, 4 mm iki dugno', plFitOff:'Nustatyti dydį ranka', plFitNote:'Užpildžius tarpus, cokolio ilgis ir aukštis skaičiuojami patys ir keičiasi kartu su spintele. Paveikslėlyje kraštus galima tempti.', plDragT:'Tempkite — cokolio kraštas (tarpas)', plSnap0:'be tarpo', mTop:'Viršus (stogas)', mTopPh:'kaip korpusas', mdT:'Medžiagos — tempkite ant plokštės 3D vaizde', mdChipT:'Tempkite ant plokštės dešinėje', mdNote:'Numesta ant fasado — fasadų medžiaga, ant stogo — viršaus, ant nugaros — nugaros, ant kitų plokščių — korpuso. Fasadų medžiaga ant šono — matomas šonas.', mdWt:'Stalviršis', mdNone:'Čia nėra plokštės', fgT:'Fasadų tarpai, mm', fgL:'Kairėje', fgR:'Dešinėje', fgTop:'Viršuje', fgMid:'Tarp fasadų', fgBot:'Apačia nuo dugno', fgToSide:'Iki šonų apačios', fgReset:'Pagal taisyklę', fgDragT:'Tempkite — fasadų kraštas (tarpas)', fgSnapBot:'lygiai su dugnu', fgSnapSide:'iki šonų apačios', fgSnapTop:'lygiai su viršumi', fgSnapOut:'lygiai su šono išore', fgNote:'Tuščias laukas — pagal taisyklę (pilka reikšmė). „Apačia nuo dugno“: 0 — fasadai prasideda ties dugnu, minusas — žemiau, ir žemiau korpuso (pvz. −20 pakabinamai spintelei — fasadai 20 mm žemiau, rankenėlei; ant kojelių — iki 10 mm virš grindų). Oranžinius kraštus paveikslėlyje galima tempti.', camPickT:'Ekscentrikų pusė — paspauskite, kad perkeltumėte į kitą plokštės pusę', camIn:'ekscentr.: vidus', camOut:'ekscentr.: išorė', topOvF:'Išlenda priekyje', topOvFf:'Išlenda už fasadų', topOvS:'Išlenda šonuose', topOvB:'Išlenda gale', topOvNote:'Kiek viršus (STOGAS) išlenda už korpuso, mm. Pvz. 1 — po 1 mm priekyje, abiejuose šonuose ir gale; plokštė tiek padidėja.', plWhere:'Cokolio vieta', plIn:'Tarp šonų', plUnder:'Po korpusu', plL:'Cokolis', plOff:'Nėra', plOn:'Yra', plH:'Aukštis', plLen:'Ilgis', plYf:'Nuo priekio', plYfH:'mm nuo korpuso priekio (be fasado)', plNote:'Cokolis įtraukiamas į detalių sąrašą (tik pjaunamas) ir matomas 3D bei brėžiniuose. Jis taip pat yra „Papildomos“ žingsnyje.', bkInset:'Nugara nuo galo, mm', bkFront:'Nugaros priekis nuo spintelės priekio', bkInsetH:'Vidinė nugara atitraukiama nuo šonų galo — lentynos ir stalčiai sutrumpėja tiek pat.', shFront:'Lentynų priekis', shFlush:'Lygiai su priekiu', shOther:'Atitraukti, mm', shFrontD:'Kiek lentynos atitrauktos nuo korpuso priekio (taip ir sutrumpėja). 0 — lygiai su šonų priekiu. Su įleistais fasadais palikite bent fasado storį.', tNest:'Plokštės', nestT:'Plokštės ir išdėstymas', nestL:'Kiek plokščių reikia kiekvienai medžiagai ir kaip detalės ant jų gula — skaičiuojama iškart. Pjūvis {k} mm, kraštų apipjovimas {tr} mm (Nesting nustatymai).', nestOpen:'Atidaryti Nesting programoje', nestOpenT:'Atidaro Nesting programą su šio projekto detalėmis (.xlsx kaip DB_PartList ataskaita) — galutiniam išdėstymui, etiketėms ir CNC.', nestNone:'Detalių dar nėra.', nestMat:'Medžiaga', nestBoard:'Plokštė, mm', nestSheets:'Lapų', nestUtil:'Išnaudota', nestParts:'Detalių', nestArea:'Detalių plotas', nestGrain:'Struktūra', nestGrainL:'nesukti', nestTot:'Iš viso lapų', nestSh:'lap.', nestPcs:'det.', nestBig:'netelpa', nestBigL:'Netelpa į plokštę', nestBW:'Plokštės ilgis', nestBH:'Plokštės plotis', nestBadSize:'Plokštės dydis 300–6000 mm', nestHandFail:'Projektas per didelis perduoti — atsisiųskite .xlsx ir įkelkite į Nesting', nestNote:'Greitas įvertinimas: Nesting programa gali sudėti dar tankiau (grupės, likučiai). Pažymėjus „nesukti“, detalių ilgis eina išilgai plokštės (medienos struktūra). Stalviršiai neskaičiuojami.', tCab:'Spintelės', tRes:'Detalės ir CNC', tDrw:'Brėžiniai', drwTitle:'Brėžiniai', drwLead:'Sudaromi automatiškai iš detalių: baldų išdėstymas ir sienų vaizdai (kai spintelės sudėliotos Baldų skirtuke), kiekvienai spintelei — vaizdai su matmenimis ir surinkimo schema su detalių ir furnitūros sąrašu.', drwShow:'Rodyti', drwAll:'Visi lapai', drwFurn:'Tik baldų išdėstymas', drwPaper:'Popierius', drwPdf:'⤓ Atsisiųsti PDF ({n} lap.)', drwOne:'⤓ PDF', drwView:'Peržiūrėti', drwBuilding:'Ruošiamas PDF… {i} / {n}', drwDone:'PDF paruoštas', drwFail:'Nepavyko sudaryti PDF: ', drwNone:'Nėra ką braižyti — pridėkite spintelę.', drwCab:'📐 Brėžiniai', drwZip:'PDF su visais brėžiniais įdedamas ir į „Viskas ZIP“.', drwClose:'Uždaryti', drwPrev:'‹ Ankstesnis', drwNext:'Kitas ›', drwSheets:'lapai', tSet:'Nustatymai', projects:'Projektai',
  cabs:'Spintelės', newCab:'＋ Nauja spintelė', dup:'Kopijuoti', del:'Ištrinti', delSure:'Tikrai ištrinti?',
  sB:'Konstrukcija', sBl:'Kaip surenkama dėžė: atramos, dugnas, viršus, šonai, nugara, jungtys.', nB:'Konstrukcija', bgBase:'Atramos ir dugnas', stepNext:'Toliau', stepBack:'Atgal', libT:'Biblioteka', libQ:'Ieškoti: pavadinimas, matmenys (600x720), medžiaga…', libCats:'Katalogai', libAll:'Visi', libNewCat:'Naujas katalogas', libAddT:'Pridėti šią spintelę į projektą (kopija)', libMove:'Perkelti į katalogą', libNone:'Nieko nerasta — pakeiskite paiešką ar katalogą.', libEmpty:'Biblioteka tuščia. Spintelės redaktoriuje paspauskite „☆ Į biblioteką“ — spintelė bus čia visuose projektuose.', libNewT:'Nauja iš šablono', libSave:'Į biblioteką', libSaveT:'Išsaugoti šią spintelę bibliotekoje — ją galėsite pridėti bet kuriame projekte. Vėlesni pakeitimai atnaujins bibliotekos kopiją.', libLinked:'Bibliotekoje', libLinkedT:'Ši spintelė yra bibliotekoje ir jos pakeitimai ten atnaujinami. Spustelėkite — atsieti (bibliotekos kopija liks tokia, kokia yra).', libSaved:'Išsaugota bibliotekoje: {n} ({c})', libUnlinked:'Atsieta — bibliotekos kopija daugiau nekeičiama', libAdded:'Pridėta iš bibliotekos: {n}', pickTitle:'Kokią spintelę kuriame?', pickLead:'Pasirinkite panašiausią — viską galėsite pakeisti.', cancel:'Atšaukti',
  pDrawers:'Stalčių spintelė', pDoors:'Durų spintelė', pDrDoors:'Stalčius + durys', pWall:'Pakabinama', pTall:'Aukšta su orkaite', pFridge:'Šaldytuvo spinta', kFridge:'Šaldytuvas', fridgeHinge:'Vyriai', fridgeHandle:'Rankena — {s}',
@@ -8564,7 +8590,7 @@ lt:{
  zone:'Fasadų zona', used:'užimta', left:'liko', over:'viršyta',
  kDrawers:'Stalčiai', kDoors:'Durys', kOpen:'Lentynos', kOven:'Orkaitė',
  secH:'Aukštis', fill:'Likęs', nDr:'Stalčių', runner:'Bėgeliai', rail:'Bėgelio ilgis', nDoors:'Durų', split:'Išdėstymas', sSide:'Šalia', sStack:'Viena virš kitos',
- hinge:'Lankstai', hingeN:'Lankstų durims', rGtv:'GTV guoliniai H45', rDtcU:'DTC paslėpti (D-Motion)', rDtc:'DTC guoliniai H45', mvH:'MERIVOBOX aukštis', mvAuto:'Auto (N / M / E su galerija)', mvExt:'E aukštis', mvRail:'Galerija (turėklai)', mvBoxcap:'BOXCAP (aukštas šonas)', mDrw:'Stalčių dugnas / galas (16 mm)', hside:'Lankstų pusė', hsAuto:'Auto', hsL:'Kairė', hsR:'Dešinė', shelves:'Lentynų', adj:'Kilnojamos', fixed:'Fiksuotos', sup:'Atramų',
+ hinge:'Lankstai', hingeN:'Lankstų durims', rGtv:'GTV guoliniai H45', rDtcU:'DTC paslėpti (D-Motion)', rDtc:'DTC guoliniai H45', cargoNote:'Cargo ištraukiamas: vienas fasadas ant cargo rėmo, be lankstų ir lentynų; furnitūra — cargo {w} mm spintelei (rėmas tvirtinamas pagal gamintojo šabloną, negręžiama).', mvH:'MERIVOBOX aukštis', mvAuto:'Auto (N / M / E su galerija)', mvExt:'E aukštis', mvRail:'Galerija (turėklai)', mvBoxcap:'BOXCAP (aukštas šonas)', mDrw:'Stalčių dugnas / galas (16 mm)', hside:'Lankstų pusė', hsAuto:'Auto', hsL:'Kairė', hsR:'Dešinė', shelves:'Lentynų', adj:'Kilnojamos', fixed:'Fiksuotos', sup:'Atramų',
  add:'Pridėti viršuje', up:'Aukštyn', down:'Žemyn', rm:'Pašalinti',
  s3:'Konstrukcija', s3l:'Kaip sujungiamas karkasas.',
  jConf:'Konfirmatai', jConfD:'Ø8 kiaurai + Ø5×32 krašte. Juostos ir dugnas per konfirmatus.', jCam:'Ekscentrikai + kaiščiai', jCamD:'Ø15 ekscentrikai šone, Ø8 varžtai ir kaiščiai. Surenkama be klijų.',
@@ -8697,7 +8723,7 @@ lt:{
 en:{
  app:'Cabinet creator', sub:'Dėdės Baldai · parts and CNC without the engineer',
  project:'Project', projPh:'PROJECT_CODE',
- verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', topKind:'Top type', bKind:'Type', bcBotL:'At the bottom', bcBotOn:'Stands on the bottom', bcBotCov:'Covers the bottom (shorter bottom)', bcTopL:'At the top', bcTopOn:'Under the top', bcTopCov:'Covers the top (shorter top)', bcRailOn:'Under the back rail', bcRailCov:'Covers the rail (rail moved forward)', plFitT:'fitted by gaps', plGl:'Gap left', plGr:'Gap right', plGt:'To the bottom', plGb:'From the floor', plFitBtn:'Fit: between the sides 1 mm each, 4 mm under the bottom', plFitOff:'Set the size by hand', plFitNote:'With the gaps filled, the plinth\'s length and height follow the cabinet by themselves. The edges in the picture can be dragged.', plDragT:'Drag — the plinth\'s edge (gap)', plSnap0:'no gap', mTop:'Top (STOGAS)', mTopPh:'as the carcass', mdT:'Materials — drag onto a board in the 3-D view', mdChipT:'Drag onto a board on the right', mdNote:'Dropped on a front — the fronts\' material, on the top — the top\'s, on the back — the back\'s, on other boards — the carcass. The fronts\' material on a side — a visible side.', mdWt:'Worktop', mdNone:'No board here', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower (with a raised bottom, down to the sides\' bottom). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsx as a DB_PartList report) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsx and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
+ verBtn:'Versions', verT:'Project versions', verName:'Version name', verNamePh:'e.g. Before the client\'s changes', verSave:'Save version', verHand:'Saved by hand', verSaved:'Version saved', verNote:'Versions are kept automatically: while editing about every 15 minutes, and when another project is opened. Kept: everything from the last 2 days, older ones the last of each day (half a year), named ones always. ☁ — from the cloud (another computer).', verNone:'No versions yet — the first one appears after changes.', verToday:'Today', verYest:'Yesterday', verSame:'as now', verRestore:'Restore', verSure:'Really restore?', verCopy:'As a copy', verCopyT:'Opens this version as a new project — the current one stays as it is', verCopied:'Version added as a new project', verBefore:'before restoring', verDone:'Version restored — the previous state was kept as a version', topKind:'Top type', bKind:'Type', bcBotL:'At the bottom', bcBotOn:'Stands on the bottom', bcBotCov:'Covers the bottom (shorter bottom)', bcTopL:'At the top', bcTopOn:'Under the top', bcTopCov:'Covers the top (shorter top)', bcRailOn:'Under the back rail', bcRailCov:'Covers the rail (rail moved forward)', plFitT:'fitted by gaps', plGl:'Gap left', plGr:'Gap right', plGt:'To the bottom', plGb:'From the floor', plFitBtn:'Fit: between the sides 1 mm each, 4 mm under the bottom', plFitOff:'Set the size by hand', plFitNote:'With the gaps filled, the plinth\'s length and height follow the cabinet by themselves. The edges in the picture can be dragged.', plDragT:'Drag — the plinth\'s edge (gap)', plSnap0:'no gap', mTop:'Top (STOGAS)', mTopPh:'as the carcass', mdT:'Materials — drag onto a board in the 3-D view', mdChipT:'Drag onto a board on the right', mdNote:'Dropped on a front — the fronts\' material, on the top — the top\'s, on the back — the back\'s, on other boards — the carcass. The fronts\' material on a side — a visible side.', mdWt:'Worktop', mdNone:'No board here', fgT:'Front gaps, mm', fgL:'Left', fgR:'Right', fgTop:'Top', fgMid:'Between fronts', fgBot:'Bottom from the bottom panel', fgToSide:'Down to the sides\' bottom', fgReset:'By the rule', fgDragT:'Drag — the fronts\' edge (gap)', fgSnapBot:'flush with the bottom panel', fgSnapSide:'down to the sides\' bottom', fgSnapTop:'flush with the top', fgSnapOut:'flush with the side\'s outer face', fgNote:'Empty — by the rule (the grey value). "Bottom": 0 — the fronts start at the bottom panel, minus — lower, also below the carcass (e.g. −20 on a wall cabinet — the fronts 20 mm below it, as a grip; on legs — down to 10 mm above the floor). The orange edges in the picture can be dragged.', camPickT:'Side of the eccentrics — click to move them to the other face of the panel', camIn:'cams: inside', camOut:'cams: outside', topOvF:'Overhang at the front', topOvFf:'Overhang past the fronts', topOvS:'Overhang at the sides', topOvB:'Overhang at the back', topOvNote:'How far the top (STOGAS) reaches past the carcass, mm. E.g. 1 — 1 mm at the front, both sides and the back; the board grows by that much.', plWhere:'Plinth position', plIn:'Between the sides', plUnder:'Under the carcass', plL:'Plinth', plOff:'None', plOn:'Yes', plH:'Height', plLen:'Length', plYf:'From the front', plYfH:'mm behind the carcass front (fronts not counted)', plNote:'The plinth goes into the part list (cut only) and shows in 3D and the drawings. It is in the Extras step too.', bkInset:'Back from the rear edge, mm', bkFront:'Back\'s front face from the cabinet front', bkInsetH:'The inside back is set forward from the sides\' back edge — shelves and drawers get that much shorter.', shFront:'Shelf front', shFlush:'Flush with the front', shOther:'Set back, mm', shFrontD:'How far the shelves stand back from the carcass front (they get that much shorter). 0 — flush with the sides\' front. With inset fronts leave at least the front\'s thickness.', tNest:'Boards', nestT:'Boards and layout', nestL:'How many boards each material takes and how the parts lie on them — worked out at once. Kerf {k} mm, edge trim {tr} mm (Nesting settings).', nestOpen:'Open in the Nesting app', nestOpenT:'Opens the Nesting app with this project\'s parts (the .xlsx as a DB_PartList report) — for the final layout, labels and CNC.', nestNone:'No parts yet.', nestMat:'Material', nestBoard:'Board, mm', nestSheets:'Boards', nestUtil:'Used', nestParts:'Parts', nestArea:'Parts area', nestGrain:'Grain', nestGrainL:'don\'t turn', nestTot:'Boards in all', nestSh:'boards', nestPcs:'pcs', nestBig:'too big', nestBigL:'Too big for the board', nestBW:'Board length', nestBH:'Board width', nestBadSize:'Board size 300–6000 mm', nestHandFail:'The project is too big to hand over — download the .xlsx and load it into Nesting', nestNote:'A quick estimate: the Nesting app can pack tighter still (groups, offcuts). With "don\'t turn" the parts\' length runs along the board (wood grain). Worktops are not counted.', tCab:'Cabinets', tRes:'Parts & CNC', tDrw:'Drawings', drwTitle:'Drawings', drwLead:'Made automatically from the parts: furniture layout and wall elevations (when cabinets are placed in the Furniture tab), and for every cabinet its dimensioned views and an assembly diagram with the parts and hardware lists.', drwShow:'Show', drwAll:'All sheets', drwFurn:'Furniture layout only', drwPaper:'Paper', drwPdf:'⤓ Download PDF ({n} sheets)', drwOne:'⤓ PDF', drwView:'View', drwBuilding:'Making the PDF… {i} / {n}', drwDone:'PDF ready', drwFail:'Could not make the PDF: ', drwNone:'Nothing to draw — add a cabinet.', drwCab:'📐 Drawings', drwZip:'The PDF with all drawings also goes into the full ZIP.', drwClose:'Close', drwPrev:'‹ Previous', drwNext:'Next ›', drwSheets:'sheets', tSet:'Settings', projects:'Projects',
  cabs:'Cabinets', newCab:'＋ New cabinet', dup:'Duplicate', del:'Delete', delSure:'Really delete?',
  sB:'Construction', sBl:'How the box is built: supports, bottom, top, sides, back, joints.', nB:'Construction', bgBase:'Supports and bottom', stepNext:'Next', stepBack:'Back', libT:'Library', libQ:'Search: name, size (600x720), material…', libCats:'Catalogues', libAll:'All', libNewCat:'New catalogue', libAddT:'Add this cabinet to the project (a copy)', libMove:'Move to a catalogue', libNone:'Nothing found — change the search or the catalogue.', libEmpty:'The library is empty. In the cabinet editor press "☆ Save to library" — the cabinet will be here in every project.', libNewT:'New from a template', libSave:'Save to library', libSaveT:'Keep this cabinet in the library — add it in any project. Later edits update the library copy.', libLinked:'In the library', libLinkedT:'This cabinet is in the library and its edits update it there. Click to unlink (the library copy stays as it is).', libSaved:'Saved in the library: {n} ({c})', libUnlinked:'Unlinked — the library copy no longer changes', libAdded:'Added from the library: {n}', pickTitle:'What are we building?', pickLead:'Pick the closest one — everything can be changed.', cancel:'Cancel',
  pDrawers:'Drawer cabinet', pDoors:'Door cabinet', pDrDoors:'Drawer + doors', pWall:'Wall cabinet', pTall:'Tall with oven', pFridge:'Fridge unit', kFridge:'Fridge', fridgeHinge:'Hinges', fridgeHandle:'Handle — {s}',
@@ -8712,7 +8738,7 @@ en:{
  zone:'Front zone', used:'used', left:'left', over:'exceeded',
  kDrawers:'Drawers', kDoors:'Doors', kOpen:'Shelves', kOven:'Oven',
  secH:'Height', fill:'Fill', nDr:'Drawers', runner:'Runners', rail:'Runner length', nDoors:'Doors', split:'Layout', sSide:'Side by side', sStack:'Stacked',
- hinge:'Hinges', hingeN:'Hinges per door', rGtv:'GTV ball-bearing H45', rDtcU:'DTC undermount (D-Motion)', rDtc:'DTC ball-bearing H45', mvH:'MERIVOBOX height', mvAuto:'Auto (N / M / E with gallery)', mvExt:'E height', mvRail:'Gallery (railing)', mvBoxcap:'BOXCAP (high side)', mDrw:'Drawer base / back (16 mm)', hside:'Hinge side', hsAuto:'Auto', hsL:'Left', hsR:'Right', shelves:'Shelves', adj:'Adjustable', fixed:'Fixed', sup:'Supports',
+ hinge:'Hinges', hingeN:'Hinges per door', rGtv:'GTV ball-bearing H45', rDtcU:'DTC undermount (D-Motion)', rDtc:'DTC ball-bearing H45', cargoNote:'Cargo pull-out: one front on the cargo frame, no hinges or shelves; fitting — a cargo for a {w} mm cabinet (the frame is fixed with the maker\'s template, nothing is drilled).', mvH:'MERIVOBOX height', mvAuto:'Auto (N / M / E with gallery)', mvExt:'E height', mvRail:'Gallery (railing)', mvBoxcap:'BOXCAP (high side)', mDrw:'Drawer base / back (16 mm)', hside:'Hinge side', hsAuto:'Auto', hsL:'Left', hsR:'Right', shelves:'Shelves', adj:'Adjustable', fixed:'Fixed', sup:'Supports',
  add:'Add on top', up:'Up', down:'Down', rm:'Remove',
  s3:'Construction', s3l:'How the carcass is joined.',
  jConf:'Confirmats', jConfD:'Ø8 through + Ø5×32 in the edge. Rails and bottom fixed with confirmats.', jCam:'Cams + dowels', jCamD:'Ø15 cams in the side, Ø8 bolts and dowels. Assembled without glue.',
@@ -9539,7 +9565,8 @@ function frontArtOf(c, r, extra) {
   }
   var legH = E.legHeight(engineDef(c));
   var o = Object.assign({ bnd:bnd, sel:-1, over:over, ovens:ovens, legs:legH > 0, legH:legH, type:cabKind(c), label:c.name || '' }, extra || {});
-  return { svg:r && window.DBFront ? window.DBFront.svg(c, r, o) : '', vbH:H + legH + 14, legH:legH };
+  var v0 = (r && r.visual) || {}, low = Math.min.apply(null, [0].concat((v0.drawers || []).map(function (f) { return +f.bottom || 0; }), (v0.doors || []).map(function (d) { return +d.z || 0; })));   // as DBFront: fronts below the carcass
+  return { svg:r && window.DBFront ? window.DBFront.svg(c, r, o) : '', vbH:H + Math.max(legH, -low) + 14, legH:legH };
 }
 /* the fronts' outer edges as drag handles on the front picture (its units are mm, y down from the cabinet top): bottom, top, left,
    right; dragged, they set the gaps (c.cnc.fg), snapping to the carcass bottom, the sides' bottom edge, the sides' outer faces */
@@ -9611,7 +9638,7 @@ document.addEventListener('pointermove', function (ev) {
     return;
   }
   var pt = FGD.svg.createSVGPoint(); pt.x = ev.clientX; pt.y = ev.clientY; var q = pt.matrixTransform(FGD.inv), r = FGD.r, H = +r.dims.H, W = +r.dims.W, g = r.fgaps, k = FGD.k, v, snaps, sn = null;
-  if (k === 'bot') { v = (H - q.y) - g.hb; snaps = [[0, t('fgSnapBot')], [g.botMin, t('fgSnapSide')]]; v = Math.max(g.botMin, Math.min(v, FGD.e.z1 - g.hb - 120)); }
+  if (k === 'bot') { v = (H - q.y) - g.hb; snaps = [[0, t('fgSnapBot')], [g.botMin, t('fgSnapSide')]]; v = Math.max(g.botLow != null ? g.botLow : g.botMin, Math.min(v, FGD.e.z1 - g.hb - 120)); }
   else if (k === 'top') { v = q.y; snaps = [[0, t('fgSnapTop')], [g.mid, ''], [r.fgaps.top, '']]; v = Math.max(0, Math.min(v, 80)); }
   else if (k === 'l') { v = q.x; snaps = [[0, t('fgSnapOut')], [3, ''], [+r.dims.t / 2, '']]; v = Math.max(0, Math.min(v, 40)); }
   else { v = W - q.x; snaps = [[0, t('fgSnapOut')], [3, ''], [+r.dims.t / 2, '']]; v = Math.max(0, Math.min(v, 40)); }
@@ -9779,6 +9806,8 @@ function boxFrontsBlock(c, rb) {
       if (f.hw && !hwOpts.some(function (q) { return q[0] === f.hw; })) hwOpts.push([f.hw, f.hw]);
       h += fN(t('nDr'), b + 'nDrawers', f.nDrawers || 1, 's') + fS(t('runner'), b + 'hw', f.hw, hwOpts) +
         fS(t('rail'), b + 'rail', f.rail, railLengths(f.hw).concat(railLengths(f.hw).indexOf(num(f.rail)) < 0 ? [num(f.rail)] : []).map(function (v) { return [v, v + ' mm']; })) + mvFields(b, f);
+    } else if (/^CARGO/i.test(f.hinge || '')) {
+      h += fS(t('hinge'), b + 'hinge', f.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; })) + '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(num(c.W)))) + '</span>';
     } else {
       h += '<div class="f"><span>' + t('nDoors') + '</span>' + seg(b + 'nDoors', String(+f.nDoors === 2 ? 2 : 1), [['1', '1'], ['2', '2']]) + '</div>' +
         fS(t('hinge'), b + 'hinge', f.hinge || 'BLUM LANKSTAI', E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; })) +
@@ -10229,7 +10258,7 @@ function noteTxt(x) {   // a part's orientation note (how it lies on the machine
   var map = {}; NOTE_EN_W.forEach(function (q) { map[q[0]] = q[1]; });
   return s.replace(new RegExp('(^|[^A-Za-z\\u00C0-\\u017E])(' + NOTE_EN_W.map(function (q) { return q[0]; }).join('|') + ')(?![A-Za-z\\u00C0-\\u017E])', 'g'), function (m, pre, w) { return pre + map[w]; });
 }
-function hingeLabel(v) { if (S.lang !== 'en') return v; return { 'BLUM LANKSTAI':'Blum hinges', 'BLUM TIP-ON':'Blum TIP-ON (push to open)', 'KT. LANKSTAI':'Other hinges', 'BE FURNITŪROS':'No hardware' }[v] || v; }
+function hingeLabel(v) { if (S.lang !== 'en') return { 'CARGO DTC PURE PRO':'Cargo — DTC Pure Pro' }[v] || v; return { 'BLUM LANKSTAI':'Blum hinges', 'BLUM TIP-ON':'Blum TIP-ON (push to open)', 'KT. LANKSTAI':'Other hinges', 'CARGO DTC PURE PRO':'Cargo pull-out — DTC Pure Pro', 'BE FURNITŪROS':'No hardware' }[v] || v; }
 function railLengths(hw) { var rt = E.R.runner[hw]; return rt && rt.ball ? (E.R.ball.lengths || [300, 400, 450, 500, 550]).slice() : rt && rt.under ? (E.R.under.lengths || [250, 300, 350, 400, 450, 500, 550, 600]).slice() : rt && rt.merivo ? E.R.merivo.lengths.slice() : [270, 300, 350, 400, 450, 500, 550, 600, 650]; }
 /* MERIVOBOX: the box height (auto picks N, M or E with the gallery railing by the front) and, for E, railing or BOXCAP */
 function mvFields(b, s) {
@@ -10259,6 +10288,10 @@ function viewSection(c, s, i, z) {
       '<div class="f"><span>' + t('fridgeHinge') + '</span>' + seg(b + 'hingeSide', s.hingeSide === 'right' ? 'right' : 'left', [['left', t('hsL')], ['right', t('hsR')]]) + '</div>' +
       '<span class="h">' + esc(t('fridgeHandle').replace('{s}', s.hingeSide === 'right' ? t('hsL') : t('hsR'))) + '</span>' +
       '<span class="h">' + esc(t('fridgeNiche').replace('{h}', fmt(secH - 2 * th0)).replace('{w}', fmt((c.cols > 1 ? colWidths(c)[colOf(c, s)] : num(c.W)) - 2 * th0))) + '</span>';
+  } else if (s.kind === 'doors' && /^CARGO/i.test(s.hinge || '')) {   // a cargo pull-out: one front, no hinges, no shelves
+    body += chk(b + 'fridge', false, t('fridgeSec')) +
+      fS(t('hinge'), b + 'hinge', s.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.DOOR_HW.indexOf(s.hinge) < 0 ? [[s.hinge, s.hinge]] : [])) +
+      '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(c.cols > 1 ? colWidths(c)[colOf(c, s)] : num(c.W)))) + '</span>';
   } else if (s.kind === 'doors') {
     body += chk(b + 'fridge', false, t('fridgeSec')) + fN(t('nDoors'), b + 'nDoors', s.nDoors, 's') + '<div class="f"><span>' + t('split') + '</span>' + seg(b + 'doorSplit', s.doorSplit, [['v', t('sSide')], ['h', t('sStack')]]) + '</div>' +
       fS(t('hinge'), b + 'hinge', s.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.DOOR_HW.indexOf(s.hinge) < 0 ? [[s.hinge, s.hinge]] : [])) +
@@ -10271,7 +10304,7 @@ function viewSection(c, s, i, z) {
     body += fS(t('sup'), b + 'shelves', Math.min(2, num(s.shelves)), [[0, '0'], [1, '1 — ' + (S.lang === 'lt' ? 'apačioje' : 'below')], [2, '2 — ' + (S.lang === 'lt' ? 'apačioje ir viršuje' : 'below and above')]]);
   }
   body += '</div>';
-  var nStack = s.kind === 'drawers' ? num(s.nDrawers) : s.kind === 'doors' && (s.doorSplit === 'h' || s.fridge) ? num(s.nDoors) : 0;
+  var nStack = s.kind === 'drawers' ? num(s.nDrawers) : s.kind === 'doors' && !/^CARGO/i.test(s.hinge || '') && (s.doorSplit === 'h' || s.fridge) ? num(s.nDoors) : 0;
   if (nStack > 1) body += frontsEditor(s, i, secH, Math.round(nStack));
   if (s.kind === 'doors' && s.fridge) body += '<p class="note">' + esc(t('fridgeNote').replace('{v}', E.R.fridgeVent)) + '</p>';
   return '<div class="sec k-' + s.kind + '"><div>' + head + body + '</div><div class="tools">' +
@@ -10336,7 +10369,7 @@ function sketchOf(c) { if (c.kind === 'box') { var ib = S._info && S._info[S.sel
    defects, fasteners, waste, depreciation, design → production; assembly, admin; margin; VAT. Every step is
    linear, so each cabinet carries its own share and the project is their sum (+ installation and delivery).
    Prices and the PIN stay in this browser only; the lock keeps prices from the workshop screen, it is not security. */
-var PR_HW = { 'BLUM TANDEM':26, 'BLUM TANDEMBOX':40, 'BLUM MERIVOBOX N':30, 'BLUM MERIVOBOX M':32, 'BLUM MERIVOBOX K':36, 'BLUM MERIVOBOX E':32, 'BLUM MERIVOBOX galerija':12, 'BLUM MERIVOBOX BOXCAP':20, 'GUOLINIAI':8, 'KT. PASLĖPTO MONTAVIMO':12, 'BLUM LANKSTAI':13, 'BLUM TIP-ON':16, 'KT. LANKSTAI':6, 'KT. TIP-ON':9, 'BE FURNITŪROS':0, 'GTV KULKINIAI H45':8, 'DTC KULKINIAI H45':8, 'DTC PASLĖPTI':15.9 };
+var PR_HW = { 'CARGO DTC PURE PRO':95, 'BLUM TANDEM':26, 'BLUM TANDEMBOX':40, 'BLUM MERIVOBOX N':30, 'BLUM MERIVOBOX M':32, 'BLUM MERIVOBOX K':36, 'BLUM MERIVOBOX E':32, 'BLUM MERIVOBOX galerija':12, 'BLUM MERIVOBOX BOXCAP':20, 'GUOLINIAI':8, 'KT. PASLĖPTO MONTAVIMO':12, 'BLUM LANKSTAI':13, 'BLUM TIP-ON':16, 'KT. LANKSTAI':6, 'KT. TIP-ON':9, 'BE FURNITŪROS':0, 'GTV KULKINIAI H45':8, 'DTC KULKINIAI H45':8, 'DTC PASLĖPTI':15.9 };
 function prDefaults() {
   return { cut:0.6, edge:1.7, def:{ carc:8, facade:29, back:5, top:60 }, mat:{}, edgeMat:{}, hw:clone(PR_HW),
            q:{ use:'VIRTUVĖ', margin:28, pvm:21, vat:true, matMarkup:10, packing:1, defects:5, fasteners:4, waste:25, depreciation:2.5,
@@ -10353,7 +10386,7 @@ function pinHash(pin) {
 }
 function eur(v) { v = Math.round((+v || 0) * 100) / 100; var p = v.toFixed(2).split('.'); return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ',' + p[1]; }
 var CONNECTOR_HW = /konfirmat|confirmat|ekscentrik|minifix|kaišč|dowel|varžt|laikikl/i;   // connectors and shelf supports: covered by "fasteners €/m²" (as in the offer app) unless given a price
-function hwBase(item) { return String(item || '').replace(/\s+L=\d+.*$/, '').trim(); }
+function hwBase(item) { return String(item || '').replace(/\s+[LW]=\d+.*$/, '').trim(); }
 function hwPrice(item) {
   if (PR.hw[item] != null && PR.hw[item] !== '') return { p:num(PR.hw[item]), ok:true };
   var b = hwBase(item); if (PR.hw[b] != null && PR.hw[b] !== '') return { p:num(PR.hw[b]), ok:true, base:b };

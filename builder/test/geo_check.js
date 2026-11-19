@@ -13,12 +13,13 @@ for (let run = 0; run < (+process.argv[4] || 3000); run++) {
   const c = { id:'x', name:'', type:pick(['PASTATOMOS', 'PAKABINAMOS', 'ŪKINĖ']), W, H, D:pick([300, 330, 560, 580, 600]), thick:pick([18, 18, 16]), cols, colW:[], legH:100, mat:{ carc:'M', facade:'F' }, edge:{ carc:'E' }, sections:secs, extras:[],
     cnc:{ joinery:pick(['confirmat', 'cam']), top:pick(['rails', 'full']), topOverFacade:rnd() < 0.3, legs:rnd() < 0.6, feet:rnd() < 0.2, bottom:pick(['under', 'under', 'inside']), bottomZ:pick([0, 100]), facadeT:18,
       backs:Array.from({ length:cols }, () => pick(['none', 'hdf', 'solid'])), backMount:pick(['top', 'inside']), rails:{ front:pick(['h', 'v']), back:pick(['h', 'v', 'hv']), bottom:rnd() < 0.3 }, hinges:true, hingeFix:pick(['screw', 'press']), pins:pick(['shelf', 'row']), runnerMarks:true, tbFront:pick(['mark', 'hole']) } };
+  if (rnd() < 0.25) c.cnc.fg = { bot:pick([-20, -60]) };   // fronts reaching below the carcass (a hung cabinet's grip)
   const c0 = JSON.parse(JSON.stringify(c)), r = E.buildCabinet(c, 0, 'P'); n++;
   if (r.warnings.some(w => /didesnė už fasadų zoną|per siaura|per maž|netinkami|persidengia|kertasi/.test(w))) continue;
   const ps = r.panels, bx = ps.map(box);
   for (let i = 0; i < bx.length; i++) for (let j = i + 1; j < bx.length; j++) {
     const v = bx[i].reduce((a, ri, k) => a * Math.max(0, Math.min(ri[1], bx[j][k][1]) - Math.max(ri[0], bx[j][k][0])), 1);
     if (v > 1e-3) B('OVERLAP ' + ps[i].role + ' ' + ps[j].role + ' ' + ps[i].name + ' ' + ps[j].name, c0, r); }
-  ps.filter(p => /FASADAS|DURYS/.test(p.role)).forEach(p => { const b = box(p); if (b[0][0] < -0.01 || b[0][1] > W + 0.01 || b[2][1] > H + 0.01 || b[2][0] < -0.01) B('FRONT OUTSIDE ' + p.name + ' ' + JSON.stringify(b), c0, r); });
+  ps.filter(p => /FASADAS|DURYS/.test(p.role)).forEach(p => { const b = box(p); if (b[0][0] < -0.01 || b[0][1] > W + 0.01 || b[2][1] > H + 0.01 || b[2][0] < Math.min(0, r.fgaps ? r.fgaps.bot : 0) - 0.01) B('FRONT OUTSIDE ' + p.name + ' ' + JSON.stringify(b), c0, r); });
 }
 console.log(n, 'cabinets; problems', bad, JSON.stringify(K)); process.exit(bad ? 1 : 0);
