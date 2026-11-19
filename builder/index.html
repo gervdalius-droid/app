@@ -24,7 +24,7 @@
   --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
   --f-mono:"IBM Plex Mono",ui-monospace,Consolas,monospace;
   --r:8px;
-  --k-drawers:#2f5bd6; --k-doors:#1f8a55; --k-open:#9a6b2f; --k-oven:#c9531d; --x-ink:#c2382c; --x-bg:#fdeceb; --x-line:#f5c6c1;
+  --k-drawers:#2f5bd6; --k-doors:#1f8a55; --k-cargo:#7a3fb8; --k-open:#9a6b2f; --k-oven:#c9531d; --x-ink:#c2382c; --x-bg:#fdeceb; --x-line:#f5c6c1;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#121614; --panel:#1b201d; --sunk:#161a18; --ink:#e4e9e5; --muted:#9aa59f; --line:#2c332f; --line2:#3a433e;
@@ -32,7 +32,7 @@
   --warn:#f2c94c; --warn-bg:#3a3014; --warn-line:#7a6320;
   --bad:#ff8a7e; --bad-bg:#43211e; --ok:#6fd49c; --ok-bg:#163526; --info:#9cc0e0; --info-bg:#1b2a38;
   --paper:#eef0ec; --paper-line:#c9cec8; color-scheme:dark;
-  --k-drawers:#86a2ff; --k-doors:#6fd49c; --k-open:#d9a76a; --k-oven:#ff9d6b; --x-ink:#ff8f84; --x-bg:#3a1f1c; --x-line:#6b2f29;
+  --k-drawers:#86a2ff; --k-doors:#6fd49c; --k-cargo:#c49bf0; --k-open:#d9a76a; --k-oven:#ff9d6b; --x-ink:#ff8f84; --x-bg:#3a1f1c; --x-line:#6b2f29;
 }}
 :root[data-theme="dark"]{
   --bg:#121614; --panel:#1b201d; --sunk:#161a18; --ink:#e4e9e5; --muted:#9aa59f; --line:#2c332f; --line2:#3a433e;
@@ -40,7 +40,7 @@
   --warn:#f2c94c; --warn-bg:#3a3014; --warn-line:#7a6320;
   --bad:#ff8a7e; --bad-bg:#43211e; --ok:#6fd49c; --ok-bg:#163526; --info:#9cc0e0; --info-bg:#1b2a38;
   --paper:#eef0ec; --paper-line:#c9cec8; color-scheme:dark;
-  --k-drawers:#86a2ff; --k-doors:#6fd49c; --k-open:#d9a76a; --k-oven:#ff9d6b; --x-ink:#ff8f84; --x-bg:#3a1f1c; --x-line:#6b2f29;
+  --k-drawers:#86a2ff; --k-doors:#6fd49c; --k-cargo:#c49bf0; --k-open:#d9a76a; --k-oven:#ff9d6b; --x-ink:#ff8f84; --x-bg:#3a1f1c; --x-line:#6b2f29;
 }
 
 *{box-sizing:border-box}
@@ -928,7 +928,7 @@ button.prog:hover{border-color:var(--accent);color:var(--accent);background:var(
 .colblk .backsel .seg button{padding:5px 7px;font-size:12.5px;white-space:nowrap}
 
 /* ---- sections: kinds, column map, remove buttons */
-.k-drawers{--k:var(--k-drawers)} .k-doors{--k:var(--k-doors)} .k-open{--k:var(--k-open)} .k-oven{--k:var(--k-oven)}
+.k-drawers{--k:var(--k-drawers)} .k-doors{--k:var(--k-doors)} .k-cargo{--k:var(--k-cargo)} .k-open{--k:var(--k-open)} .k-oven{--k:var(--k-oven)}
 .sec{border-left:4px solid var(--k,var(--line2));background:var(--panel);box-shadow:0 1px 0 rgba(0,0,0,.03)}
 .sec .kind{color:var(--k,var(--ink))}
 .sec .sh{padding-bottom:8px;border-bottom:1px dashed var(--line)}
@@ -1065,7 +1065,7 @@ button.prog:hover{border-color:var(--accent);color:var(--accent);background:var(
 /* v9: bottom choice, feet, smaller screens */
 .bottomrow{align-items:flex-end}
 .bxfronts{display:grid;gap:10px}.bxfront{border:1px solid var(--line);border-left:4px solid var(--line2);border-radius:var(--r);background:var(--sunk);padding:10px 12px}
-.bxfront.k-doors{border-left-color:#c77b2a}.bxfront.k-drawers{border-left-color:#3553c9}.bxfhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.bxfhead .kind{font:600 13px var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
+.bxfront.k-doors{border-left-color:#c77b2a}.bxfront.k-cargo{border-left-color:#7a3fb8}.bxfront.k-drawers{border-left-color:#3553c9}.bxfhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.bxfhead .kind{font:600 13px var(--f-mono);letter-spacing:.06em;text-transform:uppercase}
 .botpic{margin:0 0 2px;line-height:0}
 @media(min-width:1250px){
   .sheet{max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:2px}
@@ -1303,10 +1303,21 @@ function merivoParts(ctx, warnOnce) {
            hw:[{ item:'BLUM MERIVOBOX ' + pk.code + ' L=' + rail, qty:1, unit:'kompl.' }].concat(pk.ext ? [{ item:pk.ext === 'rail' ? 'BLUM MERIVOBOX galerija L=' + rail : 'BLUM MERIVOBOX BOXCAP L=' + rail, qty:1, unit:'kompl.' }] : []) };
 }
 function underDeduct(bt) { var d = R.under.ded; return d !== '' && d != null && +d > 0 ? +d : Math.round((42 + Math.max(0, bt - 16) * 7 / 3) * 2) / 2; }   // 16 → 42, 19 → 49
-var DOOR_HW   = ["BLUM LANKSTAI", "BLUM TIP-ON", "KT. LANKSTAI", "CARGO DTC PURE PRO", "BE FURNITŪROS"];
-/* a cargo pull-out instead of hinges: one front on the cargo frame (no hinge holes, no shelves — the cargo has its own
+var DOOR_HW   = ["BLUM LANKSTAI", "BLUM TIP-ON", "KT. LANKSTAI", "BE FURNITŪROS"];
+var CARGO_HW  = ["CARGO DTC PURE PRO"];   // a cargo section's fitting (its own section kind, like doors and drawers)
+/* a cargo pull-out (section / front kind 'cargo'; a door section with a CARGO fitting from before reads the same): one front on the cargo frame (no hinge holes, no shelves — the cargo has its own
    baskets); the frame is screwed on with its own template, so nothing is drilled. Fitting = the cargo for the cabinet width. */
+/* edges chosen by hand on one part (c.ebEdit[key] = { y0, y1, x0, x1: true / false, fac: true }): fac = a visible part (a hung
+   cabinet's bottom, a top) banded with the fronts' edge — every banded edge gets the facade edge and is flagged (p.ebFac), so the
+   label says PAGAL FASADA there instead of LAMINUOJASI */
+function applyEbEdit(p, ov, eCarc, eFac) {
+  var front = p.role === 'FASADAS' || p.role === 'DURYS', fac = !!ov.fac, emF = eFac || 'PAGAL FASADA', em = fac ? emF : ((front ? (eFac || eCarc) : eCarc) || 'KRAŠTAS');
+  ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (ov[e] === true) p.eb[e] = fac ? emF : (p.eb[e] || em); else if (ov[e] === false) p.eb[e] = ''; });
+  if (fac) { p.ebFac = {}; ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (p.eb[e]) { p.eb[e] = emF; p.ebFac[e] = true; } }); }
+  p.ebManual = true;
+}
 function isCargo(h) { return /^CARGO\b/i.test(String(h || '')); }
+function cargoOf(s) { return !s ? null : s.kind === 'cargo' ? (s.cargoHw || CARGO_HW[0]) : s.kind === 'doors' && !s.fridge && isCargo(s.hinge) ? s.hinge : null; }
 var hingesPerDoor = function (h) { return h <= 900 ? 2 : h <= 1500 ? 3 : h <= 2000 ? 4 : 5; };   // same rule as the offer app
 /* hinge positions along a door of height h, from its bottom edge: outer ones R.hinge.fromEnd from the ends, rest evenly between */
 function hingeYs(h, nSet) { var n = +nSet >= 2 ? Math.round(+nSet) : hingesPerDoor(h), e = Math.min(R.hinge.fromEnd, h*0.25), ys = []; for (var q = 0; q < n; q++) ys.push(e + (h - 2*e)*q/(n - 1)); return ys; }
@@ -1467,9 +1478,7 @@ function buildCabinet(c, idx, projName) {
     out.forEach(function (p) {
       p.key = p.name.slice(base.length + 1);
       var ov = ebEdit[p.key]; if (!ov) return;
-      var front = p.role === 'FASADAS' || p.role === 'DURYS', em = (front ? (eFac || eCarc) : eCarc) || 'KRAŠTAS';
-      ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (ov[e] === true) p.eb[e] = p.eb[e] || em; else if (ov[e] === false) p.eb[e] = ''; });
-      p.ebManual = true;
+      applyEbEdit(p, ov, eCarc, eFac);
     });
     out.forEach(function (p) { p.cab = idx + 1; p.short = (idx + 1) + '-' + (p.drawerOf ? p.name.slice(base.length + 1).replace(/_/g, '-') : p.role.replace(/_/g, '-') + (/\d$/.test(p.name) ? p.name.match(/\d+$/)[0] : '')); });
   }
@@ -1574,7 +1583,7 @@ function buildCabinet(c, idx, projName) {
     var yCur = zBotF;
     secs.forEach(function (s, si) {
       var secH = s.fill ? fillH : Math.max(0, +s.height || 0);
-      if ((s.kind === 'drawers' || s.kind === 'doors') && (secH < 60 + gap || FW < 60)) { warn.push(lbl(si) + ': per maža sekcija (' + num(FW) + ' × ' + num(secH) + ' mm) — fasadai nepridėti, padidinkite aukštį'); yCur += secH; return; }
+      if ((s.kind === 'drawers' || s.kind === 'doors' || s.kind === 'cargo') && (secH < 60 + gap || FW < 60)) { warn.push(lbl(si) + ': per maža sekcija (' + num(FW) + ' × ' + num(secH) + ' mm) — fasadai nepridėti, padidinkite aukštį'); yCur += secH; return; }
       if (s.kind === 'drawers') {
         var n = Math.max(1, Math.round(+s.nDrawers || 1)), sp = splitFronts(secH, n, s.frontH, gap), fbs = [0];
         sp.mods.forEach(function (m) { fbs.push(fbs[fbs.length - 1] + m); });
@@ -1588,12 +1597,12 @@ function buildCabinet(c, idx, projName) {
           if (!(rt && rt.merivo)) hw.push({ item:(s.hw || 'Stalčiaus bėgeliai') + ' L=' + (+s.rail || 500), qty:1, unit:'kompl.' });
         }
         if (+s.innerDrawers > 0) warn.push(lbl(si) + ': vidiniai stalčiai dar nepalaikomi');
-      } else if (s.kind === 'doors') {
+      } else if (s.kind === 'doors' || s.kind === 'cargo') {
         /* an integrated fridge: its fronts (one, or two over each other for a fridge-freezer) are screwed to the fridge's own doors —
            no hinges, no hinge holes; the niche gets fixed shelves (below) instead of adjustable ones */
-        var fridge = !!s.fridge;
+        var fridge = s.kind === 'doors' && !!s.fridge;
         if (+s.innerDrawers > 0 && !fridge) warn.push(lbl(si) + ': vidiniai stalčiai už durų dar nepalaikomi — nebraižomi ir negręžiami');
-        var cargo = !fridge && isCargo(s.hinge), hingedSec = !fridge && !cargo && s.hinge !== 'BE FURNITŪROS';
+        var cargoHw = cargoOf(s), cargo = !!cargoHw, hingedSec = !fridge && !cargo && s.hinge !== 'BE FURNITŪROS';
         if (hingedSec && !o.hinges) warn.push(lbl(si) + ': durys — lankstų skylės išjungtos (gręžiama rankomis)');
         /* cargo: one front, no shelves — the section's door count and shelves stay saved for when it goes back to doors */
         var nd = fridge ? Math.max(1, Math.min(3, Math.round(+s.nDoors || 2))) : cargo ? 1 : Math.max(1, Math.round(+s.nDoors || 1)), horiz = fridge || (!cargo && s.doorSplit === 'h'), hs = s.hingeSide || 'auto';
@@ -1616,7 +1625,7 @@ function buildCabinet(c, idx, projName) {
           if (hingedSec && o.hinges && !fits) warnOnce('durys ' + num(dw) + '×' + num(dh) + ': per žemos lankstams — lankstų skylės nepridėtos');
           if (hingedSec && o.hinges && fits && hingeYs(dh, nH).some(function (y, q) { return Math.abs(y - ys[q]) > 0.01; })) warnOnce('durys ' + num(dw) + '×' + num(dh) + ': lankstas perkeltas, kad plokštelė nepatektų po viršumi/juosta');
           doors.push({ w:dw, h:dh, x:dx, z:dz, sec:si, hingeLeft:cargo ? undefined : hl, hinged:hingedSec && fits, ys:ys, col:col, fridge:fridge, cargo:cargo });
-          if (cargo) hw.push({ item:String(s.hinge).toUpperCase() + ' W=' + Math.round(cols > 1 ? FW + 2 * gap : W), qty:1, unit:'kompl.' });
+          if (cargo) hw.push({ item:String(cargoHw).toUpperCase() + ' W=' + Math.round(cols > 1 ? FW + 2 * gap : W), qty:1, unit:'kompl.' });
           else if (hingedSec && s.hinge) hw.push({ item:s.hinge, qty:nH || hingesPerDoor(dh), unit:'vnt.' });
         }
       }
@@ -1628,7 +1637,7 @@ function buildCabinet(c, idx, projName) {
       } else if (s.kind === 'doors' && s.fridge) {   // the fridge niche: its floor (when something is under it) and its ceiling, fixed, open at the back for the air
         if (yCur >= t) shelves.push({ z:yCur, sec:si, fixed:true, oven:true, fridge:true, col:col });
         if (yCur + secH <= t + Lside - t) shelves.push({ z:yCur + secH - t, sec:si, fixed:true, oven:true, fridge:true, col:col });
-      } else if ((s.kind === 'doors' || s.kind === 'open') && +s.shelves > 0 && !(s.kind === 'doors' && !s.fridge && isCargo(s.hinge))) {
+      } else if ((s.kind === 'doors' || s.kind === 'open') && +s.shelves > 0 && !cargoOf(s)) {
         var ns = Math.round(+s.shelves), z0 = Math.max(yCur, t), z1 = Math.min(yCur + secH, topFull ? H - t : H - t);
         var manual = s.shelfMode === 'manual' && Array.isArray(s.shelfPos);
         for (var m = 0; m < ns; m++) {
@@ -2737,7 +2746,7 @@ function buildBox(c, idx, projName) {
           else hw.push({ item:'BLUM MERIVOBOX L=' + rail, qty:1, unit:'kompl.' }); }
       }
     } else {
-      var hinge = fr0.hinge || 'BLUM LANKSTAI', cargoF = isCargo(hinge), nd = cargoF ? 1 : Math.max(1, Math.min(2, Math.round(+fr0.nDoors || 1))), hs = fr0.hingeSide || 'auto', hinged = hinge !== 'BE FURNITŪROS' && !cargoF;
+      var cargoHwF = cargoOf(fr0), hinge = cargoHwF || fr0.hinge || 'BLUM LANKSTAI', cargoF = !!cargoHwF, nd = cargoF ? 1 : Math.max(1, Math.min(2, Math.round(+fr0.nDoors || 1))), hs = fr0.hingeSide || 'auto', hinged = hinge !== 'BE FURNITŪROS' && !cargoF;
       var dw = (FW - (nd - 1) * gapF) / nd, hr = R.hinge, clr = hr.plateSpacing / 2 + hr.plateD / 2 + 3, nH = +fr0.hingeN >= 2 ? Math.min(6, Math.round(+fr0.hingeN)) : 0;
       for (var d = 0; d < nd; d++) {
         var dx = x0 + d * (dw + gapF), hl = nd === 2 ? d === 0 : hs === 'right' ? false : hs === 'left' ? true : !(Lb && !Lb.outer && Rb && Rb.outer) ;
@@ -2831,8 +2840,7 @@ function buildBox(c, idx, projName) {
   out.forEach(function (p) {
     p.key = p.name.slice(base.length + 1);
     var ov = ebEdit[p.key]; if (!ov) return;
-    ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (ov[e] === true) p.eb[e] = p.eb[e] || eCarc || 'KRAŠTAS'; else if (ov[e] === false) p.eb[e] = ''; });
-    p.ebManual = true;
+    applyEbEdit(p, ov, eCarc, eFac);
   });
   out.forEach(function (p) { p.cab = idx + 1; p.short = (idx + 1) + '-' + (p.drawerOf ? p.name.slice(base.length + 1).replace(/_/g, '-') : p.role.replace(/_/g, '-') + (/\d$/.test(p.name) ? p.name.match(/\d+$/)[0] : '')); });
   if (nJ) warnOnce('3D konstrukcija: jungtys gręžiamos pagal spintelių taisykles, bet šis surinkimas naujas — patikrinkite pirmą gaminį');
@@ -3027,7 +3035,7 @@ function sidePanels(c) {
   return out;
 }
 function sideWidths(c) { var o = { L:0, R:0 }; sidePanels(c).forEach(function (p) { o[p.side] += p.T; }); return o; }
-var api = { R:R, shelfSetSb:shelfSetSb, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, newCabinet:newCabinet, newSection:newSection, cncDefaults:cncDefaults,
+var api = { R:R, shelfSetSb:shelfSetSb, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, CARGO_HW:CARGO_HW, cargoOf:cargoOf, newCabinet:newCabinet, newSection:newSection, cncDefaults:cncDefaults,
             buildCabinet:function (c, idx, pn) { var r = buildCabinet(c, idx, pn); r.worktop = worktopOf(c);
               var bad = r.panels.filter(function (p) { return !(p.L >= 1 && p.W >= 1 && p.T > 0 && isFinite(p.L + p.W + p.T)); });   // a part with no size (dimensions too small for the layout) is left out
               if (bad.length) { r.panels = r.panels.filter(function (p) { return bad.indexOf(p) < 0; }); r.warnings.push(bad.map(function (p) { return p.short || p.role; }).join(', ') + ': per maži matmenys (' + bad.map(function (p) { return num(Math.round(p.L)) + '×' + num(Math.round(p.W)); }).join(', ') + ') — detalės nepridėtos, padidinkite spintelę'); }
@@ -3084,6 +3092,7 @@ function buildProject(col, opts) {
       if (pr.files.length > 2) warnings.push(label + ': ' + p.short + ' turi ' + pr.files.length + ' programas — etiketėje telpa 2 QR, ' + pr.files.slice(2).map(function (f) { return f.id; }).join(', ') + ' paleiskite pagal sąrašą');
       parts.push({ name:p.name, short:p.short, cab:c.nr, role:p.role, mat:p.mat || '', L:p.L, W:p.W, T:p.T, qty:1,
                    eb:{ eb1:p.eb.y0 || '', eb2:p.eb.y1 || '', eb3:p.eb.x0 || '', eb4:p.eb.x1 || '' },
+                   ebFac:p.ebFac ? { eb1:!!p.ebFac.y0, eb2:!!p.ebFac.y1, eb3:!!p.ebFac.x0, eb4:!!p.ebFac.x1 } : null,
                    op1:pr.files[0] ? pr.files[0].id : '', op2:pr.files[1] ? pr.files[1].id : '',
                    progs:pr.files.map(function (f) { return { id:f.id, kind:f.kind, file:f.file }; }), src:'cab',
                    pic:{ holes:p.holes.map(function (h) { return { x:h.x, y:h.y, d:h.d, face:h.face, through:!!h.through }; }),
@@ -3253,7 +3262,8 @@ function reportInput(pj) {
   return { project:pj.project, hardware:pj.hardware.map(function (h) { return { item:h.item, qty:h.qty }; }),
     parts:pj.parts.map(function (p) {
       return { solid:p.name, dbpart:p.name, name:p.short, mat:p.mat, L:r1(p.L), W:r1(p.W), T:r1(p.T), qty:p.qty,
-               eb:{ F:p.eb.eb1 || '', B:p.eb.eb2 || '', L:p.eb.eb3 || '', R:p.eb.eb4 || '' }, progs:p.progs || [], pic:p.pic || null };
+               eb:{ F:p.eb.eb1 || '', B:p.eb.eb2 || '', L:p.eb.eb3 || '', R:p.eb.eb4 || '' }, progs:p.progs || [], pic:p.pic || null,
+               ebFac:p.ebFac ? { F:p.ebFac.eb1, B:p.ebFac.eb2, L:p.ebFac.eb3, R:p.ebFac.eb4 } : null };
     }) };
 }
 var api = { buildProject:buildProject, sheets:sheets, workbookEntries:workbookEntries, edgeText:edgeText, reportInput:reportInput };
@@ -3554,15 +3564,15 @@ function cabinetSVG(c,r){
             s+=frontPanel(Xc0,y0,Xc1,y1);
             const L=Math.max(96,Math.min(320,(Xc1-Xc0)*0.36)), hy=fh>260?y1-70:(y0+y1)/2, xm=(Xc0+Xc1)/2;
             s+=handleBar(xm-L/2,hy,xm+L/2,hy);}
-        } else if(so.kind==='doors'){const n=Math.max(1,num(sec.nDoors));
+        } else if(so.kind==='doors'||so.kind==='cargo'){const n=so.kind==='cargo'?1:Math.max(1,num(sec.nDoors));
           const idn=Math.max(0,Math.floor(num(sec.innerDrawers))), pos=sec.innerPos||'bottom';
           const zoneH=idn>0?((num(sec.innerH)>0)?Math.min(num(sec.innerH),secH):secH):0;
           const shBot=(idn>0&&pos==='bottom')?hB+zoneH:hB, shTop=(idn>0&&pos==='top')?hT-zoneH:hT;
-          const sh=/^CARGO/i.test(String(sec.hinge||''))?0:num(sec.shelves);
+          const sh=so.kind==='cargo'||/^CARGO/i.test(String(sec.hinge||''))?0:num(sec.shelves);
           for(let q=1;q<=sh;q++){const hh=shBot+(shTop-shBot)*q/(sh+1);s+=slab(fx0,hh-t_/2,0,fx1,hh+t_/2,D,PK,W_SHELF);}
           if(idn>0){const z0=(pos==='top')?hT-zoneH:hB, dep=Math.max(40,Math.min(D-t_,num(sec.innerRail)||D));
             for(let d=0;d<idn;d++){const y0=z0+zoneH*d/idn,y1=z0+zoneH*(d+1)/idn;s+=drawerBox3D(fx0,fx1,y0,y1,dep,sec.innerHw,true);}}
-          const hinged=!eq(sec.hinge,'BE FURNITŪROS')&&!/^CARGO/i.test(String(sec.hinge||'')), tipOn=/TIP-ON/i.test(String(sec.hinge||''));
+          const hinged=so.kind!=='cargo'&&!eq(sec.hinge,'BE FURNITŪROS')&&!/^CARGO/i.test(String(sec.hinge||'')), tipOn=/TIP-ON/i.test(String(sec.hinge||''));
           const hsV=sec.hingeSide||'auto';
           // one leaf: hinges on hingeLeft side, handle on the opening edge (none for TIP-ON)
           const leaf=(x0,y0,x1,y1,hingeLeft,handleY)=>{
@@ -8292,6 +8302,8 @@ function numText(v) { return String(Math.round(v*10)/10); }
 /* whole screen pixels (0.75 pt): Excel lays shapes on pixel-rounded rows, so fractional heights let pictures drift */
 function pxH(h) { return Math.max(0.75, Math.round(h/0.75)*0.75); }
 function pxAttrs(a) { return a.replace(/ ht="([\d.]+)"/, function (m, h) { return ' ht="' + pxH(+h) + '"'; }); }
+/* a label's edge text: LAMINUOJASI as SWOOD writes it; PAGAL FASADA where the part is banded with the fronts' edge (visible part) */
+function ebLbl(p, k) { return !p.eb[k] ? '' : p.ebFac && p.ebFac[k] ? 'PAGAL FASADA' : 'LAMINUOJASI'; }
 function qrF(id) { return { f:'_xlfn.IMAGE("https://quickchart.io/qr?text=' + encodeURIComponent(id).replace(/%2F/g, '/') + '")' }; }
 
 /* ----------------------------------------------------------------- main */
@@ -8321,7 +8333,7 @@ async function buildReport(tplBytes, pj, opts) {
   var proj = pj.project || 'PROJEKTAS';
   var parts = sortParts(pj.parts.map(function (p) {
     return { solid:p.solid, dbpart:p.dbpart, name:p.name, mat:p.mat || '', L:+p.L, W:+p.W, T:+p.T, qty:Math.max(1, Math.round(+p.qty || 1)),
-             eb:p.eb || {}, ebInfo:p.ebInfo || {}, stockRef:p.stockRef || '', progs:p.progs || [], pic:p.pic || null, grainVert:!!p.grainVert };
+             eb:p.eb || {}, ebFac:p.ebFac || {}, ebInfo:p.ebInfo || {}, stockRef:p.stockRef || '', progs:p.progs || [], pic:p.pic || null, grainVert:!!p.grainVert };
   }));
   /* material check (v20): a material whose thickness is not the part's is flagged — yellow row, NOTES "PATIKRINTI: …" */
   var nFlag = 0;
@@ -8433,9 +8445,9 @@ async function buildReport(tplBytes, pj, opts) {
         if (i === 2) {
           put[1 + off] = qrF(p.progs[0] ? p.progs[0].id : p.dbpart + '_1OP');
           put[6 + off] = p.progs[1] ? qrF(p.progs[1].id) : '';
-          put[2 + off] = p.eb.L ? 'LAMINUOJASI' : ''; put[3 + off] = p.eb.B ? 'LAMINUOJASI' : ''; put[5 + off] = p.eb.R ? 'LAMINUOJASI' : '';
+          put[2 + off] = ebLbl(p, 'L'); put[3 + off] = ebLbl(p, 'B'); put[5 + off] = ebLbl(p, 'R');
         }
-        if (i === 7) put[3 + off] = p.eb.F ? 'LAMINUOJASI' : '';
+        if (i === 7) put[3 + off] = ebLbl(p, 'F');
         if (i === 8) { put[1 + off] = fmt1(p.L) + 'x' + fmt1(p.W) + 'x' + fmt1(p.T); put[4 + off] = p.name; }
         if (i === 9) { put[1 + off] = 'MAT: ' + p.mat; put[4 + off] = p.solid; }
       };
@@ -8588,7 +8600,7 @@ lt:{
  name:'Pavadinimas', type:'Tipas', tBase:'Pastatoma', tWall:'Pakabinama', tTall:'Aukšta', W:'Plotis', H:'Aukštis', D:'Gylis', thick:'Plokštė', facT:'Fasadas', dishW:'Indaplovės plotis',
  s2:'Sekcijos', s2l:'Viršus sąrašo viršuje. „Likęs“ — užima likusį aukštį.',
  zone:'Fasadų zona', used:'užimta', left:'liko', over:'viršyta',
- kDrawers:'Stalčiai', kDoors:'Durys', kOpen:'Lentynos', kOven:'Orkaitė',
+ kDrawers:'Stalčiai', kDoors:'Durys', kCargo:'Cargo', cargoHw:'Cargo furnitūra', kOpen:'Lentynos', kOven:'Orkaitė',
  secH:'Aukštis', fill:'Likęs', nDr:'Stalčių', runner:'Bėgeliai', rail:'Bėgelio ilgis', nDoors:'Durų', split:'Išdėstymas', sSide:'Šalia', sStack:'Viena virš kitos',
  hinge:'Lankstai', hingeN:'Lankstų durims', rGtv:'GTV guoliniai H45', rDtcU:'DTC paslėpti (D-Motion)', rDtc:'DTC guoliniai H45', cargoNote:'Cargo ištraukiamas: vienas fasadas ant cargo rėmo, be lankstų ir lentynų; furnitūra — cargo {w} mm spintelei (rėmas tvirtinamas pagal gamintojo šabloną, negręžiama).', mvH:'MERIVOBOX aukštis', mvAuto:'Auto (N / M / E su galerija)', mvExt:'E aukštis', mvRail:'Galerija (turėklai)', mvBoxcap:'BOXCAP (aukštas šonas)', mDrw:'Stalčių dugnas / galas (16 mm)', hside:'Lankstų pusė', hsAuto:'Auto', hsL:'Kairė', hsR:'Dešinė', shelves:'Lentynų', adj:'Kilnojamos', fixed:'Fiksuotos', sup:'Atramų',
  add:'Pridėti viršuje', up:'Aukštyn', down:'Žemyn', rm:'Pašalinti',
@@ -8608,7 +8620,7 @@ lt:{
  rotHint:'↻ — antra programa su ta pačia puse viršuje, plokštė pasukta 90° prieš laikrodžio rodyklę (priekinis kraštas tampa kairiuoju galu).',
  setRails:'Juostos ir nugara', drillsTop:'Grąžtai galvoje (viršus), mm', drillsTopL:'Iš Maestro konfigūracijos. Skylės, kurių skersmens čia nėra, neprogramuojamos.', tbHoleSet:'TANDEMBOX fasado skylė (jei Ø)', tbDef:'TANDEMBOX fasadai',
  s4:'Papildomos operacijos', s4l:'Pažymėkite, ką gręžti CNC. „Patikrinta“ — sutampa su jūsų SWOOD modeliais.',
- oLegs:'Kojelės ir jų žymės dugne', oLegsD:'4 žymės Ø5 × 2 mm kiekvienai kojelei. Plačiai ar sunkiai spintelei pridėkite daugiau kojelių.', legRow:'Kojelių eilėje', ebTitle:'Laminuojami kraštai', ebLead:'spustelėkite kraštą — įjungti / išjungti (kaip etiketėje)', ebStd:'Standartiniai', ebT:'Kraštas', ebNoMat:'Kraštas pažymėtas, bet kraštinės medžiaga nenurodyta (Medžiagos) — etiketėje bus „KRAŠTAS“', supL:'Atramos', feetRow:'Pėdutės', feetTotal:'Iš viso pėdučių', supLegs:'Kojelės', supFeet:'Pėdutės', supNone:'Nėra', supEdit:'Nustatymai', feetNote:'Pėdutė Ø15 po šonu · skylė Ø8 × 10 · 50 nuo priekio ir galo', feetParts:'Po šonais ir pertvaromis', feetSides:'Tik po šonais', oFeet:'Pėdutės po šonais', oFeetD:'Ø15 pėdutės po šonais: Ø8 × 10 skylė šono apačioje (arba dugno apačioje po šonu), 50 mm nuo priekio ir galo. Galima pridėti vidurinę eilę.', botMount:'Dugnas', botUnder:'Po šonais', botInside:'Tarp šonų', botZ:'Dugno aukštis nuo apačios', botD:'Dugno gylis', botDFull:'visas', botDGap:'gale ≈ {g} mm laisva — vamzdžiams', fhTitle:'Fasadų aukščiai, mm', fhNote:'iš viršaus · tuščias = dalijasi likusį aukštį', fhEqual:'Vienodi', legParts:'Po pertvaromis', legRows:'Eilės', legRows2:'2 — priekis, galas', legRows3:'3 — + vidurys', legTotal:'Iš viso kojelių', legFront:'priekis', legDense:'Per tankiai — tarp kojelių būtų mažiau nei 70 mm',
+ oLegs:'Kojelės ir jų žymės dugne', oLegsD:'4 žymės Ø5 × 2 mm kiekvienai kojelei. Plačiai ar sunkiai spintelei pridėkite daugiau kojelių.', legRow:'Kojelių eilėje', ebFac:'Matoma detalė — kraštai pagal fasadą (etiketėje „PAGAL FASADA“)', ebTitle:'Laminuojami kraštai', ebLead:'spustelėkite kraštą — įjungti / išjungti (kaip etiketėje)', ebStd:'Standartiniai', ebT:'Kraštas', ebNoMat:'Kraštas pažymėtas, bet kraštinės medžiaga nenurodyta (Medžiagos) — etiketėje bus „KRAŠTAS“', supL:'Atramos', feetRow:'Pėdutės', feetTotal:'Iš viso pėdučių', supLegs:'Kojelės', supFeet:'Pėdutės', supNone:'Nėra', supEdit:'Nustatymai', feetNote:'Pėdutė Ø15 po šonu · skylė Ø8 × 10 · 50 nuo priekio ir galo', feetParts:'Po šonais ir pertvaromis', feetSides:'Tik po šonais', oFeet:'Pėdutės po šonais', oFeetD:'Ø15 pėdutės po šonais: Ø8 × 10 skylė šono apačioje (arba dugno apačioje po šonu), 50 mm nuo priekio ir galo. Galima pridėti vidurinę eilę.', botMount:'Dugnas', botUnder:'Po šonais', botInside:'Tarp šonų', botZ:'Dugno aukštis nuo apačios', botD:'Dugno gylis', botDFull:'visas', botDGap:'gale ≈ {g} mm laisva — vamzdžiams', fhTitle:'Fasadų aukščiai, mm', fhNote:'iš viršaus · tuščias = dalijasi likusį aukštį', fhEqual:'Vienodi', legParts:'Po pertvaromis', legRows:'Eilės', legRows2:'2 — priekis, galas', legRows3:'3 — + vidurys', legTotal:'Iš viso kojelių', legFront:'priekis', legDense:'Per tankiai — tarp kojelių būtų mažiau nei 70 mm',
  oRun:'Bėgelių žymės šonuose', oRunD:'Blum TANDEM / TANDEMBOX šablonai pagal stalčių aukštį.',
  oTb:'TANDEMBOX fasadų tvirtinimas', oTbD:'Ø10 × 12 skylės fasado vidinėje pusėje.',
  oHinge:'Lankstų skylės', oHingeD:'Ø35 puodelis duryse su 2 varžtų žymėmis (Ø5 × 2) + 2 plokštelės žymės šone (Ø5 × 2, kaip post-procesoriuje). Blum katalogo matmenys.',
@@ -8736,7 +8748,7 @@ en:{
  name:'Name', type:'Type', tBase:'Base', tWall:'Wall', tTall:'Tall', W:'Width', H:'Height', D:'Depth', thick:'Board', facT:'Front', dishW:'Dishwasher width',
  s2:'Sections', s2l:'Top of the list is the top of the cabinet. “Fill” takes the remaining height.',
  zone:'Front zone', used:'used', left:'left', over:'exceeded',
- kDrawers:'Drawers', kDoors:'Doors', kOpen:'Shelves', kOven:'Oven',
+ kDrawers:'Drawers', kDoors:'Doors', kCargo:'Cargo', cargoHw:'Cargo fitting', kOpen:'Shelves', kOven:'Oven',
  secH:'Height', fill:'Fill', nDr:'Drawers', runner:'Runners', rail:'Runner length', nDoors:'Doors', split:'Layout', sSide:'Side by side', sStack:'Stacked',
  hinge:'Hinges', hingeN:'Hinges per door', rGtv:'GTV ball-bearing H45', rDtcU:'DTC undermount (D-Motion)', rDtc:'DTC ball-bearing H45', cargoNote:'Cargo pull-out: one front on the cargo frame, no hinges or shelves; fitting — a cargo for a {w} mm cabinet (the frame is fixed with the maker\'s template, nothing is drilled).', mvH:'MERIVOBOX height', mvAuto:'Auto (N / M / E with gallery)', mvExt:'E height', mvRail:'Gallery (railing)', mvBoxcap:'BOXCAP (high side)', mDrw:'Drawer base / back (16 mm)', hside:'Hinge side', hsAuto:'Auto', hsL:'Left', hsR:'Right', shelves:'Shelves', adj:'Adjustable', fixed:'Fixed', sup:'Supports',
  add:'Add on top', up:'Up', down:'Down', rm:'Remove',
@@ -8756,7 +8768,7 @@ en:{
  rotHint:'↻ — second program with the same face up, panel turned 90° counter-clockwise (the front edge becomes the left end).',
  setRails:'Rails and back', drillsTop:'Drills on the head (top), mm', drillsTopL:'From the Maestro configuration. Holes of a size not listed are not programmed.', tbHoleSet:'TANDEMBOX front hole (if Ø)', tbDef:'TANDEMBOX fronts',
  s4:'Extra operations', s4l:'Tick what the CNC should drill. “Verified” means it matches your SWOOD models.',
- oLegs:'Legs and their marks in the bottom', oLegsD:'4 marks Ø5 × 2 mm per leg. Add more legs for a wide or heavy cabinet.', legRow:'Legs in a row', ebTitle:'Banded edges', ebLead:'click an edge to switch it on / off (as on the label)', ebStd:'Standard', ebT:'Edge', ebNoMat:'Edge marked, but no edge band material is set (Materials) — the label will say "KRAŠTAS"', supL:'Supports', feetRow:'Feet', feetTotal:'Feet in total', supLegs:'Legs', supFeet:'Feet', supNone:'None', supEdit:'Settings', feetNote:'Foot Ø15 under a side · hole Ø8 × 10 · 50 from the front and back', feetParts:'Under the sides and partitions', feetSides:'Under the sides only', oFeet:'Feet under the sides', oFeetD:'Ø15 feet under the sides: a Ø8 × 10 hole in the side bottom edge (or in the bottom underside below the side), 50 mm from the front and back. A middle row can be added.', botMount:'Bottom', botUnder:'Under the sides', botInside:'Between the sides', botZ:'Bottom height from below', botD:'Bottom depth', botDFull:'full', botDGap:'≈ {g} mm free at the back — for the pipes', fhTitle:'Front heights, mm', fhNote:'from the top · empty = shares what is left', fhEqual:'Equal', legParts:'Under partitions', legRows:'Rows', legRows2:'2 — front, back', legRows3:'3 — + middle', legTotal:'Legs in total', legFront:'front', legDense:'Too dense — less than 70 mm between legs',
+ oLegs:'Legs and their marks in the bottom', oLegsD:'4 marks Ø5 × 2 mm per leg. Add more legs for a wide or heavy cabinet.', legRow:'Legs in a row', ebFac:'Visible part — edges as the fronts (label: PAGAL FASADA)', ebTitle:'Banded edges', ebLead:'click an edge to switch it on / off (as on the label)', ebStd:'Standard', ebT:'Edge', ebNoMat:'Edge marked, but no edge band material is set (Materials) — the label will say "KRAŠTAS"', supL:'Supports', feetRow:'Feet', feetTotal:'Feet in total', supLegs:'Legs', supFeet:'Feet', supNone:'None', supEdit:'Settings', feetNote:'Foot Ø15 under a side · hole Ø8 × 10 · 50 from the front and back', feetParts:'Under the sides and partitions', feetSides:'Under the sides only', oFeet:'Feet under the sides', oFeetD:'Ø15 feet under the sides: a Ø8 × 10 hole in the side bottom edge (or in the bottom underside below the side), 50 mm from the front and back. A middle row can be added.', botMount:'Bottom', botUnder:'Under the sides', botInside:'Between the sides', botZ:'Bottom height from below', botD:'Bottom depth', botDFull:'full', botDGap:'≈ {g} mm free at the back — for the pipes', fhTitle:'Front heights, mm', fhNote:'from the top · empty = shares what is left', fhEqual:'Equal', legParts:'Under partitions', legRows:'Rows', legRows2:'2 — front, back', legRows3:'3 — + middle', legTotal:'Legs in total', legFront:'front', legDense:'Too dense — less than 70 mm between legs',
  oRun:'Runner marks in the sides', oRunD:'Blum TANDEM / TANDEMBOX patterns at each drawer height.',
  oTb:'TANDEMBOX front fixing', oTbD:'Ø10 × 12 holes on the inside of the front.',
  oHinge:'Hinge holes', oHingeD:'Ø35 cup in the door with 2 screw marks (Ø5 × 2) + 2 plate marks in the side (Ø5 × 2, as the post-processor makes them). Blum catalogue values.',
@@ -8916,7 +8928,7 @@ function defSettings() {
   };
 }
 function newSection(kind) {
-  return { id:uid(), kind:kind, col:0, fill:kind !== 'drawers' && kind !== 'oven', height:kind === 'drawers' ? 540 : kind === 'oven' ? 595 : 400,
+  return { id:uid(), kind:kind, col:0, fill:kind !== 'drawers' && kind !== 'oven', height:kind === 'drawers' ? 540 : kind === 'oven' ? 595 : 400, cargoHw:'CARGO DTC PURE PRO',
            nDrawers:3, hw:'BLUM TANDEMBOX', rail:500, nDoors:kind === 'doors' ? 2 : 1, hinge:'BLUM LANKSTAI', doorSplit:'v', hingeSide:'auto',
            shelves:kind === 'oven' ? 2 : kind === 'open' ? 2 : 1, shelfAdj:true, shelfMode:'even', shelfPos:[] };
 }
@@ -9024,7 +9036,8 @@ function normCab(c) {
   c.worktop = Object.assign(wtDefault(), c.worktop && typeof c.worktop === 'object' ? c.worktop : {});
   c.cnc.joints = (c.cnc.joints && typeof c.cnc.joints === 'object') ? c.cnc.joints : {};
   c.sections = (c.sections || []).map(function (s) { return Object.assign(newSection(s.kind || 'doors'), s); });
-  c.sections.forEach(function (s) { if (s.fridge && s.kind === 'doors') { s.doorSplit = 'h'; s.hinge = 'BE FURNITŪROS'; } else if (s.fridge) delete s.fridge; });
+  c.sections.forEach(function (s) { if (s.kind === 'doors' && !s.fridge && /^CARGO/i.test(s.hinge || '')) { s.kind = 'cargo'; s.cargoHw = s.hinge; s.hinge = 'BLUM LANKSTAI'; }   // cargo chosen as a door fitting (before it was its own kind)
+    if (s.fridge && s.kind === 'doors') { s.doorSplit = 'h'; s.hinge = 'BE FURNITŪROS'; } else if (s.fridge) delete s.fridge; });
   c.vis = { L:!!(c.vis && c.vis.L), R:!!(c.vis && c.vis.R), B:!!(c.vis && c.vis.B) };
   c.leds = (Array.isArray(c.leds) ? c.leds : []).filter(function (l) { return l && /^(bottom|top|L|R)$/.test(l.at); }).map(function (l) {   // LED profile grooves
     return { at:l.at, side:l.side === 'out' ? 'out' : 'in', from:num(l.from) >= 0 && l.from !== '' && l.from != null ? num(l.from) : E.R.led.from, ends:l.ends === 'closed' ? 'closed' : 'open', w:num(l.w) > 0 ? num(l.w) : E.R.led.w, depth:num(l.depth) > 0 ? num(l.depth) : E.R.led.depth }; });   // visible sides / bottom: in the front material
@@ -9443,7 +9456,7 @@ function viewCab(info) {
 }
 /* where am I / what is left: the steps of this cabinet, with a mark where something needs attention */
 function needsWt(c) { return !!(c.worktop && c.worktop.on && !c.dishwasher && !String(c.worktop.mat || '').trim()); }   // the worktop's material is set in step 1, with the worktop
-function needsMats(c) { if (c.kind === 'panel') return !c.mat.carc; if (c.dishwasher) return !c.mat.facade; if (c.kind === 'box') return !c.mat.carc || (c.box && c.box.fronts && c.box.fronts.length > 0 && !c.mat.facade); return !c.mat.carc || (c.sections.some(function (s) { return s.kind === 'drawers' || s.kind === 'doors'; }) && !c.mat.facade); }
+function needsMats(c) { if (c.kind === 'panel') return !c.mat.carc; if (c.dishwasher) return !c.mat.facade; if (c.kind === 'box') return !c.mat.carc || (c.box && c.box.fronts && c.box.fronts.length > 0 && !c.mat.facade); return !c.mat.carc || (c.sections.some(function (s) { return s.kind === 'drawers' || s.kind === 'doors' || s.kind === 'cargo'; }) && !c.mat.facade); }
 /* the editor shows one step at a time (S.stepKey, kept while moving between cabinets of the same kind); the preview stays beside it */
 function curStep(keys) { return keys.indexOf(S.stepKey) >= 0 ? S.stepKey : keys[0]; }
 function oneStep(html, c, inf) {
@@ -9734,7 +9747,7 @@ function viewEditor(c) {
       '<div class="zone" data-col="' + k + '">' + zoneHtml(z) + '</div><div class="secs">';
     for (var i = c.sections.length - 1; i >= 0; i--) if (colOf(c, c.sections[i]) === k) secs += viewSection(c, c.sections[i], i, z);
     secs += '</div><div class="addsec"><span class="unit" style="align-self:center">' + t('add') + ':</span>' +
-      ['drawers', 'doors', 'open', 'oven'].map(function (kd) { return '<button class="btn addk k-' + kd + '" data-act="addsec" data-v="' + kd + '" data-i="' + k + '"><i class="kdot" aria-hidden="true"></i>＋ ' + t({ drawers:'kDrawers', doors:'kDoors', open:'kOpen', oven:'kOven' }[kd]) + '</button>'; }).join('') + '</div></div>';
+      ['drawers', 'doors', 'cargo', 'open', 'oven'].map(function (kd) { return '<button class="btn addk k-' + kd + '" data-act="addsec" data-v="' + kd + '" data-i="' + k + '"><i class="kdot" aria-hidden="true"></i>＋ ' + t({ drawers:'kDrawers', doors:'kDoors', cargo:'kCargo', open:'kOpen', oven:'kOven' }[kd]) + '</button>'; }).join('') + '</div></div>';
   }
   secs += '</div>';
   if (c.sections.some(function (s) { return (s.kind === 'doors' || s.kind === 'open') && num(s.shelves) > 0; })) secs += shelfFront(c);
@@ -9795,7 +9808,7 @@ function boxFrontsBlock(c, rb) {
   var rows = fr.map(function (f, i) {
     var b = 'c.box.fronts.' + i + '.', col = Math.min(nCol - 1, Math.max(0, +f.col || 0)), mine = ops.filter(function (o) { return o.col === col; });
     var cellOpts = mine.map(function (o) { return [o.cell, (o.cell + 1) + ' · ' + fmt(Math.round(o.z0)) + '–' + fmt(Math.round(o.z1)) + ' mm']; });
-    var h = '<div class="bxfront k-' + (f.kind === 'drawers' ? 'drawers' : 'doors') + '"><div class="bxfhead"><span class="kind">' + t(f.kind === 'drawers' ? 'kDrawers' : 'kDoors') + '</span>' +
+    var h = '<div class="bxfront k-' + (f.kind === 'drawers' ? 'drawers' : f.kind === 'cargo' ? 'cargo' : 'doors') + '"><div class="bxfhead"><span class="kind">' + t(f.kind === 'drawers' ? 'kDrawers' : f.kind === 'cargo' ? 'kCargo' : 'kDoors') + '</span>' +
       '<button class="btn ghost danger" data-act="boxfrm" data-i="' + i + '">' + t('bxRm') + '</button></div><div class="row">' +
       (nCol > 1 ? fS(t('bxFCol'), b + 'col', col, Array.from({ length:nCol }, function (_, k) { return [k, String(k + 1)]; })) : '') +
       (cellOpts.length ? fS(t('bxFCell'), b + 'cell', +f.cell || 0, cellOpts) : '<span class="note">' + t(c.box.boards.front && c.box.boards.front.on ? 'bxNoOpen' : 'bxNoOpen2') + '</span>') +
@@ -9806,8 +9819,8 @@ function boxFrontsBlock(c, rb) {
       if (f.hw && !hwOpts.some(function (q) { return q[0] === f.hw; })) hwOpts.push([f.hw, f.hw]);
       h += fN(t('nDr'), b + 'nDrawers', f.nDrawers || 1, 's') + fS(t('runner'), b + 'hw', f.hw, hwOpts) +
         fS(t('rail'), b + 'rail', f.rail, railLengths(f.hw).concat(railLengths(f.hw).indexOf(num(f.rail)) < 0 ? [num(f.rail)] : []).map(function (v) { return [v, v + ' mm']; })) + mvFields(b, f);
-    } else if (/^CARGO/i.test(f.hinge || '')) {
-      h += fS(t('hinge'), b + 'hinge', f.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; })) + '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(num(c.W)))) + '</span>';
+    } else if (f.kind === 'cargo' || /^CARGO/i.test(f.hinge || '')) {
+      h += fS(t('cargoHw'), b + 'cargoHw', f.cargoHw || E.cargoOf(f) || E.CARGO_HW[0], E.CARGO_HW.map(function (v) { return [v, hingeLabel(v)]; })) + '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(num(c.W)))) + '</span>';
     } else {
       h += '<div class="f"><span>' + t('nDoors') + '</span>' + seg(b + 'nDoors', String(+f.nDoors === 2 ? 2 : 1), [['1', '1'], ['2', '2']]) + '</div>' +
         fS(t('hinge'), b + 'hinge', f.hinge || 'BLUM LANKSTAI', E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; })) +
@@ -9817,7 +9830,7 @@ function boxFrontsBlock(c, rb) {
     return h + '</div></div>';
   }).join('');
   return '<div class="bxfronts">' + (rows || '<p class="note" style="margin:0">' + t('bxNoFronts') + '</p>') + '</div>' +
-    '<div class="addsec" style="margin-top:10px"><button class="btn addk k-doors" data-act="boxfadd" data-v="doors"><i class="kdot" aria-hidden="true"></i>' + t('bxAddDoors') + '</button><button class="btn addk k-drawers" data-act="boxfadd" data-v="drawers"><i class="kdot" aria-hidden="true"></i>' + t('bxAddDrawers') + '</button></div>';
+    '<div class="addsec" style="margin-top:10px"><button class="btn addk k-doors" data-act="boxfadd" data-v="doors"><i class="kdot" aria-hidden="true"></i>' + t('bxAddDoors') + '</button><button class="btn addk k-drawers" data-act="boxfadd" data-v="drawers"><i class="kdot" aria-hidden="true"></i>' + t('bxAddDrawers') + '</button><button class="btn addk k-cargo" data-act="boxfadd" data-v="cargo"><i class="kdot" aria-hidden="true"></i>＋ ' + t('kCargo') + '</button></div>';
 }
 function boxEditor(c) {
   var b = 'c.', bx = c.box, inf = S._info && S._info[S.sel] ? S._info[S.sel] : null, r = inf ? inf.r : null, rb = r && r.box ? r.box : { boards:[], covers:[], comps:[[0, 0]] }, h = '';
@@ -10012,7 +10025,7 @@ function opRow(bind, on, title, desc, verified, applies, more) {
     '<span class="badge ' + (verified ? 'ok' : 'warn') + '">' + (verified ? t('verified') : t('unverified')) + '</span></div>';
 }
 function matsBlock(c) {
-  var b = 'c.', hasFront = c.dishwasher || c.sections.some(function (s) { return s.kind === 'drawers' || s.kind === 'doors'; }) || !!(c.kind === 'box' && c.box && c.box.fronts && c.box.fronts.length);
+  var b = 'c.', hasFront = c.dishwasher || c.sections.some(function (s) { return s.kind === 'drawers' || s.kind === 'doors' || s.kind === 'cargo'; }) || !!(c.kind === 'box' && c.box && c.box.fronts && c.box.fronts.length);
   var req = function (html, val) { return html.replace('<span>', '<span>').replace('</span>', ' <i class="req" aria-hidden="true">*</i></span>').replace('type="text"', 'type="text" required' + (val ? '' : ' aria-invalid="true"')); };
   return matDock(c) + '<p class="note reqnote"><i class="req">*</i> ' + t('reqNote') + '</p><div class="row">' + (c.dishwasher ? fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat') : req(fT(t('mCarc'), b + 'mat.carc', c.mat.carc, 'dl-mat'), c.mat.carc)) + (hasFront ? req(fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat'), c.mat.facade) : fT(t('mFac'), b + 'mat.facade', c.mat.facade, 'dl-mat')) + (c.dishwasher ? '' : fT(t('mBack'), b + 'mat.back', c.mat.back, 'dl-mat')) + (!c.dishwasher && c.kind !== 'box' && c.cnc && c.cnc.top === 'full' ? fT(t('mTop'), b + 'mat.top', c.mat.top || '', 'dl-mat').replace('type="text"', 'type="text" placeholder="' + esc(c.mat.carc || t('mTopPh')) + '"') : '') +
       (usesMerivo(c) ? fT(t('mDrw'), b + 'mat.drawer', c.mat.drawer || '', 'dl-mat').replace('type="text"', 'type="text" placeholder="' + esc(c.mat.carc || t('mTopPh')) + '"') : '') + '</div>' +
@@ -10273,7 +10286,7 @@ function sameCol(c, i) { var cl = colOf(c, c.sections[i]); return c.sections.map
 function firstInCol(c, i) { return sameCol(c, i)[0] === i; }
 function lastInCol(c, i) { var a = sameCol(c, i); return a[a.length - 1] === i; }
 function viewSection(c, s, i, z) {
-  var b = 'c.sections.' + i + '.', kn = s.kind === 'doors' && s.fridge ? 'kFridge' : { drawers:'kDrawers', doors:'kDoors', open:'kOpen', oven:'kOven' }[s.kind];
+  var b = 'c.sections.' + i + '.', kn = s.kind === 'doors' && s.fridge ? 'kFridge' : { drawers:'kDrawers', doors:'kDoors', cargo:'kCargo', open:'kOpen', oven:'kOven' }[s.kind];
   var secH = s.fill ? z.fillH : num(s.height);
   var head = '<div class="sh"><span class="kind">' + t(kn) + '</span>' + chk(b + 'fill', s.fill, t('fill')) +
     (s.fill ? '<span class="h" data-fill-h="' + i + '">' + fmt(secH) + ' mm</span>' : fN(t('secH'), b + 'height', s.height)) + '</div>';
@@ -10288,9 +10301,8 @@ function viewSection(c, s, i, z) {
       '<div class="f"><span>' + t('fridgeHinge') + '</span>' + seg(b + 'hingeSide', s.hingeSide === 'right' ? 'right' : 'left', [['left', t('hsL')], ['right', t('hsR')]]) + '</div>' +
       '<span class="h">' + esc(t('fridgeHandle').replace('{s}', s.hingeSide === 'right' ? t('hsL') : t('hsR'))) + '</span>' +
       '<span class="h">' + esc(t('fridgeNiche').replace('{h}', fmt(secH - 2 * th0)).replace('{w}', fmt((c.cols > 1 ? colWidths(c)[colOf(c, s)] : num(c.W)) - 2 * th0))) + '</span>';
-  } else if (s.kind === 'doors' && /^CARGO/i.test(s.hinge || '')) {   // a cargo pull-out: one front, no hinges, no shelves
-    body += chk(b + 'fridge', false, t('fridgeSec')) +
-      fS(t('hinge'), b + 'hinge', s.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.DOOR_HW.indexOf(s.hinge) < 0 ? [[s.hinge, s.hinge]] : [])) +
+  } else if (s.kind === 'cargo' || (s.kind === 'doors' && /^CARGO/i.test(s.hinge || ''))) {   // a cargo pull-out: one front, no hinges, no shelves
+    body += fS(t('cargoHw'), b + 'cargoHw', s.cargoHw || E.CARGO_HW[0], E.CARGO_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.CARGO_HW.indexOf(s.cargoHw || E.CARGO_HW[0]) < 0 ? [[s.cargoHw, s.cargoHw]] : [])) +
       '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(c.cols > 1 ? colWidths(c)[colOf(c, s)] : num(c.W)))) + '</span>';
   } else if (s.kind === 'doors') {
     body += chk(b + 'fridge', false, t('fridgeSec')) + fN(t('nDoors'), b + 'nDoors', s.nDoors, 's') + '<div class="f"><span>' + t('split') + '</span>' + seg(b + 'doorSplit', s.doorSplit, [['v', t('sSide')], ['h', t('sStack')]]) + '</div>' +
@@ -10801,6 +10813,7 @@ function ebEditor(p, up) {   // laid out as the picture under it (a part drilled
     return '<button type="button" class="ebt ' + cls + (on ? ' on' : '') + '" data-act="ebtog" data-v="' + e + '" aria-pressed="' + on + '" title="' + esc(t('ebT') + ' ' + fmt(len) + ' mm') + '">' + (on ? '▬ ' : '＋ ') + fmt(len) + '</button>'; };
   var r = Math.min(1, 2.2 * p.W / p.L), ph = Math.round(Math.max(26, Math.min(70, 120 * r)));
   return '<div class="ebedit noprint"><div class="ebh"><b>' + t('ebTitle') + '</b><span class="unit">' + t('ebLead') + '</span>' + (p.ebManual ? '<button type="button" class="btn ghost ebreset" data-act="ebreset">↺ ' + t('ebStd') + '</button>' : '') + '</div>' +
+    '<label class="ebfac"><input type="checkbox" data-act="ebfac"' + (p.ebFac ? ' checked' : '') + '> ' + t('ebFac') + '</label>' +
     '<div class="ebgrid">' + b(up === 'B' ? 'y0' : 'y1', 'top', p.L) + b('x0', 'left', p.W) + '<span class="ebpart" style="height:' + ph + 'px"></span>' + b('x1', 'right', p.W) + b(up === 'B' ? 'y1' : 'y0', 'bot', p.L) + '</div></div>';
 }
 function viewPart() {
@@ -11343,6 +11356,7 @@ app.addEventListener('click', function (e) {
       if (!free && ops0.length) { S.undo.pop(); toast(S.lang === 'lt' ? 'Visos angos jau turi duris ar stalčius — pridėkite lentyną ar pertvarą, kad atsirastų nauja anga.' : 'Every opening already has doors or drawers — add a shelf or a partition to make a new opening.', true); break; }
       free = free || { col:0, cell:0 };
       fb0.fronts.push(v === 'drawers' ? { id:nid0, kind:'drawers', col:free.col, cell:free.cell, span:1, inset:false, nDrawers:2, hw:'BLUM TANDEMBOX', rail:500 }
+        : v === 'cargo' ? { id:nid0, kind:'cargo', col:free.col, cell:free.cell, span:1, inset:false, cargoHw:'CARGO DTC PURE PRO' }
         : { id:nid0, kind:'doors', col:free.col, cell:free.cell, span:1, inset:false, nDoors:(free.x1 - free.x0) > 600 ? 2 : 1, hinge:'BLUM LANKSTAI', hingeSide:'auto', hingeN:'' });
       fc0.cnc.hinges = fc0.cnc.hinges !== false; save(); break; }
     case 'boxfrm': pushUndo(); cur().box.fronts.splice(i, 1); save(); break;
@@ -11387,9 +11401,12 @@ app.addEventListener('click', function (e) {
     case 'isosel': S.iso = { key:v, side:'L', idx:null }; S.isoFocus = true; render(); var ie = document.getElementById('iso3d') || document.getElementById('assembly-preview'); if (ie && ie.scrollIntoView) ie.scrollIntoView({ block:'center', behavior:'smooth' }); return;
     case 'part': S.part = v; S.ptab = 0; var pp0 = findPanel(v); S.partRef = pp0 ? { cab:pp0.cab, key:pp0.key } : null; if (window.innerWidth < 900) setTimeout(function () { var pv = document.querySelector('.paper') || document.querySelector('.partview'); if (pv && pv.scrollIntoView) pv.scrollIntoView({ block:'start', behavior:'smooth' }); }, 60); break;
     case 'ptab': S.ptab = +v; break;
-    case 'ebtog': case 'ebreset': { var pp = S.part && findPanel(S.part), cb = pp && S.proj.cabinets[pp.cab - 1]; if (!cb) break;
+    case 'ebtog': case 'ebreset': case 'ebfac': { var pp = S.part && findPanel(S.part), cb = pp && S.proj.cabinets[pp.cab - 1]; if (!cb) break;
       cb.ebEdit = cb.ebEdit || {};
       if (act === 'ebreset') delete cb.ebEdit[pp.key];
+      else if (act === 'ebfac') { var ovf = cb.ebEdit[pp.key] = cb.ebEdit[pp.key] || {}; ovf.fac = !pp.ebFac;
+        if (ovf.fac && !['y0', 'y1', 'x0', 'x1'].some(function (e) { return pp.eb && pp.eb[e]; })) ovf.y0 = true;   // nothing banded yet: the front edge (Y=0) is the one that shows
+        if (!ovf.fac) delete ovf.fac; if (!Object.keys(ovf).length) delete cb.ebEdit[pp.key]; }
       else { var ov = cb.ebEdit[pp.key] = cb.ebEdit[pp.key] || {}; ov[v] = !(pp.eb && pp.eb[v]); }
       if (!cb.edge.carc && !cb.edge.facade && act === 'ebtog') toast(t('ebNoMat'));
       save(); break; }
