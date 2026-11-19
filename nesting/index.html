@@ -249,6 +249,8 @@ input[type=color]{padding:2px 3px;height:27px;cursor:pointer}
 .nc-warn{margin-top:5px;font-size:10.5px;color:#b42318;background:#fef3f2;border:1px solid #fecdca;border-radius:5px;padding:4px 6px}
 .nc-box details{margin-top:6px}.nc-box summary{cursor:pointer;font-size:10.5px;color:#2f54eb}
 .nc-grid{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px;align-items:center}
+.lq-badge{position:fixed;left:14px;bottom:14px;z-index:9000;background:#1f5f43;color:#fff;font-size:11.5px;border-radius:999px;padding:6px 12px;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lq-badge span{opacity:.8;margin-left:8px;font-size:10.5px}
 .pli-eb{flex-shrink:0;cursor:pointer;padding:1px;border-radius:3px;line-height:0;opacity:.9}
 .pli-eb:hover{background:#e8edff;opacity:1}
 .pw-eb-cell{display:flex;align-items:center;gap:5px;cursor:pointer;border:1px solid transparent;border-radius:5px;padding:2px 3px;min-width:0}
@@ -4043,6 +4045,16 @@ var I18N={
     matPh:'Type or pick a material',
     matDone:'✓ Material {m} set on {n} part(s)',
     ppCodeHint:'Scan when this sheet starts on the CNC',
+    lqSignIn:'Sign in to print',
+    lqReimport:'This project was imported before web printing existed — import the reportlist file again (same file), then print.',
+    lqNoFile:'Reportlist file not found in the cloud',
+    lqNoStation:'The label PC did not answer — open Nesting on the label PC (localhost:8000) and keep it signed in.',
+    lqSending:'Sending to the label PC…',
+    lqUploaded:'labels printable from any computer',
+    lqUploadFail:'could not store the file for web printing',
+    lqStation:'Label station',
+    lqStationTip:'This PC prints labels sent from other computers. Click to switch off.',
+    lqStopAsk:'Stop printing labels sent from other computers on this PC?',
     lenFirst:'Place parts lengthwise first',
     lenFirstSub:'Part length along the sheet length; turned only if it saves a sheet',
     ppCodeTip:'Sheet code: project + sheet number',
@@ -4368,6 +4380,16 @@ var I18N={
     matPh:'Įrašykite arba pasirinkite',
     matDone:'✓ Medžiaga {m} priskirta: {n} det.',
     ppCodeHint:'Nuskenuokite, kai plokštė pradedama CNC',
+    lqSignIn:'Prisijunkite, kad spausdintumėte',
+    lqReimport:'Šis projektas importuotas anksčiau — dar kartą importuokite tą patį reportlist failą ir spausdinkite.',
+    lqNoFile:'Reportlist failas debesyje nerastas',
+    lqNoStation:'Lipdukų kompiuteris neatsakė — atidarykite Nesting lipdukų kompiuteryje (localhost:8000) ir būkite prisijungę.',
+    lqSending:'Siunčiama į lipdukų kompiuterį…',
+    lqUploaded:'lipdukus galima spausdinti iš bet kurio kompiuterio',
+    lqUploadFail:'nepavyko išsaugoti failo spausdinimui per internetą',
+    lqStation:'Lipdukų stotis',
+    lqStationTip:'Šis kompiuteris spausdina lipdukus, atsiųstus iš kitų kompiuterių. Spustelėkite, kad išjungtumėte.',
+    lqStopAsk:'Nebespausdinti šiame kompiuteryje lipdukų, atsiųstų iš kitų kompiuterių?',
     lenFirst:'Pirmiausia dėti detales išilgai',
     lenFirstSub:'Detalės ilgis išilgai plokštės ilgio; pasukama tik jei taip sutaupoma plokštė',
     ppCodeTip:'Plokštės kodas: projektas + plokštės nr.',
@@ -6133,6 +6155,24 @@ function routeFiles(files){
 }
 
 async function processFile(f){
+  var before={}; parts.forEach(function(pt){ before[pt.id]=1; });
+  var buf=null; try{ buf=await f.arrayBuffer(); }catch(e){}
+  await _processFileInner(f);
+  // reportlist labels: keep the workbook in the cloud so any computer can print
+  if (buf && /\.xls[xm]$/i.test(f.name)){
+    var fresh=parts.filter(function(pt){ return !before[pt.id] && pt.labelRange; });
+    if (fresh.length){
+      var st=document.getElementById('ist');
+      try{
+        var key=await labelFileUpload(buf, f.name);
+        fresh.forEach(function(pt){ pt.labelFile=key; pt.labelFileName=f.name; });
+        try{ scheduleSave(); }catch(e){}
+        if(st && !/✗|klaida|error/i.test(st.textContent)) st.textContent+=' · '+t_lq('lqUploaded');
+      }catch(e){ console.warn('label file upload',e); window.__lqUploadErr=String(e&&e.message||e); if(st) st.textContent+=' · '+t_lq('lqUploadFail'); }
+    }
+  }
+}
+async function _processFileInner(f){
   var st=document.getElementById('ist');
   st.style.color='#667085';st.textContent='Reading…';
   try{
@@ -17404,8 +17444,184 @@ function resetPrintStatus(){
   try { renderCanvas(curSheet); } catch(e) {}
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PRINT REPORTLIST LABELS FROM ANY COMPUTER (cloud label queue)
+// The Zebra is on USB at the label PC and the label must be exactly what Excel
+// prints from the reportlist. So:
+//  • importing a reportlist anywhere also stores the workbook in workshop
+//    storage (shopflow/label-files/<sha1>.xlsx|.xlsm) and tags its parts;
+//  • Print on any computer puts a job (file + LABEL range) in
+//    label_print_jobs and waits for the answer;
+//  • the label PC — Nesting at localhost:8000 next to the v2 print server,
+//    "label station" on — claims jobs, keeps a local copy of the workbook and
+//    prints the range through Excel as before.
+// ═══════════════════════════════════════════════════════════════
+var LQ_BUCKET='shopflow';
+function _lqHdr(tok, extra){ return Object.assign({'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+tok}, extra||{}); }
+async function _lqToken(){ var t=await WorkshopAuth.token(); if(!t) throw new Error(t_lq('lqSignIn')); return t; }
+function t_lq(k,v){ try{ return t(k,v); }catch(e){ return k; } }
+function _lqSha1Js(buf){   // fallback where crypto.subtle is missing (plain http pages)
+  var m=new Uint8Array(buf), l=m.length, n=((l+8)>>6)+1, w=new Uint32Array(n*16), i;
+  for(i=0;i<l;i++) w[i>>2]|=m[i]<<(24-(i%4)*8);
+  w[l>>2]|=0x80<<(24-(l%4)*8); w[n*16-1]=l*8; w[n*16-2]=Math.floor(l/0x20000000);
+  var h0=0x67452301,h1=0xEFCDAB89,h2=0x98BADCFE,h3=0x10325476,h4=0xC3D2E1F0, x=new Uint32Array(80);
+  for(var blk=0;blk<w.length;blk+=16){
+    for(i=0;i<16;i++) x[i]=w[blk+i];
+    for(i=16;i<80;i++){ var v=x[i-3]^x[i-8]^x[i-14]^x[i-16]; x[i]=(v<<1)|(v>>>31); }
+    var a=h0,b=h1,c=h2,d=h3,e=h4;
+    for(i=0;i<80;i++){
+      var f,k; if(i<20){f=(b&c)|(~b&d);k=0x5A827999;} else if(i<40){f=b^c^d;k=0x6ED9EBA1;} else if(i<60){f=(b&c)|(b&d)|(c&d);k=0x8F1BBCDC;} else {f=b^c^d;k=0xCA62C1D6;}
+      var t=(((a<<5)|(a>>>27))+f+e+k+x[i])>>>0; e=d; d=c; c=((b<<30)|(b>>>2))>>>0; b=a; a=t;
+    }
+    h0=(h0+a)>>>0; h1=(h1+b)>>>0; h2=(h2+c)>>>0; h3=(h3+d)>>>0; h4=(h4+e)>>>0;
+  }
+  return [h0,h1,h2,h3,h4].map(function(v){ return ('00000000'+v.toString(16)).slice(-8); }).join('');
+}
+async function _lqSha1(buf){
+  if(!(window.crypto&&crypto.subtle)) return _lqSha1Js(buf);
+  var h=await crypto.subtle.digest('SHA-1', buf);
+  return Array.prototype.map.call(new Uint8Array(h), function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+}
+// Store the imported reportlist in the cloud (once per file content) → storage key
+async function labelFileUpload(buf, fileName){
+  var ext=(/\.xlsm$/i.test(fileName)?'.xlsm':'.xlsx');
+  var key='label-files/'+(await _lqSha1(buf))+ext;
+  var tok=await _lqToken();
+  var r=await fetch(SUPABASE_URL+'/storage/v1/object/'+LQ_BUCKET+'/'+key,{method:'POST',
+    headers:_lqHdr(tok,{'x-upsert':'true','Content-Type':ext==='.xlsm'?'application/vnd.ms-excel.sheet.macroEnabled.12':'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),body:buf});
+  if(!r.ok){ var tx=''; try{ tx=await r.text(); }catch(e){} throw new Error('upload '+r.status+' '+tx.slice(0,120)); }
+  return key;
+}
+// ── label PC: is the v2 print server next to us? ──
+var _lqLocal=null;   // null = not checked, false = no, object = {ok,version}
+function lqLocalServer(){
+  if(_lqLocal!==null) return Promise.resolve(_lqLocal);
+  if(!/^(localhost|127\.0\.0\.1)$/.test(location.hostname)){ _lqLocal=false; return Promise.resolve(false); }
+  return fetch('/health',{cache:'no-store'}).then(function(r){ return r.ok?r.json():null; })
+    .then(function(j){ _lqLocal=(j&&j.ok&&j.version>=2)?j:false; return _lqLocal; })
+    .catch(function(){ _lqLocal=false; return false; });
+}
+// Local copy of a stored workbook on the label PC → its full path
+async function lqLocalFile(key, tok){
+  var h=await (await fetch('/has-file?key='+encodeURIComponent(key),{cache:'no-store'})).json();
+  if(h.ok&&h.exists) return h.path;
+  tok=tok||await _lqToken();
+  var r=await fetch(SUPABASE_URL+'/storage/v1/object/authenticated/'+LQ_BUCKET+'/'+key,{headers:_lqHdr(tok)});
+  if(!r.ok) throw new Error(t_lq('lqNoFile')+' ('+r.status+')');
+  var buf=await r.arrayBuffer();
+  var s=await (await fetch('/store-file?key='+encodeURIComponent(key),{method:'POST',body:buf})).json();
+  if(!s.ok) throw new Error(s.error||'store-file');
+  return s.path;
+}
+async function lqPrintLocal(key, sheet, range, printer, copies){
+  var path=await lqLocalFile(key);
+  var last=null;
+  for(var i=0;i<Math.max(1,copies||1);i++){
+    var r=await fetch('/print-label',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({xlsm:path,sheet:sheet,range:range,printer:printer})});
+    last=await r.json();
+    if(!last.ok) throw new Error(last.error||('HTTP '+r.status));
+  }
+  return last;
+}
+// ── any computer: send a job and wait for the label PC ──
+async function lqSendAndWait(p, sheet, range){
+  var tok=await _lqToken();
+  var me=null; try{ me=await WorkshopAuth.me(); }catch(e){}
+  var body={file_key:p.part.labelFile, file_name:p.part.labelFileName||'', sheet:sheet, cell_range:range,
+    part_name:p.part.origName||p.part.name||'', requested_by:(me&&(me.display_name||me.name))||'', copies:1};
+  var r=await fetch(SUPABASE_URL+'/rest/v1/label_print_jobs',{method:'POST',headers:_lqHdr(tok,{'Content-Type':'application/json','Prefer':'return=representation'}),body:JSON.stringify(body)});
+  if(!r.ok) throw new Error('queue '+r.status);
+  var job=(await r.json())[0];
+  var t0=Date.now(), seenClaim=false;
+  while(Date.now()-t0<90000){
+    await new Promise(function(res){ setTimeout(res, 1200); });
+    var q=await fetch(SUPABASE_URL+'/rest/v1/label_print_jobs?id=eq.'+job.id+'&select=status,error,station',{headers:_lqHdr(await _lqToken())});
+    var row=(await q.json())[0]||{};
+    if(row.status==='printed') return {ok:true, msg:range+' → '+(row.station||'label PC')};
+    if(row.status==='failed') return {ok:false, msg:(row.station||'label PC')+': '+(row.error||'failed')};
+    if(row.status==='printing') seenClaim=true;
+    if(!seenClaim && Date.now()-t0>20000) break;
+  }
+  // nobody took it: cancel so it does not print by surprise later
+  try{ await fetch(SUPABASE_URL+'/rest/v1/label_print_jobs?id=eq.'+job.id+'&status=eq.queued',{method:'PATCH',headers:_lqHdr(await _lqToken(),{'Content-Type':'application/json'}),body:JSON.stringify({status:'cancelled'})}); }catch(e){}
+  return {ok:false, msg:t_lq('lqNoStation')};
+}
+// ── label station loop (label PC only) ──
+var _lqSt={on:false, busy:false, printed:0, failed:0, timer:null, beat:0, last:''};
+function lqStationId(){ try{ return localStorage.getItem('nest.labelStationName')||'Lipdukų PC'; }catch(e){ return 'Lipdukų PC'; } }
+function lqStationWanted(){ try{ return localStorage.getItem('nest.labelStation')!=='0'; }catch(e){ return true; } }
+function lqStationToggle(on){ try{ localStorage.setItem('nest.labelStation', on?'1':'0'); }catch(e){} lqStationStart(); }
+async function lqStationTick(){
+  if(!_lqSt.on || _lqSt.busy) return;
+  if(!WorkshopAuth.signedIn || !WorkshopAuth.signedIn()) return;
+  _lqSt.busy=true;
+  try{
+    var tok=await _lqToken(), sid=lqStationId(), prn=((document.getElementById('prn')||{}).value||'ZDesigner GK420d').trim();
+    if(Date.now()-_lqSt.beat>30000){
+      _lqSt.beat=Date.now();
+      fetch(SUPABASE_URL+'/rest/v1/label_stations',{method:'POST',headers:_lqHdr(tok,{'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'}),body:JSON.stringify({id:sid,printer:prn,last_seen:new Date().toISOString()})}).catch(function(){});
+    }
+    for(var n=0;n<20;n++){   // empty the queue, then wait for the next tick
+      var r=await fetch(SUPABASE_URL+'/rest/v1/rpc/label_claim_job',{method:'POST',headers:_lqHdr(tok,{'Content-Type':'application/json'}),body:JSON.stringify({p_station:sid})});
+      var jobs=r.ok?await r.json():[]; var job=jobs&&jobs[0]; if(!job) break;
+      var patch;
+      try{
+        await lqPrintLocal(job.file_key, job.sheet||'LABEL', job.cell_range, job.printer||prn, job.copies||1);
+        patch={status:'printed', done_at:new Date().toISOString()}; _lqSt.printed++; _lqSt.last='✓ '+(job.part_name||job.cell_range)+(job.requested_by?' · '+job.requested_by:'');
+      }catch(e){
+        patch={status:'failed', error:String(e.message||e).slice(0,300), done_at:new Date().toISOString()}; _lqSt.failed++; _lqSt.last='✗ '+(job.part_name||job.cell_range)+': '+patch.error;
+      }
+      await fetch(SUPABASE_URL+'/rest/v1/label_print_jobs?id=eq.'+job.id,{method:'PATCH',headers:_lqHdr(tok,{'Content-Type':'application/json'}),body:JSON.stringify(patch)});
+      lqStationBadge();
+    }
+  }catch(e){ console.warn('label station',e); }
+  finally{ _lqSt.busy=false; }
+}
+function lqStationBadge(){
+  var b=document.getElementById('lq-badge');
+  if(!_lqSt.on){ if(b) b.remove(); return; }
+  if(!b){ b=document.createElement('div'); b.id='lq-badge'; b.className='lq-badge'; b.onclick=function(){ if(confirm(t_lq('lqStopAsk'))) lqStationToggle(false); }; document.body.appendChild(b); }
+  b.innerHTML='🖨 <b>'+esc(t_lq('lqStation'))+'</b> · '+_lqSt.printed+(_lqSt.failed?' / ✗'+_lqSt.failed:'')+(_lqSt.last?'<span>'+esc(_lqSt.last)+'</span>':'');
+  b.title=t_lq('lqStationTip');
+}
+function lqStationStart(){
+  lqLocalServer().then(function(srv){
+    var want=!!srv && lqStationWanted();
+    _lqSt.on=want;
+    if(want && !_lqSt.timer){ _lqSt.timer=setInterval(lqStationTick, 3000); setTimeout(lqStationTick, 1500); }
+    if(!want && _lqSt.timer){ clearInterval(_lqSt.timer); _lqSt.timer=null; }
+    lqStationBadge();
+  });
+}
+if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', lqStationStart); else setTimeout(lqStationStart, 500);
+// Is a label station online? (for the print window)
+async function lqStationOnline(){
+  try{
+    var tok=await _lqToken();
+    var r=await fetch(SUPABASE_URL+'/rest/v1/label_stations?select=id,last_seen&order=last_seen.desc&limit=1',{headers:_lqHdr(tok)});
+    var s=(await r.json())[0]; if(!s) return null;
+    return {id:s.id, ageSec:Math.round((Date.now()-new Date(s.last_seen).getTime())/1000)};
+  }catch(e){ return null; }
+}
+
 // Promise core — resolves {ok, msg}. Marks the part printed on success.
 function _printLabelExcelCore(p){
+  // Reportlist stored in the cloud: label PC prints it directly, any other
+  // computer sends it to the label PC's queue.
+  if (p.part.labelFile){
+    var rng = p.part.labelRange, sh = 'LABEL', bg = rng.indexOf('!');
+    if (bg > 0){ sh = rng.substring(0, bg); rng = rng.substring(bg+1); }
+    return lqLocalServer().then(function(srv){
+      if (srv){
+        var prn = (document.getElementById('prn').value || 'ZDesigner GK420d').trim();
+        return lqPrintLocal(p.part.labelFile, sh, rng, prn, 1).then(function(){ return {ok:true, msg:sh+'!'+rng+' → '+prn}; });
+      }
+      return lqSendAndWait(p, sh, rng);
+    }).then(function(res){ if (res.ok) markPartPrinted(p, true); return res; },
+            function(e){ return {ok:false, msg:String(e.message||e)}; });
+  }
+  if (!/^(localhost|127\.0\.0\.1)$/.test(location.hostname))
+    return Promise.resolve({ok:false, msg:t_lq('lqReimport')});
   return new Promise(function(resolve){
     var xlsm = getXlsmPath();
     if (!xlsm){ resolve({ok:false, msg:'No .xlsm chosen — click 📂 Choose .xlsm…'}); return; }
@@ -17434,7 +17650,7 @@ function _printLabelExcelCore(p){
 }
 
 function doPrintViaExcel(p, pst){
-  if (!getXlsmPath()){
+  if (!getXlsmPath() && !(p.part && p.part.labelFile)){
     pst.innerHTML =
       '<b style="color:#B84040">No .xlsm chosen</b><br>' +
       '<span style="font-size:11px;color:#667085">' +
@@ -17443,7 +17659,7 @@ function doPrintViaExcel(p, pst){
     return;
   }
   var printer = (document.getElementById('prn').value || 'ZDesigner GK420d').trim();
-  pst.innerHTML = '<span style="color:#667085">Excel \u2192 '+esc(printer)+'\u2026</span>';
+  pst.innerHTML = '<span style="color:#667085">'+(p.part.labelFile && !_lqLocal ? esc(t_lq('lqSending')) : 'Excel \u2192 '+esc(printer)+'\u2026')+'</span>';
   _printLabelExcelCore(p).then(function(res){
     plogRecord(p, layouts[curSheet], res, 'single');
     if (res.ok){
