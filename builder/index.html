@@ -1572,7 +1572,7 @@ function buildCabinet(c, idx, projName) {
   var zBotF = Math.max(botLow, fgv('bot', 0));
   if (fgv('bot', 0) < botLow - 0.5) warnOnce('fasadai gali nusileisti tik ' + num(-botLow) + ' mm žemiau dugno' + (legHf > 0 ? ' (10 mm virš grindų)' : ''));
   var Hz = zTopF - zBotF;   // facade zone height
-  var runners = [], facades = [], doors = [], shelves = [];
+  var runners = [], facades = [], doors = [], shelves = [], shelfInfo = [];
   for (var colN = 0; colN < cols; colN++) (function (col) {
     var secs = (c.sections || []).filter(function (s) { return Math.min(cols - 1, Math.max(0, Math.floor(+s.col || 0))) === col; });
     var lbl = function (si) { return 'sekcija ' + (cols > 1 ? (col + 1) + '.' : '') + (si + 1); };
@@ -1639,12 +1639,13 @@ function buildCabinet(c, idx, projName) {
         if (yCur + secH <= t + Lside - t) shelves.push({ z:yCur + secH - t, sec:si, fixed:true, oven:true, fridge:true, col:col });
       } else if ((s.kind === 'doors' || s.kind === 'open') && +s.shelves > 0 && !cargoOf(s)) {
         var ns = Math.round(+s.shelves), z0 = Math.max(yCur, t), z1 = Math.min(yCur + secH, topFull ? H - t : H - t);
-        var manual = s.shelfMode === 'manual' && Array.isArray(s.shelfPos);
+        var manual = Array.isArray(s.shelfPos) && (s.shelfMode === 'manual' || s.shelfPos.some(function (v) { return +v > 0; })), shInf = { col:col, sec:si, base:yCur, zc:[] };
         for (var m = 0; m < ns; m++) {
           var zc = z0 + (m + 1)*(z1 - z0)/(ns + 1);                        // shelf centre
-          if (manual && +s.shelfPos[m] > 0) zc = Math.max(z0 + t/2, Math.min(z1 - t/2, yCur + (+s.shelfPos[m])));   // offer app: height of the shelf from the section bottom
-          shelves.push({ z:zc - t/2, sec:si, fixed:s.shelfAdj === false, col:col });
+          if (manual && +s.shelfPos[m] > 0) zc = Math.max(z0 + t/2, Math.min(z1 - t/2, yCur + (+s.shelfPos[m])));   // offer app: height of the shelf (its middle) from the section bottom
+          shelves.push({ z:zc - t/2, sec:si, fixed:s.shelfAdj === false, col:col }); shInf.zc.push(zc);
         }
+        shelfInfo.push(shInf);   // for the editor: each shelf's height from the section bottom
         if (s.shelfAdj !== false) hw.push({ item:'Lentynų laikikliai', qty:4*ns, unit:'vnt.' });
       }
       yCur += secH;
@@ -2390,7 +2391,7 @@ function buildCabinet(c, idx, projName) {
     [g.x0, g.x1].forEach(function (a2) { [g.y0 + 1, g.y1 - 1].forEach(function (b2) { [tA, tB].forEach(function (t2) { pts.push([0, 1, 2].map(function (k) { return pq.o[k] + a2 * pq.u[k] + b2 * pq.v[k] - t2 * pq.n[k]; })); }); }); });
     return { at:q.at, e:[0, 1, 2].map(function (k) { return [Math.min.apply(null, pts.map(function (v) { return v[k]; })), Math.max.apply(null, pts.map(function (v) { return v[k]; }))]; }) };
   }).filter(Boolean);
-  return { panels:out, warnings:warn, hardware:mergeHw(hw), legs:legs, joints:jointsInfo, seams:seams, visual:{ doors:doors, drawers:facades, plinth:plinth, hb:hb, leds:ledVis }, dims:{ W:W, H:Htot, D:D, t:t },
+  return { panels:out, warnings:warn, hardware:mergeHw(hw), legs:legs, joints:jointsInfo, seams:seams, visual:{ doors:doors, drawers:facades, plinth:plinth, hb:hb, leds:ledVis }, shelfInfo:shelfInfo, dims:{ W:W, H:Htot, D:D, t:t },
     fgaps:{ l:sideGapL, r:sideGapR, mid:gap, top:topRef - zTopF + gap, bot:zBotF, hb:hb, botMin:-hb, botLow:botLow } };
 }
 
@@ -3341,7 +3342,7 @@ const eq=(a,b)=>String(a||"").trim().toUpperCase()===String(b||"").trim().toUppe
 const t=k=>({reqInfo:LANG==='lt'?'Įveskite matmenis':'Enter dimensions'})[k]||k;
 function shelfYs(sec,secH){
   const sh=Math.max(0,Math.round(num(sec.shelves)));
-  if(sec&&sec.shelfMode==='manual'&&Array.isArray(sec.shelfPos)){
+  if(sec&&Array.isArray(sec.shelfPos)&&(sec.shelfMode==='manual'||sec.shelfPos.some(v=>num(v)>0))){
     const ys=[];for(let q=0;q<sh;q++){const v=num(sec.shelfPos[q]);ys.push(isFinite(v)&&v>0?v:secH*(q+1)/(sh+1));}return ys;
   }
   const ys=[];for(let q=1;q<=sh;q++)ys.push(secH*q/(sh+1));return ys;
@@ -8620,7 +8621,7 @@ lt:{
  rotHint:'↻ — antra programa su ta pačia puse viršuje, plokštė pasukta 90° prieš laikrodžio rodyklę (priekinis kraštas tampa kairiuoju galu).',
  setRails:'Juostos ir nugara', drillsTop:'Grąžtai galvoje (viršus), mm', drillsTopL:'Iš Maestro konfigūracijos. Skylės, kurių skersmens čia nėra, neprogramuojamos.', tbHoleSet:'TANDEMBOX fasado skylė (jei Ø)', tbDef:'TANDEMBOX fasadai',
  s4:'Papildomos operacijos', s4l:'Pažymėkite, ką gręžti CNC. „Patikrinta“ — sutampa su jūsų SWOOD modeliais.',
- oLegs:'Kojelės ir jų žymės dugne', oLegsD:'4 žymės Ø5 × 2 mm kiekvienai kojelei. Plačiai ar sunkiai spintelei pridėkite daugiau kojelių.', legRow:'Kojelių eilėje', ebFac:'Matoma detalė — kraštai pagal fasadą (etiketėje „PAGAL FASADA“)', ebTitle:'Laminuojami kraštai', ebLead:'spustelėkite kraštą — įjungti / išjungti (kaip etiketėje)', ebStd:'Standartiniai', ebT:'Kraštas', ebNoMat:'Kraštas pažymėtas, bet kraštinės medžiaga nenurodyta (Medžiagos) — etiketėje bus „KRAŠTAS“', supL:'Atramos', feetRow:'Pėdutės', feetTotal:'Iš viso pėdučių', supLegs:'Kojelės', supFeet:'Pėdutės', supNone:'Nėra', supEdit:'Nustatymai', feetNote:'Pėdutė Ø15 po šonu · skylė Ø8 × 10 · 50 nuo priekio ir galo', feetParts:'Po šonais ir pertvaromis', feetSides:'Tik po šonais', oFeet:'Pėdutės po šonais', oFeetD:'Ø15 pėdutės po šonais: Ø8 × 10 skylė šono apačioje (arba dugno apačioje po šonu), 50 mm nuo priekio ir galo. Galima pridėti vidurinę eilę.', botMount:'Dugnas', botUnder:'Po šonais', botInside:'Tarp šonų', botZ:'Dugno aukštis nuo apačios', botD:'Dugno gylis', botDFull:'visas', botDGap:'gale ≈ {g} mm laisva — vamzdžiams', fhTitle:'Fasadų aukščiai, mm', fhNote:'iš viršaus · tuščias = dalijasi likusį aukštį', fhEqual:'Vienodi', legParts:'Po pertvaromis', legRows:'Eilės', legRows2:'2 — priekis, galas', legRows3:'3 — + vidurys', legTotal:'Iš viso kojelių', legFront:'priekis', legDense:'Per tankiai — tarp kojelių būtų mažiau nei 70 mm',
+ oLegs:'Kojelės ir jų žymės dugne', oLegsD:'4 žymės Ø5 × 2 mm kiekvienai kojelei. Plačiai ar sunkiai spintelei pridėkite daugiau kojelių.', legRow:'Kojelių eilėje', ebFac:'Matoma detalė — kraštai pagal fasadą (etiketėje „PAGAL FASADA“)', ebTitle:'Laminuojami kraštai', ebLead:'spustelėkite kraštą — įjungti / išjungti (kaip etiketėje)', ebStd:'Standartiniai', ebT:'Kraštas', ebNoMat:'Kraštas pažymėtas, bet kraštinės medžiaga nenurodyta (Medžiagos) — etiketėje bus „KRAŠTAS“', supL:'Atramos', feetRow:'Pėdutės', feetTotal:'Iš viso pėdučių', supLegs:'Kojelės', supFeet:'Pėdutės', supNone:'Nėra', supEdit:'Nustatymai', feetNote:'Pėdutė Ø15 po šonu · skylė Ø8 × 10 · 50 nuo priekio ir galo', feetParts:'Po šonais ir pertvaromis', feetSides:'Tik po šonais', oFeet:'Pėdutės po šonais', oFeetD:'Ø15 pėdutės po šonais: Ø8 × 10 skylė šono apačioje (arba dugno apačioje po šonu), 50 mm nuo priekio ir galo. Galima pridėti vidurinę eilę.', botMount:'Dugnas', botUnder:'Po šonais', botInside:'Tarp šonų', botZ:'Dugno aukštis nuo apačios', botD:'Dugno gylis', botDFull:'visas', botDGap:'gale ≈ {g} mm laisva — vamzdžiams', shPosT:'Lentynų aukščiai', shPosN:'nuo sekcijos apačios iki lentynos vidurio, mm · tuščias — tolygiai', shPosEven:'Tolygiai', fhTitle:'Fasadų aukščiai, mm', fhNote:'iš viršaus · tuščias = dalijasi likusį aukštį', fhEqual:'Vienodi', legParts:'Po pertvaromis', legRows:'Eilės', legRows2:'2 — priekis, galas', legRows3:'3 — + vidurys', legTotal:'Iš viso kojelių', legFront:'priekis', legDense:'Per tankiai — tarp kojelių būtų mažiau nei 70 mm',
  oRun:'Bėgelių žymės šonuose', oRunD:'Blum TANDEM / TANDEMBOX šablonai pagal stalčių aukštį.',
  oTb:'TANDEMBOX fasadų tvirtinimas', oTbD:'Ø10 × 12 skylės fasado vidinėje pusėje.',
  oHinge:'Lankstų skylės', oHingeD:'Ø35 puodelis duryse su 2 varžtų žymėmis (Ø5 × 2) + 2 plokštelės žymės šone (Ø5 × 2, kaip post-procesoriuje). Blum katalogo matmenys.',
@@ -8768,7 +8769,7 @@ en:{
  rotHint:'↻ — second program with the same face up, panel turned 90° counter-clockwise (the front edge becomes the left end).',
  setRails:'Rails and back', drillsTop:'Drills on the head (top), mm', drillsTopL:'From the Maestro configuration. Holes of a size not listed are not programmed.', tbHoleSet:'TANDEMBOX front hole (if Ø)', tbDef:'TANDEMBOX fronts',
  s4:'Extra operations', s4l:'Tick what the CNC should drill. “Verified” means it matches your SWOOD models.',
- oLegs:'Legs and their marks in the bottom', oLegsD:'4 marks Ø5 × 2 mm per leg. Add more legs for a wide or heavy cabinet.', legRow:'Legs in a row', ebFac:'Visible part — edges as the fronts (label: PAGAL FASADA)', ebTitle:'Banded edges', ebLead:'click an edge to switch it on / off (as on the label)', ebStd:'Standard', ebT:'Edge', ebNoMat:'Edge marked, but no edge band material is set (Materials) — the label will say "KRAŠTAS"', supL:'Supports', feetRow:'Feet', feetTotal:'Feet in total', supLegs:'Legs', supFeet:'Feet', supNone:'None', supEdit:'Settings', feetNote:'Foot Ø15 under a side · hole Ø8 × 10 · 50 from the front and back', feetParts:'Under the sides and partitions', feetSides:'Under the sides only', oFeet:'Feet under the sides', oFeetD:'Ø15 feet under the sides: a Ø8 × 10 hole in the side bottom edge (or in the bottom underside below the side), 50 mm from the front and back. A middle row can be added.', botMount:'Bottom', botUnder:'Under the sides', botInside:'Between the sides', botZ:'Bottom height from below', botD:'Bottom depth', botDFull:'full', botDGap:'≈ {g} mm free at the back — for the pipes', fhTitle:'Front heights, mm', fhNote:'from the top · empty = shares what is left', fhEqual:'Equal', legParts:'Under partitions', legRows:'Rows', legRows2:'2 — front, back', legRows3:'3 — + middle', legTotal:'Legs in total', legFront:'front', legDense:'Too dense — less than 70 mm between legs',
+ oLegs:'Legs and their marks in the bottom', oLegsD:'4 marks Ø5 × 2 mm per leg. Add more legs for a wide or heavy cabinet.', legRow:'Legs in a row', ebFac:'Visible part — edges as the fronts (label: PAGAL FASADA)', ebTitle:'Banded edges', ebLead:'click an edge to switch it on / off (as on the label)', ebStd:'Standard', ebT:'Edge', ebNoMat:'Edge marked, but no edge band material is set (Materials) — the label will say "KRAŠTAS"', supL:'Supports', feetRow:'Feet', feetTotal:'Feet in total', supLegs:'Legs', supFeet:'Feet', supNone:'None', supEdit:'Settings', feetNote:'Foot Ø15 under a side · hole Ø8 × 10 · 50 from the front and back', feetParts:'Under the sides and partitions', feetSides:'Under the sides only', oFeet:'Feet under the sides', oFeetD:'Ø15 feet under the sides: a Ø8 × 10 hole in the side bottom edge (or in the bottom underside below the side), 50 mm from the front and back. A middle row can be added.', botMount:'Bottom', botUnder:'Under the sides', botInside:'Between the sides', botZ:'Bottom height from below', botD:'Bottom depth', botDFull:'full', botDGap:'≈ {g} mm free at the back — for the pipes', shPosT:'Shelf heights', shPosN:'from the section bottom to the shelf middle, mm · empty — spread evenly', shPosEven:'Evenly', fhTitle:'Front heights, mm', fhNote:'from the top · empty = shares what is left', fhEqual:'Equal', legParts:'Under partitions', legRows:'Rows', legRows2:'2 — front, back', legRows3:'3 — + middle', legTotal:'Legs in total', legFront:'front', legDense:'Too dense — less than 70 mm between legs',
  oRun:'Runner marks in the sides', oRunD:'Blum TANDEM / TANDEMBOX patterns at each drawer height.',
  oTb:'TANDEMBOX front fixing', oTbD:'Ø10 × 12 holes on the inside of the front.',
  oHinge:'Hinge holes', oHingeD:'Ø35 cup in the door with 2 screw marks (Ø5 × 2) + 2 plate marks in the side (Ø5 × 2, as the post-processor makes them). Blum catalogue values.',
@@ -10318,6 +10319,7 @@ function viewSection(c, s, i, z) {
   body += '</div>';
   var nStack = s.kind === 'drawers' ? num(s.nDrawers) : s.kind === 'doors' && !/^CARGO/i.test(s.hinge || '') && (s.doorSplit === 'h' || s.fridge) ? num(s.nDoors) : 0;
   if (nStack > 1) body += frontsEditor(s, i, secH, Math.round(nStack));
+  if ((s.kind === 'doors' || s.kind === 'open') && num(s.shelves) > 0) body += shelfPosEditor(c, s, i);
   if (s.kind === 'doors' && s.fridge) body += '<p class="note">' + esc(t('fridgeNote').replace('{v}', E.R.fridgeVent)) + '</p>';
   return '<div class="sec k-' + s.kind + '"><div>' + head + body + '</div><div class="tools">' +
     '<button title="' + t('up') + '" aria-label="' + t('up') + '" data-act="mv" data-i="' + i + '" data-v="1"' + (lastInCol(c, i) ? ' disabled' : '') + '>▲</button>' +
@@ -10325,6 +10327,23 @@ function viewSection(c, s, i, z) {
     '<button class="xbtn" title="' + t('rm') + '" aria-label="' + t('rm') + '" data-act="rmsec" data-i="' + i + '">✕</button></div></div>';
 }
 /* stacked fronts, top first: type a height for any of them, the empty ones share what is left */
+/* shelf heights in a doors / open section: one field per shelf (top first), empty = spread evenly; the value is the shelf's
+   middle above the section bottom (as the offer app writes it) */
+function shelfPosEditor(c, s, i) {
+  var ns = Math.round(num(s.shelves)); if (!(ns > 0) || s.fridge || s.kind === 'cargo') return '';
+  var inf = S._info && S._info[S.sel], r = inf && inf.r, si = sameCol(c, i).indexOf(i), col = colOf(c, s);
+  var info = r && (r.shelfInfo || []).filter(function (q) { return q.col === col && q.sec === si; })[0];
+  var pos = Array.isArray(s.shelfPos) ? s.shelfPos : [], any = false, rows = '';
+  for (var q = ns - 1; q >= 0; q--) {
+    var own = pos[q] != null && String(pos[q]).trim() !== '' && +pos[q] > 0; if (own) any = true;
+    var real = info && info.zc[q] != null ? info.zc[q] - info.base : null, id = 'f-c-sections-' + i + '-shelfPos-' + q;
+    rows += '<label class="fh' + (own ? ' own' : '') + '" for="' + id + '"><span class="fh-no">' + (q === ns - 1 ? '↑ ' : q === 0 ? '↓ ' : '') + (q + 1) + '</span>' +
+      '<input id="' + id + '" type="text" inputmode="decimal" data-bind="c.sections.' + i + '.shelfPos.' + q + '" data-num="1" data-empty="1" value="' + (own ? esc(fmt(pos[q])) : '') + '" placeholder="' + (real != null ? fmt(Math.round(real * 10) / 10) : '') + '">' +
+      (real != null ? '<span class="fh-real">' + fmt(Math.round(real * 10) / 10) + ' mm</span>' : '') + '</label>';
+  }
+  return '<div class="fronts shpos"><div class="fh-head"><b>' + t('shPosT') + '</b><span class="unit">' + t('shPosN') + '</span>' +
+    (any ? '<button type="button" class="btn ghost fh-reset" data-act="shposreset" data-i="' + i + '">↺ ' + t('shPosEven') + '</button>' : '') + '</div><div class="fh-list">' + rows + '</div></div>';
+}
 function frontsEditor(s, i, secH, n) {
   var g = E.R.facade.gap, sp = E.splitFronts(secH, n, s.frontH, g), top = sp.mods.slice().reverse(), fh = s.frontH || {}, any = false;
   var rows = top.map(function (m, q) {
@@ -11304,6 +11323,7 @@ app.addEventListener('click', function (e) {
     case 'nestopen': nestHandoff(); return;
     case 'ledadd': { var lc = cur(); lc.leds = lc.leds || []; lc.leds.push({ at:v, side:v === 'bottom' && cabKind(lc) === 'PAKABINAMOS' ? 'out' : 'in', from:E.R.led.from, ends:'open', w:E.R.led.w, depth:E.R.led.depth }); save(); break; }
     case 'leddel': { var lc2 = cur(); if (lc2.leds) lc2.leds.splice(i, 1); save(); break; }
+    case 'shposreset': { var csr = cur(), ssr = csr && csr.sections[+i]; if (ssr) { ssr.shelfPos = []; ssr.shelfMode = 'even'; save(); } break; }
     case 'addsec': { var ns = newSection(v); ns.col = isNaN(i) ? 0 : i; S.colSel = ns.col; cur().sections.push(ns); save(); break; }
     case 'colsel': S.colSel = +v; break;
     case 'lookrot': lookSet(v, function (l) { l.rot = !l.rot; }); return;
