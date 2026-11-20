@@ -13973,6 +13973,26 @@ function saveFile(name, data, type) {
 
 document.documentElement.lang = S.lang;
 render();
+/* Back button: home ⇄ project, tabs, the cabinet being edited, the type picker, an open drawing (hub/shared/back.js) */
+(window.HubBackQ = window.HubBackQ || []).push(function (B) {
+  B.view({
+    get: function () { return S.home || !S.proj ? { h: 1 } : { p: S.proj.id, t: S.tab, s: S.tab === 'cab' ? S.sel : 0, k: !!S.picking, d: S.tab === 'drw' && S.drwOpen != null ? S.drwOpen : null }; },
+    set: function (v) {
+      if (!v) return;
+      if (v.h) { if (S.proj) { clearTimeout(libTimer); libSave(); } S.home = true; S.confirm = null; }
+      else {
+        if (!S.proj || S.proj.id !== v.p) {
+          var rec = lib().filter(function (r) { return r.id === v.p; })[0]; if (!rec) return;
+          if (S.proj) { clearTimeout(libTimer); libSave(); VER.flush(); }
+          openProject(rec.data);
+        }
+        S.home = false; S.tab = v.t || 'cab'; S.sel = v.s || 0; S.picking = !!v.k; S.drwOpen = v.d; S.confirm = null; S.iso = null;
+      }
+      render(); window.scrollTo(0, 0);
+    }
+  });
+  B.layer('.iso3d.full,.av.full,.rr-ov');
+});
 window.__dbk = { S:S, render:render, nestPlan:nestPlan, VER:VER, dropMat:dropMat, store:store, lib:lib, libSet:libSet, libRec:libRec, clib:clib, defSettings:defSettings, applyRules:applyRules, toast:toast, newProject:newProject, openProject:openProject, save:save, priceCabinet:priceCabinet, buildProjectAll:buildProjectAll, zipAll:zipAll, xlsmBytes:xlsmBytes, csvOf:csvOf, fromOffer:fromOffer, normCab:normCab, PRESETS:PRESETS, fromPreset:fromPreset };
 })();
 
@@ -13980,5 +14000,6 @@ window.__dbk = { S:S, render:render, nestPlan:nestPlan, VER:VER, dropMat:dropMat
 <script src="workshop-auth.js"></script>
 <script src="/hub/shared/notices.js" defer></script>
 <script src="cloud.js"></script>
+<script src="/hub/shared/back.js"></script>
 </body>
 </html>

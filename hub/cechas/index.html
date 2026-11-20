@@ -2705,6 +2705,8 @@ function confirmTwice(b){if(b.dataset.armed){return true}b.dataset.armed='1';con
    check-in writes (moveStamp → the day report, the TV and the plan all see it). "🗺 Planas" switches back. */
 const PQ={open:null,st:null,pr:'',nw:'',nt:'',err:'',q:''};
 const pqOn=()=>document.body.classList.contains('pq');
+/* Back button on the phone: the person opened → closed, list ⇄ plan (hub/shared/back.js) */
+(window.HubBackQ=window.HubBackQ||[]).push(B=>B.view({get:()=>({pq:pqOn(),o:pqOn()?PQ.open:null}),set:v=>{if(!v)return;if(v.pq!==pqOn())pqSet(v.pq,true);PQ.open=v.o;render()}}));
 function pqSet(on,remember){
   document.body.classList.toggle('pq',!!on);
   if(remember)lsSet('cp.phoneView',on?'people':'plan');
@@ -2872,5 +2874,7 @@ normalize();applyView();render();boot();
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(view==='3d')build3D()});
 })();
 </script>
+<script src="/hub/shared/back.js"></script>
+<script>HubBackQ.push(function(B){B.layer('#ci.modal,#dv,#qrs,#rep,#shout,#aw');B.ignore('#auth');});</script>
 </body>
 </html>

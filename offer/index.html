@@ -2170,5 +2170,7 @@ window.addEventListener('beforeunload',()=>saveNow());
 <script src="workshop-auth.js"></script>
 <script src="/hub/shared/notices.js" defer></script>
 <script src="workshop-cloud.js"></script>
+<script src="/hub/shared/back.js"></script>
+<script>HubBackQ.push(function(B){B.view({get:function(){return activeTab;},set:function(v){var b=document.querySelector('#tabbar [data-tab="'+v+'"]');if(b)b.click();}});});</script>
 </body>
 </html>

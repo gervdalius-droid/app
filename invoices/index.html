@@ -1831,14 +1831,21 @@ function showView(v){
 /* Every move through the app pushes a history entry, so the browser's Back
    button (and the phone's back gesture) steps back through the views it came
    from instead of leaving the app on the first press. */
+let NAVPOS=0,NAVG=false;   /* steps of ours below this one (0 = the first view: Back from here leaves) */
 function go(v,replace){
   showView(v);
   const h='#'+v;
   try{
-    if(replace||location.hash===h)history.replaceState({v},'',h);
-    else history.pushState({v},'',h);
+    if(replace||location.hash===h)history.replaceState({v,pos:NAVPOS},'',h);
+    else{history.pushState({v,pos:NAVPOS+1},'',h);NAVPOS++;NAVG=false;}
   }catch(e){try{location.hash=v;}catch(e2){}}
 }
+/* A dialog opened on the very first view has no step under it, so Back would
+   close the tab instead of the dialog: give it one. */
+document.addEventListener('click',()=>setTimeout(()=>{
+  if(NAVPOS>0||!$('#scrim').classList.contains('on'))return;
+  try{history.pushState({v:VIEW,pos:1,g:1},'','#'+VIEW);NAVPOS=1;NAVG=true;}catch(e){}
+},150),true);
 function viewFromHash(){
   const h=(location.hash||'').replace('#','')||'dash';
   const tab=TABS.find(x=>x.id===h);
@@ -1848,7 +1855,8 @@ function viewFromHash(){
     return h==='editor'?'invoices':h==='waybill'?'waybills':h==='sheet'?'sheets':'dash';
   return h;
 }
-window.addEventListener('popstate',()=>{
+window.addEventListener('popstate',ev=>{
+  const leftG=NAVG,st=ev.state||{};NAVPOS=st.pos||0;NAVG=!!st.g;
   /* A dialog is a page as far as the phone's back gesture is concerned: the
      press closes it and puts the entry back, rather than leaving the view.
      No entry is pushed when a modal opens — pushing one and then calling
@@ -1856,9 +1864,11 @@ window.addEventListener('popstate',()=>{
      a dialog, and those are common here (import, period export, payments). */
   if($('#scrim').classList.contains('on')){
     closeModal();
-    try{history.pushState({v:VIEW},'','#'+VIEW);}catch(e){}
+    if(leftG&&location.hash==='#'+VIEW)NAVG=false;   /* the dialog's own step: done */
+    else try{history.pushState({v:VIEW,pos:NAVPOS+1},'','#'+VIEW);NAVPOS++;}catch(e){}
     return;
   }
+  if(leftG&&NAVPOS===0&&location.hash==='#'+VIEW){history.back();return;}   /* its dialog was closed with ✕: this Back is for leaving */
   showView(viewFromHash());
 });
 function render(){

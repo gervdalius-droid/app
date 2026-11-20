@@ -499,6 +499,8 @@ var App = {
    ============================================================ */
 var Router = {
   _applying: false,
+  _pos: 0,     // steps of ours below this one (0 = the first screen: Back from here leaves ShopFlow)
+  _guard: false,
   snapshot() {
     return {
       view: App.view,
@@ -528,11 +530,19 @@ var Router = {
   push() {
     if (this._applying || !App.me) return;
     var h = this.hash();
-    this._safe(() => location.hash === h ? history.replaceState(this.snapshot(), "", h) : history.pushState(this.snapshot(), "", h));
+    this._safe(() => location.hash === h ? history.replaceState(this.state(), "", h) : (history.pushState(this.state(1), "", h), this._pos++, this._guard = false));
   },
   replace() {
     if (this._applying || !App.me) return;
-    this._safe(() => history.replaceState(this.snapshot(), "", this.hash()));
+    this._safe(() => history.replaceState(this.state(), "", this.hash()));
+  },
+  state(up) { var s = this.snapshot(); s.pos = this._pos + (up ? 1 : 0); return s; },
+  /* A window opened on the very first screen: without a step of its own,
+     Back would close the tab instead of the window. Give it one. */
+  guardFirst() {
+    if (this._applying || !App.me || this._pos > 0 || !this.topOverlay()) return;
+    var s = this.state(1); s.g = 1;
+    this._safe(() => { history.pushState(s, "", location.hash || this.hash()); this._pos = 1; this._guard = true; });
   },
   /* Keep the URL honest after any state change, without growing history.
      Guarded on an actual change — browsers rate-limit replaceState. */
@@ -542,6 +552,8 @@ var Router = {
   },
   /* Any transient layer the Back gesture should dismiss first */
   topOverlay() {
+    var ntc = $(".ntc-panel.on");   // the bell's list (hub/shared/notices.js)
+    if (ntc) return () => { var sc = $(".ntc-scrim"); if (sc) sc.click(); };
     if ($("#pop-root")) return () => Popover.close();
     if (Palette.isOpen) return () => Palette.close();
     if ($(".modal-scrim", $("#modal-root"))) return () => Modal.close();
@@ -607,15 +619,21 @@ var Router = {
     }
     this.replace(); // own the first entry
 
+    // a tap that opens a window on the first screen gets a step for Back to close it with
+    document.addEventListener("click", () => setTimeout(() => this.guardFirst(), 150), true);
     window.addEventListener("popstate", ev => {
+      var leftGuard = this._guard;
+      this._pos = ev.state && ev.state.pos || 0; this._guard = !!(ev.state && ev.state.g);
       // Back closes what's on top first — drawer, modal, popover — and puts
       // the entry back so the user's history depth is unchanged
       var close = this.topOverlay();
       if (close) {
         close();
-        this._safe(() => history.pushState(this.snapshot(), "", this.hash()));
+        if (!(leftGuard && location.hash === this.hash())) this._safe(() => { history.pushState(this.state(1), "", this.hash()); this._pos++; });
+        else this._guard = false;
         return;
       }
+      if (leftGuard && this._pos === 0 && location.hash === this.hash()) { history.back(); return; }   // its window was closed with ✕: this Back is for leaving
       if (ev.state) this.apply(ev.state);else this.apply(this.fromHash() || this.snapshot());
     });
   }

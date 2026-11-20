@@ -667,7 +667,7 @@
   function route() {
     var h = decodeURIComponent(location.hash.slice(1) || ""), p = h.split("/");
     if (p[0] === "deal" || p[0] === "client") { if (S.ui.lostPick && S.ui.lostPick !== p[1]) S.ui.lostPick = null; S.open = { kind: p[0], id: p[1] }; }
-    else { S.open = null; if (["today", "pipe", "clients"].indexOf(p[0]) >= 0) S.view = p[0]; }
+    else { S.open = null; if (["today", "pipe", "clients"].indexOf(p[0]) >= 0) S.view = p[0]; else if (!p[0]) S.view = "today"; }   // Back to the first page = Šiandien
     changed();
     if (S.open) setTimeout(function () { var dr = $("#drawer"); if (dr && !dr.contains(document.activeElement)) { var b = dr.querySelector(".d-body"); if (b) b.scrollTop = 0; } }, 0);
   }
