@@ -2355,8 +2355,24 @@ function buildCabinet(c, idx, projName) {
     var closed = ld.ends === 'closed', e = closed ? Math.max(R.rout.dia / 2 + 1, +ld.end >= 0 && ld.end !== '' && ld.end != null ? +ld.end : R.led.end) : 0;
     if (closed && pl.L - 2 * e < 60) { warn.push(lbl + ': per trumpa detalė uždaram grioveliui — nepadarytas'); return; }
     var g = { x0:e, x1:pl.L - e, y0:ya, y1:yb, face:face, depth:dep, led:true, name:'LED_PROFILE_DRAG_ON_EDGE' };
-    var hit = pl.holes.some(function (h) { return !h.mark && (h.face === face || h.through) && h.x + h.d / 2 > g.x0 && h.x - h.d / 2 < g.x1 && h.y + h.d / 2 > g.y0 && h.y - h.d / 2 < g.y1; });
-    if (hit) warn.push(lbl + ': LED griovelis kerta jungčių ar kitas skyles (' + pl.role + ') — perkelkite jį (atstumas nuo priekio)');
+    /* the groove must not open into a hole: connector bores in the part's ends and edges (at mid-thickness), cams and
+       hinge-plate / runner holes and marks on either face, as deep as they go — with a 2 mm wall left. On a clash the
+       groove is moved the least it takes (towards the front or the back), and a note says so; no room → a warning. */
+    var clashes = function (y0, y1) { var T = pl.T, m = 2, z0 = face === 'A' ? T - dep - m : -1, z1 = face === 'A' ? T + 1 : dep + m, gx0 = g.x0 - m, gx1 = g.x1 + m, gy0 = y0 - m, gy1 = y1 + m;
+      var hitBox = function (bx0, bx1, by0, by1, bz0, bz1) { return bx1 > gx0 && bx0 < gx1 && by1 > gy0 && by0 < gy1 && bz1 > z0 && bz0 < z1; };
+      return pl.holes.filter(function (h) { var r = h.d / 2, hz0 = h.through ? 0 : h.face === 'A' ? T - h.depth : 0, hz1 = h.through ? T : h.face === 'A' ? T : h.depth;
+               return hitBox(h.x - r, h.x + r, h.y - r, h.y + r, hz0, hz1); }).length +
+             (pl.edges || []).filter(function (b) { var r = b.d / 2, zc = T / 2, dd = b.depth;
+               return b.edge === 'x0' ? hitBox(0, dd, b.pos - r, b.pos + r, zc - r, zc + r) : b.edge === 'x1' ? hitBox(pl.L - dd, pl.L, b.pos - r, b.pos + r, zc - r, zc + r)
+                    : b.edge === 'y0' ? hitBox(b.pos - r, b.pos + r, 0, dd, zc - r, zc + r) : hitBox(b.pos - r, b.pos + r, pl.W - dd, pl.W, zc - r, zc + r); }).length; };
+    if (clashes(g.y0, g.y1)) {
+      var best = null;
+      for (var dm = 1; dm <= 80 && best == null; dm++) [-dm, dm].forEach(function (dv) { if (best != null) return; var a0 = g.y0 + dv, a1 = g.y1 + dv; if (a0 >= 3 && a1 <= pl.W - 3 && !clashes(a0, a1)) best = dv; });
+      var fromNow = function (y0) { return at === 'R' ? pl.W - (y0 + gw) - yOff : y0 - yOff; };
+      if (best != null) { var was = fromNow(g.y0); g.y0 += best; g.y1 += best;
+        warn.push(lbl + ': LED griovelis kirto jungčių / furnitūros skyles (' + pl.role + ') — perkeltas ' + num(was) + ' → ' + num(fromNow(g.y0)) + ' mm nuo priekio'); }
+      else warn.push(lbl + ': LED griovelis kerta jungčių ar furnitūros skyles (' + pl.role + '), o perkelti nėra kur — pakeiskite jungtis ar LED vietą');
+    }
     (pl.grooves = pl.grooves || []).push(g); pl.note += ', LED griovelis ' + num(gw) + '×' + num(dep) + (face === 'A' ? '' : ' (kitoje pusėje)');
     leds.push({ p:pl, g:g, at:at });
   });
@@ -12374,6 +12390,11 @@ function artOf(type) { return window.DBArt ? '<span class="cart">' + window.DBAr
 function choice(bind, val, v, icon, title, desc) { return '<button type="button" class="choice' + (val === v ? ' on' : '') + '" data-act="set" data-bind="' + bind + '" data-v="' + v + '" aria-pressed="' + (val === v) + '">' + icon + '<span><b>' + title + '</b><small>' + desc + '</small></span></button>'; }
 /* LED profile grooves: where, which face, how far from the front, open or closed ends — routed as step2xxl does (T=96, ramp, 2 mm skin) */
 function ledAtName(at) { return t({ bottom:'ledBottom', top:'ledTop', L:'ledL', R:'ledR' }[at]); }
+/* the engine moved this groove off holes (or found no room): its note under the LED row */
+function ledMoved(k) {
+  var inf = S._info && S._info[S.sel], ws = (inf && inf.r && inf.r.warnings) || [], w = ws.filter(function (x) { return x.indexOf('LED ' + (k + 1) + ': LED griovelis k') === 0; })[0];
+  return w ? '<p class="note" style="margin:4px 0 0;flex-basis:100%;color:var(--warn,#a5560b)">⚠ ' + esc(w.replace(/^LED \d+: /, '')) + '</p>' : '';
+}
 function ledBlock(c) {
   var b = 'c.leds.', ls = c.leds || [];
   return '<div class="ledblk" id="st-led"><div class="lbl">' + t('ledT') + ' <span class="unit">· ' + t('ledL2') + '</span></div>' +
@@ -12382,7 +12403,8 @@ function ledBlock(c) {
         '<div class="f"><span>' + t('ledSide') + '</span>' + seg(b + k + '.side', l.side, [['in', t('ledIn')], ['out', t('ledOut')]]) + '</div>' +
         fN(t('ledFrom'), b + k + '.from', l.from, 's') +
         '<div class="f"><span>' + t('ledEnds') + '</span>' + seg(b + k + '.ends', l.ends, [['open', t('ledOpen')], ['closed', t('ledClosed')]]) + '</div>' +
-        '<button type="button" class="btn ghost danger" data-act="leddel" data-i="' + k + '" aria-label="' + esc(t('del')) + '">✕</button></div>'; }).join('') : '<p class="note" style="margin:2px 0 6px">' + t('ledNone') + '</p>') +
+        '<button type="button" class="btn ghost danger" data-act="leddel" data-i="' + k + '" aria-label="' + esc(t('del')) + '">✕</button>' +
+        ledMoved(k) + '</div>'; }).join('') : '<p class="note" style="margin:2px 0 6px">' + t('ledNone') + '</p>') +
     '<div class="ledadd"><span class="unit">' + t('ledAddL') + '</span>' + ['bottom', 'top', 'L', 'R'].map(function (at) { return '<button type="button" class="btn" data-act="ledadd" data-v="' + at + '">＋ ' + esc(ledAtName(at)) + '</button>'; }).join('') + '</div>' +
     '<p class="note" style="margin:6px 0 0">' + t('ledNote') + '</p></div>';
 }
