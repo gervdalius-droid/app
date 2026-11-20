@@ -4,7 +4,7 @@
 // except the one known bug fixed on purpose (back rail holes in the sides were off by the back thickness
 // when the back is on top AND the top is rails).
 const REF=require('./ref_cnc.js'), E=require(process.env.ENG||'../src/engine.js');
-E.setRules({drills:{top:[5,8,10,15,35]}});
+E.setRules({drills:{top:[5,8,10,15,35]}, joint3From:0});   // the reference cabinets had three connectors on every carcass joint
 let cases=0, files=0, fails=0, fixed=0, exact=0;
 const opts=[]; for(const joinery of ['cam','confirmat']) for(const back of ['none','top','inside']) for(const top of ['rails','full'])
   for(const tof of [false,true]) for(const legs of [false,true]) opts.push({joinery,back,top,topOverFacade:tof,legs,facadeT:18});

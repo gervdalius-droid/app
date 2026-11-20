@@ -57,8 +57,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .logo{width:34px;height:34px;border-radius:6px;background:var(--ink);color:var(--panel);display:grid;place-items:center;font:700 16px/1 var(--f-display);letter-spacing:.04em}
 .brand h1{margin:0;font:600 22px/1 var(--f-display);letter-spacing:.01em;white-space:nowrap}
 .brand .sub{font-size:12px;color:var(--muted)}
-.projname{flex:1 1 220px;min-width:0;display:flex;align-items:center;gap:8px}
-.projname input{flex:1;min-width:0;border:1px solid var(--line);background:var(--sunk);border-radius:6px;padding:7px 10px;font:600 15px var(--f-mono);letter-spacing:.02em}
+.projname{flex:1 1 220px;min-width:min(100%,330px);display:flex;align-items:center;gap:8px}   /* never squeezed under its own buttons: the tabs go to the next line instead */
+.projname input{flex:1;min-width:110px;border:1px solid var(--line);background:var(--sunk);border-radius:6px;padding:7px 10px;font:600 15px var(--f-mono);letter-spacing:.02em}
 .tabs{display:flex;gap:4px;max-width:100%;overflow-x:auto;background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:3px}
 .tabs button{border:0;background:transparent;padding:7px 12px;border-radius:6px;cursor:pointer;font-weight:600;color:var(--muted);white-space:nowrap}
 .tabs button.on{background:var(--panel);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -1070,6 +1070,11 @@ button.prog:hover{border-color:var(--accent);color:var(--accent);background:var(
 @media(min-width:1250px){
   .sheet{max-height:calc(100vh - 96px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable;padding-right:2px}
 }
+@media(max-width:1749px){   /* not room for everything on one line: the tabs get a line of their own, full width */
+  .top .tabs{order:5;flex:1 1 100%}
+  .top .tabs button{flex:1 1 auto}
+  .top .hbtns{margin-left:auto}
+}
 @media(max-width:1440px){
   .brand .sub{display:none}
   .top .wrap{gap:10px;padding-block:8px}
@@ -1250,7 +1255,8 @@ var R = {
   /* routing as step2xxl / XXL Fix write it: the Ø15.5 diamond cutter T=96; never deeper than DZ − skin, never a vertical
      plunge (ramp ≤ 30 mm along the path, back at full depth), never more than 20 mm outside the part (Maestro NC17050) */
   rout: { T:96, dia:15.5, D:24, name:'DEIMANTAS 16MM  - NAUJA - ', feedCut:4000, feedPlunge:2000, safeZ:10, skin:2, ramp:30, leadIn:5, air:20 },
-  led: { w:16, depth:8, from:30, end:20 },   // LED profile groove: 16 wide, 8 deep, 30 from the front edge; closed ends 20 from the part's ends
+  led: { w:16, depth:8, from:30, end:20 },
+  joint3From: 550,   // a carcass joint gets its third connector (in the middle) only when longer than this   // LED profile groove: 16 wide, 8 deep, 30 from the front edge; closed ends 20 from the part's ends
   hdf: { t:3, inset:2, mat:'HDF 3 mm' }          // plaušo nugara: nailed on the back, 2 mm in from the carcass edges
 };
 var DRAWER_HW = ["BLUM TANDEM", "BLUM TANDEMBOX", "BLUM MERIVOBOX", "GTV KULKINIAI H45", "DTC KULKINIAI H45", "DTC PASLĖPTI"];
@@ -1710,19 +1716,20 @@ function buildCabinet(c, idx, projName) {
   function seam1(key, side, o3, d3, w) { var q = { key:key, side:side, o:o3.slice(), d:d3.slice(), w:w }, a = at(key, side, w); if (a) q.at = a; seams.push(q); }   // one end only (parts inside a column)
   function lin(w, n, e) { if (n <= 1) return [w/2]; var r = []; for (var i = 0; i < n; i++) r.push(e + (w - 2*e)*i/(n - 1)); return r; }
   function camDowels(pos,w){return pairedDowels(pos,w,cm.dowel.offset);}
+  /* connectors along a joint: two, near the ends; a third in the middle only on a joint longer than R.joint3From (550 mm) */
   function defSpots(w, kind, type) {
-    var e, n, pos;
+    var e, n, pos, three = w > R.joint3From;
     if (kind === 'long') { pos = [cf.railAlong, w/2, w - cf.railAlong]; return { pos:pos, n:3, e:pos[0], dowels:[] }; }   // along a rail: the verified 3-cam pattern
     if (kind === 'rail') { if (type === 'cam') { pos = [w/2]; return { pos:pos, n:1, e:w/2, dowels:camDowels(pos, w) }; }
       pos = w === 100 ? cf.railFromEdge.slice() : [30, w - 30]; return { pos:pos, n:2, e:pos[0] }; }
-    if (kind === 'carc') { e = type === 'cam' ? cm.cam.fromFront : cf.fromFront; pos = [e, w/2, w - e];
-      return { pos:pos, n:3, e:e, dowels:type === 'cam' ? [e + cm.dowel.offset, w - e - cm.dowel.offset] : [] }; }
-    if (kind === 'back') { e = type === 'cam' ? R.backCam.fromEnd : cm.backFix.fromEdge; pos = [e, w/2, w - e];
-      return { pos:pos, n:3, e:e, dowels:type === 'cam' ? (w >= 2*e + 2*cm.dowel.offset + 40 ? [e + cm.dowel.offset, w - e - cm.dowel.offset] : []) : [] }; }
+    if (kind === 'carc') { e = type === 'cam' ? cm.cam.fromFront : cf.fromFront; pos = three ? [e, w/2, w - e] : [e, w - e];
+      return { pos:pos, n:pos.length, e:e, dowels:type === 'cam' ? [e + cm.dowel.offset, w - e - cm.dowel.offset] : [] }; }
+    if (kind === 'back') { e = type === 'cam' ? R.backCam.fromEnd : cm.backFix.fromEdge; pos = three ? [e, w/2, w - e] : [e, w - e];
+      return { pos:pos, n:pos.length, e:e, dowels:type === 'cam' ? (w >= 2*e + 2*cm.dowel.offset + 40 ? [e + cm.dowel.offset, w - e - cm.dowel.offset] : []) : [] }; }
     /* shelf */
-    if (type === 'cam') { var ec = cm.cam.fromFront; pos = w >= 2*ec + 100 ? [ec, w/2, w - ec] : [w/2];
-      return { pos:pos, n:pos.length, e:pos[0], dowels:pos.length === 3 ? [ec + cm.dowel.offset, w - ec - cm.dowel.offset] : [] }; }
-    e = cf.fromFront; pos = w >= 2*e + 80 ? [e, w/2, w - e] : w >= 120 ? [40, w - 40] : [w/2];
+    if (type === 'cam') { var ec = cm.cam.fromFront; pos = w >= 2*ec + 100 ? (three ? [ec, w/2, w - ec] : [ec, w - ec]) : [w/2];
+      return { pos:pos, n:pos.length, e:pos[0], dowels:pos.length > 1 ? [ec + cm.dowel.offset, w - ec - cm.dowel.offset] : [] }; }
+    e = cf.fromFront; pos = w >= 2*e + 80 ? (three ? [e, w/2, w - e] : [e, w - e]) : w >= 120 ? [40, w - 40] : [w/2];
     return { pos:pos, n:pos.length, e:pos[0] };
   }
   /* verified on the shop's SWOOD cabinets: carcass bottom/top with confirmats or cams, confirmat rails, back on the back with confirmats */
