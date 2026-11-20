@@ -13694,7 +13694,7 @@ app.addEventListener('click', function (e) {
   var el = e.target.closest('[data-act]'); if (!el) return;
   var act = el.getAttribute('data-act'), v = el.getAttribute('data-v'), i = +el.getAttribute('data-i');
   if (act === 'closeDrawer' && e.target.closest('[data-stop]') && el.classList.contains('overlay')) return;
-  if (act !== 'del' && act !== 'pnew' && act !== 'pdel' && act !== 'prreset') S.confirm = null;
+  if (act !== 'del' && act !== 'pnew' && act !== 'pdel' && act !== 'prreset' && act !== 'libdel') S.confirm = null;   // the two-click deletes keep their 'sure?' between the clicks
   switch (act) {
     case 'tab': S.tab = v; S.picking = false; window.scrollTo(0, 0); break;
     case 'lang': S.lang = v; store('dbKurejas.lang', v); break;
