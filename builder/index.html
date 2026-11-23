@@ -208,6 +208,9 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .jtable{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
 .rc-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;border-radius:8px}.rc-bar.allok{border:1px solid var(--line);background:transparent;color:var(--ok)}
 .rc-chips{display:flex;gap:6px;flex-wrap:wrap}.rc-chip{border:1px solid #c9861a;background:#fff;color:#6a4300;border-radius:999px;padding:5px 11px;font:600 13px/1.2 inherit;cursor:pointer}.rc-chip.ok{border-color:var(--line);color:var(--ok);font-weight:500}.rc-chip.bad{border-color:#b4291f;color:#b4291f}
+.ec-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}.ec-model{position:sticky;top:0;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
+.ec-tools{display:flex;gap:6px;padding:8px 10px}.ec-tools .btn{padding:5px 10px;font-size:13px}.ec-tools .btn.on{background:var(--ink);color:var(--panel)}.ec-msvg{display:block;width:100%;height:min(58vh,560px)}
+.ec-f{cursor:pointer}.ec-f:hover{fill:#e8b90c;stroke:#e8b90c}@media(max-width:900px){.ec-cols{grid-template-columns:minmax(0,1fr)}.ec-model{position:static}}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}.ec-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}.ec-card.custom{background:var(--accent-soft)}
 .ec-h{display:flex;align-items:baseline;gap:8px}.ec-h .jreset{margin-left:auto}.ec-svg{display:block;width:100%;max-width:300px;margin:0 auto}.ec-e{cursor:pointer}.ec-e:hover line:nth-of-type(2){stroke-width:7}
 .ec-ctl{display:flex;align-items:center;gap:12px;margin-top:2px}.ec-ctl .btn{padding:4px 10px;font-size:13px}.jcneed+.jcneed{margin-top:-4px}
@@ -12216,6 +12219,39 @@ function roomChecks(infos) {
    c.edgesOk keeps the signature of the confirmed banding, any later change asks again. */
 function ecSig(r) { return ((r && r.panels) || []).map(function (p) { return p.key + '=' + ['y0', 'y1', 'x0', 'x1'].map(function (e) { return p.eb && p.eb[e] ? (p.ebFac && p.ebFac[e] ? 'F' : '1') : '0'; }).join(''); }).join(';'); }
 function ecNeeded(c, r) { return !!(r && r.panels && r.panels.length) && c.edgesOk !== ecSig(r); }
+/* the cabinet itself in the edges check: every part as a box, its four edge faces coloured by their banding and clickable
+   (the same switch as on the cards). Turn it, pull the parts apart to reach hidden edges, hide the fronts. */
+function ecModel(c, r) {
+  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { yaw:0, exp:true, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
+  var ps = r.panels.filter(function (p) { return p.place && (V.fronts || (p.role !== 'FASADAS' && p.role !== 'DURYS')); }); if (!ps.length) return '';
+  var add = function (a, b, k) { return [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k]; };
+  var boxes = ps.map(function (p) { var q = p.place, pt = function (a, b, d) { return add(add(add(q.o, q.u, a), q.v, b), q.n, -d); };
+    var cn = function (a, b, d) { return pt(a ? p.L : 0, b ? p.W : 0, d ? p.T : 0); };
+    return { p:p, cen:pt(p.L / 2, p.W / 2, p.T / 2), faces:[
+      { k:'A', v:[cn(0,0,0), cn(1,0,0), cn(1,1,0), cn(0,1,0)] }, { k:'B', v:[cn(0,0,1), cn(1,0,1), cn(1,1,1), cn(0,1,1)] },
+      { k:'y0', v:[cn(0,0,0), cn(1,0,0), cn(1,0,1), cn(0,0,1)] }, { k:'y1', v:[cn(0,1,0), cn(1,1,0), cn(1,1,1), cn(0,1,1)] },
+      { k:'x0', v:[cn(0,0,0), cn(0,1,0), cn(0,1,1), cn(0,0,1)] }, { k:'x1', v:[cn(1,0,0), cn(1,1,0), cn(1,1,1), cn(1,0,1)] }] }; });
+  var mid = [0, 1, 2].map(function (i) { var a = boxes.map(function (b) { return b.cen[i]; }); return (Math.min.apply(null, a) + Math.max.apply(null, a)) / 2; });
+  var ya = (35 + 90 * V.yaw) * Math.PI / 180, pi = 24 * Math.PI / 180, cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pi), sp = Math.sin(pi);
+  /* cabinet: x width, y depth (front at 0), z up. Screen: turn about z, then tip forward; d grows away from the eye */
+  var pr = function (w) { var x = w[0] - mid[0], y = w[1] - mid[1], z = w[2] - mid[2], xr = x * cy + y * sy, yr = -x * sy + y * cy; return { x:xr, y:-(z * cp - yr * sp), d:yr * cp + z * sp }; };
+  var out = [], minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  boxes.forEach(function (b) { var off = V.exp ? [0, 1, 2].map(function (i) { return (b.cen[i] - mid[i]) * 0.45; }) : [0, 0, 0];
+    b.faces.forEach(function (f) { var fc = [0, 1, 2].map(function (i) { return (f.v[0][i] + f.v[1][i] + f.v[2][i] + f.v[3][i]) / 4; }), nrm = [fc[0] - b.cen[0], fc[1] - b.cen[1], fc[2] - b.cen[2]];
+      var a0 = pr([mid[0], mid[1], mid[2]]), a1 = pr(add(mid, nrm, 1)); if (a1.d - a0.d > -1e-6) return;   // facing away
+      var q = f.v.map(function (w) { return pr(add(w, off, 1)); }), d = (q[0].d + q[1].d + q[2].d + q[3].d) / 4;
+      q.forEach(function (t2) { minX = Math.min(minX, t2.x); maxX = Math.max(maxX, t2.x); minY = Math.min(minY, t2.y); maxY = Math.max(maxY, t2.y); });
+      out.push({ b:b, f:f, q:q, d:d }); }); });
+  out.sort(function (a, b) { return b.d - a.d; });
+  var pad = 30, sw = Math.max(2, (maxX - minX) / 260), svg = out.map(function (o) { var p = o.b.p, pts = o.q.map(function (t2) { return (Math.round(t2.x * 10) / 10) + ',' + (Math.round(t2.y * 10) / 10); }).join(' ');
+    if (o.f.k === 'A' || o.f.k === 'B') return '<polygon points="' + pts + '" fill="#f4f3ef" fill-opacity=".93" stroke="#8d918c" stroke-width="' + sw * 0.5 + '"><title>' + esc((p.short || p.role) + ' · ' + fmt(p.L) + ' × ' + fmt(p.W)) + '</title></polygon>';
+    var e = o.f.k, on = !!(p.eb && p.eb[e]), fac = on && (p.ebFac && p.ebFac[e] || p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')), col = !on ? '#c9ccc6' : fac ? '#d9730d' : '#1f5fbf', len = e === 'y0' || e === 'y1' ? p.L : p.W;
+    return '<polygon class="ec-f" points="' + pts + '" fill="' + col + '" stroke="' + (on ? col : '#8d918c') + '" stroke-width="' + (on ? sw * 1.6 : sw * 0.5) + '" stroke-linejoin="round" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button" aria-pressed="' + on + '"><title>' + esc((p.short || p.role) + ' — ' + fmt(Math.round(len)) + ' mm: ' + (on ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded'))) + '</title></polygon>'; }).join('');
+  var tb = function (act, lab, on) { return '<button type="button" class="btn' + (on ? ' on' : '') + '" data-act="ecview" data-v="' + act + '"' + (on != null ? ' aria-pressed="' + !!on + '"' : '') + '>' + lab + '</button>'; };
+  return '<div class="ec-model"><div class="ec-tools">' + tb('l', '⟲') + tb('r', '⟳') + tb('exp', lt ? 'Išskleista' : 'Pulled apart', V.exp) + tb('fronts', lt ? 'Su fasadais' : 'With fronts', V.fronts) + '</div>' +
+    '<svg class="ec-msvg" viewBox="' + (minX - pad) + ' ' + (minY - pad) + ' ' + (maxX - minX + 2 * pad) + ' ' + (maxY - minY + 2 * pad) + '" preserveAspectRatio="xMidYMid meet">' + svg + '</svg>' +
+    '<p class="note" style="margin:6px 10px 8px">' + (lt ? 'Spustelėkite detalės kraštą modelyje — įjungsite arba išjungsite laminavimą. Sukite ⟲ ⟳, kad pamatytumėte kitą pusę.' : 'Click a part\'s edge on the model to switch its banding. Turn ⟲ ⟳ to see the other side.') + '</p></div>';
+}
 function ecModal(c, inf) {
   var r = inf.r, lt = S.lang === 'lt', need = ecNeeded(c, r), fe = c.edge.facade || 'PAGAL FASADA';
   var cards = r.panels.map(function (p) {
@@ -12236,7 +12272,7 @@ function ecModal(c, inf) {
   return '<div class="drwover jcover" data-act="ecclose" role="dialog" aria-modal="true"><div class="drwbox jcbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Kraštų laminavimo patikra' : 'Edge banding check') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="ecclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
     '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Kiekviena detalė su keturiais kraštais ir jų ilgiais, išdėstyta kaip detalės lange „Detalės ir CNC“. Spustelėkite kraštą — įjungsite arba išjungsite laminavimą; tas pats bus sąraše ir etiketėje.' : 'Every part with its four edges and their lengths, laid out as in the part view of Detalės ir CNC. Click an edge to switch its banding on or off; the list and the label follow.') +
       ' <span class="jc-leg"><i class="s" style="background:#1f5fbf"></i>' + esc(c.edge.carc || (lt ? 'karkaso kraštas' : 'carcass edge')) + ' <i class="s" style="background:#d9730d"></i>' + esc(lt ? 'pagal fasadą' : 'as the fronts') + (c.edge.facade ? ' (' + esc(c.edge.facade) + ')' : '') + ' <i class="s" style="background:#9aa09a"></i>' + (lt ? 'nelaminuojama' : 'not banded') + '</span></p>' +
-      '<div class="ec-grid">' + cards + '</div></div>' +
+      '<div class="ec-cols">' + ecModel(c, r) + '<div class="ec-grid">' + cards + '</div></div></div>' +
     '<div class="jcfoot"><span></span><button type="button" class="btn pri big" data-act="ecok">✓ ' + (need ? (lt ? 'Kraštai patikrinti' : 'Edges are checked') : (lt ? 'Patikrinta — uždaryti' : 'Checked — close')) + '</button></div></div></div>';
 }
 function jcBanner(c, inf) {
@@ -13956,6 +13992,7 @@ app.addEventListener('click', function (e) {
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
     case 'jcopen': S.jcheck = true; S.echeck = false; break;
     case 'ecopen': S.echeck = true; S.jcheck = false; break;
+    case 'ecview': { var EV = S.ecView = S.ecView || { yaw:0, exp:true, fronts:false }; if (v === 'l') EV.yaw = (EV.yaw + 3) % 4; else if (v === 'r') EV.yaw = (EV.yaw + 1) % 4; else EV[v] = !EV[v]; break; }
     case 'ecroom': S.sel = i; setRoomSel(i); S.echeck = true; S.jcheck = false; break;
     case 'ecclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.echeck = false; break;
     case 'ecok': { var ce = cur(), ie = S._info && S._info[S.sel]; if (ce && ie && ie.r) { ce.edgesOk = ecSig(ie.r); save(); toast(S.lang === 'lt' ? 'Kraštai patikrinti ✓' : 'Edges checked ✓'); } S.echeck = false; break; }
