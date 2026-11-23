@@ -209,7 +209,7 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .rc-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;border-radius:8px}.rc-bar.allok{border:1px solid var(--line);background:transparent;color:var(--ok)}
 .rc-chips{display:flex;gap:6px;flex-wrap:wrap}.rc-chip{border:1px solid #c9861a;background:#fff;color:#6a4300;border-radius:999px;padding:5px 11px;font:600 13px/1.2 inherit;cursor:pointer}.rc-chip.ok{border-color:var(--line);color:var(--ok);font-weight:500}.rc-chip.bad{border-color:#b4291f;color:#b4291f}
 .ec-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}.ec-model{position:sticky;top:0;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
-.ec-tools{display:flex;gap:6px;padding:8px 10px}.ec-tools .btn{padding:5px 10px;font-size:13px}.ec-tools .btn.on{background:var(--ink);color:var(--panel)}.ec-msvg{display:block;width:100%;height:min(58vh,560px)}
+.ec-tools{display:flex;gap:6px;padding:8px 10px}.ec-tools .btn{padding:5px 10px;font-size:13px}.ec-tools .btn.on{background:var(--ink);color:var(--panel)}.ec-msvg{display:block;width:100%;height:min(62vh,620px);cursor:grab;touch-action:none;user-select:none}.ec-msvg.drag{cursor:grabbing}.ec-tools{flex-wrap:wrap}
 .ec-f{cursor:pointer}.ec-f:hover{fill:#e8b90c;stroke:#e8b90c}@media(max-width:900px){.ec-cols{grid-template-columns:minmax(0,1fr)}.ec-model{position:static}}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}.ec-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}.ec-card.custom{background:var(--accent-soft)}
 .ec-h{display:flex;align-items:baseline;gap:8px}.ec-h .jreset{margin-left:auto}.ec-svg{display:block;width:100%;max-width:300px;margin:0 auto}.ec-e{cursor:pointer}.ec-e:hover line:nth-of-type(2){stroke-width:7}
@@ -1217,7 +1217,7 @@ var R = {
                                                                // (cam centre at 34 — as SWOOD CAM / step2xxl drill it: the drill cannot go to 34)
            dowel:{d:8, depthEdge:27, depthFace:12, offset:32}, // dowels at cam ±32 (outer cams only)
            backFix:{d:8, fromEdge:50} },                       // confirmats back→side: 8 through in back
-  confirmat: { d:8, pilot:{d:5, depth:32}, fromFront:70, railFromEdge:[30,70], railAlong:50 },
+  confirmat: { d:8, pilot:{d:5, depth:32}, fromFront:50, railFromEdge:[30,70], railAlong:50 },
   rail: 100,
   feet: { d:15, h:10, fromFront:50, fromBack:50, holeD:8, holeDepth:10 },   // pėdutės: Ø15 buttons under the sides (and partitions), one Ø8 × 10 hole each, 50 from the front and the back
   legs: { fromSide:55, fromFront:95, fromBack:55, markD:5, markDepth:2, markOff:14.85, drawD:40 },
@@ -1339,11 +1339,29 @@ var CARGO_HW  = ["CARGO DTC PURE PRO"];   // a cargo section's fitting (its own 
 /* edges chosen by hand on one part (c.ebEdit[key] = { y0, y1, x0, x1: true / false, fac: true }): fac = a visible part (a hung
    cabinet's bottom, a top) banded with the fronts' edge — every banded edge gets the facade edge and is flagged (p.ebFac), so the
    label says PAGAL FASADA there instead of LAMINUOJASI */
-function applyEbEdit(p, ov, eCarc, eFac) {
-  var front = p.role === 'FASADAS' || p.role === 'DURYS', fac = !!ov.fac, emF = eFac || 'PAGAL FASADA', em = fac ? emF : ((front ? (eFac || eCarc) : eCarc) || 'KRAŠTAS');
-  ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (ov[e] === true) p.eb[e] = fac ? emF : (p.eb[e] || em); else if (ov[e] === false) p.eb[e] = ''; });
-  if (fac) { p.ebFac = {}; ['y0', 'y1', 'x0', 'x1'].forEach(function (e) { if (p.eb[e]) { p.eb[e] = emF; p.ebFac[e] = true; } }); }
+function applyEbEdit(p, ov, eCarc, eFac) {   // per edge: true = banded (standard edge), 'fac' = banded as the fronts (label PAGAL FASADA), false = not banded
+  var front = p.role === 'FASADAS' || p.role === 'DURYS', fac = !!ov.fac, emF = eFac || 'PAGAL FASADA', em = fac ? emF : ((front ? (eFac || eCarc) : eCarc) || 'KRAŠTAS'), ES = ['y0', 'y1', 'x0', 'x1'];
+  ES.forEach(function (e) { if (ov[e] === true) p.eb[e] = fac ? emF : (p.eb[e] || em); else if (ov[e] === false) p.eb[e] = ''; else if (ov[e] === 'fac') p.eb[e] = emF; });
+  if (fac) { p.ebFac = {}; ES.forEach(function (e) { if (p.eb[e]) { p.eb[e] = emF; p.ebFac[e] = true; } }); }
+  else if (!front) ES.forEach(function (e) { if (ov[e] === 'fac') { p.ebFac = p.ebFac || {}; p.ebFac[e] = true; } });
   p.ebManual = true;
+}
+/* the shop's standard banding of the carcass: besides the front edges set where the parts are made, every edge of the sides,
+   the bottom and the top that no other part covers is banded — a bottom under the sides gets its ends, a side its top end,
+   and its bottom end when it runs past the bottom. The back edge is the one that is never seen: banded only when asked (ebBack). */
+function stdEdges(out, eCarc, back) {
+  var box = function (p) { var q = p.place, mn = [1e9, 1e9, 1e9], mx = [-1e9, -1e9, -1e9];
+    [0, p.L].forEach(function (a) { [0, p.W].forEach(function (b) { [0, p.T].forEach(function (d) { for (var i = 0; i < 3; i++) { var w = q.o[i] + a * q.u[i] + b * q.v[i] - d * q.n[i]; if (w < mn[i]) mn[i] = w; if (w > mx[i]) mx[i] = w; } }); }); });
+    return { mn:mn, mx:mx }; };
+  var solid = out.filter(function (p) { return p.place && p.role !== 'FASADAS' && p.role !== 'DURYS' && !p.drawerOf && p.T >= 8; }).map(function (p) { return { p:p, b:box(p) }; });
+  solid.forEach(function (s0) { var p = s0.p; if (['KAIRE', 'DESINE', 'DUGNAS', 'VIRSUS'].indexOf(p.role) < 0) return;
+    [['y0', p.place.v, -1], ['y1', p.place.v, 1], ['x0', p.place.u, -1], ['x1', p.place.u, 1]].forEach(function (E3) {
+      var e = E3[0], nrm = E3[1].map(function (x) { return x * E3[2]; }), ax = Math.abs(nrm[0]) > 0.9 ? 0 : Math.abs(nrm[1]) > 0.9 ? 1 : Math.abs(nrm[2]) > 0.9 ? 2 : -1; if (ax < 0 || p.eb[e]) return;
+      if (ax === 1) { if (nrm[1] > 0 && back) p.eb[e] = eCarc; return; }   // front edges are set with the part; the back edge only on request
+      var sg = nrm[ax] > 0 ? 1 : -1, pl = sg > 0 ? s0.b.mx[ax] : s0.b.mn[ax], o1 = (ax + 1) % 3, o2 = (ax + 2) % 3, area = (s0.b.mx[o1] - s0.b.mn[o1]) * (s0.b.mx[o2] - s0.b.mn[o2]), cov = 0;
+      solid.forEach(function (q) { if (q === s0) return; var near = sg > 0 ? q.b.mn[ax] : q.b.mx[ax]; if (Math.abs(near - pl) > 1.5) return;
+        var a = Math.min(s0.b.mx[o1], q.b.mx[o1]) - Math.max(s0.b.mn[o1], q.b.mn[o1]), b2 = Math.min(s0.b.mx[o2], q.b.mx[o2]) - Math.max(s0.b.mn[o2], q.b.mn[o2]); if (a > 0 && b2 > 0) cov += a * b2; });
+      if (cov < area * 0.5) p.eb[e] = eCarc; }); });
 }
 function isCargo(h) { return /^CARGO\b/i.test(String(h || '')); }
 function cargoOf(s) { return !s ? null : s.kind === 'cargo' ? (s.cargoHw || CARGO_HW[0]) : s.kind === 'doors' && !s.fridge && isCargo(s.hinge) ? s.hinge : null; }
@@ -1489,7 +1507,7 @@ function buildCabinet(c, idx, projName) {
   var warnOnce = function (w) { if (warn.indexOf(w) < 0) warn.push(w); };
   var mat = c.mat || {}, ed = c.edge || {};
   var mCarc = mat.carc || '', mFac = mat.facade || mCarc, mBack = mat.back || mCarc, mTop = mat.top || mCarc, mDrw = mat.drawer || mCarc;   // mTop: a full top (STOGAS) in its own board; mDrw: MERIVOBOX base / back (16 mm)
-  var eCarc = ed.carc || '', eFac = ed.facade || '';
+  var eCarc = ed.carc || 'KRAŠTAS', eFac = ed.facade || '';   // no edge material named: the standard banding is still there, called KRAŠTAS
   var fT = +o.facadeT || 18;
   /* the fronts' gaps (o.fg, mm; empty = the rule): l / r at the sides, mid between fronts, top under the top / rails, bot = where the
      lowest fronts start, from the carcass bottom (negative: lower, down to the sides' bottom edges when the bottom is raised) */
@@ -1503,6 +1521,7 @@ function buildCabinet(c, idx, projName) {
   /* part keys, edge banding chosen by hand (c.ebEdit[part key] = { y0, y1, x0, x1 }: true / false, in the part's own frame as on
      the label), cabinet number and short names (drawer box parts: STALC1-SONAS) */
   function finishParts() {
+    if (!c.kind && !c.dishwasher) stdEdges(out, eCarc, !!o.ebBack);
     var ebEdit = c.ebEdit || {};
     out.forEach(function (p) {
       p.key = p.name.slice(base.length + 1);
@@ -2510,7 +2529,7 @@ function buildBox(c, idx, projName) {
   var nm = function (role) { return base + '_' + role; };
   var out = [], warn = [], hw = [], jointsInfo = [], seams = [];
   var warnOnce = function (w) { if (warn.indexOf(w) < 0) warn.push(w); };
-  var mat = c.mat || {}, ed = c.edge || {}, mCarc = mat.carc || '', mBack = mat.back || mCarc, mDrw = mat.drawer || mCarc, eCarc = ed.carc || '';
+  var mat = c.mat || {}, ed = c.edge || {}, mCarc = mat.carc || '', mBack = mat.back || mCarc, mDrw = mat.drawer || mCarc, eCarc = ed.carc || 'KRAŠTAS';
   var cf = R.confirmat, cm = R.cam;
   var empty = function () { return { panels:out, warnings:warn, hardware:hw, legs:[], joints:[], seams:[], visual:{ doors:[], drawers:[], plinth:null, hb:0 }, dims:{ W:W, H:H, D:D, t:t }, box:{ boards:[], ghosts:[], covers:[] } }; };
   if (!(W > 0 && H > 0 && D > 0)) { warn.push('netinkami matmenys'); return empty(); }
@@ -12221,42 +12240,56 @@ function ecSig(r) { return ((r && r.panels) || []).map(function (p) { return p.k
 function ecNeeded(c, r) { return !!(r && r.panels && r.panels.length) && c.edgesOk !== ecSig(r); }
 /* the cabinet itself in the edges check: every part as a box, its four edge faces coloured by their banding and clickable
    (the same switch as on the cards). Turn it, pull the parts apart to reach hidden edges, hide the fronts. */
+function ecState(p, e, fe) { var on = !!(p.eb && p.eb[e]); return !on ? 0 : (p.ebFac && p.ebFac[e]) || (p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')) ? 2 : 1; }   // 0 raw, 1 carcass edge, 2 as the fronts
+var EC_COL = ['#c9ccc6', '#1f5fbf', '#d9730d'];
 function ecModel(c, r) {
-  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { yaw:0, exp:true, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
+  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { yaw:35, pitch:22, zoom:1, exp:false, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
   var ps = r.panels.filter(function (p) { return p.place && (V.fronts || (p.role !== 'FASADAS' && p.role !== 'DURYS')); }); if (!ps.length) return '';
-  var add = function (a, b, k) { return [a[0] + b[0] * k, a[1] + b[1] * k, a[2] + b[2] * k]; };
-  var boxes = ps.map(function (p) { var q = p.place, pt = function (a, b, d) { return add(add(add(q.o, q.u, a), q.v, b), q.n, -d); };
+  var boxes = ps.map(function (p) { var q = p.place, pt = function (a, b, d) { return [0, 1, 2].map(function (i) { return q.o[i] + a * q.u[i] + b * q.v[i] - d * q.n[i]; }); };
     var cn = function (a, b, d) { return pt(a ? p.L : 0, b ? p.W : 0, d ? p.T : 0); };
     return { p:p, cen:pt(p.L / 2, p.W / 2, p.T / 2), faces:[
       { k:'A', v:[cn(0,0,0), cn(1,0,0), cn(1,1,0), cn(0,1,0)] }, { k:'B', v:[cn(0,0,1), cn(1,0,1), cn(1,1,1), cn(0,1,1)] },
       { k:'y0', v:[cn(0,0,0), cn(1,0,0), cn(1,0,1), cn(0,0,1)] }, { k:'y1', v:[cn(0,1,0), cn(1,1,0), cn(1,1,1), cn(0,1,1)] },
       { k:'x0', v:[cn(0,0,0), cn(0,1,0), cn(0,1,1), cn(0,0,1)] }, { k:'x1', v:[cn(1,0,0), cn(1,1,0), cn(1,1,1), cn(1,0,1)] }] }; });
   var mid = [0, 1, 2].map(function (i) { var a = boxes.map(function (b) { return b.cen[i]; }); return (Math.min.apply(null, a) + Math.max.apply(null, a)) / 2; });
-  var ya = (35 + 90 * V.yaw) * Math.PI / 180, pi = 24 * Math.PI / 180, cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pi), sp = Math.sin(pi);
-  /* cabinet: x width, y depth (front at 0), z up. Screen: turn about z, then tip forward; d grows away from the eye */
-  var pr = function (w) { var x = w[0] - mid[0], y = w[1] - mid[1], z = w[2] - mid[2], xr = x * cy + y * sy, yr = -x * sy + y * cy; return { x:xr, y:-(z * cp - yr * sp), d:yr * cp + z * sp }; };
-  var out = [], minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
-  boxes.forEach(function (b) { var off = V.exp ? [0, 1, 2].map(function (i) { return (b.cen[i] - mid[i]) * 0.45; }) : [0, 0, 0];
-    b.faces.forEach(function (f) { var fc = [0, 1, 2].map(function (i) { return (f.v[0][i] + f.v[1][i] + f.v[2][i] + f.v[3][i]) / 4; }), nrm = [fc[0] - b.cen[0], fc[1] - b.cen[1], fc[2] - b.cen[2]];
-      var a0 = pr([mid[0], mid[1], mid[2]]), a1 = pr(add(mid, nrm, 1)); if (a1.d - a0.d > -1e-6) return;   // facing away
-      var q = f.v.map(function (w) { return pr(add(w, off, 1)); }), d = (q[0].d + q[1].d + q[2].d + q[3].d) / 4;
-      q.forEach(function (t2) { minX = Math.min(minX, t2.x); maxX = Math.max(maxX, t2.x); minY = Math.min(minY, t2.y); maxY = Math.max(maxY, t2.y); });
-      out.push({ b:b, f:f, q:q, d:d }); }); });
-  out.sort(function (a, b) { return b.d - a.d; });
-  var pad = 30, sw = Math.max(2, (maxX - minX) / 260), svg = out.map(function (o) { var p = o.b.p, pts = o.q.map(function (t2) { return (Math.round(t2.x * 10) / 10) + ',' + (Math.round(t2.y * 10) / 10); }).join(' ');
-    if (o.f.k === 'A' || o.f.k === 'B') return '<polygon points="' + pts + '" fill="#f4f3ef" fill-opacity=".93" stroke="#8d918c" stroke-width="' + sw * 0.5 + '"><title>' + esc((p.short || p.role) + ' · ' + fmt(p.L) + ' × ' + fmt(p.W)) + '</title></polygon>';
-    var e = o.f.k, on = !!(p.eb && p.eb[e]), fac = on && (p.ebFac && p.ebFac[e] || p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')), col = !on ? '#c9ccc6' : fac ? '#d9730d' : '#1f5fbf', len = e === 'y0' || e === 'y1' ? p.L : p.W;
-    return '<polygon class="ec-f" points="' + pts + '" fill="' + col + '" stroke="' + (on ? col : '#8d918c') + '" stroke-width="' + (on ? sw * 1.6 : sw * 0.5) + '" stroke-linejoin="round" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button" aria-pressed="' + on + '"><title>' + esc((p.short || p.role) + ' — ' + fmt(Math.round(len)) + ' mm: ' + (on ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded'))) + '</title></polygon>'; }).join('');
-  var tb = function (act, lab, on) { return '<button type="button" class="btn' + (on ? ' on' : '') + '" data-act="ecview" data-v="' + act + '"' + (on != null ? ' aria-pressed="' + !!on + '"' : '') + '>' + lab + '</button>'; };
-  return '<div class="ec-model"><div class="ec-tools">' + tb('l', '⟲') + tb('r', '⟳') + tb('exp', lt ? 'Išskleista' : 'Pulled apart', V.exp) + tb('fronts', lt ? 'Su fasadais' : 'With fronts', V.fronts) + '</div>' +
-    '<svg class="ec-msvg" viewBox="' + (minX - pad) + ' ' + (minY - pad) + ' ' + (maxX - minX + 2 * pad) + ' ' + (maxY - minY + 2 * pad) + '" preserveAspectRatio="xMidYMid meet">' + svg + '</svg>' +
-    '<p class="note" style="margin:6px 10px 8px">' + (lt ? 'Spustelėkite detalės kraštą modelyje — įjungsite arba išjungsite laminavimą. Sukite ⟲ ⟳, kad pamatytumėte kitą pusę.' : 'Click a part\'s edge on the model to switch its banding. Turn ⟲ ⟳ to see the other side.') + '</p></div>';
+  boxes.forEach(function (b) { var off = V.exp ? [0, 1, 2].map(function (i) { return (b.cen[i] - mid[i]) * 0.5; }) : [0, 0, 0];
+    b.faces.forEach(function (f) { f.w = f.v.map(function (w) { return [w[0] + off[0] - mid[0], w[1] + off[1] - mid[1], w[2] + off[2] - mid[2]]; }); });
+    b.mn = [1e9, 1e9, 1e9]; b.mx = [-1e9, -1e9, -1e9]; b.faces.forEach(function (f) { f.w.forEach(function (w) { for (var i = 0; i < 3; i++) { if (w[i] < b.mn[i]) b.mn[i] = w[i]; if (w[i] > b.mx[i]) b.mx[i] = w[i]; } }); });
+    b.c2 = [0, 1, 2].map(function (i) { return (b.mn[i] + b.mx[i]) / 2; }); });
+  /* cabinet: x width, y depth (front at 0), z up. Turn about z, then tip; depth grows away from the eye */
+  var ya = V.yaw * Math.PI / 180, pi = V.pitch * Math.PI / 180, cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pi), sp = Math.sin(pi), dv = [-sy * cp, cy * cp, sp];
+  var pr = function (w) { var xr = w[0] * cy + w[1] * sy, yr = -w[0] * sy + w[1] * cy; return [Math.round((xr) * 10) / 10, Math.round(-(w[2] * cp - yr * sp) * 10) / 10]; };
+  var dep = function (w) { return w[0] * dv[0] + w[1] * dv[1] + w[2] * dv[2]; };
+  /* painter's order for boxes that do not intersect: a box goes first when it lies behind another along an axis that separates them */
+  var behind = function (A, B) { for (var i = 0; i < 3; i++) { if (A.mn[i] >= B.mx[i] - 0.01 && dv[i] > 1e-6) return true; if (A.mx[i] <= B.mn[i] + 0.01 && dv[i] < -1e-6) return true; } return false; };
+  var todo = boxes.slice().sort(function (a, b) { return dep(b.c2) - dep(a.c2); }), order = [];
+  while (todo.length) { var k = 0; for (var a2 = 0; a2 < todo.length; a2++) { var free = true; for (var b3 = 0; b3 < todo.length; b3++) if (b3 !== a2 && behind(todo[b3], todo[a2]) && !behind(todo[a2], todo[b3])) { free = false; break; } if (free) { k = a2; break; } } order.push(todo.splice(k, 1)[0]); }
+  var rad = 0; boxes.forEach(function (b) { b.faces.forEach(function (f) { f.w.forEach(function (w) { rad = Math.max(rad, Math.hypot(w[0], w[1], w[2])); }); }); });
+  var half = rad * 1.08 / (V.zoom || 1), sw = half / 140;
+  var svg = order.map(function (b) { var p = b.p; return b.faces.map(function (f) {
+      var fc = [0, 1, 2].map(function (i) { return (f.w[0][i] + f.w[1][i] + f.w[2][i] + f.w[3][i]) / 4 - b.c2[i]; }); if (dep(fc) > -1e-6) return '';   // facing away
+      var pts = f.w.map(function (w) { return pr(w).join(','); }).join(' ');
+      if (f.k === 'A' || f.k === 'B') return '<polygon points="' + pts + '" fill="#f6f5f1" stroke="#7d827c" stroke-width="' + sw * 0.6 + '" stroke-linejoin="round"><title>' + esc((p.short || p.role) + ' · ' + fmt(p.L) + ' × ' + fmt(p.W)) + '</title></polygon>';
+      var e = f.k, st = ecState(p, e, fe), len = e === 'y0' || e === 'y1' ? p.L : p.W;
+      return '<polygon class="ec-f" points="' + pts + '" fill="' + EC_COL[st] + '" stroke="' + (st ? EC_COL[st] : '#7d827c') + '" stroke-width="' + (st ? sw * 2.2 : sw * 0.6) + '" stroke-linejoin="round" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button"><title>' + esc((p.short || p.role) + ' — ' + fmt(Math.round(len)) + ' mm: ' + (st ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded'))) + '</title></polygon>'; }).join(''); }).join('');
+  var tb = function (act, lab, on, tip) { return '<button type="button" class="btn' + (on ? ' on' : '') + '" data-act="ecview" data-v="' + act + '"' + (on != null ? ' aria-pressed="' + !!on + '"' : '') + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + lab + '</button>'; };
+  return '<div class="ec-model"><div class="ec-tools">' + tb('front', lt ? 'Priekis' : 'Front') + tb('backv', lt ? 'Galas' : 'Back') + tb('under', lt ? 'Iš apačios' : 'From below') + tb('exp', lt ? 'Išskleisti' : 'Pull apart', V.exp) + tb('fronts', lt ? 'Fasadai' : 'Fronts', V.fronts) + tb('zin', '＋') + tb('zout', '−') + '</div>' +
+    '<svg class="ec-msvg" viewBox="' + (-half) + ' ' + (-half) + ' ' + (2 * half) + ' ' + (2 * half) + '" preserveAspectRatio="xMidYMid meet">' + svg + '</svg>' +
+    '<p class="note" style="margin:6px 10px 8px">' + (lt ? 'Tempkite — sukite modelį, ratuku — artinkite. Spustelėkite kraštą: nelaminuojama → karkaso kraštas → pagal fasadą.' : 'Drag to turn the model, wheel to zoom. Click an edge: not banded → carcass edge → as the fronts.') + '</p></div>';
 }
+(function () {   // turn the edges model by dragging, zoom with the wheel — only the model is redrawn
+  var D = null, redraw = function () { var m = document.querySelector('.ec-model'), c = cur(), inf = S._info && S._info[S.sel]; if (m && c && inf && inf.r) { m.outerHTML = ecModel(c, inf.r); var sv = document.querySelector('.ec-msvg'); if (sv && D && D.moved) sv.classList.add('drag'); } };
+  document.addEventListener('pointerdown', function (e) { S.ecDrag = false; if (!e.target.closest || !e.target.closest('.ec-msvg')) return; var V = S.ecView; if (!V) return; D = { x:e.clientX, y:e.clientY, yaw:V.yaw, pitch:V.pitch, moved:false }; });
+  document.addEventListener('pointermove', function (e) { if (!D) return; var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 5) return; D.moved = true; S.ecDrag = true;
+    S.ecView.yaw = D.yaw + dx * 0.45; S.ecView.pitch = Math.max(-85, Math.min(85, D.pitch + dy * 0.35)); redraw(); e.preventDefault(); });
+  document.addEventListener('pointerup', function () { if (D && D.moved) { var d0 = D; D = null; redraw(); setTimeout(function () { S.ecDrag = false; }, 60); void d0; } D = null; });
+  document.addEventListener('wheel', function (e) { if (!e.target.closest || !e.target.closest('.ec-msvg') || !S.ecView) return; e.preventDefault(); S.ecView.zoom = Math.max(0.5, Math.min(6, (S.ecView.zoom || 1) * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); redraw(); }, { passive:false });
+})();
 function ecModal(c, inf) {
   var r = inf.r, lt = S.lang === 'lt', need = ecNeeded(c, r), fe = c.edge.facade || 'PAGAL FASADA';
   var cards = r.panels.map(function (p) {
     var Wd = 230, k = Wd / Math.max(p.L, 1), hh = Math.max(34, Math.min(120, p.W * k)), pad = 22, x0 = pad, x1 = pad + Wd, yT = pad, yB = pad + hh;
-    var seg = function (e, xa, ya, xb, yb, len, lx, ly, rot) { var on = !!(p.eb && p.eb[e]), fac = on && (p.ebFac && p.ebFac[e] || p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')), col = !on ? '#9aa09a' : fac ? '#d9730d' : '#1f5fbf';
+    var seg = function (e, xa, ya, xb, yb, len, lx, ly, rot) { var st = ecState(p, e, fe), on = st > 0, col = st ? EC_COL[st] : '#9aa09a';
       return '<g class="ec-e" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button" aria-pressed="' + on + '"><title>' + esc((on ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded')) + ' · ' + fmt(len) + ' mm') + '</title>' +
         '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="transparent" stroke-width="18"/>' +
         '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="' + col + '" stroke-width="' + (on ? 5 : 1.5) + '"' + (on ? ' stroke-linecap="round"' : ' stroke-dasharray="5 4"') + '/>' +
@@ -12267,11 +12300,12 @@ function ecModal(c, inf) {
       '<svg class="ec-svg" viewBox="0 0 ' + (Wd + 2 * pad) + ' ' + (hh + 2 * pad) + '"><rect x="' + x0 + '" y="' + yT + '" width="' + Wd + '" height="' + hh + '" fill="var(--sunk)"/>' +
         seg('y1', x0, yT, x1, yT, p.L, (x0 + x1) / 2, yT - 7) + seg('y0', x0, yB, x1, yB, p.L, (x0 + x1) / 2, yB + 16) + seg('x0', x0, yT, x0, yB, p.W, x0 - 8, (yT + yB) / 2 + 4, 1) + seg('x1', x1, yT, x1, yB, p.W, x1 + 15, (yT + yB) / 2 + 4, 1) + '</svg>' +
       '<div class="ec-ctl"><button type="button" class="btn" data-act="ebk" data-v="' + esc(p.key) + '" data-i="all">' + (n4 === 4 ? (lt ? 'Nė vieno' : 'None') : (lt ? 'Visi 4' : 'All 4')) + '</button>' +
-        '<label class="chk"><input type="checkbox" data-act="ebk" data-v="' + esc(p.key) + '" data-i="fac"' + (p.ebFac ? ' checked' : '') + '> ' + (lt ? 'pagal fasadą' : 'as the fronts') + '</label></div></div>';
+        '</div></div>';
   }).join('');
   return '<div class="drwover jcover" data-act="ecclose" role="dialog" aria-modal="true"><div class="drwbox jcbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Kraštų laminavimo patikra' : 'Edge banding check') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="ecclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
-    '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Kiekviena detalė su keturiais kraštais ir jų ilgiais, išdėstyta kaip detalės lange „Detalės ir CNC“. Spustelėkite kraštą — įjungsite arba išjungsite laminavimą; tas pats bus sąraše ir etiketėje.' : 'Every part with its four edges and their lengths, laid out as in the part view of Detalės ir CNC. Click an edge to switch its banding on or off; the list and the label follow.') +
+    '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Standartas: laminuojami visi šonų, dugno ir viršaus kraštai, kurių neuždengia kita detalė (priekis, matomi galai), lentynų ir juostų — priekis. Spustelėkite kraštą modelyje ar kortelėje: nelaminuojama → karkaso kraštas → pagal fasadą (etiketėje „PAGAL FASADA“).' : 'Standard: every edge of the sides, bottom and top that no other part covers is banded (front, visible ends); shelves and rails — the front. Click an edge on the model or a card: not banded → carcass edge → as the fronts (label: PAGAL FASADA).') +
       ' <span class="jc-leg"><i class="s" style="background:#1f5fbf"></i>' + esc(c.edge.carc || (lt ? 'karkaso kraštas' : 'carcass edge')) + ' <i class="s" style="background:#d9730d"></i>' + esc(lt ? 'pagal fasadą' : 'as the fronts') + (c.edge.facade ? ' (' + esc(c.edge.facade) + ')' : '') + ' <i class="s" style="background:#9aa09a"></i>' + (lt ? 'nelaminuojama' : 'not banded') + '</span></p>' +
+      '<label class="chk" style="margin:0 0 10px"><input type="checkbox" data-bind="c.cnc.ebBack"' + (c.cnc.ebBack ? ' checked' : '') + '> ' + (lt ? 'Laminuoti ir galinius (nematomus) šonų, dugno ir viršaus kraštus' : 'Band the back (unseen) edges of the sides, bottom and top too') + '</label>' +
       '<div class="ec-cols">' + ecModel(c, r) + '<div class="ec-grid">' + cards + '</div></div></div>' +
     '<div class="jcfoot"><span></span><button type="button" class="btn pri big" data-act="ecok">✓ ' + (need ? (lt ? 'Kraštai patikrinti' : 'Edges are checked') : (lt ? 'Patikrinta — uždaryti' : 'Checked — close')) + '</button></div></div></div>';
 }
@@ -13992,17 +14026,20 @@ app.addEventListener('click', function (e) {
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
     case 'jcopen': S.jcheck = true; S.echeck = false; break;
     case 'ecopen': S.echeck = true; S.jcheck = false; break;
-    case 'ecview': { var EV = S.ecView = S.ecView || { yaw:0, exp:true, fronts:false }; if (v === 'l') EV.yaw = (EV.yaw + 3) % 4; else if (v === 'r') EV.yaw = (EV.yaw + 1) % 4; else EV[v] = !EV[v]; break; }
+    case 'ecview': { var EV = S.ecView = S.ecView || { yaw:35, pitch:22, zoom:1, exp:false, fronts:false };
+      if (v === 'front') { EV.yaw = 35; EV.pitch = 22; } else if (v === 'backv') { EV.yaw = 215; EV.pitch = 22; } else if (v === 'under') { EV.yaw = 35; EV.pitch = -40; }
+      else if (v === 'zin') EV.zoom = Math.min(6, (EV.zoom || 1) * 1.3); else if (v === 'zout') EV.zoom = Math.max(0.5, (EV.zoom || 1) / 1.3); else EV[v] = !EV[v]; break; }
     case 'ecroom': S.sel = i; setRoomSel(i); S.echeck = true; S.jcheck = false; break;
     case 'ecclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.echeck = false; break;
     case 'ecok': { var ce = cur(), ie = S._info && S._info[S.sel]; if (ce && ie && ie.r) { ce.edgesOk = ecSig(ie.r); save(); toast(S.lang === 'lt' ? 'Kraštai patikrinti ✓' : 'Edges checked ✓'); } S.echeck = false; break; }
     case 'ebk': { var ck = cur(), ik = S._info && S._info[S.sel], pk = ik && ik.r && ik.r.panels.filter(function (q) { return q.key === v; })[0], what = el.getAttribute('data-i'); if (!ck || !pk) break;
       var EE = ck.ebEdit = ck.ebEdit || {}, ES = ['y0', 'y1', 'x0', 'x1'], has = function (e2) { return !!(pk.eb && pk.eb[e2]); };
+      if (S.ecDrag) { S.ecDrag = false; return; }
       if (what === 'reset') delete EE[v];
-      else { var o2 = EE[v] = EE[v] || {};
-        if (what === 'all') { var allOn = ES.every(has); ES.forEach(function (e2) { o2[e2] = !allOn; }); }
-        else if (what === 'fac') { if (pk.ebFac) delete o2.fac; else { o2.fac = true; if (!ES.some(has)) o2.y0 = true; } }
-        else o2[what] = !has(what);
+      else { var o2 = EE[v] = EE[v] || {}, frontP = pk.role === 'FASADAS' || pk.role === 'DURYS', isF = function (e2) { return !!(pk.ebFac && pk.ebFac[e2]); };
+        if (o2.fac) { delete o2.fac; ES.forEach(function (e2) { if (has(e2)) o2[e2] = 'fac'; }); }   // a whole part set "as the fronts" before: now edge by edge
+        if (what === 'all') { var allOn = ES.every(has); ES.forEach(function (e2) { o2[e2] = allOn ? false : (isF(e2) ? 'fac' : true); }); }
+        else o2[what] = !has(what) ? true : (!frontP && !isF(what) ? 'fac' : false);   // not banded → carcass edge → as the fronts → not banded
         if (!Object.keys(o2).length) delete EE[v]; }
       if (!ck.edge.carc && !ck.edge.facade && what !== 'reset') toast(t('ebNoMat'));
       save(); break; }
