@@ -913,5 +913,7 @@ var LT = {
   "Handed off to production": "Perduota į gamybą",
   "Drawings check": "Brėžinių patikra",
   "Design draft": "Eskizas",
-  "Right-click a card for quick actions — problem, urgent, remark…": "Dešinys pelės klavišas ant kortelės — greiti veiksmai: problema, skubu, pastaba…"
+  "Right-click a card for quick actions — problem, urgent, remark…": "Dešinys pelės klavišas ant kortelės — greiti veiksmai: problema, skubu, pastaba…",
+  "Show the side panel": "Rodyti šoninį meniu",
+  "Hide the side panel": "Slėpti šoninį meniu"
 };

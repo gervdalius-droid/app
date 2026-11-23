@@ -45,23 +45,24 @@ var Mgr = {
     // everyone gets the same cockpit — Settings is the only thing a role can hide
     ["dashboard", "dashboard", "Dashboard"], ...(App.isWorker() ? [["mywork", "wrench", "My Work", myOps]] : []), ["board", "kanban", "Production Board"], ["projects", "folder", "Projects", active.length], ["warehouse", "warehouse", "Warehouse", low, "low"], ["todo", "todo", "To-Do", myTodos], ["planner", "columns", "Planner", D.myGTaskCount(App.me.id)], ["scan", "scan", "Scan Station"], ["team", "users", "Team"], ["whiteboard", "board", "Whiteboard"], ["activity", "history", "Activity"], ...(App.can("reports.view") ? [["reports", "chart", "Reports"]] : []), ...(App.can("settings") ? [["settings", "sliders", "Settings"]] : [])];
     var navActive = id => id === "projects" ? ["projects", "orders"].includes(App.view) : App.view === id;
-    return `<div class="shell">
+    var shut = this.sideShut();
+    return `<div class="shell ${shut ? "side-shut" : ""}">
       <aside class="sidebar">
-        <div class="brand"><span class="mark" style="color:var(--accent)">${icon("logo", 23, "", 1.7)}</span> ShopFlow</div>
+        <div class="brand"><span class="mark" style="color:var(--accent)">${icon("logo", 23, "", 1.7)}</span> <span class="lbl">ShopFlow</span></div>
         ${nav.map(([id, ico, label, count, warn]) => `
-          <button class="nav-item ${navActive(id) ? "active" : ""}" data-nav="${id}">
-            <span class="ico">${icon(ico, 17)}</span> ${label}
+          <button class="nav-item ${navActive(id) ? "active" : ""}" data-nav="${id}" title="${esc(typeof I18N !== "undefined" ? I18N.t(label) : label)}">
+            <span class="ico">${icon(ico, 17)}</span> <span class="lbl">${label}</span>
             ${count ? `<span class="count-badge" ${warn ? `style="background:var(--red-soft);color:var(--red)"` : ""}>${count}</span>` : ""}
           </button>`).join("")}
         <div class="spacer"></div>
         ${(() => {
       var n = D.attention(App.me.id).count;
       return n ? `<button class="nav-item ${App.view === "attention" ? "active" : ""}" data-nav="attention" style="color:var(--red)">
-            <span class="ico">${icon("alert", 16)}</span> Needs attention <span class="count-badge" style="background:var(--red-soft);color:var(--red)">${n}</span>
+            <span class="ico">${icon("alert", 16)}</span> <span class="lbl">Needs attention</span> <span class="count-badge" style="background:var(--red-soft);color:var(--red)">${n}</span>
           </button>` : "";
     })()}
         <button class="nav-item bench-switch" id="bench-btn" title="Big-button screen for a bench tablet">
-          <span class="ico">${icon("wrench", 16)}</span> Bench mode
+          <span class="ico">${icon("wrench", 16)}</span> <span class="lbl">Bench mode</span>
         </button>
         <button class="user-chip" id="logout-btn" title="Sign out">
           ${avatarHtml(App.me, "md")}
@@ -71,6 +72,7 @@ var Mgr = {
       </aside>
       <div class="main">
         <div class="topbar">
+          <button class="icon-btn side-toggle" id="side-toggle" title="${shut ? "Show the side panel" : "Hide the side panel"} ( [ )">${icon("menu", 17)}</button>
           <h1 id="page-title">${this.titles[App.view] || ""}</h1>
           <div class="grow"></div>
           <div class="search-box" id="topbar-search">${icon("search", 14)}<span style="flex:1">Search</span><kbd>⌘K</kbd></div>
@@ -85,6 +87,20 @@ var Mgr = {
       </div>
       ${this.mobileNav(nav, navActive, attention)}
     </div>`;
+  },
+  /* the side panel can fold to a thin row of icons — remembered on this computer */
+  sideShut() {
+    try { return localStorage.getItem("sf-side-shut") === "1"; } catch (e) { return !!this._sideShut; }
+  },
+  toggleSide() {
+    var on = !this.sideShut();
+    this._sideShut = on;
+    try { localStorage.setItem("sf-side-shut", on ? "1" : "0"); } catch (e) {}
+    var sh = document.querySelector(".shell");
+    if (sh) sh.classList.toggle("side-shut", on);
+    var b = document.getElementById("side-toggle");
+    if (b) b.title = (on ? I18N.t("Show the side panel") : I18N.t("Hide the side panel")) + " ( [ )";
+    window.dispatchEvent(new Event("resize")); // boards and plans re-measure their width
   },
   titles: {
     dashboard: "Dashboard",
@@ -259,6 +275,18 @@ var Mgr = {
     if (bench) bench.onclick = () => App.setBenchMode(true);
     Notif.bindBell(root);
     $("#topbar-search", root).onclick = () => Palette.open();
+    var sideBtn = $("#side-toggle", root);
+    if (sideBtn) sideBtn.onclick = () => this.toggleSide();
+    if (!this._sideKeys) {
+      this._sideKeys = true;
+      document.addEventListener("keydown", e => {
+        if (e.key !== "[" || e.ctrlKey || e.metaKey || e.altKey) return;
+        var t = e.target;
+        if (t && (t.closest && t.closest("input, textarea, select, [contenteditable]"))) return;
+        if (!document.querySelector(".shell")) return;
+        this.toggleSide();
+      });
+    }
     $("#theme-btn", root).onclick = () => {
       var cur = document.documentElement.getAttribute("data-theme");
       App.applyTheme(cur === "dark" ? "light" : "dark");

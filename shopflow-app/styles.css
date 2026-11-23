@@ -3328,3 +3328,14 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 /* "Paruošta" — packed, waiting for installation */
 .board-col.ready-col, .bg-cell.ready-col { background: rgba(52,199,89,.06); }
 .bg-head-cell.ready-col b { color: #1f9d48; }
+/* side panel that folds to icons */
+.sidebar { transition: width .2s var(--ease), padding .2s var(--ease); overflow: hidden; }
+.nav-item .lbl, .sidebar .brand .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.side-toggle { margin-right: 4px; margin-left: -6px; }
+.shell.side-shut .sidebar { width: 64px; padding-left: 8px; padding-right: 8px; }
+.shell.side-shut .sidebar .brand { padding: 4px 0 16px; justify-content: center; }
+.shell.side-shut .sidebar .lbl, .shell.side-shut .user-chip .meta, .shell.side-shut .user-chip .out { display: none; }
+.shell.side-shut .nav-item { justify-content: center; padding: 9px 0; position: relative; gap: 0; }
+.shell.side-shut .nav-item .count-badge { position: absolute; top: 2px; right: 2px; margin: 0; min-width: 16px; height: 16px; padding: 0 4px; font-size: 9.5px; line-height: 16px; }
+.shell.side-shut .user-chip { justify-content: center; padding-left: 0; padding-right: 0; }
+@media (max-width: 760px) { .side-toggle { display: none; } }
