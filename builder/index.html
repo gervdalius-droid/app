@@ -1362,6 +1362,7 @@ function stdEdges(out, eCarc, back) {
       solid.forEach(function (q) { if (q === s0) return; var near = sg > 0 ? q.b.mn[ax] : q.b.mx[ax]; if (Math.abs(near - pl) > 1.5) return;
         var a = Math.min(s0.b.mx[o1], q.b.mx[o1]) - Math.max(s0.b.mn[o1], q.b.mn[o1]), b2 = Math.min(s0.b.mx[o2], q.b.mx[o2]) - Math.max(s0.b.mn[o2], q.b.mn[o2]); if (a > 0 && b2 > 0) cov += a * b2; });
       if (cov < area * 0.5) p.eb[e] = eCarc; }); });
+  out.forEach(function (p) { if (/^JUOSTA_/.test(p.role)) { if (!p.eb.y0) p.eb.y0 = eCarc; if (!p.eb.y1) p.eb.y1 = eCarc; } });   // tie rails: both long edges, always
 }
 function isCargo(h) { return /^CARGO\b/i.test(String(h || '')); }
 function cargoOf(s) { return !s ? null : s.kind === 'cargo' ? (s.cargoHw || CARGO_HW[0]) : s.kind === 'doors' && !s.fridge && isCargo(s.hinge) ? s.hinge : null; }
@@ -12243,7 +12244,7 @@ function ecNeeded(c, r) { return !!(r && r.panels && r.panels.length) && c.edges
 function ecState(p, e, fe) { var on = !!(p.eb && p.eb[e]); return !on ? 0 : (p.ebFac && p.ebFac[e]) || (p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')) ? 2 : 1; }   // 0 raw, 1 carcass edge, 2 as the fronts
 var EC_COL = ['#c9ccc6', '#1f5fbf', '#d9730d'];
 function ecModel(c, r) {
-  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { yaw:35, pitch:22, zoom:1, exp:false, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
+  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { th:0.62, ph:0.42, zoom:1, exp:false, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
   var ps = r.panels.filter(function (p) { return p.place && (V.fronts || (p.role !== 'FASADAS' && p.role !== 'DURYS')); }); if (!ps.length) return '';
   var boxes = ps.map(function (p) { var q = p.place, pt = function (a, b, d) { return [0, 1, 2].map(function (i) { return q.o[i] + a * q.u[i] + b * q.v[i] - d * q.n[i]; }); };
     var cn = function (a, b, d) { return pt(a ? p.L : 0, b ? p.W : 0, d ? p.T : 0); };
@@ -12257,8 +12258,10 @@ function ecModel(c, r) {
     b.mn = [1e9, 1e9, 1e9]; b.mx = [-1e9, -1e9, -1e9]; b.faces.forEach(function (f) { f.w.forEach(function (w) { for (var i = 0; i < 3; i++) { if (w[i] < b.mn[i]) b.mn[i] = w[i]; if (w[i] > b.mx[i]) b.mx[i] = w[i]; } }); });
     b.c2 = [0, 1, 2].map(function (i) { return (b.mn[i] + b.mx[i]) / 2; }); });
   /* cabinet: x width, y depth (front at 0), z up. Turn about z, then tip; depth grows away from the eye */
-  var ya = V.yaw * Math.PI / 180, pi = V.pitch * Math.PI / 180, cy = Math.cos(ya), sy = Math.sin(ya), cp = Math.cos(pi), sp = Math.sin(pi), dv = [-sy * cp, cy * cp, sp];
-  var pr = function (w) { var xr = w[0] * cy + w[1] * sy, yr = -w[0] * sy + w[1] * cy; return [Math.round((xr) * 10) / 10, Math.round(-(w[2] * cp - yr * sp) * 10) / 10]; };
+  /* the same view as the 3D window: th = azimuth (0 from the front, + from the left), ph = elevation; r, u = screen right and up, ev = towards the eye */
+  if (V.th == null) { V.th = 0.62; V.ph = 0.42; }
+  var ct = Math.cos(V.th), st2 = Math.sin(V.th), cp = Math.cos(V.ph), sp = Math.sin(V.ph), rr = [ct, -st2, 0], uu = [st2 * sp, ct * sp, cp], dv = [st2 * cp, ct * cp, -sp];
+  var pr = function (w) { return [Math.round((w[0] * rr[0] + w[1] * rr[1]) * 10) / 10, Math.round(-(w[0] * uu[0] + w[1] * uu[1] + w[2] * uu[2]) * 10) / 10]; };
   var dep = function (w) { return w[0] * dv[0] + w[1] * dv[1] + w[2] * dv[2]; };
   /* painter's order for boxes that do not intersect: a box goes first when it lies behind another along an axis that separates them */
   var behind = function (A, B) { for (var i = 0; i < 3; i++) { if (A.mn[i] >= B.mx[i] - 0.01 && dv[i] > 1e-6) return true; if (A.mx[i] <= B.mn[i] + 0.01 && dv[i] < -1e-6) return true; } return false; };
@@ -12279,11 +12282,11 @@ function ecModel(c, r) {
 }
 (function () {   // turn the edges model by dragging, zoom with the wheel — only the model is redrawn
   var D = null, redraw = function () { var m = document.querySelector('.ec-model'), c = cur(), inf = S._info && S._info[S.sel]; if (m && c && inf && inf.r) { m.outerHTML = ecModel(c, inf.r); var sv = document.querySelector('.ec-msvg'); if (sv && D && D.moved) sv.classList.add('drag'); } };
-  document.addEventListener('pointerdown', function (e) { S.ecDrag = false; if (!e.target.closest || !e.target.closest('.ec-msvg')) return; var V = S.ecView; if (!V) return; D = { x:e.clientX, y:e.clientY, yaw:V.yaw, pitch:V.pitch, moved:false }; });
+  document.addEventListener('pointerdown', function (e) { S.ecDrag = false; if (!e.target.closest || !e.target.closest('.ec-msvg')) return; var V = S.ecView; if (!V) return; D = { x:e.clientX, y:e.clientY, th:V.th, ph:V.ph, moved:false }; });
   document.addEventListener('pointermove', function (e) { if (!D) return; var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 5) return; D.moved = true; S.ecDrag = true;
-    S.ecView.yaw = D.yaw + dx * 0.45; S.ecView.pitch = Math.max(-85, Math.min(85, D.pitch + dy * 0.35)); redraw(); e.preventDefault(); });
+    S.ecView.th = D.th - dx * 0.009; S.ecView.ph = Math.max(-1.35, Math.min(1.35, D.ph + dy * 0.007)); redraw(); e.preventDefault(); });   // as in the 3D window; here also from below
   document.addEventListener('pointerup', function () { if (D && D.moved) { var d0 = D; D = null; redraw(); setTimeout(function () { S.ecDrag = false; }, 60); void d0; } D = null; });
-  document.addEventListener('wheel', function (e) { if (!e.target.closest || !e.target.closest('.ec-msvg') || !S.ecView) return; e.preventDefault(); S.ecView.zoom = Math.max(0.5, Math.min(6, (S.ecView.zoom || 1) * (e.deltaY < 0 ? 1.15 : 1 / 1.15))); redraw(); }, { passive:false });
+  document.addEventListener('wheel', function (e) { if (!e.target.closest || !e.target.closest('.ec-msvg') || !S.ecView) return; e.preventDefault(); S.ecView.zoom = Math.max(0.5, Math.min(6, (S.ecView.zoom || 1) * Math.exp(-(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015))); redraw(); }, { passive:false });
 })();
 function ecModal(c, inf) {
   var r = inf.r, lt = S.lang === 'lt', need = ecNeeded(c, r), fe = c.edge.facade || 'PAGAL FASADA';
@@ -14028,8 +14031,8 @@ app.addEventListener('click', function (e) {
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
     case 'jcopen': S.jcheck = true; S.echeck = false; break;
     case 'ecopen': S.echeck = true; S.jcheck = false; break;
-    case 'ecview': { var EV = S.ecView = S.ecView || { yaw:35, pitch:22, zoom:1, exp:false, fronts:false };
-      if (v === 'front') { EV.yaw = 35; EV.pitch = 22; } else if (v === 'backv') { EV.yaw = 215; EV.pitch = 22; } else if (v === 'under') { EV.yaw = 35; EV.pitch = -40; }
+    case 'ecview': { var EV = S.ecView = S.ecView || { th:0.62, ph:0.42, zoom:1, exp:false, fronts:false };
+      if (v === 'front') { EV.th = 0.62; EV.ph = 0.42; } else if (v === 'backv') { EV.th = 0.62 + Math.PI; EV.ph = 0.42; } else if (v === 'under') { EV.th = 0.62; EV.ph = -0.7; }
       else if (v === 'zin') EV.zoom = Math.min(6, (EV.zoom || 1) * 1.3); else if (v === 'zout') EV.zoom = Math.max(0.5, (EV.zoom || 1) / 1.3); else EV[v] = !EV[v]; break; }
     case 'ecroom': S.sel = i; setRoomSel(i); S.echeck = true; S.jcheck = false; break;
     case 'ecclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.echeck = false; break;
