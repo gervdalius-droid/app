@@ -3674,6 +3674,13 @@ var D = {
     };
   },
   /* All ready tasks at a station (an order can be at several stations at once) */
+  /* the installation step — on the board "Paruošta" (ready) sits right before it */
+  readyBeforeStation() {
+    var st = Store.state.stations || [];
+    var id = Store.state.readyBefore;
+    if (id === "none") return null;
+    return (id && st.find(x => x.id === id)) || st.find(x => x.kind !== "eng" && /montav|install|fitting/i.test(x.name || "")) || null;
+  },
   stationQueue(stationId) {
     var out = [];
     var _iterator29 = _createForOfIteratorHelper(Store.state.orders),
@@ -6114,6 +6121,16 @@ var M = {
     });
     Store.save();
     return order;
+  },
+  /* installation started on site (dragged into the installation column) or not
+     yet (back to "Paruošta") — no timer runs for this */
+  setOnSite(orderId, on, byId) {
+    var o = D.order(orderId);
+    var st = D.readyBeforeStation();
+    if (!o || !st) return;
+    o.ops.filter(op => op.stationId === st.id && op.status !== "done").forEach(op => { if (on) op.onSite = Date.now(); else delete op.onSite; });
+    this.log(byId, on ? `started **${st.name}** on ${o.num}` : `${o.num} is ready — waiting for **${st.name}**`, { orderId: o.id });
+    Store.save();
   },
   blockOp(orderId, opId, memberId, note) {
     var o = D.order(orderId);

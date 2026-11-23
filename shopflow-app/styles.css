@@ -3325,3 +3325,6 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .block-banner .bb-foot { display: flex; align-items: center; gap: 10px; margin-top: 8px; flex-wrap: wrap; }
 .block-banner .bb-foot .bb-who { margin-top: 0; }
 .block-banner .bb-foot .btn { background: #fff; }
+/* "Paruošta" — packed, waiting for installation */
+.board-col.ready-col, .bg-cell.ready-col { background: rgba(52,199,89,.06); }
+.bg-head-cell.ready-col b { color: #1f9d48; }

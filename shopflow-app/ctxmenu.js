@@ -103,6 +103,11 @@ var CtxMenu = {
       if (op.status === "running") out.push({ ic: "pause", text: L("Pause this step", "Pristabdyti etapą"), run: () => { M.pauseOp(o.id, op.id, App.me.id); this.after(); } });
       else if (op.status !== "blocked") out.push({ ic: "play", text: L("Start this step", "Pradėti etapą"), run: () => { M.startOp(o.id, op.id, App.me.id); this.after(); } });
       if (can("orders.edit")) out.push({ ic: "users", text: L("Who does this step…", "Kas atlieka etapą…"), run: () => this.assignModal(o, op) });
+      var inst = D.readyBeforeStation && D.readyBeforeStation();
+      if (inst && op.stationId === inst.id && op.status === "queued" && !(op.qtyDone > 0) && can("orders.edit")) {
+        if (op.onSite) out.push({ ic: "check-circle", text: L("Back to Ready (not started)", "Grąžinti į Paruošta"), run: () => { M.setOnSite(o.id, false, App.me.id); this.after(); } });
+        else out.push({ ic: "truck", text: L("Installation started (no timer)", "Montavimas pradėtas (be laiko)"), run: () => { M.setOnSite(o.id, true, App.me.id); this.after(); } });
+      }
     }
     out.push({ sep: true });
     var urgent = o.priority === "rush";

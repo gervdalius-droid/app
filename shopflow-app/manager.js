@@ -1243,7 +1243,25 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
     var cols = D.stationsOf(kind).map(st => ({
       st,
       q: D.stationQueue(st.id).filter(matches)
-    })).filter(c => !hideEmpty || c.q.length);
+    }));
+    /* "Paruošta" sits before installation: packed projects wait there until the
+       fitters start, and the end-of-line "Ready to ship" column goes away. A
+       project with no installation step lands there when it is finished. */
+    var rb = kind === "prod" ? D.readyBeforeStation() : null;
+    var readyCol = null;
+    if (rb) {
+      var ci = cols.findIndex(c => c.st.id === rb.id);
+      if (ci >= 0) {
+        var waits = x => x.op && x.op.status === "queued" && !(x.op.qtyDone > 0) && !x.op.onSite;
+        var waiting = cols[ci].q.filter(waits);
+        cols[ci].q = cols[ci].q.filter(x => !waits(x));
+        var finished = ready.filter(o => !o.ops.some(op => op.stationId === rb.id)).map(o => ({ order: o, op: null }));
+        readyCol = { st: { id: rb.id, name: "Ready", ic: "check-circle", readyCol: true }, q: waiting.concat(finished) };
+        cols.splice(ci, 0, readyCol);
+        ready = null;
+      }
+    }
+    cols = cols.filter(c => !hideEmpty || c.q.length || c === readyCol);
     return `<div class="view-anim" style="display:flex;flex-direction:column;height:100%">
       <div class="board-toolbar">
         <select class="select" id="bf-who">
@@ -1272,18 +1290,18 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         ${cols.map(({
       st,
       q
-    }) => `<div class="board-col" data-drop="${st.id}">
-          <header><span class="ico">${stIcon(st, 15)}</span><b>${esc(st.name)}</b><span class="count-badge">${q.length}</span></header>
+    }) => `<div class="board-col ${st.readyCol ? "ready-col" : ""}" data-drop="${st.readyCol ? "__waitfor:" + st.id : st.id}">
+          <header><span class="ico" ${st.readyCol ? `style="color:var(--green)"` : ""}>${stIcon(st, 15)}</span><b>${esc(st.name)}</b><span class="count-badge">${q.length}</span></header>
           <div class="board-col-cards">
             ${q.length ? this.cardsFor(q) : `<div class="col-empty">No tasks here</div>`}
           </div>
         </div>`).join("")}
-        <div class="board-col" data-drop="__ready">
+        ${ready ? `<div class="board-col" data-drop="__ready">
           <header><span class="ico" style="color:var(--green)">${icon("check-circle", 15)}</span><b>${kind === "eng" ? "Complete" : "Ready to ship"}</b><span class="count-badge">${ready.length}</span></header>
           <div class="board-col-cards">
             ${ready.length ? ready.map(o => this.orderCard(o, null)).join("") : `<div class="col-empty">Nothing ready yet</div>`}
           </div>
-        </div>
+        </div>` : ""}
       </div></div>`}
     </div>`;
   },
@@ -1292,16 +1310,16 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
      lane across them, so "where is GI_SI?" is one glance along a row instead
      of hunting three cards through five columns. */
   boardLanes(cols, ready, kind, density) {
-    var all = [...cols.flatMap(c => c.q.map(x => x.order)), ...ready];
+    var all = [...cols.flatMap(c => c.q.map(x => x.order)), ...(ready || [])];
     var groups = D.jobGroups([...new Map(all.map(o => [o.id, o])).values()]);
     var readyLabel = kind === "eng" ? "Complete" : "Ready to ship";
     var collapsed = D.pref(App.me.id, "boardLanes", {}) || {};
     var heads = [...cols.map(({
       st,
       q
-    }) => `<div class="bg-head-cell">
-        <span class="ico">${stIcon(st, 14)}</span><b>${esc(st.name)}</b><span class="count-badge">${q.length}</span>
-      </div>`), `<div class="bg-head-cell"><span class="ico" style="color:var(--green)">${icon("check-circle", 14)}</span><b>${readyLabel}</b><span class="count-badge">${ready.length}</span></div>`].join("");
+    }) => `<div class="bg-head-cell ${st.readyCol ? "ready-col" : ""}">
+        <span class="ico" ${st.readyCol ? `style="color:var(--green)"` : ""}>${stIcon(st, 14)}</span><b>${esc(st.name)}</b><span class="count-badge">${q.length}</span>
+      </div>`), ready ? `<div class="bg-head-cell"><span class="ico" style="color:var(--green)">${icon("check-circle", 14)}</span><b>${readyLabel}</b><span class="count-badge">${ready.length}</span></div>` : ""].join("");
     var lane = g => {
       var due = g.due ? fmtDue(g.due) : null;
       var shut = !!collapsed[g.key];
@@ -1309,15 +1327,16 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         st,
         q
       }) => ({
-        drop: st.id,
+        drop: st.readyCol ? "__waitfor:" + st.id : st.id,
+        ready: !!st.readyCol,
         cards: q.filter(x => g.orders.some(o => o.id === x.order.id))
-      })), {
+      }))].concat(ready ? [{
         drop: "__ready",
         cards: ready.filter(o => g.orders.some(x => x.id === o.id)).map(o => ({
           order: o,
           op: null
         }))
-      }];
+      }] : []);
       return `<div class="bg-lane ${shut ? "shut" : ""}">
         <div class="bg-lane-head" data-lane-key="${esc(g.key)}" ${(App.can("orders.edit") || App.isManager()) ? `draggable="true" title="Drag up or down to change the order"` : ""} style="--job:var(--${g.color});--job-soft:var(--${g.color}-soft)">
           ${(App.can("orders.edit") || App.isManager()) ? `<span class="bg-lane-grip">${icon("grip", 13)}</span>` : ""}
@@ -1331,11 +1350,11 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
           </span>
           ${g.overdue ? `<span class="due-chip bad" title="${g.overdue} of ${g.orders.length} past due">${g.overdue} <span>late</span></span>` : due ? `<span class="due-chip ${due.cls}">${due.label}</span>` : ""}
         </div>
-        ${cells.map(c => `<div class="bg-cell ${c.cards.length ? "" : "none"}" data-drop="${c.drop}">${this.cardsFor(c.cards)}</div>`).join("")}
+        ${cells.map(c => `<div class="bg-cell ${c.cards.length ? "" : "none"} ${c.ready ? "ready-col" : ""}" data-drop="${c.drop}">${this.cardsFor(c.cards)}</div>`).join("")}
       </div>`;
     };
     return `<div class="board-wrap">
-      <div class="board-grid ${density === "compact" ? "compact" : ""}" style="--bg-cols:${cols.length + 1}">
+      <div class="board-grid ${density === "compact" ? "compact" : ""}" style="--bg-cols:${cols.length + (ready ? 1 : 0)}">
         <div class="bg-head"><div class="bg-corner">${icon("folder", 13)} <span>Job</span></div>${heads}</div>
         ${groups.length ? groups.map(lane).join("") : `<div class="bg-empty">Nothing on this board yet</div>`}
       </div>
@@ -1593,7 +1612,13 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         var target = col.dataset.drop;
         var op = ref.opId ? o.ops.find(x => x.id === ref.opId) : null;
         if (op && target !== "__ready" && op.stationId === target) return; // no-op
+        /* "Paruošta" = everything before installation done, installation not started;
+           the installation column itself = the fitters have started */
+        var waitFor = target.indexOf("__waitfor:") === 0 ? target.slice(10) : null;
+        if (waitFor) target = waitFor;
+        var instSt = D.readyBeforeStation();
         var ok = target === "__ready" ? M.moveLane(o.id, o.items[0].id, null, "__ready", App.me.id) : op ? M.moveLane(o.id, op.itemId, op.group, target, App.me.id) : M.moveOrderToStation(o.id, target, App.me.id);
+        if (ok && instSt && target === instSt.id) M.setOnSite(o.id, !waitFor, App.me.id);
         if (!ok) {
           var _D$station6, _D$station7;
           Toast.show(op ? `${((_D$station6 = D.station(target)) === null || _D$station6 === void 0 ? void 0 : _D$station6.name) || "That station"} isn't in this task's route` : `Several part groups pass ${((_D$station7 = D.station(target)) === null || _D$station7 === void 0 ? void 0 : _D$station7.name) || "there"} — open ${o.num} and reopen the step you need`, {
@@ -1603,7 +1628,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
           return;
         }
         App.render();
-        var name = target === "__ready" ? "Ready" : D.station(target).name;
+        var name = target === "__ready" || waitFor ? I18N.t("Ready") : D.station(target).name;
         Toast.show(`${o.num}${op && op.group ? " · " + op.group : ""} moved to ${name}`, {
           emoji: "✦",
           undo: () => {
