@@ -332,7 +332,7 @@ var NestSheets = {
     var more = this.pending().length - 1;
     this._shown = key;
     Modal.open(`<div id="nest-pop"></div>
-      <header><h2>${icon("scan", 18)} ${esc(x.src || "CNC")}: ${esc(L("which project is this sheet?", "kuriam projektui ši plokštė?"))}</h2><button class="icon-btn" data-close>✕</button></header>
+      <header><h2>${icon("scan", 18)} ${esc(x.src || "CNC")}: ${esc(L("which project is this sheet?", "kuriam projektui ši plokštė?"))}</h2><button class="icon-btn" data-nest-cfg title="${esc(L("Scanner settings", "Skenerio nustatymai"))}">${icon("sliders", 16)}</button><button class="icon-btn" data-close>✕</button></header>
       <div class="modal-body" style="display:flex;flex-direction:column;gap:12px">
         <div style="display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:14px">
           <span class="t-caption">${esc(L("Code", "Kodas"))}</span><code>${esc(x.code)}</code>
@@ -402,6 +402,7 @@ var NestSheets = {
       };
       modal.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => { this._later = this._later || {}; this._later[key] = Date.now(); }));
       modal.querySelector("[data-nest-skip]").onclick = () => { this.drop(key); };
+      modal.querySelector("[data-nest-cfg]").onclick = () => { this._later[key] = Date.now(); this._shown = null; Modal.close(true); setTimeout(() => Machines.openSettings(), 60); };
       sync();
       setTimeout(() => q.focus(), 80);
     }, { quiet: false });
@@ -507,7 +508,7 @@ var NestSheets = {
   bindSettings(root) {
     var s = root.querySelector("[data-nest-here]");
     if (s) s.onchange = () => { this.setStationHere(s.value); Toast.show("✓", { emoji: "check" }); };
-    root.querySelectorAll("[data-nest-open]").forEach(b => b.onclick = () => { Modal.close(true); setTimeout(() => this.open(b.getAttribute("data-nest-open")), 220); });
+    root.querySelectorAll("[data-nest-open]").forEach(b => b.onclick = () => { Modal.close(true); setTimeout(() => this.open(b.getAttribute("data-nest-open")), 120); });
   }
 };
 if (typeof window !== "undefined") {

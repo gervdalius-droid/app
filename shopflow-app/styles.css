@@ -3175,7 +3175,12 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .sw-seg { align-self: flex-start; }
 .sw-into { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 /* machines in settings */
-.mach-wrap { display: flex; flex-direction: column; gap: 10px; width: min(520px, 100%); }
+.mach-wrap { display: flex; flex-direction: column; gap: 10px; width: min(560px, 100%); }
+.mach-wrap.wide { width: 100%; }
+.mach-form { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.mach-field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.mach-field .select { width: 100%; }
+@media (max-width: 640px) { .mach-form { grid-template-columns: 1fr; } }
 .mach-card { border: 1px solid var(--border); border-radius: var(--r-md); padding: 10px 12px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
 .mach-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .mach-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }

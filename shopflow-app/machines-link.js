@@ -280,21 +280,42 @@ var Machines = {
     var stLbl = { place: L("scanner moved to", "skeneris perkeltas į"), sheet: L("sheet cut, step running", "plokštė supjauta, etapas vyksta"), sheetDone: L("sheet cut, step finished", "plokštė supjauta, etapas baigtas"), confirm: L("waiting for the operator to pick the project", "laukia, kol operatorius pasirinks projektą"), nestUnknown: L("nesting project not found", "Nesting projektas nerastas"), sheetUnknown: L("no such sheet in the nesting project", "Nesting projekte tokios plokštės nėra"), error: L("could not read the nesting project", "nepavyko nuskaityti Nesting projekto"), ok: L("part counted", "detalė įskaityta"), opDone: L("step finished", "etapas baigtas"), dup: L("already counted", "jau įskaityta"), program: L("step started (program)", "etapas paleistas (programa)"), notfound: L("no project found", "projektas nerastas"), stationDone: L("step already done", "etapas jau atliktas"), waiting: L("earlier step not done", "ankstesnis etapas neatliktas"), notrouted: L("project has no such step", "projektas neturi šio etapo"), unknownPart: L("not on the part list", "nėra detalių sąraše") };
     var nest = typeof NestSheets !== "undefined" ? NestSheets.settingsHtml() : "";
     if (!rows.length) return `<div class="t-caption">${L("No machine helper has reported yet.", "Joks staklių pagalbininkas dar nesiuntė duomenų.")}</div>` + nest;
-    return nest + rows.map(x => {
+    return rows.map(x => {
       var d = x.d, type = d.type || x.id.slice(this.PREFIX.length), st = this.status(type), stId = this.stationFor(type, true), stn = stId && D.station(stId);
       return `<div class="mach-card">
         <div class="mach-head"><b>${esc(d.name || type)}</b>
-          <span class="mach-dot ${st && st.online ? "on" : ""}"></span><span class="t-caption">${st && st.online ? L("helper online", "pagalbininkas veikia") : L("helper offline", "pagalbininkas neprisijungęs") + (d.agentAt ? " · " + fmtAgo(d.agentAt) : "")}</span>
-          <span class="grow"></span>
-          <label class="t-caption">${L("Who scans", "Kas skenuoja")}</label>
-          <select class="select mach-st" data-mach-who="${esc(type)}"><option value="">${L("— whoever is at it on the floor plan —", "— kas pažymėtas cecho plane —")}</option>${(Store.state.members || []).filter(m => m && m.name && !m.archived).map(m => `<option value="${esc(m.id)}" ${this.cfgOf(type).memberId === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>
-          <label class="t-caption">${L("Step", "Etapas")}</label>
-          <select class="select mach-st" data-mach-st="${esc(type)}">${(Store.state.stations || []).map(s0 => `<option value="${esc(s0.id)}" ${stId === s0.id ? "selected" : ""}>${esc(s0.name)}</option>`).join("")}</select>
+          <span class="mach-dot ${st && st.online ? "on" : ""}"></span><span class="t-caption">${st && st.online ? L("helper online", "pagalbininkas veikia") : L("helper offline", "pagalbininkas neprisijungęs") + (d.agentAt ? " · " + fmtAgo(d.agentAt) : "")}${d.host ? " · " + esc(d.host) : ""}</span>
+        </div>
+        <div class="mach-form">
+          <label class="mach-field"><span class="t-caption">${L("Who scans (gets the questions and the credit)", "Kas skenuoja (gauna klausimus ir darbą)")}</span>
+            <select class="select" data-mach-who="${esc(type)}"><option value="">${L("— whoever is at it on the floor plan —", "— kas pažymėtas cecho plane —")}</option>${(Store.state.members || []).filter(m => m && m.name && !m.archived).map(m => `<option value="${esc(m.id)}" ${this.cfgOf(type).memberId === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select></label>
+          <label class="mach-field"><span class="t-caption">${L("Step at the machine", "Etapas prie staklių")}</span>
+            <select class="select" data-mach-st="${esc(type)}">${(Store.state.stations || []).filter(s0 => s0.kind !== "eng").map(s0 => `<option value="${esc(s0.id)}" ${stId === s0.id ? "selected" : ""}>${esc(s0.name)}</option>`).join("")}</select></label>
         </div>
         ${(() => { var pl = this.placeOf(type), ps = pl && pl.step && D.station(pl.step); return pl ? `<div class="mach-row"><span>${L("Now at", "Dabar")}: <b>${esc(pl.name)}</b>${ps ? " · " + esc(ps.name) : ""} <span class="t-caption">${L("since", "nuo")} ${new Date(+pl.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span></span><span class="grow"></span><button class="btn" data-mach-home="${esc(type)}">${L("Back to the machine", "Grąžinti prie staklių")}</button></div>` : ""; })()}
         <div class="mach-list">${this.recent.length ? this.recent.map(r => `<div class="mach-row ${r.status === "notfound" ? "bad" : ""}"><span class="t-num">${new Date(r.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span><code>${esc(r.code)}</code><span>→ ${esc(stLbl[r.status] || r.status)}${r.order ? " · <b>" + esc(r.order) + "</b>" : ""}</span></div>`).join("") : `<div class="t-caption">${L("Scans handled by this screen appear here. Today on the machine: ", "Čia matysis šio ekrano apdoroti skenavimai. Šiandien staklėse: ")}${d.today || 0}${d.last ? " · " + L("last", "paskutinis") + ": " + esc(d.last.code) : ""}</div>`}</div>
       </div>`;
-    }).join("");
+    }).join("") + nest;
+  },
+  /* the scanners' settings in a window of their own (from the sheet pop-up, a scan message or Settings) */
+  async openSettings() {
+    var L = (en, lt) => typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
+    Modal.open(`<header><h2>${icon("scan", 18)} ${L("Scanners", "Skeneriai")}</h2><button class="icon-btn" data-close>✕</button></header>
+      <div class="modal-body"><div class="mach-wrap wide" id="mach-pop"><div class="t-caption">${L("Loading…", "Kraunama…")}</div></div></div>
+      <footer><span class="grow"></span><button class="btn primary" data-close>${L("Done", "Baigta")}</button></footer>`, null, { quiet: true });
+    try {
+      if (typeof Sync !== "undefined" && Sync.client) {
+        var r = await Sync.client.from(Sync.table || "workspaces").select("id,data").like("id", this.PREFIX + "%");
+        if (r && !r.error && Array.isArray(r.data)) r.data.forEach(row => { if (row && row.data) this.rows[row.id] = row.data; });
+      }
+    } catch (e) {}
+    this.paintSettings();
+  },
+  paintSettings() {
+    var box = document.getElementById("mach-pop");
+    if (!box) return;
+    box.innerHTML = this.settingsHtml();
+    this.bindSettings(box);
   },
   bindSettings(root) {
     $$("[data-mach-st]", root).forEach(sel => sel.onchange = () => {
@@ -312,7 +333,7 @@ var Machines = {
     $$("[data-mach-home]", root).forEach(b => b.onclick = () => {
       this.setPlace(b.dataset.machHome, "off");
       Store.save();
-      if (typeof App !== "undefined") App.render();
+      if (document.getElementById("mach-pop")) this.paintSettings(); else if (typeof App !== "undefined") App.render();
     });
     if (typeof NestSheets !== "undefined") NestSheets.bindSettings(root);
   },
