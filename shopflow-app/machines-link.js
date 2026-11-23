@@ -34,6 +34,13 @@ var Machines = {
   poll() {
     if (this._busy || !this.ready() || document.hidden) return;
     this._busy = true;
+    /* a station screen signed in as a worker doesn't load the floor plan by itself, but scanners need
+       its places (station QR codes, who is at a machine): read it here, without touching any jobs */
+    if (typeof Cechas !== "undefined" && !Cechas.allowed() && (!Cechas.data || Date.now() - Cechas.at > 120000)) {
+      Sync.client.from(Sync.table || "workspaces").select("data").eq("id", Cechas.ROW).limit(1).then(r => {
+        if (r && !r.error && r.data && r.data[0]) { Cechas.data = r.data[0].data; Cechas.at = Date.now(); }
+      }).catch(() => {});
+    }
     Sync.client.from(Sync.table || "workspaces").select("id,data").like("id", this.PREFIX + "%").then(r => {
       this._busy = false;
       if (!r || r.error || !Array.isArray(r.data)) return;
@@ -51,8 +58,35 @@ var Machines = {
     for (var k in items) if (items[k] && items[k].t === type) return k;
     return null;
   },
-  stationFor(type) {
+  /* A scanner can be carried around: scanning a station's QR code from the floor plan
+     (…/cechas/?at=<place>) moves it to that place for the rest of the day, so the next
+     part labels count at that place's step. ?at=off, or the machine's own QR, brings it back. */
+  cfgOf(type) { var all = Store.state.machineCfg || (Store.state.machineCfg = {}); return all[type] || (all[type] = {}); },
+  dayStart() { var d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); },
+  placeOf(type) {
+    var pl = ((Store.state.machineCfg || {})[type] || {}).place;
+    return pl && +pl.at >= this.dayStart() ? pl : null;
+  },
+  placeCode(raw) {
+    var m = /[?&]at=([^&#\s]+)/i.exec(String(raw || ""));
+    return m && /cechas/i.test(String(raw)) ? decodeURIComponent(m[1]) : null;
+  },
+  setPlace(type, itemId, at) {
+    var cfg = this.cfgOf(type), C = typeof Cechas !== "undefined" ? Cechas : null;
+    var home = this.planItem(type);
+    if (!itemId || itemId === "off" || itemId === home) { delete cfg.place; return { home: true }; }
+    var items = C && C.layout().items || {};
+    var it = items[itemId];
+    if (C && C.data && !it) return { bad: true };
+    var step = C && it ? C.stepFor(itemId) : null;
+    var name = C ? C.placeName(itemId) : itemId;
+    cfg.place = { item: itemId, step: step || "", name: name, at: at || Date.now() };
+    return { place: cfg.place };
+  },
+  stationFor(type, base) {
     var cfg = (Store.state.machineCfg || {})[type] || {};
+    var pl = !base && this.placeOf(type);
+    if (pl && pl.step && D.station(pl.step)) return pl.step;
     if (cfg.stationId && D.station(cfg.stationId)) return cfg.stationId;
     var item = this.planItem(type);
     var fromPlan = item && typeof Cechas !== "undefined" ? Cechas.stepFor(item) : null;
@@ -62,8 +96,10 @@ var Machines = {
     var st = (Store.state.stations || []).find(s => /gr[eė][žz]|drill|bor/i.test(String(s.id) + " " + String(s.name || "")));
     return st ? st.id : (D.station("cnc") ? "cnc" : null);
   },
-  /* who is at the machine on the floor plan right now */
+  /* who scans: the person set for this scanner in Settings → Machines, else who is at the machine on the floor plan */
   memberFor(type) {
+    var fixed = ((Store.state.machineCfg || {})[type] || {}).memberId;
+    if (fixed && D.member(fixed)) return fixed;
     var item = this.planItem(type);
     if (!item || typeof Cechas === "undefined") return null;
     var ppl = Cechas.state().people || {};
@@ -130,18 +166,49 @@ var Machines = {
     var fresh = scans.filter(s => +s.seq > last).sort((a, b) => a.seq - b.seq);
     if (!fresh.length) return;
     var type = data.type || rowId.slice(this.PREFIX.length);
-    var stationId = this.stationFor(type);
     var who = this.memberFor(type);
     var now = Date.now();
     fresh.forEach(s => {
       seen[rowId] = Math.max(+seen[rowId] || 0, +s.seq);
-      if (!stationId || now - (+s.at || 0) > this.MAX_AGE_MS) return;
-      /* a nesting layout sheet (NS-XXXXXX-03): one scan = one sheet cut — looked up in nest-sheets.js */
-      if (typeof NestSheets !== "undefined" && NestSheets.isCode(s.code)) {
-        NestSheets.queue({ key: rowId + "-" + s.seq, code: String(s.code).trim().toUpperCase(), at: +s.at || now, stationId: stationId, who: who, src: data.name || type, type: type });
+      if (now - (+s.at || 0) > this.MAX_AGE_MS) return;
+      /* a station's QR code from the floor plan: the scanner moves there */
+      var place = this.placeCode(s.code);
+      if (place) {
+        var r = this.setPlace(type, place, +s.at || now);
+        var L = (en, lt) => typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
+        var stn = r.place && r.place.step && D.station(r.place.step);
+        var msg = r.bad ? L("unknown station code", "nežinomas vietos kodas")
+          : r.home ? L("back at the machine", "grįžta prie staklių") + (D.station(this.stationFor(type)) ? " · " + D.station(this.stationFor(type)).name : "")
+          : r.place.name + (stn ? " · " + stn.name : " · " + L("this place has no ShopFlow step — set it on the floor plan", "ši vieta neturi ShopFlow etapo — nustatykite jį cecho plane"));
+        this._say(type, (data.name || type) + (who && D.member(who) ? " · " + D.member(who).name : "") + " → " + msg, !r.bad && (r.home || !!stn));
+        this.recent.unshift({ at: +s.at || now, code: r.place ? r.place.name : String(s.code).slice(0, 40), status: r.bad ? "notfound" : "place", order: stn ? stn.name : "" });
+        if (this.recent.length > 12) this.recent.length = 12;
         return;
       }
-      this.handle(s, stationId, who, data.name || type, rowId);
+      /* a nesting layout sheet (NS-XXXXXX-03): one scan = one sheet cut, always at the machine's own step */
+      if (typeof NestSheets !== "undefined" && NestSheets.isCode(s.code)) {
+        var cut = this.stationFor(type, true);
+        if (!cut) return;
+        NestSheets.queue({ key: rowId + "-" + s.seq, code: String(s.code).trim().toUpperCase(), at: +s.at || now, stationId: cut, who: who, src: data.name || type, type: type });
+        return;
+      }
+      var stationId = this.stationFor(type);
+      if (!stationId) return;
+      var res = this.handle(s, stationId, who, data.name || type, rowId);
+      /* a scanner set to a person: the work is theirs, even if someone else was already on the step */
+      var fixed = this.cfgOf(type).memberId;
+      if (fixed && res && res.op && (res.status === "ok" || res.status === "opDone" || res.status === "program")) {
+        var ids = Array.isArray(res.op.assigneeIds) ? res.op.assigneeIds : (res.op.assigneeId ? [res.op.assigneeId] : []);
+        if (ids.indexOf(fixed) < 0) { res.op.assigneeIds = ids.concat([fixed]); if (!res.op.assigneeId) res.op.assigneeId = fixed; }
+      }
+      if (res) {
+        var L2 = (en, lt) => typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
+        var good = res.status === "ok" || res.status === "opDone" || res.status === "program";
+        var q = res.item && res.qtyDone ? " · " + res.qtyDone + "/" + res.item.qty : "";
+        var stn2 = D.station(stationId);
+        this._say(type, (data.name || type) + " · " + String(s.code).slice(0, 40) + (res.order ? " → " + res.order.num + " · " + (res.order.product || "") : "") + (stn2 ? " · " + stn2.name : "") + q +
+          (good ? "" : " — " + ({ dup: L2("already counted", "jau įskaityta"), stationDone: L2("step already done", "etapas jau atliktas"), notrouted: L2("project has no such step", "projektas neturi šio etapo"), notfound: L2("no project found", "projektas nerastas"), waiting: L2("earlier step not done", "ankstesnis etapas neatliktas"), unknownPart: L2("not on the part list", "nėra detalių sąraše") }[res.status] || res.status)), good);
+      }
     });
     Store.save();
     if (typeof App !== "undefined") App.render();
@@ -193,6 +260,14 @@ var Machines = {
     if (Store.state.scanLog.length > 300) Store.state.scanLog.length = 300;
     return result({ status: "notfound" });
   },
+  /* a short message on the station screen of this scanner (Settings → Machines, or ?station=<type>) */
+  _say(type, text, good) {
+    try {
+      if (typeof NestSheets === "undefined" || typeof Toast === "undefined") return;
+      var here = NestSheets.stationHere();
+      if (here && (here === "all" || here === type)) Toast.show(text, { emoji: good ? "check" : "alert", ms: 9000 });
+    } catch (e) {}
+  },
   /* what happened to the last scans, for Settings → Machines */
   recent: [],
   _remember(scan, c, r) {
@@ -203,18 +278,21 @@ var Machines = {
     var rows = Object.keys(this.rows).map(id => ({ id: id, d: this.rows[id] }));
     var lt = typeof I18N !== "undefined" && I18N.lang === "lt";
     var L = (en, l) => lt ? l : en;
-    var stLbl = { sheet: L("sheet cut, step running", "plokštė supjauta, etapas vyksta"), sheetDone: L("sheet cut, step finished", "plokštė supjauta, etapas baigtas"), confirm: L("waiting for the operator to pick the project", "laukia, kol operatorius pasirinks projektą"), nestUnknown: L("nesting project not found", "Nesting projektas nerastas"), sheetUnknown: L("no such sheet in the nesting project", "Nesting projekte tokios plokštės nėra"), error: L("could not read the nesting project", "nepavyko nuskaityti Nesting projekto"), ok: L("part counted", "detalė įskaityta"), opDone: L("step finished", "etapas baigtas"), dup: L("already counted", "jau įskaityta"), program: L("step started (program)", "etapas paleistas (programa)"), notfound: L("no project found", "projektas nerastas"), stationDone: L("step already done", "etapas jau atliktas"), waiting: L("earlier step not done", "ankstesnis etapas neatliktas"), notrouted: L("project has no such step", "projektas neturi šio etapo"), unknownPart: L("not on the part list", "nėra detalių sąraše") };
+    var stLbl = { place: L("scanner moved to", "skeneris perkeltas į"), sheet: L("sheet cut, step running", "plokštė supjauta, etapas vyksta"), sheetDone: L("sheet cut, step finished", "plokštė supjauta, etapas baigtas"), confirm: L("waiting for the operator to pick the project", "laukia, kol operatorius pasirinks projektą"), nestUnknown: L("nesting project not found", "Nesting projektas nerastas"), sheetUnknown: L("no such sheet in the nesting project", "Nesting projekte tokios plokštės nėra"), error: L("could not read the nesting project", "nepavyko nuskaityti Nesting projekto"), ok: L("part counted", "detalė įskaityta"), opDone: L("step finished", "etapas baigtas"), dup: L("already counted", "jau įskaityta"), program: L("step started (program)", "etapas paleistas (programa)"), notfound: L("no project found", "projektas nerastas"), stationDone: L("step already done", "etapas jau atliktas"), waiting: L("earlier step not done", "ankstesnis etapas neatliktas"), notrouted: L("project has no such step", "projektas neturi šio etapo"), unknownPart: L("not on the part list", "nėra detalių sąraše") };
     var nest = typeof NestSheets !== "undefined" ? NestSheets.settingsHtml() : "";
     if (!rows.length) return `<div class="t-caption">${L("No machine helper has reported yet.", "Joks staklių pagalbininkas dar nesiuntė duomenų.")}</div>` + nest;
     return nest + rows.map(x => {
-      var d = x.d, type = d.type || x.id.slice(this.PREFIX.length), st = this.status(type), stId = this.stationFor(type), stn = stId && D.station(stId);
+      var d = x.d, type = d.type || x.id.slice(this.PREFIX.length), st = this.status(type), stId = this.stationFor(type, true), stn = stId && D.station(stId);
       return `<div class="mach-card">
         <div class="mach-head"><b>${esc(d.name || type)}</b>
           <span class="mach-dot ${st && st.online ? "on" : ""}"></span><span class="t-caption">${st && st.online ? L("helper online", "pagalbininkas veikia") : L("helper offline", "pagalbininkas neprisijungęs") + (d.agentAt ? " · " + fmtAgo(d.agentAt) : "")}</span>
           <span class="grow"></span>
+          <label class="t-caption">${L("Who scans", "Kas skenuoja")}</label>
+          <select class="select mach-st" data-mach-who="${esc(type)}"><option value="">${L("— whoever is at it on the floor plan —", "— kas pažymėtas cecho plane —")}</option>${(Store.state.members || []).filter(m => m && m.name && !m.archived).map(m => `<option value="${esc(m.id)}" ${this.cfgOf(type).memberId === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>
           <label class="t-caption">${L("Step", "Etapas")}</label>
           <select class="select mach-st" data-mach-st="${esc(type)}">${(Store.state.stations || []).map(s0 => `<option value="${esc(s0.id)}" ${stId === s0.id ? "selected" : ""}>${esc(s0.name)}</option>`).join("")}</select>
         </div>
+        ${(() => { var pl = this.placeOf(type), ps = pl && pl.step && D.station(pl.step); return pl ? `<div class="mach-row"><span>${L("Now at", "Dabar")}: <b>${esc(pl.name)}</b>${ps ? " · " + esc(ps.name) : ""} <span class="t-caption">${L("since", "nuo")} ${new Date(+pl.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span></span><span class="grow"></span><button class="btn" data-mach-home="${esc(type)}">${L("Back to the machine", "Grąžinti prie staklių")}</button></div>` : ""; })()}
         <div class="mach-list">${this.recent.length ? this.recent.map(r => `<div class="mach-row ${r.status === "notfound" ? "bad" : ""}"><span class="t-num">${new Date(r.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span><code>${esc(r.code)}</code><span>→ ${esc(stLbl[r.status] || r.status)}${r.order ? " · <b>" + esc(r.order) + "</b>" : ""}</span></div>`).join("") : `<div class="t-caption">${L("Scans handled by this screen appear here. Today on the machine: ", "Čia matysis šio ekrano apdoroti skenavimai. Šiandien staklėse: ")}${d.today || 0}${d.last ? " · " + L("last", "paskutinis") + ": " + esc(d.last.code) : ""}</div>`}</div>
       </div>`;
     }).join("");
@@ -225,6 +303,17 @@ var Machines = {
       cfg[sel.dataset.machSt] = Object.assign({}, cfg[sel.dataset.machSt] || {}, { stationId: sel.value });
       Store.save();
       Toast.show("✓", { emoji: "check" });
+    });
+    $$("[data-mach-who]", root).forEach(sel => sel.onchange = () => {
+      var cfg = this.cfgOf(sel.dataset.machWho);
+      if (sel.value) cfg.memberId = sel.value; else delete cfg.memberId;
+      Store.save();
+      Toast.show("✓", { emoji: "check" });
+    });
+    $$("[data-mach-home]", root).forEach(b => b.onclick = () => {
+      this.setPlace(b.dataset.machHome, "off");
+      Store.save();
+      if (typeof App !== "undefined") App.render();
     });
     if (typeof NestSheets !== "undefined") NestSheets.bindSettings(root);
   },
