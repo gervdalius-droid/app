@@ -306,13 +306,19 @@ var NestSheets = {
     if (root && root.innerHTML.trim()) return;                           // someone is busy in another dialog
     this.open(list[0].key);
   },
+  _norm(v) { return String(v || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim(); },
+  /* production steps a project made here gets: every production step except installation (changeable in the form) */
+  defaultRoute() {
+    return (Store.state.stations || []).filter(st => st && st.kind !== "eng" && !/^eg-/.test(st.id));
+  },
   open(key) {
     var x = this.pending().find(p => p.key === key);
     if (!x) return;
     var L = this.L.bind(this);
     var orders = (Store.state.orders || []).filter(o => this.active(o))
-      .sort((a, b) => (a.id === x.guess ? -1 : b.id === x.guess ? 1 : String(a.num).localeCompare(String(b.num), "lt", { numeric: true }) * -1));
-    var opts = orders.map(o => `<option value="${esc(o.id)}" ${o.id === x.guess ? "selected" : ""}>${esc(o.num + " · " + (o.product || ""))}${o.client ? " — " + esc(o.client) : ""}</option>`).join("");
+      .sort((a, b) => (a.id === x.guess ? -1 : b.id === x.guess ? 1 : String(b.num).localeCompare(String(a.num), "lt", { numeric: true })));
+    var label = o => o.num + " · " + (o.product || "") + (o.client ? " — " + o.client : "");
+    var steps = this.defaultRoute();
     var more = this.pending().length - 1;
     this._shown = key;
     Modal.open(`<div id="nest-pop"></div>
@@ -324,8 +330,22 @@ var NestSheets = {
           <span class="t-caption">${esc(L("Sheet", "Plokštė"))}</span><span>${esc(String(x.sheet))}${x.mat ? " · " + esc(x.mat) : ""} · ${esc(String(x.n))} ${esc(L("parts", "detalės"))}${x.copies > 1 ? " · ×" + esc(String(x.copies)) : ""}</span>
           <span class="t-caption">${esc(L("Scanned", "Nuskenuota"))}</span><span>${new Date(+x.at || Date.now()).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span>
         </div>
-        <label class="field"><span class="t-caption">${esc(L("Project in ShopFlow", "Projektas ShopFlow"))}</span>
-          <select class="select" id="nest-ord"><option value="">${esc(L("— choose —", "— pasirinkite —"))}</option>${opts}</select></label>
+        <div id="nest-pick" style="display:flex;flex-direction:column;gap:6px">
+          <span class="t-caption">${esc(L("Project in ShopFlow", "Projektas ShopFlow"))}</span>
+          <input class="input" id="nest-q" type="search" autocomplete="off" placeholder="${esc(L("Type to search: number, name or client…", "Rašykite paieškai: numeris, pavadinimas ar klientas…"))}">
+          <select class="select" id="nest-ord" size="7" style="height:auto;min-height:12em">${orders.map(o => `<option value="${esc(o.id)}" ${o.id === x.guess ? "selected" : ""}>${esc(label(o))}</option>`).join("")}</select>
+          <div class="t-caption" id="nest-none" style="display:none">${esc(L("No project matches.", "Tokio projekto nėra."))}</div>
+          <button type="button" class="btn" id="nest-new-btn" style="align-self:flex-start">${icon("plus", 14)} ${esc(L("New project", "Naujas projektas"))}</button>
+        </div>
+        <div id="nest-new" style="display:none;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--r-md);padding:10px 12px">
+          <b>${esc(L("New project in ShopFlow", "Naujas projektas ShopFlow"))}</b>
+          <label class="field"><span class="t-caption">${esc(L("Project name", "Projekto pavadinimas"))}</span><input class="input" id="nest-new-name" value="${esc(x.nest)}"></label>
+          <label class="field"><span class="t-caption">${esc(L("Client", "Klientas"))}</span><input class="input" id="nest-new-client" placeholder="${esc(L("e.g. DB", "pvz. DB"))}" value="DB"></label>
+          <span class="t-caption">${esc(L("Steps", "Etapai"))}</span>
+          <div style="display:flex;flex-wrap:wrap;gap:6px">${steps.map(st => `<label class="chip" style="display:inline-flex;gap:5px;align-items:center;padding:4px 10px;border:1px solid var(--border);border-radius:999px;cursor:pointer"><input type="checkbox" data-nest-st="${esc(st.id)}" ${/montav|install/i.test(st.name) ? "" : "checked"}> ${esc(st.name)}</label>`).join("")}</div>
+          <div style="display:flex;gap:8px"><button type="button" class="btn" id="nest-new-cancel">${esc(L("Back to the list", "Atgal į sąrašą"))}</button><span class="grow"></span>
+            <button type="button" class="btn primary" id="nest-new-ok">${icon("play", 14)} ${esc(L("Create and start", "Sukurti ir pradėti"))}</button></div>
+        </div>
         <p class="t-caption" style="margin:0">${esc(L("Start runs the cutting step and counts this sheet's parts. Later sheets of this nesting project go to the same project without asking.", "„Pradėti“ paleidžia pjovimo etapą ir įskaito šios plokštės detales. Kitos šio Nesting projekto plokštės bus priskirtos tam pačiam projektui be klausimo."))}</p>
         ${more > 0 ? `<p class="t-caption" style="margin:0">${esc(L("More sheets waiting: ", "Dar laukia plokščių: "))}${more}</p>` : ""}
       </div>
@@ -333,14 +353,63 @@ var NestSheets = {
         <button class="btn" data-close>${esc(L("Later", "Vėliau"))}</button>
         <button class="btn primary" data-nest-ok>${icon("play", 14)} ${esc(L("Start", "Pradėti"))}</button></footer>`,
     modal => {
-      var sel = modal.querySelector("#nest-ord");
+      var q = modal.querySelector("#nest-q"), sel = modal.querySelector("#nest-ord"), none = modal.querySelector("#nest-none");
       var ok = modal.querySelector("[data-nest-ok]");
-      var sync = () => { ok.disabled = !sel.value; };
-      sel.onchange = sync; sync();
-      ok.onclick = () => { this.confirm(key, sel.value); };
-      modal.querySelector("[data-nest-skip]").onclick = () => { this.drop(key); };
+      var sync = () => { ok.disabled = !sel.value || modal.querySelector("#nest-new").style.display !== "none"; };
+      var fill = () => {
+        var words = this._norm(q.value).split(" ").filter(Boolean), keep = sel.value;
+        var hit = orders.filter(o => { var h = this._norm(label(o)); return words.every(w => h.indexOf(w) >= 0); });
+        sel.innerHTML = hit.map(o => `<option value="${esc(o.id)}">${esc(label(o))}</option>`).join("");
+        if (hit.some(o => o.id === keep)) sel.value = keep; else if (hit.length) sel.value = hit[0].id;
+        none.style.display = hit.length ? "none" : "";
+        sel.style.display = hit.length ? "" : "none";
+        sync();
+      };
+      q.oninput = fill;
+      q.onkeydown = e => {
+        if (e.key === "ArrowDown") { e.preventDefault(); sel.focus(); }
+        else if (e.key === "Enter") { e.preventDefault(); if (sel.value) this.confirm(key, sel.value); }
+      };
+      sel.onchange = sync;
+      sel.ondblclick = () => { if (sel.value) this.confirm(key, sel.value); };
+      sel.onkeydown = e => { if (e.key === "Enter" && sel.value) { e.preventDefault(); this.confirm(key, sel.value); } };
+      ok.onclick = () => { if (sel.value) this.confirm(key, sel.value); };
+      var pick = modal.querySelector("#nest-pick"), form = modal.querySelector("#nest-new");
+      var showNew = on => { form.style.display = on ? "flex" : "none"; pick.style.display = on ? "none" : "flex"; sync(); if (on) { var n = modal.querySelector("#nest-new-name"); n.focus(); n.select(); } else q.focus(); };
+      modal.querySelector("#nest-new-btn").onclick = () => {
+        var typed = q.value.trim();
+        if (typed && this._norm(x.nest).indexOf(this._norm(typed)) < 0 && !orders.some(o => this._norm(label(o)).indexOf(this._norm(typed)) >= 0)) modal.querySelector("#nest-new-name").value = typed;
+        showNew(true);
+      };
+      modal.querySelector("#nest-new-cancel").onclick = () => showNew(false);
+      modal.querySelector("#nest-new-ok").onclick = () => {
+        var name = modal.querySelector("#nest-new-name").value.trim(), client = modal.querySelector("#nest-new-client").value.trim() || "DB";
+        var route = [...modal.querySelectorAll("[data-nest-st]")].filter(c => c.checked).map(c => { var st = D.station(c.getAttribute("data-nest-st")); return { stationId: st.id, estMins: st.estMins || 60 }; });
+        if (!name) { modal.querySelector("#nest-new-name").focus(); return; }
+        if (!route.length) { Toast.show(L("Tick at least one step", "Pažymėkite bent vieną etapą"), { emoji: "alert" }); return; }
+        var o = this.createProject(name, client, route, x);
+        if (o) this.confirm(key, o.id);
+      };
       modal.querySelectorAll("[data-close]").forEach(b => b.addEventListener("click", () => { this._later = this._later || {}; this._later[key] = Date.now(); }));
+      modal.querySelector("[data-nest-skip]").onclick = () => { this.drop(key); };
+      sync();
+      setTimeout(() => q.focus(), 80);
     }, { quiet: false });
+  },
+  /* a quick production project from the station, named after the nesting project; the office can fill in the rest */
+  createProject(name, client, route, x) {
+    try {
+      var by = App.me ? App.me.id : null;
+      var o = M.createOrder({ type: "prod", product: name, client: client, qty: 1, unit: "vnt.", priority: "normal",
+        due: Date.now() + 14 * 864e5, notes: this.L("Created at the " + (x.src || "CNC") + " station from nesting project ", "Sukurta " + (x.src || "CNC") + " stotyje iš Nesting projekto ") + x.nest, route: route }, by);
+      if (typeof Bridge !== "undefined") { try { var cid = Bridge.resolveClient(client); if (cid) o.customerId = cid; } catch (e) {} }
+      Store.save();
+      Toast.show(o.num + " · " + name + " " + this.L("created", "sukurtas"), { emoji: "check" });
+      return o;
+    } catch (e) {
+      Toast.show(String(e && e.message || e), { emoji: "alert" });
+      return null;
+    }
   },
   async confirm(key, orderId) {
     var x = this.pending().find(p => p.key === key), o = D.order(orderId);
