@@ -12166,9 +12166,9 @@ function viewEditor(c) {
       (o.legs ? '<button type="button" class="btn ghost supgo" data-act="goto" data-v="st-ops">' + t('supEdit') + ' →</button>' : '') + '</div>' +
     '<div class="row bottomrow" style="margin-top:10px">' + dd(b + 'cnc.bottom', bIn ? 'inside' : 'under', [['under', t('botUnder')], ['inside', t('botInside')]], t('botMount')) +
       (bIn ? fN(t('botZ'), b + 'cnc.bottomZ', o.bottomZ || 0, 's') : '') + botDepthField(c) + camPick('bottom', bottomPic(bIn, bCam), bCam) + '</div>' + plinthBlock(c) + '</div>' +
-    '<div class="bgrp"><div class="bgt">' + t('top') + '</div><div class="row bottomrow" style="gap:10px;align-items:flex-end">' + dd(b + 'cnc.top', o.top, [['rails', t('topRails')], ['full', t('topFull')]], t('topKind')) +
-      (o.top === 'full' ? dd(b + 'cnc.topMount', o.topMount === 'inside' ? 'inside' : 'over', [['over', t('topOn')], ['inside', t('topInside')]], t('topMount')) +
-        (o.topMount !== 'inside' ? chk(b + 'cnc.topOverFacade', o.topOverFacade, t('topOver')) : '') + camPick('top', topPic(o.topMount === 'inside', tCam), tCam) + '</div>' +
+    '<div class="bgrp"><div class="bgt">' + t('top') + '</div><div class="row bottomrow" style="gap:10px;align-items:flex-end">' + dd(b + 'cnc.topMount', o.top !== 'full' || o.topMount === 'inside' ? 'inside' : 'over', [['over', t('topOn')], ['inside', t('topInside')]], t('topMount')) +   // first, in the same column as the bottom's; rails always sit between the sides
+      dd(b + 'cnc.top', o.top, [['rails', t('topRails')], ['full', t('topFull')]], t('topKind')) +
+      (o.top === 'full' ? (o.topMount !== 'inside' ? chk(b + 'cnc.topOverFacade', o.topOverFacade, t('topOver')) : '') + camPick('top', topPic(o.topMount === 'inside', tCam), tCam) + '</div>' +
         (o.topMount !== 'inside' ? '<div class="row topov" style="margin-top:10px;gap:10px;align-items:flex-end">' + fN(o.topOverFacade ? t('topOvFf') : t('topOvF'), b + 'cnc.topOvF', o.topOvF || 0, 's') + fN(t('topOvS'), b + 'cnc.topOvS', o.topOvS || 0, 's') + fN(t('topOvB'), b + 'cnc.topOvB', o.topOvB || 0, 's') + '</div><p class="note" style="margin:4px 0 0">' + t('topOvNote') + '</p>' : '') : '</div>' + railsEditor(c)) + '</div>' +
     '<div class="bgrp">' + visBlock(c) + '</div>' +
     '<div class="bgrp mainset">' + backBlock(c) + worktopBlock(c) + '</div>' +
@@ -13773,6 +13773,8 @@ function assign(bind, raw) {
     if (keysB.indexOf('back') < 0) keysB.push('back'); keysB.forEach(function (k) { setJoint(bc0, k, { type:v }); }); return; }   // the back's fixing: one choice for the back and its partitions
   if (bind === 'c.cnc.sideFull') { var cs = tg.obj.cnc, on = raw === true || raw === 'true';   // full-height sides: the bottom (and a full top) between them
     cs.bottom = on ? 'inside' : 'under'; if (on) cs.bottomZ = 0; if (cs.top === 'full') cs.topMount = on ? 'inside' : 'over'; return; }
+  if (bind === 'c.cnc.topMount' && v === 'over' && tg.obj.cnc.top !== 'full') { tg.obj.cnc.top = 'full'; tg.obj.cnc.topMount = 'over'; return; }   // on the sides: only a full top can
+  if (bind === 'c.cnc.top' && v === 'full' && tg.obj.cnc.top !== 'full') { tg.obj.cnc.top = 'full'; tg.obj.cnc.topMount = 'inside'; return; }   // rails were between the sides: the full top stays there until chosen otherwise
   if (bind === 'c.cnc.support') { tg.obj.cnc.legs = v !== 'none'; tg.obj.cnc.feet = v === 'feet'; return; }
   if (bind === 'c.cols') { if (+v === colsOf(tg.obj)) return; tg.obj.cols = +v; tg.obj.colW = []; fixCols(tg.obj); return; }
   if (/^c\.sections\.\d+\.(shelves|rail)$/.test(bind) && typeof v === 'string' && /^\d+$/.test(v)) v = +v;
