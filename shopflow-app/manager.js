@@ -1254,6 +1254,7 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
           <option value="">All priorities</option>
           ${["rush", "high", "normal", "low"].map(p => `<option value="${p}" ${filterPrio === p ? "selected" : ""}>${p === "rush" ? "🔥 Rush" : p[0].toUpperCase() + p.slice(1)}</option>`).join("")}
         </select>
+        <span class="ctx-hint" title="Right-click a card for quick actions — problem, urgent, remark…">${icon("cursor", 13)} <span>Right-click a card for quick actions — problem, urgent, remark…</span></span>
         <div class="grow"></div>
         <div class="segmented" id="bf-density">
           <button data-d="comfortable" class="${density === "comfortable" ? "active" : ""}">Comfortable</button>
@@ -5286,7 +5287,7 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
     var canMoveDown = canRoute && op.status !== "done" && !last && lane[i + 1].status !== "done";
     var showQty = item && item.qty > 1;
     var waiting = !ready && op.status === "queued";
-    return `<div class="route-op">
+    return `<div class="route-op" data-op-row="${op.id}">
       <div class="rail">
         <div class="node ${op.status}">${nodeIcon}</div>
         ${!last ? `<div class="line ${op.status === "done" ? "done" : ""}"></div>` : ""}

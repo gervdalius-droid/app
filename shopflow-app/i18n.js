@@ -912,5 +912,6 @@ var LT = {
   "In engineering": "Projektuojama",
   "Handed off to production": "Perduota į gamybą",
   "Drawings check": "Brėžinių patikra",
-  "Design draft": "Eskizas"
+  "Design draft": "Eskizas",
+  "Right-click a card for quick actions — problem, urgent, remark…": "Dešinys pelės klavišas ant kortelės — greiti veiksmai: problema, skubu, pastaba…"
 };
