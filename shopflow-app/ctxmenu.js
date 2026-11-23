@@ -109,6 +109,8 @@ var CtxMenu = {
         else out.push({ ic: "truck", text: L("Installation started (no timer)", "Montavimas pradėtas (be laiko)"), run: () => { M.setOnSite(o.id, true, App.me.id); this.after(); } });
       }
     }
+    var inst0 = D.readyBeforeStation && D.readyBeforeStation();
+    if (inst0 && !o.ops.some(x => x.stationId === inst0.id) && can("orders.edit")) out.push({ ic: "truck", text: L("Send to installation", "Perduoti montavimui"), run: () => { M.addInstallStep(o.id, App.me.id); M.setOnSite(o.id, true, App.me.id); this.after(); } });
     out.push({ sep: true });
     var urgent = o.priority === "rush";
     if (can("orders.edit")) out.push({ ic: "flame", text: urgent ? L("Not urgent any more", "Nebeskubu") : L("Mark urgent", "Skubu"), cls: urgent ? "" : "bad", run: () => {

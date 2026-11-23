@@ -1617,7 +1617,10 @@ Confirm.del('portfolio','portfelį',p.name,'Projects in it are not deleted.','Ja
         var waitFor = target.indexOf("__waitfor:") === 0 ? target.slice(10) : null;
         if (waitFor) target = waitFor;
         var instSt = D.readyBeforeStation();
-        var ok = target === "__ready" ? M.moveLane(o.id, o.items[0].id, null, "__ready", App.me.id) : op ? M.moveLane(o.id, op.itemId, op.group, target, App.me.id) : M.moveOrderToStation(o.id, target, App.me.id);
+        /* a project whose route has no installation gets it the moment it is
+           dragged there — packed jobs from SWOOD don't carry that step */
+        var added = instSt && target === instSt.id && !o.ops.some(x => x.stationId === instSt.id) ? M.addInstallStep(o.id, App.me.id) : null;
+        var ok = added ? true : target === "__ready" ? M.moveLane(o.id, o.items[0].id, null, "__ready", App.me.id) : op ? M.moveLane(o.id, op.itemId, op.group, target, App.me.id) : M.moveOrderToStation(o.id, target, App.me.id);
         if (ok && instSt && target === instSt.id) M.setOnSite(o.id, !waitFor, App.me.id);
         if (!ok) {
           var _D$station6, _D$station7;

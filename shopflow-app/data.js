@@ -6122,6 +6122,20 @@ var M = {
     Store.save();
     return order;
   },
+  /* add the installation step after the project's last step (assembly/packing line) */
+  addInstallStep(orderId, byId) {
+    var o = D.order(orderId);
+    var st = D.readyBeforeStation();
+    if (!o || !st || o.ops.some(op => op.stationId === st.id)) return null;
+    var asm = D.assemblyOp ? D.assemblyOp(o) : null;
+    var last = asm ? [...o.ops].reverse().find(op => op.itemId === asm.itemId) : o.ops[o.ops.length - 1];
+    if (!last) return null;
+    var op = { id: uid("op"), itemId: last.itemId, group: last.group || null, stationId: st.id, estMins: st.estMins || 60, status: "queued", qtyDone: 0, assigneeId: null, loggedMs: 0, startedAt: null, completedAt: null, blockNote: null };
+    o.ops.splice(o.ops.indexOf(last) + 1, 0, op);
+    this.log(byId, `added **${st.name}** to ${o.num}`, { orderId: o.id });
+    Store.save();
+    return op;
+  },
   /* installation started on site (dragged into the installation column) or not
      yet (back to "Paruošta") — no timer runs for this */
   setOnSite(orderId, on, byId) {
