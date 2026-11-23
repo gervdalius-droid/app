@@ -6122,6 +6122,8 @@ var M = {
     op.startedAt = null;
     op.status = "blocked";
     op.blockNote = note || "Blocked";
+    op.blockedBy = memberId;
+    op.blockedAt = Date.now();
     this.log(memberId, `blocked **${this._opName(o, op)}** on ${o.num} — ${note || ""}`, {
       orderId
     });

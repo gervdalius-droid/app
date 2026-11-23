@@ -4647,7 +4647,7 @@ var OrderDetail = {
       </header>
       <div class="modal-body sheet">
         <div class="sheet-facts">
-          <div><span class="t-label">Status</span>${pillHtml(st, D.statusLabelFor(o, st))}</div>
+          <div><span class="t-label">Status</span>${pillHtml(st, D.statusLabelFor(o, st))}${o.ops.filter(x => x.status === "blocked").map(x => `<div class="sheet-block">${icon("ban", 12)} ${esc((D.station(x.stationId) || {}).name || "")}: <b>${esc(x.blockNote || "Blocked")}</b></div>`).join("")}</div>
           <div><span class="t-label">Due</span><b class="${due.cls === "overdue" ? "bad" : ""}">${due.label}</b></div>
           <div><span class="t-label">${isEng ? "Stage" : "Now at"}</span><b>${esc(cur ? (D.station(cur.stationId) || {}).name || "—" : "—")}</b></div>
           <div><span class="t-label">Progress</span><b>${p.done}/${p.total} <span>tasks</span></b></div>
@@ -5084,6 +5084,24 @@ Confirm.del('appliance','prietaisą',Confirm.nm(D.appliances(o).find(x => x.id =
           </button>`;
       return "";
     })()}
+        ${o.ops.filter(x => x.status === "blocked").map(bop => {
+      var bst = D.station(bop.stationId);
+      var bwho = bop.blockedBy ? D.member(bop.blockedBy) : null;
+      var bitem = o.items.length > 1 ? D.item(o, bop.itemId) : null;
+      return `<div class="block-banner">
+            <div class="bb-ic">${icon("ban", 18)}</div>
+            <div class="grow">
+              <div class="bb-t"><span>Blocked</span> · ${esc(bst ? bst.name : "")}${bitem ? ` · ${esc(bitem.name)}` : ""}</div>
+              <div class="bb-note">${esc(bop.blockNote || "Blocked")}</div>
+              <div class="bb-foot">
+                ${bwho || bop.blockedAt ? `<span class="bb-who">${esc(bwho ? bwho.name : "")}${bop.blockedAt ? ` · ${fmtAgo(bop.blockedAt)}` : ""}</span>` : ""}
+                <span class="grow"></span>
+                <button class="link" data-bb-edit="${bop.id}">Edit problem</button>
+                <button class="btn sm" data-bb-fix="${bop.id}">${icon("check", 13)} Problem solved</button>
+              </div>
+            </div>
+          </div>`;
+    }).join("")}
         ${shortages.length ? `<div class="short-banner">${icon("trend-down", 14)} Material shortage: ${shortages.map(l => {
       var mat = D.material(l.materialId);
       return `${esc(mat.name)} (need ${l.qty}, have ${mat.qty} ${esc(mat.unit)})`;
@@ -5924,6 +5942,13 @@ Confirm.del('comment','komentarą',Confirm.nm((o.comments || []).find(x => x.id 
       var handoff = $("#od-handoff", el);
       if (handoff) handoff.onclick = () => typeof EngFlow !== "undefined" ? EngFlow.handoffModal(o.id) : this.handoffModal(o.id);
       EngLink.bind(el, o);
+      $$("[data-bb-fix]", el).forEach(b => b.onclick = () => {
+        M.unblockOp(o.id, b.dataset.bbFix, App.me.id);
+        App.render();
+        Drawer.refresh();
+        Toast.show("Unblocked — back in the queue", { emoji: "check" });
+      });
+      $$("[data-bb-edit]", el).forEach(b => b.onclick = () => this.blockDialog(o.id, b.dataset.bbEdit));
       if (typeof Revisions !== "undefined") Revisions.bind(el, o);
       if (typeof EngFlow !== "undefined") EngFlow.bind(el, o);
       var approve = $("#od-approve", el);
