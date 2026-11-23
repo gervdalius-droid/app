@@ -35,7 +35,7 @@ var Cechas = {
     volter: "Volter CNC", booth: "Dažymo kamera", oproom: "CNC operatorių kambarys", laser: "Lazerinis graviruoklis", desk: "Surinkimo stalas",
     zone: "Zona", compressor: "Kaeser kompresorius", vitap: "VITAP gręžimo staklės", blum: "Blum gręžimo staklės" },
 
-  DEF_SF: { altendorf: "cut", felder: "cut", olimpic: "edge", startech: "cnc", volter: "cnc", vitap: "cnc", blum: "cnc", oproom: "cnc", booth: "fin", desk: "asm" },
+  DEF_SF: { altendorf: "cut", felder: "cut", olimpic: "edge", startech: "cnc", volter: "cut", vitap: "cnc", blum: "cnc", oproom: "cnc", booth: "fin", desk: "asm" },
 
   lt() { return (typeof I18N !== "undefined" && I18N.lang === "lt"); },
   tx(lt, en) { return this.lt() ? lt : en; },

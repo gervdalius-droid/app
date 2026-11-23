@@ -57,6 +57,8 @@ var Machines = {
     var item = this.planItem(type);
     var fromPlan = item && typeof Cechas !== "undefined" ? Cechas.stepFor(item) : null;
     if (fromPlan) return fromPlan;
+    /* the Volter cuts the nested sheets: the cutting step (Pjovimas) */
+    if (type === "volter" && typeof Cechas !== "undefined") { var cut = Cechas.resolveStep("cut"); if (cut) return cut; }
     var st = (Store.state.stations || []).find(s => /gr[eė][žz]|drill|bor/i.test(String(s.id) + " " + String(s.name || "")));
     return st ? st.id : (D.station("cnc") ? "cnc" : null);
   },
@@ -134,6 +136,11 @@ var Machines = {
     fresh.forEach(s => {
       seen[rowId] = Math.max(+seen[rowId] || 0, +s.seq);
       if (!stationId || now - (+s.at || 0) > this.MAX_AGE_MS) return;
+      /* a nesting layout sheet (NS-XXXXXX-03): one scan = one sheet cut — looked up in nest-sheets.js */
+      if (typeof NestSheets !== "undefined" && NestSheets.isCode(s.code)) {
+        NestSheets.queue({ key: rowId + "-" + s.seq, code: String(s.code).trim().toUpperCase(), at: +s.at || now, stationId: stationId, who: who, src: data.name || type, type: type });
+        return;
+      }
       this.handle(s, stationId, who, data.name || type, rowId);
     });
     Store.save();
@@ -196,9 +203,10 @@ var Machines = {
     var rows = Object.keys(this.rows).map(id => ({ id: id, d: this.rows[id] }));
     var lt = typeof I18N !== "undefined" && I18N.lang === "lt";
     var L = (en, l) => lt ? l : en;
-    var stLbl = { ok: L("part counted", "detalė įskaityta"), opDone: L("step finished", "etapas baigtas"), dup: L("already counted", "jau įskaityta"), program: L("step started (program)", "etapas paleistas (programa)"), notfound: L("no project found", "projektas nerastas"), stationDone: L("step already done", "etapas jau atliktas"), waiting: L("earlier step not done", "ankstesnis etapas neatliktas"), notrouted: L("project has no such step", "projektas neturi šio etapo"), unknownPart: L("not on the part list", "nėra detalių sąraše") };
-    if (!rows.length) return `<div class="t-caption">${L("No machine helper has reported yet.", "Joks staklių pagalbininkas dar nesiuntė duomenų.")}</div>`;
-    return rows.map(x => {
+    var stLbl = { sheet: L("sheet cut, step running", "plokštė supjauta, etapas vyksta"), sheetDone: L("sheet cut, step finished", "plokštė supjauta, etapas baigtas"), confirm: L("waiting for the operator to pick the project", "laukia, kol operatorius pasirinks projektą"), nestUnknown: L("nesting project not found", "Nesting projektas nerastas"), sheetUnknown: L("no such sheet in the nesting project", "Nesting projekte tokios plokštės nėra"), error: L("could not read the nesting project", "nepavyko nuskaityti Nesting projekto"), ok: L("part counted", "detalė įskaityta"), opDone: L("step finished", "etapas baigtas"), dup: L("already counted", "jau įskaityta"), program: L("step started (program)", "etapas paleistas (programa)"), notfound: L("no project found", "projektas nerastas"), stationDone: L("step already done", "etapas jau atliktas"), waiting: L("earlier step not done", "ankstesnis etapas neatliktas"), notrouted: L("project has no such step", "projektas neturi šio etapo"), unknownPart: L("not on the part list", "nėra detalių sąraše") };
+    var nest = typeof NestSheets !== "undefined" ? NestSheets.settingsHtml() : "";
+    if (!rows.length) return `<div class="t-caption">${L("No machine helper has reported yet.", "Joks staklių pagalbininkas dar nesiuntė duomenų.")}</div>` + nest;
+    return nest + rows.map(x => {
       var d = x.d, type = d.type || x.id.slice(this.PREFIX.length), st = this.status(type), stId = this.stationFor(type), stn = stId && D.station(stId);
       return `<div class="mach-card">
         <div class="mach-head"><b>${esc(d.name || type)}</b>
@@ -218,6 +226,7 @@ var Machines = {
       Store.save();
       Toast.show("✓", { emoji: "check" });
     });
+    if (typeof NestSheets !== "undefined") NestSheets.bindSettings(root);
   },
   /* nobody marked on the plan: the step's own assignee, else whoever usually runs that station */
   _fallbackMember(o, stationId) {
