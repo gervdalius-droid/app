@@ -791,6 +791,8 @@ async function saveProject(){const inp=document.getElementById('projSaveName'),n
   if(exists&&!confirm(LANG==='lt'?`Projektas „${nm}“ jau išsaugotas.\n\nPerrašyti jį šiuo variantu?\n(Atšaukite ir įrašykite kitą pavadinimą, jei norite išsaugoti kaip naują.)`:`A project named "${nm}" already exists.\n\nOverwrite it with this version?\n(Cancel and type another name to save it as a new one.)`)){inp.focus();inp.select();return;}
   await saveProjectAs(nm,false);}
 async function saveProjectAs(nm,quiet){
+  // someone else is editing this offer (locks.js): it may be saved only under another name — as your own copy
+  if(window.__offerRO&&window.__offerRO.project===nm){toast(LANG==='lt'?`„${nm}“ dabar redaguoja ${window.__offerRO.name||'kitas žmogus'} — išsaugokite kitu pavadinimu (kopija).`:`"${nm}" is being edited by ${window.__offerRO.name||'someone else'} — save it under another name (a copy).`);return false;}
   S.projectName=nm;const data=JSON.parse(JSON.stringify(S));
   if(cloudOn()){
     try{if(!cloudCache.length)cloudCache=await cloudList();await cloudSave(nm,data);}catch(e){toast((LANG==='lt'?"Debesio klaida: ":"Cloud error: ")+e.message);return false;}
@@ -2170,6 +2172,8 @@ window.addEventListener('beforeunload',()=>saveNow());
 <script src="workshop-auth.js"></script>
 <script src="/hub/shared/notices.js" defer></script>
 <script src="workshop-cloud.js"></script>
+<script src="/hub/shared/project-lock.js"></script>
+<script src="locks.js"></script>
 <script src="/hub/shared/back.js"></script>
 <script>HubBackQ.push(function(B){B.view({get:function(){return activeTab;},set:function(v){var b=document.querySelector('#tabbar [data-tab="'+v+'"]');if(b)b.click();}});});</script>
 </body>

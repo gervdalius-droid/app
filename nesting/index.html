@@ -5368,6 +5368,8 @@ async function saveProject(){
   // a save that failed half-way must not block every later save (it did: the layout stopped reaching the cloud)
   if(_savingNow && Date.now()-_savingSince>30000){ console.warn('save was stuck — releasing'); _savingNow=false; }
   if(_suppressSave||_savingNow)return;
+  // someone else is editing this project (or it is not yet confirmed that nobody is) — nothing is saved (locks.js)
+  if(window.__nestRO){window.__nestRODirty=true;setStatus('error',_lang==='lt'?'👁 Tik peržiūra — neišsaugoma':'👁 View only — not saved');return;}
   var name=(document.getElementById('projName').value||'').trim();
   if(!name){setStatus('',t('nameRequired'));return;}
   // Cheap change detection — no full JSON stringification unless we actually save.
@@ -20741,6 +20743,8 @@ root.SvgNest = {
 })(typeof window!=='undefined'?window:globalThis);
 
 </script>
+<script src="/hub/shared/project-lock.js"></script>
+<script src="locks.js"></script>
 <script src="/hub/shared/back.js"></script>
 <script>HubBackQ.push(function(B){B.tabs('.ux-step','data-step');B.tabs('.ux-view','data-view');B.layer('.dxf-overlay,.hist-overlay,.mat-ov,.ov2,.pw-overlay,.ga-panel');B.ignore('.startup-overlay');});</script>
 </body>

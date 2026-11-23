@@ -100,7 +100,7 @@
           return W.rest("builder_projects?select=id,name,n,data,updated_at&id=in.(" + ids.map(encodeURIComponent).join(",") + ")")
             .then(function (full) {
               (full || []).forEach(function (row) {
-                if (!row.data || (S.proj && S.proj.id === row.id && !S.home)) return;   // leave the open project alone
+                if (!row.data || (S.proj && S.proj.id === row.id && !S.home && !S.ro)) return;   // leave the open project alone (unless only viewed: then show the editor's latest)
                 var d = row.data; d.id = row.id; d.updated = row.updated_at;
                 byId[row.id] = libRec(d); meta.pushed[row.id] = byId[row.id].updated; changed = true;
               });
