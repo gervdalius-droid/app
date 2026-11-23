@@ -2230,7 +2230,7 @@ Confirm.del('team member','darbuotoją',m.name,'They will no longer be able to s
       </div>
 
       ${typeof Machines !== "undefined" ? `<div class="panel">
-        <div class="settings-row" style="border-top:none;align-items:flex-start">
+        <div class="settings-row stack" style="border-top:none">
           <span class="grow"><b>Machines that send their own scans</b><span>The SCM Startech helper sends every label scanned on the machine. Each scan counts the part (or starts the project's step) at the step chosen here. The list shows what this screen did with the latest scans.</span></span>
           <div class="mach-wrap" id="mach-wrap"><button class="btn primary" id="open-scanners" style="align-self:flex-start">${icon("scan", 14)} ${typeof I18N !== "undefined" && I18N.lang === "lt" ? "Skenerių nustatymai" : "Scanner settings"}</button>${Machines.settingsHtml()}${typeof ScanLog !== "undefined" ? `<button class="btn subtle" id="open-scanlog" style="align-self:flex-start">${icon("list", 13)} Scan log</button>` : ""}</div>
         </div>
