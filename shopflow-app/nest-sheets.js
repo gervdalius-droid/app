@@ -65,21 +65,29 @@ var NestSheets = {
     if (!list.length) return null;
     var name = list[0];
     var c = this.cache[name];
-    if (!c || Date.now() - c.at > 5 * 60000) {
-      var r = await this.tbl().select("name,layouts:data->layouts,parts:data->parts").eq("name", name).limit(1);
+    if (!c || Date.now() - c.at > 60000) {
+      var r = await this.tbl().select("name,layouts:data->layouts,parts:data->parts,codes:data->sheetCodes").eq("name", name).limit(1);
       if (r.error) throw r.error;
       var row = r.data && r.data[0];
       if (!row) return null;
-      c = this.cache[name] = { at: Date.now(), name: name, layouts: Array.isArray(row.layouts) ? row.layouts : [], parts: Array.isArray(row.parts) ? row.parts : [] };
+      c = this.cache[name] = { at: Date.now(), name: name, layouts: Array.isArray(row.layouts) ? row.layouts : [], parts: Array.isArray(row.parts) ? row.parts : [],
+        codes: row.codes && typeof row.codes === "object" ? row.codes : {} };
     }
     return c;
   },
   /* what is on sheet n: its parts' codes, material, and how many identical sheets share the code */
-  sheet(proj, n) {
-    var lay = proj.layouts[n - 1];
+  sheet(proj, n, code) {
+    /* what the sheet held when it was printed/exported (saved by the Nesting app with its code) —
+       this survives later edits and re-nesting; projects printed before that fall back to the saved layout */
+    var rec = code && proj.codes && proj.codes[code];
+    if (rec && Array.isArray(rec.parts)) {
+      return { n: n, mat: rec.mat || "", copies: Math.max(1, +rec.copies || 1),
+        parts: rec.parts.map(x => { var c = String(x || "").split("|").filter(Boolean); return { codes: c, name: c[c.length - 1] || "" }; }) };
+    }
+    var lay = (proj.layouts || [])[n - 1];
     if (!lay) return null;
     var byId = {};
-    proj.parts.forEach(p => { if (p && p.id != null) byId[String(p.id)] = p; });
+    (proj.parts || []).forEach(p => { if (p && p.id != null) byId[String(p.id)] = p; });
     var sig = l => (l.matName || "?") + "#" + (l.machine || "?") + "#" + l.sw + "x" + l.sh + "@@" + (l.placements || []).map(pl => {
       var p = byId[String(pl.partId)] || {};
       return [p.origName || p.name || "?", pl.pw, pl.ph, pl.x, pl.y, pl.rot ? 1 : 0].join(",");
@@ -157,9 +165,14 @@ var NestSheets = {
   async handle(job) {
     var p = this.parse(job.code);
     var proj = await this.project(p.hash);
-    if (!proj) return this.log(job, "nestUnknown", null);
-    var sh = this.sheet(proj, p.sheet);
-    if (!sh) return this.log(job, "sheetUnknown", null, proj.name);
+    var miss = st => {
+      Store.state.scanLog.unshift({ ts: Date.now(), by: job.who, payload: p.code, status: st, orderId: null, stationId: job.stationId, partCode: null, machine: job.src });
+      if (Store.state.scanLog.length > 300) Store.state.scanLog.length = 300;
+      Store.save();
+    };
+    if (!proj) { miss("nestUnknown"); return this.log(job, "nestUnknown", null); }
+    var sh = this.sheet(proj, p.sheet, p.code);
+    if (!sh) { miss("sheetUnknown"); return this.log(job, "sheetUnknown", null, proj.name); }
     var r = this.resolve(p.hash, proj, sh);
     if (r.sure) return this.apply(job, p, proj, sh, r.o);
     /* ask: the operator picks the project on the station screen */
@@ -333,7 +346,7 @@ var NestSheets = {
     var x = this.pending().find(p => p.key === key), o = D.order(orderId);
     if (!x || !o) return;
     try {
-      var proj = await this.project(x.hash), sh = proj && this.sheet(proj, x.sheet);
+      var proj = await this.project(x.hash), sh = proj && this.sheet(proj, x.sheet, x.code);
       if (!sh) throw new Error(this.L("The nesting sheet is gone", "Nesting plokštė nerasta"));
       var job = { key: x.key, code: x.code, at: x.at, stationId: x.st, who: x.w, src: x.src, type: x.type };
       var st = this.apply(job, this.parse(x.code), proj, sh, o);
