@@ -206,13 +206,17 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .xleg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .xleg .lc{background:#2448c9}.xleg .lk{border:2px solid #d9480f;width:8px;height:8px}.xleg .ld{background:#2f7d55}
 .jtable{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.rc-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;border-radius:8px}.rc-bar.allok{border:1px solid var(--line);background:transparent;color:var(--ok)}
+.rc-chips{display:flex;gap:6px;flex-wrap:wrap}.rc-chip{border:1px solid #c9861a;background:#fff;color:#6a4300;border-radius:999px;padding:5px 11px;font:600 13px/1.2 inherit;cursor:pointer}.rc-chip.ok{border-color:var(--line);color:var(--ok);font-weight:500}.rc-chip.bad{border-color:#b4291f;color:#b4291f}
 .jcneed{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:10px 14px;border-radius:8px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;cursor:pointer;font:inherit;text-align:left}
 .jcneed span{font-weight:700;white-space:nowrap;background:#c9861a;color:#fff;border-radius:6px;padding:5px 10px}
 .jcneed.ok{border:1px solid var(--line);background:transparent;color:var(--ok);padding:6px 12px}.jcneed.ok span{background:transparent;color:var(--muted);font-weight:600;padding:0}
-.drwbox.jcbox{max-width:720px;width:100%;max-height:min(92vh,980px);display:flex;flex-direction:column}.jcbody{padding:14px;overflow:auto;flex:1}
+.jc-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:14px;align-items:start}.jc-view{position:sticky;top:0;border:1px solid var(--line);border-radius:8px;background:var(--panel);min-height:320px;overflow:hidden}.jc-row.sel{outline:2px solid var(--accent);outline-offset:-1px}#jc-iso>*:not(.iso-main){display:none}#jc-iso .iso-main{display:block}#jc-iso .iso-main>*:not(.iso-sw){display:none}#jc-iso .iso-stage{border:0}
+@media(max-width:900px){.jc-cols{grid-template-columns:minmax(0,1fr)}.jc-view{position:static}}
+.drwbox.jcbox{max-width:1180px;width:100%;max-height:min(92vh,980px);display:flex;flex-direction:column}.jcbody{padding:14px;overflow:auto;flex:1}
 .jcfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
 .jc-rows{display:flex;flex-direction:column;gap:10px}.jc-row{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}.jc-row.custom{background:var(--accent-soft)}
-.jc-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}.jc-h b{font-size:15px}.jc-h .jreset,.jc-h .badge{margin-left:auto}
+.jc-pick{border:1px solid var(--line2);background:var(--panel);border-radius:6px;cursor:pointer;padding:2px 7px;font-size:15px}.jc-row.sel .jc-pick{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}.jc-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}.jc-h b{font-size:15px}.jc-h .jreset,.jc-h .badge{margin-left:auto}
 .jcstrip{display:block;width:100%;height:auto;max-height:64px;color:var(--ink)}.jc-side{margin-top:2px}
 .jc-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:6px}.jc-ctl .seg button{padding:8px 12px}
 .jc-n{display:inline-flex;align-items:center;gap:6px}.jc-n .btn{min-width:38px;justify-content:center;font-size:17px;padding:5px 0}.jc-n b{min-width:22px;text-align:center;font:700 17px var(--f-mono)}
@@ -11814,14 +11818,14 @@ function render() {
     '</div></header><main class="wrap">';
   if (S.tab === 'cab') h += viewCab(cabInfo);
   else if (S.tab === 'res') h += viewRes(buildProjectAll());
-  else if (S.tab === 'room') h += '<div class="room" id="room"></div>';
+  else if (S.tab === 'room') h += roomChecks(cabInfo) + '<div class="room" id="room"></div>' + (S.jcheck && cur() && cabInfo[S.sel] ? jcModal(cur(), cabInfo[S.sel]) : '');
   else if (S.tab === 'drw') h += viewDrw();
   else if (S.tab === 'nest') h += viewNest();
   else h += viewSet();
   h += '</main><datalist id="dl-mat">' + listOpts('mat') + '</datalist><datalist id="dl-edge">' + listOpts('edge') + '</datalist><datalist id="dl-wt">' + listOpts('wt') + '</datalist>';
   var fx = document.activeElement && document.activeElement.id, ss = fx && document.activeElement.selectionStart;
   app.innerHTML = h;
-  mountIso(); mountRoom(); mountAssembly();
+  mountIso(); mountRoom(); mountAssembly(); mountJc();
   clampNotes();
   if (fx) { var el = document.getElementById(fx); if (el) { el.focus(); try { if (ss != null) el.setSelectionRange(ss, ss); } catch (e) {} } }
 }
@@ -12179,6 +12183,18 @@ function viewEditor(c) {
 function jcSig(r) { return ((r && r.joints) || []).map(function (j) { var sd = function (x) { return x.type + ':' + x.pos.map(function (a) { return Math.round(a * 10) / 10; }).join(','); };
   return j.key + '=' + sd(j.sides ? j.sides.L : j) + (j.single ? '' : '|' + sd(j.sides ? j.sides.R : j)); }).join(';'); }
 function jcNeeded(c, r) { return !!(r && r.joints && r.joints.length) && c.jointsOk !== jcSig(r); }
+/* Baldai: every cabinet's open checks in one bar — joints to confirm (opens the check right there) and production problems (opens the cabinet) */
+function roomChecks(infos) {
+  var lt = S.lang === 'lt', todo = 0, chips = S.proj.cabinets.map(function (c, i) {
+    var inf = infos[i]; if (!inf || !inf.r) return '';
+    var jn = jcNeeded(c, inf.r), hasJ = inf.r.joints && inf.r.joints.length, bad = (inf.warnings || []).filter(function (w) { return level(w) === 'bad'; }).length, nm = esc((i + 1) + ' · ' + (c.name || typeName(c)));
+    if (jn) todo++; if (bad) todo++;
+    return (hasJ ? '<button type="button" class="rc-chip' + (jn ? ' need' : ' ok') + '" data-act="jcroom" data-i="' + i + '" title="' + (lt ? 'Sujungimų patikra' : 'Joints check') + '">' + (jn ? '⚠' : '✓') + ' ' + nm + (jn ? ' — ' + (lt ? 'sujungimai' : 'joints') : '') + '</button>' : '') +
+      (bad ? '<button type="button" class="rc-chip bad" data-act="rcedit" data-i="' + i + '" title="' + esc(inf.warnings.filter(function (w) { return level(w) === 'bad'; }).join('\n')) + '">✕ ' + nm + ' — ' + bad + ' ' + (lt ? 'klaid.' : 'problem(s)') + '</button>' : '');
+  }).join('');
+  if (!chips) return '';
+  return '<div class="rc-bar' + (todo ? '' : ' allok') + '"><b>' + (todo ? '⚠ ' + (lt ? 'Būtina patikrinti' : 'To check') + ' (' + todo + ')' : '✓ ' + (lt ? 'Viskas patikrinta' : 'Everything is checked')) + '</b><div class="rc-chips">' + chips + '</div></div>';
+}
 function jcBanner(c, inf) {
   if (!inf.r || !inf.r.joints || !inf.r.joints.length) return '';
   var lt = S.lang === 'lt';
@@ -12200,21 +12216,21 @@ function jcModal(c, inf) {
   var js = (r.joints || []).slice().sort(function (a, b) { return oi(a.key) - oi(b.key); });
   var rows = js.map(function (j) {
     var b = 'c.cnc.joints.' + j.key + '.', own = (c.cnc.joints || {})[j.key] || {}, id = 'f-jc-' + j.key, hand = j.split || j.manual, L = j.sides ? j.sides.L : j, R = j.sides ? j.sides.R : j;
-    var name = '<div class="jc-h"><b>' + esc(tJ('jk_' + j.key)) + '</b><span class="unit">' + E.num(Math.round(j.w)) + ' mm</span>' +
+    var name = '<div class="jc-h"><button type="button" class="jc-pick" data-act="jcsel" data-v="' + j.key + '" title="' + (lt ? 'Parodyti spintelėje' : 'Show on the cabinet') + '">◎</button><b>' + esc(tJ('jk_' + j.key)) + '</b><span class="unit">' + E.num(Math.round(j.w)) + ' mm</span>' +
       (j.custom ? '<button type="button" class="btn ghost jreset" data-act="jreset" data-v="' + j.key + '">↺ ' + t('jAuto') + '</button>' : '<span class="badge mut">' + t('jAuto') + '</span>') + '</div>';
     var strips = j.split ? '<div class="jc-side"><span class="unit">' + t('sideL') + ' · ' + esc(tn(L.type)) + '</span>' + jcStrip(L, j.w) + '</div><div class="jc-side"><span class="unit">' + t('sideR') + ' · ' + esc(tn(R.type)) + '</span>' + jcStrip(R, j.w) + '</div>' : jcStrip(L, j.w);
     var ctl = hand ? '<div class="jc-ctl"><span class="unit">' + (lt ? 'Vietos nustatytos ranka' : 'Positions set by hand') + '</span><button type="button" class="btn" data-act="jc3d" data-v="' + j.key + '">' + t('isoEdit') + '</button></div>'
       : '<div class="jc-ctl">' + segI(b + 'type', j.type, [['confirmat', t('jtConf')], ['cam', t('jtCam')], ['dowel', t('jtDowel')]]) +
         '<span class="jc-n"><span class="unit">' + t('jN') + '</span><button type="button" class="btn" data-act="jcn" data-v="' + j.key + '" data-i="-1" aria-label="−"' + (L.pos.length <= 1 ? ' disabled' : '') + '>−</button><b>' + L.pos.length + '</b><button type="button" class="btn" data-act="jcn" data-v="' + j.key + '" data-i="1" aria-label="+"' + (L.pos.length >= 8 ? ' disabled' : '') + '>＋</button></span>' +
         '<label class="jc-e" for="' + id + '-e"><span class="unit">' + t('jE') + '</span><input id="' + id + '-e" type="text" inputmode="decimal" data-bind="' + b + 'e" data-num="1" data-empty="1" value="' + esc(own.e || '') + '" placeholder="' + E.num(j.defE) + '"><span class="unit">mm</span></label></div>';
-    return '<div class="jc-row' + (j.custom ? ' custom' : '') + '">' + name + strips + ctl + '</div>';
+    return '<div class="jc-row' + (j.custom ? ' custom' : '') + (S.jcSel && S.jcSel.key === j.key ? ' sel' : '') + '" data-jck="' + j.key + '">' + name + strips + ctl + '</div>';
   }).join('');
   var jw = (inf.warnings || []).filter(function (w) { return /jungt|ekscentr|konfirmat|kaišt|sujung/i.test(w); });
   return '<div class="drwover jcover" data-act="jcclose" role="dialog" aria-modal="true"><div class="drwbox jcbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Sujungimų patikra' : 'Joints check') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="jcclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
     '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Peržiūrėkite kiekvieną jungtį: tipą, tvirtinimų skaičių ir vietas (mm nuo priekio / detalės galo). Keiskite čia pat — brėžinėlis atsinaujina iškart.' : 'Look at every joint: its type, the number of connectors and where they sit (mm from the front / the part\'s end). Change them right here — the strip updates at once.') +
       ' <span class="jc-leg"><i style="background:#b4291f"></i>' + esc(t('jtCam')) + ' <i class="o" style="border-color:#1f5fbf"></i>' + esc(t('jtConf')) + ' <i class="s" style="background:#6b6f6b"></i>' + esc(t('jtDowel')) + '</span></p>' +
       (jw.length ? '<ul class="jc-warn">' + jw.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
-      '<div class="jc-rows">' + rows + '</div></div>' +
+      '<div class="jc-cols"><div class="jc-view" id="jc-iso"></div><div class="jc-rows">' + rows + '</div></div></div>' +
     '<div class="jcfoot">' + (canUndo() ? '<button type="button" class="btn ghost" data-act="undo">↶ ' + (lt ? 'Atšaukti' : 'Undo') + '</button>' : '<span></span>') +
       '<button type="button" class="btn pri big" data-act="jcok">✓ ' + (need ? (lt ? 'Sujungimai patikrinti' : 'Joints are checked') : (lt ? 'Patikrinta — uždaryti' : 'Checked — close')) + '</button></div></div></div>';
 }
@@ -13502,6 +13518,19 @@ function mountAssembly(live) {
  onFillMissing:function(){var info=S._info[S.sel].r,missing=[];(info.joints||[]).forEach(function(j){(j.single?['L']:['L','R']).forEach(function(sd){var v=j.sides?j.sides[sd]:j;if(!v.pos.length)missing.push({key:j.key,side:j.single?null:sd,type:v.type});});});if(!missing.length)return;pushUndo();missing.forEach(function(m){setJoint(cur(),m.key,{side:m.side,type:m.type,pos:null});});save();render();}
  });
 }
+/* the cabinet in the joints-check modal: the connector view (as the 3D joint editor), the joint picked in it or in the list lit */
+function mountJc() {
+  var el = document.getElementById('jc-iso'), c = cur(); if (!el || !ISO || !c || !S._info || !S._info[S.sel]) return;
+  var r = S._info[S.sel].r; if (!r.seams || !r.seams.length) { el.style.display = 'none'; return; }
+  if (S.jcSel && !(r.joints || []).some(function (j) { return j.key === S.jcSel.key; })) S.jcSel = null;
+  var again = function () { render(); };
+  ISO.attach(el, { r:r, sel:S.jcSel || null, t:t, legH:c.cnc.legs ? num(c.legH) || 0 : 0, canUndo:canUndo(), focusStage:false, toast:toast, mode:store('dbKurejas.isoMode') || 'both',
+    onMode:function (m) { store('dbKurejas.isoMode', m); },
+    onSelect:function (sel) { S.jcSel = sel; again(); var row = sel && document.querySelector('.jc-row[data-jck="' + sel.key + '"]'); if (row && row.scrollIntoView) row.scrollIntoView({ block:'nearest' }); },
+    onCommit:function (key, patch, meta) { pushUndo(); setJoint(cur(), key, patch); S.jcSel = meta && meta.sel !== undefined ? meta.sel : S.jcSel; save(); again(); if (meta && meta.msg) toast(meta.msg); },
+    onReset:function (key) { pushUndo(); var cc = cur(); if (cc.cnc.joints) delete cc.cnc.joints[key]; S.jcSel = { key:key, idx:null }; save(); again(); },
+    onUndo:function () { undoJoints(); } });
+}
 function mountIso(focus) {
   var el = document.getElementById('iso3d'), c = cur();
   if (!el || !ISO || !c || c.dishwasher || !S._info || !S._info[S.sel]) return;
@@ -13872,6 +13901,9 @@ app.addEventListener('click', function (e) {
     case 'xside': S.xside = v; break;
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
     case 'jcopen': S.jcheck = true; break;
+    case 'jcroom': S.sel = i; setRoomSel(i); S.jcSel = null; S.jcheck = true; break;
+    case 'rcedit': S.sel = i; S.tab = 'cab'; S.picking = false; S.iso = null; S.stepKey = S.proj.cabinets[i] && S.proj.cabinets[i].kind === 'box' ? 'joints' : 'ops'; break;
+    case 'jcsel': S.jcSel = S.jcSel && S.jcSel.key === v ? null : { key:v, side:'L', idx:null }; break;
     case 'undo': undoJoints(); return;
     case 'jcclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.jcheck = false; break;
     case 'jcok': { var cj = cur(), ij = S._info && S._info[S.sel]; if (cj && ij && ij.r) { cj.jointsOk = jcSig(ij.r); save(); toast(S.lang === 'lt' ? 'Sujungimai patikrinti ✓' : 'Joints checked ✓'); } S.jcheck = false; break; }
