@@ -259,8 +259,7 @@ var NestSheets = {
     }
     /* the station screen says what happened to every sheet, also when nothing changed */
     try {
-      var here = this.stationHere();
-      if (here && (here === "all" || here === job.type) && status !== "confirm" && typeof Toast !== "undefined" && Date.now() - (+job.at || 0) < 10 * 60000) {
+      if (this.mine(job.type) && status !== "confirm" && typeof Toast !== "undefined" && Date.now() - (+job.at || 0) < 10 * 60000) {
         var L = this.L.bind(this);
         var said = { sheet: L("cutting step running", "pjovimo etapas vyksta"), sheetDone: L("cutting step finished", "pjovimo etapas baigtas"),
           stationDone: L("cutting was already finished for this project — nothing changed", "šio projekto pjovimas jau baigtas — niekas nepakeista"),
@@ -280,6 +279,17 @@ var NestSheets = {
   /* a screen shows it when it is a station screen (opened with ?station=volter once — remembered),
      or when "show confirmations here" is ticked in Settings → Machines */
   STATION_KEY: "shopflow.station",
+  /* who gets a scanner's questions and messages: the person the scanner belongs to
+     (Settings → Machines → Who scans), on whatever screen they are signed in; a scanner with
+     no person set falls back to its station screen (?station=volter) */
+  ownerOf(type) { var c = (Store.state.machineCfg || {})[type]; return c && c.memberId && D.member(c.memberId) ? c.memberId : null; },
+  mine(type) {
+    if (typeof App === "undefined" || !App.me) return false;
+    var owner = this.ownerOf(type);
+    if (owner) return App.me.id === owner;
+    var here = this.stationHere();
+    return !!here && (here === "all" || here === type);
+  },
   stationHere() {
     try {
       var q = new URLSearchParams(location.search).get("station");
@@ -294,10 +304,8 @@ var NestSheets = {
   },
   prompt() {
     if (typeof Modal === "undefined" || typeof App === "undefined" || !App.me) return;
-    var here = this.stationHere();
-    if (!here) return;
     try { this.tidy(); } catch (e) {}
-    var list = this.pending().filter(x => here === "all" || x.type === here);
+    var list = this.pending().filter(x => this.mine(x.type));
     if (!list.length) {
       if (this._shown && document.getElementById("nest-pop")) Modal.close();
       this._shown = null;
@@ -473,10 +481,9 @@ var NestSheets = {
   /* the "Later" button: ask again after a few minutes, not on every poll */
   _later: {},
   tick() {
-    var here = this.stationHere();
-    if (!here) return;
+    if (typeof App === "undefined" || !App.me) return;
     try { this.tidy(); } catch (e) {}
-    var list = this.pending().filter(x => (here === "all" || x.type === here) && !(this._later[x.key] && Date.now() - this._later[x.key] < 3 * 60000));
+    var list = this.pending().filter(x => this.mine(x.type) && !(this._later[x.key] && Date.now() - this._later[x.key] < 3 * 60000));
     if (!list.length) return;
     if (document.getElementById("nest-pop")) return;
     var root = document.getElementById("modal-root");
@@ -491,7 +498,7 @@ var NestSheets = {
     Object.keys((typeof Machines !== "undefined" && Machines.rows) || {}).forEach(id => { var d = Machines.rows[id]; types[d.type || id.slice(Machines.PREFIX.length)] = d.name || d.type; });
     if (!types.volter) types.volter = "Volter CNC";
     var h = `<div class="mach-card"><div class="mach-head"><b>${esc(L("Nesting sheets (QR on the layout sheet)", "Nesting plokštės (QR ant išdėstymo lapo)"))}</b><span class="grow"></span>
-      <label class="t-caption">${esc(L("This screen asks the operator for", "Šis ekranas klausia operatoriaus dėl"))}</label>
+      <label class="t-caption">${esc(L("Scanners with no person set ask on this screen for", "Skeneriai be priskirto žmogaus klausia šiame ekrane dėl"))}</label>
       <select class="select" data-nest-here><option value="">${esc(L("— nothing —", "— nieko —"))}</option>${Object.keys(types).map(t => `<option value="${esc(t)}" ${here === t ? "selected" : ""}>${esc(types[t])}</option>`).join("")}<option value="all" ${here === "all" ? "selected" : ""}>${esc(L("all machines", "visų staklių"))}</option></select></div>`;
     if (!list.length) h += `<div class="t-caption">${esc(L("No sheets waiting for a project.", "Jokia plokštė nelaukia projekto."))}</div>`;
     else h += `<div class="mach-list">${list.map(x => `<div class="mach-row bad"><span class="t-num">${new Date(+x.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span><code>${esc(x.code)}</code><span>${esc(x.nest)} · ${esc(L("sheet", "plokštė"))} ${esc(String(x.sheet))}</span><span class="grow"></span><button class="btn" data-nest-open="${esc(x.key)}">${esc(L("Choose project", "Pasirinkti projektą"))}</button></div>`).join("")}</div>`;

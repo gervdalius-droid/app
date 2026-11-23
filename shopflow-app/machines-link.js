@@ -264,8 +264,7 @@ var Machines = {
   _say(type, text, good) {
     try {
       if (typeof NestSheets === "undefined" || typeof Toast === "undefined") return;
-      var here = NestSheets.stationHere();
-      if (here && (here === "all" || here === type)) Toast.show(text, { emoji: good ? "check" : "alert", ms: 9000 });
+      if (NestSheets.mine(type)) Toast.show(text, { emoji: good ? "check" : "alert", ms: 9000 });
     } catch (e) {}
   },
   /* what happened to the last scans, for Settings → Machines */
