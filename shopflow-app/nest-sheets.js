@@ -243,6 +243,20 @@ var NestSheets = {
       Machines.recent.unshift({ at: line.at, code: job.code, status: status, order: line.order + (nest ? " ← " + nest : "") + (extra ? " · " + extra : "") });
       if (Machines.recent.length > 12) Machines.recent.length = 12;
     }
+    /* the station screen says what happened to every sheet, also when nothing changed */
+    try {
+      var here = this.stationHere();
+      if (here && (here === "all" || here === job.type) && status !== "confirm" && typeof Toast !== "undefined" && Date.now() - (+job.at || 0) < 10 * 60000) {
+        var L = this.L.bind(this);
+        var said = { sheet: L("cutting step running", "pjovimo etapas vyksta"), sheetDone: L("cutting step finished", "pjovimo etapas baigtas"),
+          stationDone: L("cutting was already finished for this project — nothing changed", "šio projekto pjovimas jau baigtas — niekas nepakeista"),
+          notrouted: L("this project has no cutting step", "šis projektas neturi pjovimo etapo"), dup: L("this sheet was already counted", "ši plokštė jau įskaityta"),
+          nestUnknown: L("no nesting project has this code", "joks Nesting projektas neturi šio kodo"), sheetUnknown: L("the nesting project has no such sheet", "Nesting projekte tokios plokštės nėra"),
+          error: L("could not read the nesting project", "nepavyko nuskaityti Nesting projekto") }[status] || status;
+        var good = status === "sheet" || status === "sheetDone";
+        Toast.show((job.src || "CNC") + " · " + job.code + (line.order ? " → " + line.order : "") + (extra ? " · " + extra : "") + " — " + said, { emoji: good ? "check" : "alert", ms: 9000 });
+      }
+    } catch (e) {}
     if (typeof ScanLog !== "undefined" && status !== "dup") {
       try { ScanLog.add({ k: job.key, ts: job.at || Date.now(), src: job.src, code: job.code, st: job.stationId, o: o ? o.id : "", w: who || job.who || "", r: status, q: extra || "" }); } catch (e) {}
     }
