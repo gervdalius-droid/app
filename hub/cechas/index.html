@@ -2820,6 +2820,8 @@ function qrCount(){const all=[...document.querySelectorAll('#qrs .qc')],n=all.fi
   $('#qr-n').textContent=t('qrSel')+': '+n+' / '+all.length;const p=document.querySelector('#qrs [data-qr=print]');if(p)p.disabled=!n}
 function qrSave(){qrSel=[...document.querySelectorAll('#qrs .qc:not(.off)')].map(c=>c.dataset.qid);lsSet('cp.qrsel',JSON.stringify(qrSel));qrCount()}
 $('#btnQR').addEventListener('click',qrOpen);
+/* ?qr=1 (from ShopFlow → Scanners): open the station QR codes straight away, once the plan is loaded */
+if(new URLSearchParams(location.search).has('qr')){const go=n=>{if(ciPlaces().length||n>40)qrOpen();else setTimeout(()=>go(n+1),500)};setTimeout(()=>go(0),800)}
 $('#qrs').addEventListener('change',e=>{const c=e.target;if(c.dataset.qr!=='pick')return;c.closest('.qc').classList.toggle('off',!c.checked);qrSave()});
 $('#qrs').addEventListener('click',e=>{const b=e.target.closest('[data-qr]');if(!b||b.dataset.qr==='pick')return;const k=b.dataset.qr;
   if(k==='close'){$('#qrs').hidden=true;$('#qrs').innerHTML=''}

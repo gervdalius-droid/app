@@ -96,11 +96,43 @@ var Machines = {
     var st = (Store.state.stations || []).find(s => /gr[eė][žz]|drill|bor/i.test(String(s.id) + " " + String(s.name || "")));
     return st ? st.id : (D.station("cnc") ? "cnc" : null);
   },
-  /* who scans: the person set for this scanner in Settings → Machines, else who is at the machine on the floor plan */
+  /* Scanner stations: every machine and desk on the floor plan where work is scanned. Each has its
+     ShopFlow step (set on the floor plan) and may have a default person (Settings → Scanners). */
+  WORK_TYPES: ["altendorf", "felder", "olimpic", "startech", "volter", "vitap", "blum", "booth", "laser", "desk"],
+  places() {
+    if (typeof Cechas === "undefined") return [];
+    var items = Cechas.layout().items || {}, out = [];
+    Object.keys(items).forEach(id => {
+      var it = items[id];
+      if (!it || this.WORK_TYPES.indexOf(it.t) < 0) return;
+      out.push({ id: id, t: it.t, name: Cechas.placeName(id), step: Cechas.stepFor(id) });
+    });
+    return out.sort((a, b) => ((a.t === "desk") - (b.t === "desk")) || String(a.name).localeCompare(String(b.name), "lt"));
+  },
+  placeCfgOf(itemId) { var all = Store.state.placeCfg || (Store.state.placeCfg = {}); return all[itemId] || (all[itemId] = {}); },
+  /* who works at a place: its default person, else who is marked there on the floor plan */
+  personAt(itemId) {
+    if (!itemId) return null;
+    var def = ((Store.state.placeCfg || {})[itemId] || {}).memberId;
+    if (def && D.member(def)) return def;
+    if (typeof Cechas === "undefined") return null;
+    var ppl = Cechas.state().people || {};
+    for (var k in ppl) {
+      var p = ppl[k];
+      if (p && p.at === itemId && !p.pz && Cechas.counts(p)) { var m = Cechas.memberFor(p.n); if (m) return m.id; }
+    }
+    return null;
+  },
+  /* who scans: the scanner's own person (Settings → Scanners), else the person of the station it is at
+     (the station it was moved to by its QR, or its machine) */
   memberFor(type) {
     var fixed = ((Store.state.machineCfg || {})[type] || {}).memberId;
     if (fixed && D.member(fixed)) return fixed;
+    var pl = this.placeOf(type);
+    if (pl) return this.personAt(pl.item);
     var item = this.planItem(type);
+    var def = item && ((Store.state.placeCfg || {})[item] || {}).memberId;
+    if (def && D.member(def)) return def;
     if (!item || typeof Cechas === "undefined") return null;
     var ppl = Cechas.state().people || {};
     for (var k in ppl) {
@@ -170,11 +202,13 @@ var Machines = {
     var now = Date.now();
     fresh.forEach(s => {
       seen[rowId] = Math.max(+seen[rowId] || 0, +s.seq);
+      who = this.memberFor(type); // the station may have changed with the previous scan
       if (now - (+s.at || 0) > this.MAX_AGE_MS) return;
       /* a station's QR code from the floor plan: the scanner moves there */
       var place = this.placeCode(s.code);
       if (place) {
         var r = this.setPlace(type, place, +s.at || now);
+        who = this.memberFor(type);
         var L = (en, lt) => typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
         var stn = r.place && r.place.step && D.station(r.place.step);
         var msg = r.bad ? L("unknown station code", "nežinomas vietos kodas")
@@ -295,18 +329,39 @@ var Machines = {
         ${(() => { var pl = this.placeOf(type), ps = pl && pl.step && D.station(pl.step); return pl ? `<div class="mach-row"><span>${L("Now at", "Dabar")}: <b>${esc(pl.name)}</b>${ps ? " · " + esc(ps.name) : ""} <span class="t-caption">${L("since", "nuo")} ${new Date(+pl.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span></span><span class="grow"></span><button class="btn" data-mach-home="${esc(type)}">${L("Back to the machine", "Grąžinti prie staklių")}</button></div>` : ""; })()}
         <div class="mach-list">${this.recent.length ? this.recent.map(r => `<div class="mach-row ${r.status === "notfound" ? "bad" : ""}"><span class="t-num">${new Date(r.at).toLocaleTimeString("lt-LT", { hour: "2-digit", minute: "2-digit" })}</span><code>${esc(r.code)}</code><span>→ ${esc(stLbl[r.status] || r.status)}${r.order ? " · <b>" + esc(r.order) + "</b>" : ""}</span></div>`).join("") : `<div class="t-caption">${L("Scans handled by this screen appear here. Today on the machine: ", "Čia matysis šio ekrano apdoroti skenavimai. Šiandien staklėse: ")}${d.today || 0}${d.last ? " · " + L("last", "paskutinis") + ": " + esc(d.last.code) : ""}</div>`}</div>
       </div>`;
-    }).join("") + nest;
+    }).join("") + this.placesHtml(L) + nest;
+  },
+  placesHtml(L) {
+    var list = this.places();
+    var mem = (Store.state.members || []).filter(m => m && m.name && !m.archived);
+    var head = `<div class="mach-card"><div class="mach-head"><b>${L("Scanner stations — machines and desks", "Skenavimo stotys — staklės ir stalai")}</b><span class="grow"></span>
+      <a class="btn" href="../hub/cechas/?qr=1" target="_blank" rel="noopener">${icon("qr", 14)} ${L("Print station QR codes", "Spausdinti stočių QR kodus")}</a></div>
+      <div class="t-caption">${L("A scanner works at a station after scanning its QR code (or at its own machine). Scans count at the station's step, for the scanner's person, else the station's person below, else who is marked there on the floor plan. Steps are set on the floor plan.", "Skeneris dirba stotyje nuskenavęs jos QR kodą (arba prie savo staklių). Skenavimai įskaitomi stoties etape — skenerio žmogui, jei jo nėra — žemiau nurodytam stoties žmogui, jei ir jo nėra — pažymėtam cecho plane. Etapai nustatomi cecho plane.")}</div>`;
+    if (!list.length) return head + `<div class="t-caption">${L("The floor plan is not loaded on this screen yet.", "Šiame ekrane cecho planas dar neįkeltas.")}</div></div>`;
+    return head + `<div class="place-list">${list.map(p => {
+      var st = p.step && D.station(p.step), def = ((Store.state.placeCfg || {})[p.id] || {}).memberId;
+      var here = Object.keys(this.rows).map(id => this.rows[id]).filter(d => { var ty = d.type || ""; var pl = this.placeOf(ty); return pl ? pl.item === p.id : this.planItem(ty) === p.id; }).map(d => d.name || d.type);
+      return `<div class="place-row">
+        <span class="place-name"><b>${esc(p.name)}</b>${here.length ? `<span class="t-caption"> · ${icon("scan", 11)} ${esc(here.join(", "))}</span>` : ""}</span>
+        <span class="place-step ${st ? "" : "none"}">${st ? esc(st.name) : L("no step — set on the floor plan", "nėra etapo — nustatykite cecho plane")}</span>
+        <select class="select" data-place-who="${esc(p.id)}"><option value="">${L("— by the floor plan —", "— pagal cecho planą —")}</option>${mem.map(m => `<option value="${esc(m.id)}" ${def === m.id ? "selected" : ""}>${esc(m.name)}</option>`).join("")}</select>
+      </div>`;
+    }).join("")}</div></div>`;
   },
   /* the scanners' settings in a window of their own (from the sheet pop-up, a scan message or Settings) */
   async openSettings() {
     var L = (en, lt) => typeof I18N !== "undefined" && I18N.lang === "lt" ? lt : en;
     Modal.open(`<header><h2>${icon("scan", 18)} ${L("Scanners", "Skeneriai")}</h2><button class="icon-btn" data-close>✕</button></header>
       <div class="modal-body"><div class="mach-wrap wide" id="mach-pop"><div class="t-caption">${L("Loading…", "Kraunama…")}</div></div></div>
-      <footer><span class="grow"></span><button class="btn primary" data-close>${L("Done", "Baigta")}</button></footer>`, null, { quiet: true });
+      <footer><span class="grow"></span><button class="btn primary" data-close>${L("Done", "Baigta")}</button></footer>`, m => { m.style.maxWidth = "780px"; }, { quiet: true });
     try {
       if (typeof Sync !== "undefined" && Sync.client) {
         var r = await Sync.client.from(Sync.table || "workspaces").select("id,data").like("id", this.PREFIX + "%");
         if (r && !r.error && Array.isArray(r.data)) r.data.forEach(row => { if (row && row.data) this.rows[row.id] = row.data; });
+        if (typeof Cechas !== "undefined" && !Cechas.data) {
+          var c = await Sync.client.from(Sync.table || "workspaces").select("data").eq("id", Cechas.ROW).limit(1);
+          if (c && !c.error && c.data && c.data[0]) { Cechas.data = c.data[0].data; Cechas.at = Date.now(); }
+        }
       }
     } catch (e) {}
     this.paintSettings();
@@ -327,6 +382,12 @@ var Machines = {
     $$("[data-mach-who]", root).forEach(sel => sel.onchange = () => {
       var cfg = this.cfgOf(sel.dataset.machWho);
       if (sel.value) cfg.memberId = sel.value; else delete cfg.memberId;
+      Store.save();
+      Toast.show("✓", { emoji: "check" });
+    });
+    $$("[data-place-who]", root).forEach(sel => sel.onchange = () => {
+      var c = this.placeCfgOf(sel.dataset.placeWho);
+      if (sel.value) c.memberId = sel.value; else delete c.memberId;
       Store.save();
       Toast.show("✓", { emoji: "check" });
     });
