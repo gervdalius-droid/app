@@ -208,6 +208,9 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .jtable{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
 .rc-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0;padding:8px 12px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;border-radius:8px}.rc-bar.allok{border:1px solid var(--line);background:transparent;color:var(--ok)}
 .rc-chips{display:flex;gap:6px;flex-wrap:wrap}.rc-chip{border:1px solid #c9861a;background:#fff;color:#6a4300;border-radius:999px;padding:5px 11px;font:600 13px/1.2 inherit;cursor:pointer}.rc-chip.ok{border-color:var(--line);color:var(--ok);font-weight:500}.rc-chip.bad{border-color:#b4291f;color:#b4291f}
+.ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}.ec-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}.ec-card.custom{background:var(--accent-soft)}
+.ec-h{display:flex;align-items:baseline;gap:8px}.ec-h .jreset{margin-left:auto}.ec-svg{display:block;width:100%;max-width:300px;margin:0 auto}.ec-e{cursor:pointer}.ec-e:hover line:nth-of-type(2){stroke-width:7}
+.ec-ctl{display:flex;align-items:center;gap:12px;margin-top:2px}.ec-ctl .btn{padding:4px 10px;font-size:13px}.jcneed+.jcneed{margin-top:-4px}
 .jcneed{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:10px 14px;border-radius:8px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;cursor:pointer;font:inherit;text-align:left}
 .jcneed span{font-weight:700;white-space:nowrap;background:#c9861a;color:#fff;border-radius:6px;padding:5px 10px}
 .jcneed.ok{border:1px solid var(--line);background:transparent;color:var(--ok);padding:6px 12px}.jcneed.ok span{background:transparent;color:var(--muted);font-weight:600;padding:0}
@@ -11831,7 +11834,7 @@ function render() {
     '</div></header><main class="wrap">';
   if (S.tab === 'cab') h += viewCab(cabInfo);
   else if (S.tab === 'res') h += viewRes(buildProjectAll());
-  else if (S.tab === 'room') h += roomChecks(cabInfo) + '<div class="room" id="room"></div>' + (S.jcheck && cur() && cabInfo[S.sel] ? jcModal(cur(), cabInfo[S.sel]) : '');
+  else if (S.tab === 'room') h += roomChecks(cabInfo) + '<div class="room" id="room"></div>' + (S.jcheck && cur() && cabInfo[S.sel] ? jcModal(cur(), cabInfo[S.sel]) : S.echeck && cur() && cabInfo[S.sel] ? ecModal(cur(), cabInfo[S.sel]) : '');
   else if (S.tab === 'drw') h += viewDrw();
   else if (S.tab === 'nest') h += viewNest();
   else h += viewSet();
@@ -11873,7 +11876,7 @@ function viewCab(info) {
   }).join('') + '</div><button class="btn pri" data-act="pick">' + t('newCab') + '</button></aside>';
   if (S.picking || !cabs.length) return '<div class="ws">' + rail + '<section class="editor" style="grid-column:span 2">' + viewPick() + '</section></div>';
   var c = cur(), inf = info[S.sel];
-  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + jcBanner(c, inf) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>' + (S.jcheck ? jcModal(c, inf) : '');
+  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + jcBanner(c, inf) + ecBanner(c, inf) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>' + (S.jcheck ? jcModal(c, inf) : S.echeck ? ecModal(c, inf) : '');
 }
 /* where am I / what is left: the steps of this cabinet, with a mark where something needs attention */
 function needsWt(c) { return !!(c.worktop && c.worktop.on && !c.dishwasher && !String(c.worktop.mat || '').trim()); }   // the worktop's material is set in step 1, with the worktop
@@ -12201,18 +12204,52 @@ function roomChecks(infos) {
   var lt = S.lang === 'lt', todo = 0, chips = S.proj.cabinets.map(function (c, i) {
     var inf = infos[i]; if (!inf || !inf.r) return '';
     var jn = jcNeeded(c, inf.r), hasJ = inf.r.joints && inf.r.joints.length, bad = (inf.warnings || []).filter(function (w) { return level(w) === 'bad'; }).length, nm = esc((i + 1) + ' · ' + (c.name || typeName(c)));
-    if (jn) todo++; if (bad) todo++;
+    var en = ecNeeded(c, inf.r); if (jn) todo++; if (bad) todo++; if (en) todo++;
     return (hasJ ? '<button type="button" class="rc-chip' + (jn ? ' need' : ' ok') + '" data-act="jcroom" data-i="' + i + '" title="' + (lt ? 'Sujungimų patikra' : 'Joints check') + '">' + (jn ? '⚠' : '✓') + ' ' + nm + (jn ? ' — ' + (lt ? 'sujungimai' : 'joints') : '') + '</button>' : '') +
+      '<button type="button" class="rc-chip' + (en ? ' need' : ' ok') + '" data-act="ecroom" data-i="' + i + '" title="' + (lt ? 'Kraštų laminavimo patikra' : 'Edge banding check') + '">' + (en ? '⚠' : '✓') + ' ' + nm + ' — ' + (lt ? 'kraštai' : 'edges') + '</button>' +
       (bad ? '<button type="button" class="rc-chip bad" data-act="rcedit" data-i="' + i + '" title="' + esc(inf.warnings.filter(function (w) { return level(w) === 'bad'; }).join('\n')) + '">✕ ' + nm + ' — ' + bad + ' ' + (lt ? 'klaid.' : 'problem(s)') + '</button>' : '');
   }).join('');
   if (!chips) return '';
   return '<div class="rc-bar' + (todo ? '' : ' allok') + '"><b>' + (todo ? '⚠ ' + (lt ? 'Būtina patikrinti' : 'To check') + ' (' + todo + ')' : '✓ ' + (lt ? 'Viskas patikrinta' : 'Everything is checked')) + '</b><div class="rc-chips">' + chips + '</div></div>';
+}
+/* ---- edges check: every part of the cabinet with its four edges — which are banded, with what; click an edge to switch it.
+   c.edgesOk keeps the signature of the confirmed banding, any later change asks again. */
+function ecSig(r) { return ((r && r.panels) || []).map(function (p) { return p.key + '=' + ['y0', 'y1', 'x0', 'x1'].map(function (e) { return p.eb && p.eb[e] ? (p.ebFac && p.ebFac[e] ? 'F' : '1') : '0'; }).join(''); }).join(';'); }
+function ecNeeded(c, r) { return !!(r && r.panels && r.panels.length) && c.edgesOk !== ecSig(r); }
+function ecModal(c, inf) {
+  var r = inf.r, lt = S.lang === 'lt', need = ecNeeded(c, r), fe = c.edge.facade || 'PAGAL FASADA';
+  var cards = r.panels.map(function (p) {
+    var Wd = 230, k = Wd / Math.max(p.L, 1), hh = Math.max(34, Math.min(120, p.W * k)), pad = 22, x0 = pad, x1 = pad + Wd, yT = pad, yB = pad + hh;
+    var seg = function (e, xa, ya, xb, yb, len, lx, ly, rot) { var on = !!(p.eb && p.eb[e]), fac = on && (p.ebFac && p.ebFac[e] || p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')), col = !on ? '#9aa09a' : fac ? '#d9730d' : '#1f5fbf';
+      return '<g class="ec-e" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button" aria-pressed="' + on + '"><title>' + esc((on ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded')) + ' · ' + fmt(len) + ' mm') + '</title>' +
+        '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="transparent" stroke-width="18"/>' +
+        '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="' + col + '" stroke-width="' + (on ? 5 : 1.5) + '"' + (on ? ' stroke-linecap="round"' : ' stroke-dasharray="5 4"') + '/>' +
+        '<text x="' + lx + '" y="' + ly + '" text-anchor="middle" font-size="11" font-weight="' + (on ? 700 : 400) + '" fill="' + col + '"' + (rot ? ' transform="rotate(-90 ' + lx + ' ' + ly + ')"' : '') + '>' + fmt(Math.round(len)) + '</text></g>'; };
+    var n4 = ['y0', 'y1', 'x0', 'x1'].filter(function (e) { return p.eb && p.eb[e]; }).length;
+    return '<div class="ec-card' + (p.ebManual ? ' custom' : '') + '"><div class="ec-h"><b>' + esc(p.short || p.role) + '</b><span class="unit">' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + fmt(p.T) + '</span>' +
+        (p.ebManual ? '<button type="button" class="btn ghost jreset" data-act="ebk" data-v="' + esc(p.key) + '" data-i="reset">↺</button>' : '') + '</div>' +
+      '<svg class="ec-svg" viewBox="0 0 ' + (Wd + 2 * pad) + ' ' + (hh + 2 * pad) + '"><rect x="' + x0 + '" y="' + yT + '" width="' + Wd + '" height="' + hh + '" fill="var(--sunk)"/>' +
+        seg('y1', x0, yT, x1, yT, p.L, (x0 + x1) / 2, yT - 7) + seg('y0', x0, yB, x1, yB, p.L, (x0 + x1) / 2, yB + 16) + seg('x0', x0, yT, x0, yB, p.W, x0 - 8, (yT + yB) / 2 + 4, 1) + seg('x1', x1, yT, x1, yB, p.W, x1 + 15, (yT + yB) / 2 + 4, 1) + '</svg>' +
+      '<div class="ec-ctl"><button type="button" class="btn" data-act="ebk" data-v="' + esc(p.key) + '" data-i="all">' + (n4 === 4 ? (lt ? 'Nė vieno' : 'None') : (lt ? 'Visi 4' : 'All 4')) + '</button>' +
+        '<label class="chk"><input type="checkbox" data-act="ebk" data-v="' + esc(p.key) + '" data-i="fac"' + (p.ebFac ? ' checked' : '') + '> ' + (lt ? 'pagal fasadą' : 'as the fronts') + '</label></div></div>';
+  }).join('');
+  return '<div class="drwover jcover" data-act="ecclose" role="dialog" aria-modal="true"><div class="drwbox jcbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Kraštų laminavimo patikra' : 'Edge banding check') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="ecclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
+    '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Kiekviena detalė su keturiais kraštais ir jų ilgiais, išdėstyta kaip detalės lange „Detalės ir CNC“. Spustelėkite kraštą — įjungsite arba išjungsite laminavimą; tas pats bus sąraše ir etiketėje.' : 'Every part with its four edges and their lengths, laid out as in the part view of Detalės ir CNC. Click an edge to switch its banding on or off; the list and the label follow.') +
+      ' <span class="jc-leg"><i class="s" style="background:#1f5fbf"></i>' + esc(c.edge.carc || (lt ? 'karkaso kraštas' : 'carcass edge')) + ' <i class="s" style="background:#d9730d"></i>' + esc(lt ? 'pagal fasadą' : 'as the fronts') + (c.edge.facade ? ' (' + esc(c.edge.facade) + ')' : '') + ' <i class="s" style="background:#9aa09a"></i>' + (lt ? 'nelaminuojama' : 'not banded') + '</span></p>' +
+      '<div class="ec-grid">' + cards + '</div></div>' +
+    '<div class="jcfoot"><span></span><button type="button" class="btn pri big" data-act="ecok">✓ ' + (need ? (lt ? 'Kraštai patikrinti' : 'Edges are checked') : (lt ? 'Patikrinta — uždaryti' : 'Checked — close')) + '</button></div></div></div>';
 }
 function jcBanner(c, inf) {
   if (!inf.r || !inf.r.joints || !inf.r.joints.length) return '';
   var lt = S.lang === 'lt';
   return jcNeeded(c, inf.r) ? '<button type="button" class="jcneed" data-act="jcopen"><b>⚠ ' + (lt ? 'Būtina patikrinti sujungimus' : 'The joints must be checked') + '</b><span>' + (lt ? 'Patikrinti' : 'Check') + ' →</span></button>'
     : '<button type="button" class="jcneed ok" data-act="jcopen"><b>✓ ' + (lt ? 'Sujungimai patikrinti' : 'Joints checked') + '</b><span>' + (lt ? 'Peržiūrėti' : 'Review') + '</span></button>';
+}
+function ecBanner(c, inf) {
+  if (!inf.r || !inf.r.panels || !inf.r.panels.length) return '';
+  var lt = S.lang === 'lt';
+  return ecNeeded(c, inf.r) ? '<button type="button" class="jcneed" data-act="ecopen"><b>⚠ ' + (lt ? 'Būtina patikrinti kraštų laminavimą' : 'The edge banding must be checked') + '</b><span>' + (lt ? 'Patikrinti' : 'Check') + ' →</span></button>'
+    : '<button type="button" class="jcneed ok" data-act="ecopen"><b>✓ ' + (lt ? 'Kraštai patikrinti' : 'Edges checked') + '</b><span>' + (lt ? 'Peržiūrėti' : 'Review') + '</span></button>';
 }
 function jcStrip(x, w) {   // one joint side drawn to scale: the seam as a bar, a symbol at every connector, its distance under it
   var W = 560, k = W / Math.max(1, w), col = { cam:'#b4291f', confirmat:'#1f5fbf', dowel:'#6b6f6b' }[x.type] || '#333';
@@ -13801,7 +13838,7 @@ app.addEventListener('click', function (e) {
   switch (act) {
     case 'tab': S.tab = v; S.picking = false; window.scrollTo(0, 0); break;
     case 'lang': S.lang = v; store('dbKurejas.lang', v); break;
-    case 'sel': S.sel = i; S.picking = false; S.iso = null; S.colSel = 0; S.jcheck = false; break;
+    case 'sel': S.sel = i; S.picking = false; S.iso = null; S.colSel = 0; S.jcheck = false; S.echeck = false; break;
     case 'pick': S.picking = true; break;
     case 'unpick': S.picking = false; break;
     case 'preset': S.proj.cabinets.push(fromPreset(PRESETS[i])); S.sel = S.proj.cabinets.length - 1; S.picking = false; save(); break;
@@ -13917,7 +13954,21 @@ app.addEventListener('click', function (e) {
       return; }
     case 'xside': S.xside = v; break;
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
-    case 'jcopen': S.jcheck = true; break;
+    case 'jcopen': S.jcheck = true; S.echeck = false; break;
+    case 'ecopen': S.echeck = true; S.jcheck = false; break;
+    case 'ecroom': S.sel = i; setRoomSel(i); S.echeck = true; S.jcheck = false; break;
+    case 'ecclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.echeck = false; break;
+    case 'ecok': { var ce = cur(), ie = S._info && S._info[S.sel]; if (ce && ie && ie.r) { ce.edgesOk = ecSig(ie.r); save(); toast(S.lang === 'lt' ? 'Kraštai patikrinti ✓' : 'Edges checked ✓'); } S.echeck = false; break; }
+    case 'ebk': { var ck = cur(), ik = S._info && S._info[S.sel], pk = ik && ik.r && ik.r.panels.filter(function (q) { return q.key === v; })[0], what = el.getAttribute('data-i'); if (!ck || !pk) break;
+      var EE = ck.ebEdit = ck.ebEdit || {}, ES = ['y0', 'y1', 'x0', 'x1'], has = function (e2) { return !!(pk.eb && pk.eb[e2]); };
+      if (what === 'reset') delete EE[v];
+      else { var o2 = EE[v] = EE[v] || {};
+        if (what === 'all') { var allOn = ES.every(has); ES.forEach(function (e2) { o2[e2] = !allOn; }); }
+        else if (what === 'fac') { if (pk.ebFac) delete o2.fac; else { o2.fac = true; if (!ES.some(has)) o2.y0 = true; } }
+        else o2[what] = !has(what);
+        if (!Object.keys(o2).length) delete EE[v]; }
+      if (!ck.edge.carc && !ck.edge.facade && what !== 'reset') toast(t('ebNoMat'));
+      save(); break; }
     case 'jcroom': S.sel = i; setRoomSel(i); S.jcSel = null; S.jcheck = true; break;
     case 'rcedit': S.sel = i; S.tab = 'cab'; S.picking = false; S.iso = null; S.stepKey = S.proj.cabinets[i] && S.proj.cabinets[i].kind === 'box' ? 'joints' : 'ops'; break;
     case 'jcsel': S.jcSel = S.jcSel && S.jcSel.key === v ? null : { key:v, side:'L', idx:null }; break;
