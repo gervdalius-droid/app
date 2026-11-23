@@ -206,6 +206,19 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .xleg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:4px;vertical-align:-1px}
 .xleg .lc{background:#2448c9}.xleg .lk{border:2px solid #d9480f;width:8px;height:8px}.xleg .ld{background:#2f7d55}
 .jtable{margin-top:16px;border-top:1px solid var(--line);padding-top:12px}
+.jcneed{display:flex;width:100%;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 10px;padding:10px 14px;border-radius:8px;border:1.5px solid #c9861a;background:#fff4dc;color:#6a4300;cursor:pointer;font:inherit;text-align:left}
+.jcneed span{font-weight:700;white-space:nowrap;background:#c9861a;color:#fff;border-radius:6px;padding:5px 10px}
+.jcneed.ok{border:1px solid var(--line);background:transparent;color:var(--ok);padding:6px 12px}.jcneed.ok span{background:transparent;color:var(--muted);font-weight:600;padding:0}
+.drwbox.jcbox{max-width:720px;width:100%;max-height:min(92vh,980px);display:flex;flex-direction:column}.jcbody{padding:14px;overflow:auto;flex:1}
+.jcfoot{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 14px;border-top:1px solid var(--line)}
+.jc-rows{display:flex;flex-direction:column;gap:10px}.jc-row{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--panel)}.jc-row.custom{background:var(--accent-soft)}
+.jc-h{display:flex;align-items:center;gap:10px;margin-bottom:4px}.jc-h b{font-size:15px}.jc-h .jreset,.jc-h .badge{margin-left:auto}
+.jcstrip{display:block;width:100%;height:auto;max-height:64px;color:var(--ink)}.jc-side{margin-top:2px}
+.jc-ctl{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;margin-top:6px}.jc-ctl .seg button{padding:8px 12px}
+.jc-n{display:inline-flex;align-items:center;gap:6px}.jc-n .btn{min-width:38px;justify-content:center;font-size:17px;padding:5px 0}.jc-n b{min-width:22px;text-align:center;font:700 17px var(--f-mono)}
+.jc-e{display:inline-flex;align-items:center;gap:6px}.jc-e input{width:70px;border:1px solid var(--line);background:var(--sunk);border-radius:6px;padding:7px 8px;font:600 14px var(--f-mono)}
+.jc-leg{white-space:nowrap}.jc-leg i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 10px;vertical-align:-1px}.jc-leg i.o{background:#fff;border:2px solid}.jc-leg i.s{border-radius:1px}
+.jc-warn{margin:0 0 10px;padding:8px 10px 8px 26px;border-radius:6px;background:#fff4dc;color:#6a4300;font-size:13px}
 .jrows{container-type:inline-size;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
 .jrow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 12px;align-items:center;padding:9px 10px;border-bottom:1px solid var(--line);background:var(--panel)}
 .jrow .seg{grid-column:1/-1;justify-self:start;order:2}
@@ -11843,7 +11856,7 @@ function viewCab(info) {
   }).join('') + '</div><button class="btn pri" data-act="pick">' + t('newCab') + '</button></aside>';
   if (S.picking || !cabs.length) return '<div class="ws">' + rail + '<section class="editor" style="grid-column:span 2">' + viewPick() + '</section></div>';
   var c = cur(), inf = info[S.sel];
-  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>';
+  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + jcBanner(c, inf) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>' + (S.jcheck ? jcModal(c, inf) : '');
 }
 /* where am I / what is left: the steps of this cabinet, with a mark where something needs attention */
 function needsWt(c) { return !!(c.worktop && c.worktop.on && !c.dishwasher && !String(c.worktop.mat || '').trim()); }   // the worktop's material is set in step 1, with the worktop
@@ -12160,6 +12173,50 @@ function viewEditor(c) {
   h += step(5, t('s5'), t('s5l'), matsBlock(c), 'mats');
   h += step(6, t('s6'), t('s6l'), extrasBlock(c), 'extra');
   return h;
+}
+/* ---- joints check: every cabinet's connectors have to be looked at before it goes to production. c.jointsOk holds the
+   signature of the joints that were confirmed; any change to them (type, count, positions, a new joint) asks again. */
+function jcSig(r) { return ((r && r.joints) || []).map(function (j) { var sd = function (x) { return x.type + ':' + x.pos.map(function (a) { return Math.round(a * 10) / 10; }).join(','); };
+  return j.key + '=' + sd(j.sides ? j.sides.L : j) + (j.single ? '' : '|' + sd(j.sides ? j.sides.R : j)); }).join(';'); }
+function jcNeeded(c, r) { return !!(r && r.joints && r.joints.length) && c.jointsOk !== jcSig(r); }
+function jcBanner(c, inf) {
+  if (!inf.r || !inf.r.joints || !inf.r.joints.length) return '';
+  var lt = S.lang === 'lt';
+  return jcNeeded(c, inf.r) ? '<button type="button" class="jcneed" data-act="jcopen"><b>⚠ ' + (lt ? 'Būtina patikrinti sujungimus' : 'The joints must be checked') + '</b><span>' + (lt ? 'Patikrinti' : 'Check') + ' →</span></button>'
+    : '<button type="button" class="jcneed ok" data-act="jcopen"><b>✓ ' + (lt ? 'Sujungimai patikrinti' : 'Joints checked') + '</b><span>' + (lt ? 'Peržiūrėti' : 'Review') + '</span></button>';
+}
+function jcStrip(x, w) {   // one joint side drawn to scale: the seam as a bar, a symbol at every connector, its distance under it
+  var W = 560, k = W / Math.max(1, w), col = { cam:'#b4291f', confirmat:'#1f5fbf', dowel:'#6b6f6b' }[x.type] || '#333';
+  var g = x.pos.map(function (a, i) { var cx = Math.round(a * k * 10) / 10, lab = E.num(Math.round(a * 10) / 10), up = i % 2 && x.pos.length > 4;
+    var sym = x.type === 'cam' ? '<circle cx="' + cx + '" cy="14" r="7" fill="' + col + '"/>' : x.type === 'dowel' ? '<rect x="' + (cx - 4) + '" y="10" width="8" height="8" fill="' + col + '"/>'
+      : '<circle cx="' + cx + '" cy="14" r="6.5" fill="#fff" stroke="' + col + '" stroke-width="2"/><path d="M' + (cx - 4) + ' 10 l8 8 m0 -8 l-8 8" stroke="' + col + '" stroke-width="1.6"/>';
+    return sym + '<text x="' + Math.max(12, Math.min(W - 12, cx)) + '" y="' + (up ? 44 : 34) + '" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">' + lab + '</text>'; }).join('');
+  return '<svg class="jcstrip" viewBox="-4 0 ' + (W + 8) + ' 48" role="img" aria-label="' + esc(x.pos.map(function (a) { return E.num(Math.round(a)); }).join(', ')) + '"><rect x="0" y="9" width="' + W + '" height="10" rx="2" fill="none" stroke="currentColor" stroke-opacity=".45"/>' + g + '</svg>';
+}
+function jcModal(c, inf) {
+  var r = inf.r, lt = S.lang === 'lt', need = jcNeeded(c, r), tn = function (ty) { return t('isoT_' + ty); };
+  var ORDER = ['bottom', 'top', 'railF', 'railB', 'railV', 'railVH', 'railBottom', 'railBotB', 'back', 'partB', 'partT', 'partF', 'partR', 'backP', 'shelf', 'oven'];
+  var oi = function (k) { var m = /^(\D+)(\d)$/.exec(k); return m ? ORDER.indexOf(m[1]) * 10 + +m[2] : ORDER.indexOf(k) * 10; };
+  var js = (r.joints || []).slice().sort(function (a, b) { return oi(a.key) - oi(b.key); });
+  var rows = js.map(function (j) {
+    var b = 'c.cnc.joints.' + j.key + '.', own = (c.cnc.joints || {})[j.key] || {}, id = 'f-jc-' + j.key, hand = j.split || j.manual, L = j.sides ? j.sides.L : j, R = j.sides ? j.sides.R : j;
+    var name = '<div class="jc-h"><b>' + esc(tJ('jk_' + j.key)) + '</b><span class="unit">' + E.num(Math.round(j.w)) + ' mm</span>' +
+      (j.custom ? '<button type="button" class="btn ghost jreset" data-act="jreset" data-v="' + j.key + '">↺ ' + t('jAuto') + '</button>' : '<span class="badge mut">' + t('jAuto') + '</span>') + '</div>';
+    var strips = j.split ? '<div class="jc-side"><span class="unit">' + t('sideL') + ' · ' + esc(tn(L.type)) + '</span>' + jcStrip(L, j.w) + '</div><div class="jc-side"><span class="unit">' + t('sideR') + ' · ' + esc(tn(R.type)) + '</span>' + jcStrip(R, j.w) + '</div>' : jcStrip(L, j.w);
+    var ctl = hand ? '<div class="jc-ctl"><span class="unit">' + (lt ? 'Vietos nustatytos ranka' : 'Positions set by hand') + '</span><button type="button" class="btn" data-act="jc3d" data-v="' + j.key + '">' + t('isoEdit') + '</button></div>'
+      : '<div class="jc-ctl">' + segI(b + 'type', j.type, [['confirmat', t('jtConf')], ['cam', t('jtCam')], ['dowel', t('jtDowel')]]) +
+        '<span class="jc-n"><span class="unit">' + t('jN') + '</span><button type="button" class="btn" data-act="jcn" data-v="' + j.key + '" data-i="-1" aria-label="−"' + (L.pos.length <= 1 ? ' disabled' : '') + '>−</button><b>' + L.pos.length + '</b><button type="button" class="btn" data-act="jcn" data-v="' + j.key + '" data-i="1" aria-label="+"' + (L.pos.length >= 8 ? ' disabled' : '') + '>＋</button></span>' +
+        '<label class="jc-e" for="' + id + '-e"><span class="unit">' + t('jE') + '</span><input id="' + id + '-e" type="text" inputmode="decimal" data-bind="' + b + 'e" data-num="1" data-empty="1" value="' + esc(own.e || '') + '" placeholder="' + E.num(j.defE) + '"><span class="unit">mm</span></label></div>';
+    return '<div class="jc-row' + (j.custom ? ' custom' : '') + '">' + name + strips + ctl + '</div>';
+  }).join('');
+  var jw = (inf.warnings || []).filter(function (w) { return /jungt|ekscentr|konfirmat|kaišt|sujung/i.test(w); });
+  return '<div class="drwover jcover" data-act="jcclose" role="dialog" aria-modal="true"><div class="drwbox jcbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Sujungimų patikra' : 'Joints check') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="jcclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
+    '<div class="jcbody"><p class="note" style="margin:0 0 10px">' + (lt ? 'Peržiūrėkite kiekvieną jungtį: tipą, tvirtinimų skaičių ir vietas (mm nuo priekio / detalės galo). Keiskite čia pat — brėžinėlis atsinaujina iškart.' : 'Look at every joint: its type, the number of connectors and where they sit (mm from the front / the part\'s end). Change them right here — the strip updates at once.') +
+      ' <span class="jc-leg"><i style="background:#b4291f"></i>' + esc(t('jtCam')) + ' <i class="o" style="border-color:#1f5fbf"></i>' + esc(t('jtConf')) + ' <i class="s" style="background:#6b6f6b"></i>' + esc(t('jtDowel')) + '</span></p>' +
+      (jw.length ? '<ul class="jc-warn">' + jw.map(function (w) { return '<li>' + esc(w) + '</li>'; }).join('') + '</ul>' : '') +
+      '<div class="jc-rows">' + rows + '</div></div>' +
+    '<div class="jcfoot">' + (canUndo() ? '<button type="button" class="btn ghost" data-act="undo">↶ ' + (lt ? 'Atšaukti' : 'Undo') + '</button>' : '<span></span>') +
+      '<button type="button" class="btn pri big" data-act="jcok">✓ ' + (need ? (lt ? 'Sujungimai patikrinti' : 'Joints are checked') : (lt ? 'Patikrinta — uždaryti' : 'Checked — close')) + '</button></div></div></div>';
 }
 function jointsBlock(c, r) {
   var ORDER = ['bottom', 'top', 'railF', 'railB', 'railV', 'railVH', 'railBottom', 'railBotB', 'back', 'partB', 'partT', 'partF', 'partR', 'backP', 'shelf', 'oven'];
@@ -13698,7 +13755,7 @@ app.addEventListener('click', function (e) {
   switch (act) {
     case 'tab': S.tab = v; S.picking = false; window.scrollTo(0, 0); break;
     case 'lang': S.lang = v; store('dbKurejas.lang', v); break;
-    case 'sel': S.sel = i; S.picking = false; S.iso = null; S.colSel = 0; break;
+    case 'sel': S.sel = i; S.picking = false; S.iso = null; S.colSel = 0; S.jcheck = false; break;
     case 'pick': S.picking = true; break;
     case 'unpick': S.picking = false; break;
     case 'preset': S.proj.cabinets.push(fromPreset(PRESETS[i])); S.sel = S.proj.cabinets.length - 1; S.picking = false; save(); break;
@@ -13814,6 +13871,13 @@ app.addEventListener('click', function (e) {
       return; }
     case 'xside': S.xside = v; break;
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
+    case 'jcopen': S.jcheck = true; break;
+    case 'undo': undoJoints(); return;
+    case 'jcclose': if (!el.getAttribute('data-force') && e.target.closest('[data-stop]')) return; S.jcheck = false; break;
+    case 'jcok': { var cj = cur(), ij = S._info && S._info[S.sel]; if (cj && ij && ij.r) { cj.jointsOk = jcSig(ij.r); save(); toast(S.lang === 'lt' ? 'Sujungimai patikrinti ✓' : 'Joints checked ✓'); } S.jcheck = false; break; }
+    case 'jc3d': S.jcheck = false; S.iso = { key:v, side:'L', idx:null }; S.isoFocus = true; break;
+    case 'jcn': { var cn = cur(), inn = S._info && S._info[S.sel], jj = inn && inn.r && (inn.r.joints || []).filter(function (q) { return q.key === v; })[0]; if (!cn || !jj) break;
+      pushUndo(); var Jn = cn.cnc.joints = cn.cnc.joints || {}, on = Jn[v] && !Jn[v].L && !Jn[v].R ? Jn[v] : {}; Jn[v] = Object.assign({}, on, { n:Math.max(1, Math.min(8, (jj.sides ? jj.sides.L : jj).pos.length + (+i || 0))) }); delete Jn[v].pos; save(); break; }
     case 'isosel': S.iso = { key:v, side:'L', idx:null }; S.isoFocus = true; render(); var ie = document.getElementById('iso3d') || document.getElementById('assembly-preview'); if (ie && ie.scrollIntoView) ie.scrollIntoView({ block:'center', behavior:'smooth' }); return;
     case 'part': S.part = v; S.ptab = 0; var pp0 = findPanel(v); S.partRef = pp0 ? { cab:pp0.cab, key:pp0.key } : null; if (window.innerWidth < 900) setTimeout(function () { var pv = document.querySelector('.paper') || document.querySelector('.partview'); if (pv && pv.scrollIntoView) pv.scrollIntoView({ block:'start', behavior:'smooth' }); }, 60); break;
     case 'ptab': S.ptab = +v; break;
@@ -13839,7 +13903,10 @@ app.addEventListener('click', function (e) {
       S.settings.rules.hinge = clone(RULE_DEF.hinge); S.settings.rules.pins = clone(RULE_DEF.pins); store('dbKurejas.settings', S.settings); applyRules(); render();
       toast(t('rulesReset'), false, t('undoBtn'), function () { S.settings.rules.hinge = rPrev.hinge; S.settings.rules.pins = rPrev.pins; store('dbKurejas.settings', S.settings); applyRules(); render(); }); return; }
     case 'goto': gotoStep(v); return;
-    case 'step': S.stepKey = v; render(); { var ed = document.querySelector('.editor'); if (ed && ed.getBoundingClientRect().top < 0) window.scrollTo({ top:0, behavior:'smooth' }); } return;
+    case 'step': { var cs = cur(), is0 = S._info && S._info[S.sel], order = ['dims', 'build', 'boards', 'inner', 'secs', 'fronts', 'ops', 'joints', 'mats', 'extra'], jst = cs && cs.kind === 'box' ? 'joints' : 'ops';
+      S.jcAsked = S.jcAsked || {};
+      if (cs && is0 && is0.r && order.indexOf(v) > order.indexOf(jst) && order.indexOf(S.stepKey || 'dims') <= order.indexOf(jst) && jcNeeded(cs, is0.r) && !S.jcAsked[cs.id]) { S.jcAsked[cs.id] = 1; S.jcheck = true; toast(S.lang === 'lt' ? 'Būtina patikrinti sujungimus' : 'The joints must be checked', true); } }
+      S.stepKey = v; render(); { var ed = document.querySelector('.editor'); if (ed && ed.getBoundingClientRect().top < 0) window.scrollTo({ top:0, behavior:'smooth' }); } return;
     case 'fixcab': S.home = false; S.tab = 'cab'; S.sel = i; S.picking = false; render(); setTimeout(function () { if (v === 'wt') { var wf = document.getElementById('f-c-worktop-mat'); if (wf) { wf.scrollIntoView({ block:'center', behavior:'smooth' }); wf.focus({ preventScroll:true }); return; } v = 'dims'; } gotoStep('st-' + (v || 'mats')); }, 30); return;
     case 'fixname': { var pn = document.getElementById('projname'); if (pn) { pn.focus(); pn.scrollIntoView({ block:'center' }); } return; }
     case 'home': if (S.proj) { clearTimeout(libTimer); libSave(); } S.home = true; S.confirm = null; window.scrollTo(0, 0); break;
