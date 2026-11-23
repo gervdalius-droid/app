@@ -5363,14 +5363,17 @@ function applyProjectState(d){
 
 function hashProjectState(){return cheapFingerprint();}
 
+var _savingSince=0;
 async function saveProject(){
+  // a save that failed half-way must not block every later save (it did: the layout stopped reaching the cloud)
+  if(_savingNow && Date.now()-_savingSince>30000){ console.warn('save was stuck — releasing'); _savingNow=false; }
   if(_suppressSave||_savingNow)return;
   var name=(document.getElementById('projName').value||'').trim();
   if(!name){setStatus('',t('nameRequired'));return;}
   // Cheap change detection — no full JSON stringification unless we actually save.
   var fp=cheapFingerprint();
   if(fp===_lastSavedHash&&name===currentProjectName){setStatus('saved',t('saved'));return;}
-  _savingNow=true;
+  _savingNow=true;_savingSince=Date.now();
   currentProjectName=name;
   try{localStorage.setItem(LS_LAST_PROJECT,name);}catch(e){}
   var data=collectProjectState();
@@ -5378,7 +5381,8 @@ async function saveProject(){
   try{serialized=JSON.stringify(data);}catch(e){_savingNow=false;setStatus('error','⚠ Serialize failed');console.error(e);return;}
   var updatedAt=new Date().toISOString();
   // Always write a local mirror (backup + offline fallback)
-  var localOk=await localPut({name:name,data:data,updated_at:updatedAt});
+  // the local copy must never hold up the cloud save (a blocked IndexedDB never answers)
+  var localOk=await Promise.race([localPut({name:name,data:data,updated_at:updatedAt}),new Promise(function(r){setTimeout(function(){r(false);},5000);})]);
   // Attempt cloud save
   if(supaConfigured()){
     try{
