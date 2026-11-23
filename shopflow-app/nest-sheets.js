@@ -177,7 +177,8 @@ var NestSheets = {
     if (r.sure) return this.apply(job, p, proj, sh, r.o);
     /* ask: the operator picks the project on the station screen */
     var pend = Store.state.machinePending || (Store.state.machinePending = []);
-    if (!pend.some(x => x.key === job.key)) {
+    /* the same sheet scanned again while it waits (the operator thought nothing happened) is the same question, not a new one */
+    if (!pend.some(x => x.key === job.key || x.code === p.code)) {
       pend.push({ key: job.key, code: p.code, hash: p.hash, sheet: p.sheet, nest: proj.name, mat: sh.mat, n: sh.parts.length, copies: sh.copies,
         at: job.at, guess: r.o ? r.o.id : "", st: job.stationId, w: job.who || "", src: job.src, type: job.type });
       if (pend.length > 30) pend.splice(0, pend.length - 30);
@@ -295,6 +296,7 @@ var NestSheets = {
     if (typeof Modal === "undefined" || typeof App === "undefined" || !App.me) return;
     var here = this.stationHere();
     if (!here) return;
+    try { this.tidy(); } catch (e) {}
     var list = this.pending().filter(x => here === "all" || x.type === here);
     if (!list.length) {
       if (this._shown && document.getElementById("nest-pop")) Modal.close();
@@ -419,7 +421,7 @@ var NestSheets = {
       if (!sh) throw new Error(this.L("The nesting sheet is gone", "Nesting plokštė nerasta"));
       var job = { key: x.key, code: x.code, at: x.at, stationId: x.st, who: x.w, src: x.src, type: x.type };
       var st = this.apply(job, this.parse(x.code), proj, sh, o);
-      this.remove(key);
+      this.settle(x);
       Store.save();
       Modal.close(true);
       this._shown = null;
@@ -431,12 +433,37 @@ var NestSheets = {
     }
   },
   drop(key) {
+    var x = this.pending().find(p => p.key === key);
+    if (x) (Store.state.machinePending || []).filter(p => p.code === x.code).forEach(p => this.remove(p.key));
     this.remove(key);
     Store.save();
     Modal.close(true);
     this._shown = null;
     if (typeof App !== "undefined") App.render();
     setTimeout(() => this.prompt(), 400);
+  },
+  /* after a sheet is confirmed: the same sheet waiting again is answered, and other sheets of that
+     nesting project now go to the chosen project by themselves */
+  settle(x) {
+    var pend = Store.state.machinePending || [];
+    pend.filter(p => p.code === x.code).forEach(p => this.remove(p.key));
+    pend.filter(p => p.hash === x.hash).slice().forEach(p => {
+      this.remove(p.key);
+      this.queue({ key: p.key, code: p.code, at: p.at, stationId: p.st, who: p.w, src: p.src, type: p.type });
+    });
+  },
+  /* a waiting sheet that has meanwhile been counted (another screen, a repeat scan) is no longer a question */
+  tidy() {
+    var pend = Store.state.machinePending || [], done = Store.state.sheetScans || {}, links = Store.state.nestLinks || {}, gone = false;
+    pend.slice().forEach(p => {
+      var counted = (done[p.code] || []).length >= (+p.copies || 1);
+      if (counted || (links[p.hash] && D.order(links[p.hash]))) {
+        this.remove(p.key); gone = true;
+        if (!counted) this.queue({ key: p.key, code: p.code, at: p.at, stationId: p.st, who: p.w, src: p.src, type: p.type });
+      }
+    });
+    if (gone) Store.save();
+    return gone;
   },
   remove(key) {
     var pend = Store.state.machinePending || [];
@@ -448,6 +475,7 @@ var NestSheets = {
   tick() {
     var here = this.stationHere();
     if (!here) return;
+    try { this.tidy(); } catch (e) {}
     var list = this.pending().filter(x => (here === "all" || x.type === here) && !(this._later[x.key] && Date.now() - this._later[x.key] < 3 * 60000));
     if (!list.length) return;
     if (document.getElementById("nest-pop")) return;
