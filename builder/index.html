@@ -1608,6 +1608,13 @@ function buildCabinet(c, idx, projName) {
     var sumExp = 0, nFill = 0; secs.forEach(function (s) { if (s.fill) nFill++; else sumExp += Math.max(0, +s.height || 0); });
     var fillH = nFill > 0 ? Math.max(0, Hz - sumExp) / nFill : 0;
     if (sumExp > Hz + 0.5) warn.push((cols > 1 ? 'kolona ' + (col + 1) + ': ' : '') + 'sekcijų aukščių suma (' + sumExp + ') didesnė už fasadų zoną (' + num(Hz) + ')');
+    /* a dividing shelf between an open section and the fronted section next to it (open section's `divider`): fixed, and
+       placed on the fronted section's side of the border, so the doors / drawer fronts cover its edge and the niche keeps its height */
+    var divs = [], fronted = function (q) { return !!q && (q.kind === 'drawers' || q.kind === 'doors' || q.kind === 'cargo') && !q.fridge; };
+    (function () { var y = zBotF; secs.forEach(function (q, qi) { var h = q.fill ? fillH : Math.max(0, +q.height || 0);
+      if (q.kind === 'open' && q.divider) { if (fronted(secs[qi + 1])) divs.push({ z:y + h, sec:qi }); if (fronted(secs[qi - 1])) divs.push({ z:y - t, sec:qi }); }
+      y += h; }); })();
+    divs.forEach(function (d) { shelves.push({ z:d.z, sec:d.sec, fixed:true, col:col, divider:true }); });
     var yCur = zBotF;
     secs.forEach(function (s, si) {
       var secH = s.fill ? fillH : Math.max(0, +s.height || 0);
@@ -1647,6 +1654,7 @@ function buildCabinet(c, idx, projName) {
              mounting plate screws (±plateSpacing/2) land in the free part of the side; cups and plates share these */
           var hr0 = R.hinge, clr = hr0.plateSpacing/2 + hr0.plateD/2 + 3;
           var lo = t + clr - dz, hi = t + Lside - (topFull ? 0 : t) - clr - dz;
+          divs.forEach(function (d) { if (d.z + t/2 > dz && d.z + t/2 < dz + dh) { if (d.z - dz < dh/2) lo = Math.max(lo, d.z + t + clr - dz); else hi = Math.min(hi, d.z - clr - dz); } });   // plates clear of a dividing shelf behind the door
           var nH = +s.hingeN >= 2 ? Math.min(6, Math.round(+s.hingeN)) : 0;   // hinges per door chosen in the section, or by the door height
           var ys = hingeYs(dh, nH).map(function (y) { return Math.max(lo, Math.min(hi, y)); });
           var fits = !hingedSec || (hingesFit(dh, o.hingeFix === 'press', nH) && ys.every(function (y, q) { return q === 0 || ys[q] - ys[q-1] >= hr0.cupD + 3; }));
@@ -11338,7 +11346,7 @@ function defSettings() {
 function newSection(kind) {
   return { id:uid(), kind:kind, col:0, fill:kind !== 'drawers' && kind !== 'oven', height:kind === 'drawers' ? 540 : kind === 'oven' ? 595 : 400, cargoHw:'CARGO DTC PURE PRO',
            nDrawers:3, hw:'BLUM TANDEMBOX', rail:500, nDoors:kind === 'doors' ? 2 : 1, hinge:'BLUM LANKSTAI', doorSplit:'v', hingeSide:'auto',
-           shelves:kind === 'oven' ? 2 : kind === 'open' ? 2 : 1, shelfAdj:true, shelfMode:'even', shelfPos:[] };
+           shelves:kind === 'oven' ? 2 : kind === 'open' ? 2 : 1, shelfAdj:true, shelfMode:'even', shelfPos:[], divider:kind === 'open' };
 }
 /* ---- columns (pertvaros) and a back per column */
 function colsOf(c) { return c.dishwasher ? 1 : Math.max(1, Math.min(3, Math.floor(num(c.cols) || 1))); }
@@ -12781,7 +12789,9 @@ function viewSection(c, s, i, z) {
       (s.hinge === 'BE FURNITŪROS' ? '' : '<div class="f"><span>' + t('hingeN') + '</span>' + seg(b + 'hingeN', +s.hingeN >= 2 ? String(Math.round(+s.hingeN)) : 'auto', [['auto', t('hsAuto') + ' (' + E.hingesPerDoor(s.doorSplit === 'h' ? secH / Math.max(1, num(s.nDoors) || 1) - E.R.facade.gap : secH - E.R.facade.gap) + ')'], ['2', '2'], ['3', '3'], ['4', '4'], ['5', '5']]) + '</div>') +
       fN(t('shelves'), b + 'shelves', s.shelves, 's') + (num(s.shelves) > 0 ? '<div class="f"><span>&nbsp;</span>' + seg(b + 'shelfAdj', s.shelfAdj !== false, [['true', t('adj')], ['false', t('fixed')]]) + '</div>' : '');
   } else if (s.kind === 'open') {
-    body += fN(t('shelves'), b + 'shelves', s.shelves, 's') + (num(s.shelves) > 0 ? '<div class="f"><span>&nbsp;</span>' + seg(b + 'shelfAdj', s.shelfAdj !== false, [['true', t('adj')], ['false', t('fixed')]]) + '</div>' : '');
+    body += fN(t('shelves'), b + 'shelves', s.shelves, 's') + (num(s.shelves) > 0 ? '<div class="f"><span>&nbsp;</span>' + seg(b + 'shelfAdj', s.shelfAdj !== false, [['true', t('adj')], ['false', t('fixed')]]) + '</div>' : '') +
+      (c.sections.some(function (q) { return colOf(c, q) === colOf(c, s) && (q.kind === 'drawers' || q.kind === 'doors' || q.kind === 'cargo') && !q.fridge; }) ?
+        chk(b + 'divider', !!s.divider, S.lang === 'lt' ? 'Skiriamoji lentyna tarp nišos ir fasadų — fasadai ją uždengia' : 'Dividing shelf between the niche and the fronts — the fronts cover it') : '');
   } else {
     body += fS(t('sup'), b + 'shelves', Math.min(2, num(s.shelves)), [[0, '0'], [1, '1 — ' + (S.lang === 'lt' ? 'apačioje' : 'below')], [2, '2 — ' + (S.lang === 'lt' ? 'apačioje ir viršuje' : 'below and above')]]);
   }
