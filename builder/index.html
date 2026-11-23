@@ -1648,6 +1648,9 @@ function buildCabinet(c, idx, projName) {
           var dh = horiz ? dsp.mods[k] - gap : secH - gap;
           var dx = horiz ? F0 : F0 + k*(dw + gap);
           var dz = horiz ? yCur + dzs[k] : yCur;
+          /* doors reaching down over the open niche under them (section's frontDrop, mm): the lowest doors are that much longer */
+          var below = secs[si - 1], drop = !fridge && below && below.kind === 'open' && (!horiz || k === 0) ? Math.max(0, Math.min(+s.frontDrop || 0, (below.fill ? fillH : +below.height || 0) - 20)) : 0;
+          if (drop > 0) { dz -= drop; dh += drop; }
           if (dw < 40 || dh < 40) { warnOnce(lbl(si) + ': durys per mažos (' + num(dw) + ' × ' + num(dh) + ' mm) — sumažinkite durų skaičių'); continue; }
           var hl = horiz ? hs !== 'right' : (hs === 'left' ? true : hs === 'right' ? false : k < nd - 1);   // same rule as the offer app's sketch
           /* hinge heights on the door: catalogue spacing, kept clear of the bottom panel and the top / top rail so the
@@ -12783,6 +12786,8 @@ function viewSection(c, s, i, z) {
     body += fS(t('cargoHw'), b + 'cargoHw', s.cargoHw || E.CARGO_HW[0], E.CARGO_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.CARGO_HW.indexOf(s.cargoHw || E.CARGO_HW[0]) < 0 ? [[s.cargoHw, s.cargoHw]] : [])) +
       '<span class="h">' + esc(t('cargoNote').replace('{w}', fmt(c.cols > 1 ? colWidths(c)[colOf(c, s)] : num(c.W)))) + '</span>';
   } else if (s.kind === 'doors') {
+    var colSecs = sameCol(c, i), under = c.sections[colSecs[colSecs.indexOf(i) - 1]];
+    if (under && under.kind === 'open') body += fN(S.lang === 'lt' ? 'Durys žemiau, ant nišos (mm)' : 'Doors lower, over the niche (mm)', b + 'frontDrop', s.frontDrop || 0);
     body += chk(b + 'fridge', false, t('fridgeSec')) + fN(t('nDoors'), b + 'nDoors', s.nDoors, 's') + '<div class="f"><span>' + t('split') + '</span>' + seg(b + 'doorSplit', s.doorSplit, [['v', t('sSide')], ['h', t('sStack')]]) + '</div>' +
       fS(t('hinge'), b + 'hinge', s.hinge, E.DOOR_HW.map(function (v) { return [v, hingeLabel(v)]; }).concat(E.DOOR_HW.indexOf(s.hinge) < 0 ? [[s.hinge, s.hinge]] : [])) +
       (num(s.nDoors) >= 2 && s.doorSplit !== 'h' ? '' : '<div class="f"><span>' + t('hside') + '</span>' + seg(b + 'hingeSide', s.hingeSide || 'auto', [['auto', t('hsAuto')], ['left', t('hsL')], ['right', t('hsR')]]) + '</div>') +   // two doors side by side open from the outer sides
