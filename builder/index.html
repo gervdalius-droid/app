@@ -210,6 +210,18 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .rc-chips{display:flex;gap:6px;flex-wrap:wrap}.rc-chip{border:1px solid #c9861a;background:#fff;color:#6a4300;border-radius:999px;padding:5px 11px;font:600 13px/1.2 inherit;cursor:pointer}.rc-chip.ok{border-color:var(--line);color:var(--ok);font-weight:500}.rc-chip.bad{border-color:#b4291f;color:#b4291f}
 .ec-cols{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:14px;align-items:start}.ec-model{position:sticky;top:0;border:1px solid var(--line);border-radius:8px;background:var(--panel)}
 .ec-tools{display:flex;gap:6px;padding:8px 10px}.ec-tools .btn{padding:5px 10px;font-size:13px}.ec-tools .btn.on{background:var(--ink);color:var(--panel)}.ec-msvg{display:block;width:100%;height:min(62vh,620px);cursor:grab;touch-action:none;user-select:none}.ec-msvg.drag{cursor:grabbing}.ec-tools{flex-wrap:wrap}
+.skbtn{display:flex;width:100%;align-items:center;gap:8px;margin:0 0 10px;padding:8px 14px;border-radius:8px;border:1px dashed var(--line);background:transparent;color:inherit;font:inherit;cursor:pointer;text-align:left}.skbtn:hover{border-color:#7a3fc4;color:#5b2aa0}.skbtn b{background:#7a3fc4;color:#fff;border-radius:10px;padding:0 7px;font-size:12px}
+.drwbox.skbox{max-width:1500px}.sk-cols{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:14px;align-items:start}.sk-left{position:sticky;top:0}.sk-left .ec-msvg{height:min(46vh,460px)}
+.sk-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.sk-chip{font:inherit;font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:inherit;cursor:pointer}.sk-chip.has{border-color:#b9a3ea;background:#f3eeff}.sk-chip.on{background:#ffd65a;border-color:#9a6a00}.sk-chip b{color:#5b2aa0}
+.sk-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}.sk-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.sk-tools .btn{padding:5px 10px;font-size:13px}.sk-tools .btn.on{background:var(--ink);color:var(--panel)}.sk-grid{font-size:13px;display:flex;gap:6px;align-items:center;margin-left:auto}.sk-grid select{width:auto;padding:4px 6px}
+.sk-face{margin-left:auto;font-size:13px;color:#5b2aa0}.sk-below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}.sk-below>.sk-list,.sk-below>.note{margin-top:8px}@media(max-width:1200px){.sk-below{grid-template-columns:minmax(0,1fr)}}
+.sk-wrap{position:relative}.sk-svg{display:block;width:100%;height:min(50vh,540px);background:#eef0ec;border:1px solid var(--line);border-radius:8px;touch-action:none;user-select:none;-webkit-user-select:none}.sk-svg.tool-line,.sk-svg.tool-rect,.sk-svg.tool-circle{cursor:crosshair}.sk-svg.tool-sel{cursor:default}.sk-svg.tool-sel .sk-hit{cursor:move}.sk-svg .sk-h{cursor:grab}
+.sk-hud{position:absolute;left:10px;bottom:10px;background:rgba(27,33,30,.86);color:#fff;font:12px IBM Plex Mono,monospace;padding:4px 8px;border-radius:6px;pointer-events:none;display:none;white-space:pre}.sk-hint{margin:6px 0 4px}
+.sk-props{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--panel)}.sk-ph{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.sk-pb{display:flex;gap:6px}.sk-pb .btn{padding:4px 10px;font-size:13px}.sk-pb .danger{color:#b4291f}
+.sk-props .sk-row{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 6px}.sk-props .f.sk-f,.sk-pt .f.sk-f{display:flex;flex-direction:column;gap:2px;flex:0 0 auto;min-width:0;margin:0}.sk-f span{font-size:12px;color:var(--muted,#5f6a64)}.sk-ed .f.sk-f input{width:92px!important;padding:5px 7px}.sk-pt{align-items:flex-end}.sk-pt>.unit{width:16px;padding-bottom:8px}.sk-props .seg button{padding:5px 10px;font-size:13px}.sk-pts{display:flex;flex-direction:column;gap:4px;max-height:220px;overflow:auto}.sk-pt{display:flex;gap:8px;align-items:flex-end}.sk-pt .btn{padding:3px 8px}
+.sk-ops{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 8px}.sk-ops .btn{padding:5px 10px;font-size:13px}.sk-ops .btn.on{background:#7a3fc4;border-color:#7a3fc4;color:#fff}.sk-ops .btn[disabled]{opacity:.4;cursor:not-allowed}
+.sk-warn{color:#8a2a00;background:#fff1e6;border:1px solid #f0c7a4;border-radius:6px;padding:5px 8px;margin:6px 0 0;font-size:13px}.sk-list{display:flex;flex-direction:column;gap:3px;margin-top:6px}.sk-li{font:inherit;font-size:13px;text-align:left;padding:5px 8px;border:1px solid var(--line);border-radius:6px;background:transparent;color:inherit;cursor:pointer}.sk-li.on{border-color:#e07b00;background:#fff6e8}.sk-op{color:#5b2aa0;font-weight:600}
+@media(max-width:1000px){.sk-cols{grid-template-columns:minmax(0,1fr)}.sk-left{position:static}}
 .ec-f{cursor:pointer}.ec-f:hover{fill:#e8b90c;stroke:#e8b90c}@media(max-width:900px){.ec-cols{grid-template-columns:minmax(0,1fr)}.ec-model{position:static}}
 .ec-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:10px}.ec-card{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:var(--panel)}.ec-card.custom{background:var(--accent-soft)}
 .ec-h{display:flex;align-items:baseline;gap:8px}.ec-h .jreset{margin-left:auto}.ec-svg{display:block;width:100%;max-width:300px;margin:0 auto}.ec-e{cursor:pointer}.ec-e:hover line:nth-of-type(2){stroke-width:7}
@@ -1364,6 +1376,75 @@ function stdEdges(out, eCarc, back) {
       if (cov < area * 0.5) p.eb[e] = eCarc; }); });
   out.forEach(function (p) { if (/^JUOSTA_/.test(p.role)) { if (!p.eb.y0) p.eb.y0 = eCarc; if (!p.eb.y1) p.eb.y1 = eCarc; } });   // tie rails: both long edges, always
 }
+/* ---- operations drawn by hand on a part (c.sketch[part key] = [shape]), in the part's program frame as seen from face A:
+   X along the part from X0, Y across it from Y0 — exactly as the part drawing shows it. A shape:
+   { id, t:'line' (pts:[[x,y]..], closed) | 'rect' (x, y = corner, w, h) | 'circle' (x, y = centre, r),
+     op:'none' (only a sketch) | 'on' (routed along the line) | 'in' (cut out: tool inside) | 'out' (tool outside) | 'pocket' | 'drill',
+     face:'A'|'B', depth, through } */
+function skOutline(s) {
+  if (!s) return { pts:[], closed:false };
+  if (s.t === 'rect') { var x = +s.x || 0, y = +s.y || 0, w = +s.w || 0, h = +s.h || 0; return { pts:[[x, y], [x + w, y], [x + w, y + h], [x, y + h]], closed:true }; }
+  if (s.t === 'circle') { var r = Math.max(0, +s.r || 0), cx = +s.x || 0, cy = +s.y || 0, n = Math.max(24, Math.min(360, Math.ceil(2 * Math.PI * r / 3))), pts = [];
+    for (var i = 0; i < n; i++) { var a = 2 * Math.PI * i / n; pts.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return { pts:pts, closed:true }; }
+  var P = (s.pts || []).map(function (q) { return [+q[0] || 0, +q[1] || 0]; });
+  return { pts:P, closed:!!s.closed && P.length > 2 };
+}
+function polyArea(P) { var a = 0; for (var i = 0; i < P.length; i++) { var p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
+/* a closed polygon moved d inwards (d < 0: outwards), corners mitred; null when it no longer exists at that distance */
+function offsetPoly(P, d) {
+  var Q = []; P.forEach(function (p) { var l = Q[Q.length - 1]; if (!l || Math.hypot(p[0] - l[0], p[1] - l[1]) > 1e-6) Q.push(p); });
+  if (Q.length > 2 && Math.hypot(Q[0][0] - Q[Q.length - 1][0], Q[0][1] - Q[Q.length - 1][1]) < 1e-6) Q.pop();
+  if (Q.length < 3 || Math.abs(polyArea(Q)) < 1e-6) return null;
+  if (polyArea(Q) < 0) Q.reverse();   // counter-clockwise: the inside is on the left of every edge
+  var n = Q.length, Ls = [];
+  for (var i = 0; i < n; i++) { var a = Q[i], b = Q[(i + 1) % n], dx = b[0] - a[0], dy = b[1] - a[1], len = Math.hypot(dx, dy); Ls.push({ a:[a[0] - dy / len * d, a[1] + dx / len * d], dx:dx, dy:dy }); }
+  var out = [];
+  for (var j = 0; j < n; j++) { var l1 = Ls[(j + n - 1) % n], l2 = Ls[j], den = l1.dx * l2.dy - l1.dy * l2.dx;
+    if (Math.abs(den) < 1e-9) { out.push(l2.a.slice()); continue; }
+    var t = ((l2.a[0] - l1.a[0]) * l2.dy - (l2.a[1] - l1.a[1]) * l2.dx) / den; out.push([l1.a[0] + l1.dx * t, l1.a[1] + l1.dy * t]); }
+  for (var k = 0; k < n; k++) { var p0 = out[k], p1 = out[(k + 1) % n]; if ((p1[0] - p0[0]) * Ls[k].dx + (p1[1] - p0[1]) * Ls[k].dy <= 1e-9) return null; }   // an edge turned round: collapsed
+  return polyArea(out) > 0 ? out : null;
+}
+function applySketch(p, list, warn) {
+  if (!list || !list.length) return;
+  var C0 = R.rout, r = C0.dia / 2, maxD = p.T - C0.skin, air = C0.air, lbl = (p.short || p.key || p.name) + ' eskizas #';
+  p.sketch = []; p.paths = p.paths || [];
+  var nOp = 0, nThr = 0;
+  list.forEach(function (s, i) {
+    var o = skOutline(s), op = s.op || 'none', face = s.face === 'B' ? 'B' : 'A', tag = lbl + (i + 1) + ': ';
+    p.sketch.push({ pts:o.pts, closed:o.closed, op:op, face:face, id:s.id, n:i + 1, t:s.t });
+    if (op === 'none' || o.pts.length < 2) return;
+    if (o.pts.some(function (q) { return q[0] < -air || q[0] > p.L + air || q[1] < -air || q[1] > p.W + air; })) { warn.push(tag + 'išeina daugiau nei ' + air + ' mm už detalės — NEPROGRAMUOTA'); return; }
+    if (op === 'drill') {
+      if (s.t !== 'circle') { warn.push(tag + 'gręžti galima tik apskritimą — NEPROGRAMUOTA'); return; }
+      var d = Math.round(2 * (+s.r || 0) * 100) / 100, thr = !!s.through || (+s.depth || 0) >= p.T;
+      if (R.drills.top.indexOf(d) < 0) { warn.push(tag + 'ø' + num(d) + ' grąžto nėra (' + R.drills.top.join(', ') + ') — rinkitės frezavimą'); return; }
+      hole(p, face, +s.x || 0, +s.y || 0, d, thr ? 0 : Math.max(0.5, +s.depth || 0), { through:thr, op:'sketch' }); nOp++; return;
+    }
+    var dep = s.through ? maxD : Math.min(+s.depth || 0, maxD);
+    if (!(dep > 0)) { warn.push(tag + 'nenurodytas gylis — NEPROGRAMUOTA'); return; }
+    if (!s.through && (+s.depth || 0) > maxD + 1e-6) warn.push(tag + 'gylis sumažintas iki ' + num(maxD) + ' mm (frezuojant paliekama ' + C0.skin + ' mm)');
+    if (s.through) nThr++;
+    var loops = [];
+    if (op === 'on') loops.push(o.closed ? o.pts.concat([o.pts[0]]) : o.pts);
+    else {
+      if (!o.closed) { warn.push(tag + 'linija neuždara — frezuoti iš vidaus / išorės ar kišenę galima tik uždarą kontūrą'); return; }
+      var ccw = function (q) { return polyArea(q) < 0 ? q.slice().reverse() : q; };
+      if (op === 'in') { var a1 = offsetPoly(o.pts, r); if (!a1) { warn.push(tag + 'kontūras per mažas frezai ø' + num(C0.dia) + ' — NEPROGRAMUOTA'); return; } loops.push(ccw(a1)); }   // panel on the right: counter-clockwise
+      else if (op === 'out') { var b1 = offsetPoly(o.pts, -r); if (!b1) { warn.push(tag + 'kontūro nepavyko apeiti — NEPROGRAMUOTA'); return; } loops.push(ccw(b1).reverse()); }   // the part inside: clockwise
+      else if (op === 'pocket') {
+        var step = r * 0.95, dd = r, q;
+        while ((q = offsetPoly(o.pts, dd)) && loops.length < 400) { loops.push(ccw(q)); dd += step; }
+        if (!loops.length) { warn.push(tag + 'plotas per mažas frezai ø' + num(C0.dia) + ' — NEPROGRAMUOTA'); return; }
+        loops.reverse();   // from the middle outwards
+      }
+    }
+    loops.forEach(function (lp, k) { p.paths.push({ face:face, name:'ESKIZAS_' + (i + 1) + (loops.length > 1 ? '_' + (k + 1) : ''), pts:lp.map(function (q) { return [Math.round(q[0] * 1000) / 1000, Math.round(q[1] * 1000) / 1000]; }), depth:dep }); });
+    nOp++;
+  });
+  if (nOp) p.note += ', rankinės operacijos: ' + nOp;
+  if (nThr) p.warnings.push(lbl.replace(' eskizas #', '') + ': kiaurai frezuojama paliekant ' + C0.skin + ' mm — išlaužkite rankomis');
+}
 function isCargo(h) { return /^CARGO\b/i.test(String(h || '')); }
 function cargoOf(s) { return !s ? null : s.kind === 'cargo' ? (s.cargoHw || CARGO_HW[0]) : s.kind === 'doors' && !s.fridge && isCargo(s.hinge) ? s.hinge : null; }
 var hingesPerDoor = function (h) { return h <= 900 ? 2 : h <= 1500 ? 3 : h <= 2000 ? 4 : 5; };   // same rule as the offer app
@@ -1530,6 +1611,7 @@ function buildCabinet(c, idx, projName) {
       applyEbEdit(p, ov, eCarc, eFac);
     });
     out.forEach(function (p) { p.cab = idx + 1; p.short = (idx + 1) + '-' + (p.drawerOf ? p.name.slice(base.length + 1).replace(/_/g, '-') : p.role.replace(/_/g, '-') + (/\d$/.test(p.name) ? p.name.match(/\d+$/)[0] : '')); });
+    var skx = c.sketch || {}; out.forEach(function (p) { applySketch(p, skx[p.key], warn); });   // operations drawn by hand on the parts
   }
 
   var early = function () { return { panels:out, warnings:warn, hardware:hw, legs:[], joints:[], seams:[], visual:{ doors:[], drawers:[], plinth:null, hb:0 }, dims:{ W:W > 0 ? W : 0, H:H > 0 ? H : 0, D:D > 0 ? D : 0, t:t } }; };   // same shape as a full result
@@ -2931,6 +3013,7 @@ function buildBox(c, idx, projName) {
     applyEbEdit(p, ov, eCarc, eFac);
   });
   out.forEach(function (p) { p.cab = idx + 1; p.short = (idx + 1) + '-' + (p.drawerOf ? p.name.slice(base.length + 1).replace(/_/g, '-') : p.role.replace(/_/g, '-') + (/\d$/.test(p.name) ? p.name.match(/\d+$/)[0] : '')); });
+  var skx = c.sketch || {}; out.forEach(function (p) { applySketch(p, skx[p.key], warn); });
   if (nJ) warnOnce('3D konstrukcija: jungtys gręžiamos pagal spintelių taisykles, bet šis surinkimas naujas — patikrinkite pirmą gaminį');
   hardwareFromHoles(out, o, hw);
   /* for the 3-D editor: every board's box, the absent outer boards as ghosts, the corners */
@@ -2947,7 +3030,7 @@ function legHeight(c) { var o = c.cnc || {}; if (c.dishwasher) return +c.legH ||
 function hardwareFromHoles(panels, o, hw) {
   var cams = 0, dowels = 0, conf = 0;
   panels.forEach(function (p) {
-    p.holes.forEach(function (h) { if (h.d === 15 && !h.mark) cams++; if (h.through && h.d === 8) conf++; });
+    p.holes.forEach(function (h) { if (h.op === 'sketch') return; if (h.d === 15 && !h.mark) cams++; if (h.through && h.d === 8) conf++; });
     p.edges.forEach(function (e) { if (e.d === 8 && e.depth === R.cam.dowel.depthEdge) dowels++; });
   });
   if (cams) { hw.push({ item:'Ekscentrikai (Minifix 15)', qty:cams, unit:'vnt.' }); hw.push({ item:'Ekscentrikų varžtai', qty:cams, unit:'vnt.' }); }
@@ -3004,8 +3087,8 @@ function groovePath(g, DX, DY, depth, name) {   // g in program coordinates: x0.
   return routeMoves(P(s0, centres[0]), segs, depth, name);
 }
 function programs(p) {
-  var DX = p.L, DY = p.W, DZ = p.T; var w = [], M = R.machine, GR = p.grooves || [];
-  var cnt = function (f) { return p.holes.filter(function (h) { return h.face === f && !h.through; }).length + GR.filter(function (g) { return g.face === f; }).length; };
+  var DX = p.L, DY = p.W, DZ = p.T; var w = [], M = R.machine, GR = p.grooves || [], PA = p.paths || [];
+  var cnt = function (f) { return p.holes.filter(function (h) { return h.face === f && !h.through; }).length + GR.filter(function (g) { return g.face === f; }).length + PA.filter(function (g) { return g.face === f; }).length; };
   var up1 = cnt('B') > cnt('A') ? 'B' : 'A', up2 = up1 === 'A' ? 'B' : 'A';
   var need2 = cnt(up2) > 0;
   var mach = function (h, up) { return { x:h.x, y:(up === 'A') ? h.y : DY - h.y }; };   // all holes are given as seen from face A; B up mirrors Y
@@ -3055,7 +3138,10 @@ function programs(p) {
     return GR.filter(function (g) { return g.face === up; }).map(function (g) {
       var y0 = up === 'A' ? g.y0 : DY - g.y1, y1 = up === 'A' ? g.y1 : DY - g.y0, dep = Math.min(g.depth, DZ - R.rout.skin);
       return groovePath({ x0:g.x0, x1:g.x1, y0:y0, y1:y1 }, DX, DY, dep, g.name || 'GROOVE');
-    });
+    }).concat(PA.filter(function (g) { return g.face === up; }).map(function (g) {   // drawn by hand: the tool centre's path as worked out with the part (B up: Y mirrored)
+      var P = g.pts.map(function (q) { return [q[0], up === 'A' ? q[1] : DY - q[1]]; }); if (up === 'B') P.reverse();   // mirrored: turn the path round so the panel stays on the same side of the tool
+      return routeMoves(P[0], P.slice(1).map(function (q) { return { x:q[0], y:q[1] }; }), Math.min(g.depth, DZ - R.rout.skin), g.name);
+    }));
   };
   var faceTxt = function (up) { return up === 'A' ? '' : ' -- THIS PROGRAM DRILLS THE OTHER FACE: panel turned over about X (long edge stays, Y mirrored)'; };
   var text = function (bl, op, kind, up, rts) {
@@ -3127,7 +3213,7 @@ var api = { R:R, shelfSetSb:shelfSetSb, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, CA
             buildCabinet:function (c, idx, pn) { var r = buildCabinet(c, idx, pn); r.worktop = worktopOf(c);
               var bad = r.panels.filter(function (p) { return !(p.L >= 1 && p.W >= 1 && p.T > 0 && isFinite(p.L + p.W + p.T)); });   // a part with no size (dimensions too small for the layout) is left out
               if (bad.length) { r.panels = r.panels.filter(function (p) { return bad.indexOf(p) < 0; }); r.warnings.push(bad.map(function (p) { return p.short || p.role; }).join(', ') + ': per maži matmenys (' + bad.map(function (p) { return num(Math.round(p.L)) + '×' + num(Math.round(p.W)); }).join(', ') + ') — detalės nepridėtos, padidinkite spintelę'); }
-              return r; }, worktopOf:worktopOf, sidePanels:sidePanels, sideWidths:sideWidths, WT_DEF:WT_DEF, programs:programs, num:num, ascii:ascii, safeName:safeName, hingesPerDoor:hingesPerDoor,
+              return r; }, worktopOf:worktopOf, sidePanels:sidePanels, sideWidths:sideWidths, WT_DEF:WT_DEF, programs:programs, skOutline:skOutline, offsetPoly:offsetPoly, num:num, ascii:ascii, safeName:safeName, hingesPerDoor:hingesPerDoor,
             hingeYs:hingeYs, hingesFit:hingesFit, setRules:setRules, splitFronts:splitFronts, pairedDowels:pairedDowels, legHeight:legHeight,
             buildBox:buildBox, underDeduct:underDeduct, boxDefaults:boxDefaults, BOX_IDS:BOX_IDS, BOX_DEF:BOX_DEF, boxPair:boxPair, boxCoverDefault:boxCoverDefault };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DBEngine = api;
@@ -11861,6 +11947,8 @@ function render() {
   else if (S.tab === 'drw') h += viewDrw();
   else if (S.tab === 'nest') h += viewNest();
   else h += viewSet();
+  if (S.sk && !S.proj.cabinets[S.sk.cab]) S.sk = null;
+  if (S.sk) h += skModal();
   h += '</main><datalist id="dl-mat">' + listOpts('mat') + '</datalist><datalist id="dl-edge">' + listOpts('edge') + '</datalist><datalist id="dl-wt">' + listOpts('wt') + '</datalist>';
   var fx = document.activeElement && document.activeElement.id, ss = fx && document.activeElement.selectionStart;
   app.innerHTML = h;
@@ -11899,7 +11987,7 @@ function viewCab(info) {
   }).join('') + '</div><button class="btn pri" data-act="pick">' + t('newCab') + '</button></aside>';
   if (S.picking || !cabs.length) return '<div class="ws">' + rail + '<section class="editor" style="grid-column:span 2">' + viewPick() + '</section></div>';
   var c = cur(), inf = info[S.sel];
-  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + jcBanner(c, inf) + ecBanner(c, inf) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>' + (S.jcheck ? jcModal(c, inf) : S.echeck ? ecModal(c, inf) : '');
+  return '<div class="ws">' + rail + '<section class="editor">' + (c.kind !== 'box' && c.kind !== 'panel' ? cabBar(c) : '') + stepNav(c, inf) + jcBanner(c, inf) + ecBanner(c, inf) + skBanner(c) + oneStep(viewEditor(c), c, inf) + '</section>' + viewSheet(c, inf) + '</div>' + (S.jcheck ? jcModal(c, inf) : S.echeck ? ecModal(c, inf) : '');
 }
 /* where am I / what is left: the steps of this cabinet, with a mark where something needs attention */
 function needsWt(c) { return !!(c.worktop && c.worktop.on && !c.dishwasher && !String(c.worktop.mat || '').trim()); }   // the worktop's material is set in step 1, with the worktop
@@ -12243,8 +12331,8 @@ function ecNeeded(c, r) { return !!(r && r.panels && r.panels.length) && c.edges
    (the same switch as on the cards). Turn it, pull the parts apart to reach hidden edges, hide the fronts. */
 function ecState(p, e, fe) { var on = !!(p.eb && p.eb[e]); return !on ? 0 : (p.ebFac && p.ebFac[e]) || (p.eb[e] === fe && (p.role === 'FASADAS' || p.role === 'DURYS')) ? 2 : 1; }   // 0 raw, 1 carcass edge, 2 as the fronts
 var EC_COL = ['#c9ccc6', '#1f5fbf', '#d9730d'];
-function ecModel(c, r) {
-  var lt = S.lang === 'lt', V = S.ecView = S.ecView || { th:0.62, ph:0.42, zoom:1, exp:false, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
+function ecModel(c, r, mode) {
+  var skm = mode === 'sk', lt = S.lang === 'lt', V = S.ecView = S.ecView || { th:0.62, ph:0.42, zoom:1, exp:false, fronts:false }, fe = c.edge.facade || 'PAGAL FASADA';
   var ps = r.panels.filter(function (p) { return p.place && (V.fronts || (p.role !== 'FASADAS' && p.role !== 'DURYS')); }); if (!ps.length) return '';
   var boxes = ps.map(function (p) { var q = p.place, pt = function (a, b, d) { return [0, 1, 2].map(function (i) { return q.o[i] + a * q.u[i] + b * q.v[i] - d * q.n[i]; }); };
     var cn = function (a, b, d) { return pt(a ? p.L : 0, b ? p.W : 0, d ? p.T : 0); };
@@ -12253,7 +12341,7 @@ function ecModel(c, r) {
       { k:'y0', v:[cn(0,0,0), cn(1,0,0), cn(1,0,1), cn(0,0,1)] }, { k:'y1', v:[cn(0,1,0), cn(1,1,0), cn(1,1,1), cn(0,1,1)] },
       { k:'x0', v:[cn(0,0,0), cn(0,1,0), cn(0,1,1), cn(0,0,1)] }, { k:'x1', v:[cn(1,0,0), cn(1,1,0), cn(1,1,1), cn(1,0,1)] }] }; });
   var mid = [0, 1, 2].map(function (i) { var a = boxes.map(function (b) { return b.cen[i]; }); return (Math.min.apply(null, a) + Math.max.apply(null, a)) / 2; });
-  boxes.forEach(function (b) { var off = V.exp ? [0, 1, 2].map(function (i) { return (b.cen[i] - mid[i]) * 0.5; }) : [0, 0, 0];
+  boxes.forEach(function (b) { var off = b.off = V.exp ? [0, 1, 2].map(function (i) { return (b.cen[i] - mid[i]) * 0.5; }) : [0, 0, 0];
     b.faces.forEach(function (f) { f.w = f.v.map(function (w) { return [w[0] + off[0] - mid[0], w[1] + off[1] - mid[1], w[2] + off[2] - mid[2]]; }); });
     b.mn = [1e9, 1e9, 1e9]; b.mx = [-1e9, -1e9, -1e9]; b.faces.forEach(function (f) { f.w.forEach(function (w) { for (var i = 0; i < 3; i++) { if (w[i] < b.mn[i]) b.mn[i] = w[i]; if (w[i] > b.mx[i]) b.mx[i] = w[i]; } }); });
     b.c2 = [0, 1, 2].map(function (i) { return (b.mn[i] + b.mx[i]) / 2; }); });
@@ -12272,21 +12360,365 @@ function ecModel(c, r) {
   var svg = order.map(function (b) { var p = b.p; return b.faces.map(function (f) {
       var fc = [0, 1, 2].map(function (i) { return (f.w[0][i] + f.w[1][i] + f.w[2][i] + f.w[3][i]) / 4 - b.c2[i]; }); if (dep(fc) > -1e-6) return '';   // facing away
       var pts = f.w.map(function (w) { return pr(w).join(','); }).join(' ');
-      if (f.k === 'A' || f.k === 'B') return '<polygon points="' + pts + '" fill="#f6f5f1" stroke="#7d827c" stroke-width="' + sw * 0.6 + '" stroke-linejoin="round"><title>' + esc((p.short || p.role) + ' · ' + fmt(p.L) + ' × ' + fmt(p.W)) + '</title></polygon>';
+      var ttl = '<title>' + esc((p.short || p.role) + ' · ' + fmt(p.L) + ' × ' + fmt(p.W)) + '</title>';
+      if (skm) {   // operations: every face picks its part; the part being edited stands out, parts with operations are tinted, the drawn shapes are on their face
+        var on = S.sk && S.sk.key === p.key, has = skList(c, p.key).length, isF = f.k === 'A' || f.k === 'B';
+        var fill = on ? (isF ? '#ffd65a' : '#e8b90c') : has ? (isF ? '#e6dcff' : '#c9b8f0') : (isF ? '#f6f5f1' : '#d9dbd5');
+        var g = '<polygon class="ec-f" points="' + pts + '" fill="' + fill + '" stroke="' + (on ? '#9a6a00' : '#7d827c') + '" stroke-width="' + sw * (on ? 1.4 : 0.6) + '" stroke-linejoin="round" data-act="skpick" data-v="' + esc(p.key) + '" role="button">' + ttl + '</polygon>';
+        if (isF && p.sketch) { var q = p.place, tB = f.k === 'B' ? p.T : 0;
+          p.sketch.forEach(function (sh) { if (sh.face !== f.k || sh.pts.length < 2) return;
+            var w3 = sh.pts.map(function (a) { return pr([0, 1, 2].map(function (i) { return q.o[i] + a[0] * q.u[i] + a[1] * q.v[i] - tB * q.n[i] + b.off[i] - mid[i]; })).join(','); }).join(' ');
+            g += '<polyline points="' + w3 + (sh.closed ? ' ' + w3.split(' ')[0] : '') + '" fill="' + (sh.op === 'pocket' ? 'rgba(122,63,196,.25)' : 'none') + '" stroke="' + (sh.op === 'none' ? '#5f6a64' : '#7a3fc4') + '" stroke-width="' + sw * 1.6 + '" stroke-linejoin="round" pointer-events="none"' + (sh.op === 'none' ? ' stroke-dasharray="' + sw * 4 + ' ' + sw * 3 + '"' : '') + '/>'; }); }
+        return g; }
+      if (f.k === 'A' || f.k === 'B') return '<polygon points="' + pts + '" fill="#f6f5f1" stroke="#7d827c" stroke-width="' + sw * 0.6 + '" stroke-linejoin="round">' + ttl + '</polygon>';
       var e = f.k, st = ecState(p, e, fe), len = e === 'y0' || e === 'y1' ? p.L : p.W;
       return '<polygon class="ec-f" points="' + pts + '" fill="' + EC_COL[st] + '" stroke="' + (st ? EC_COL[st] : '#7d827c') + '" stroke-width="' + (st ? sw * 2.2 : sw * 0.6) + '" stroke-linejoin="round" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button"><title>' + esc((p.short || p.role) + ' — ' + fmt(Math.round(len)) + ' mm: ' + (st ? p.eb[e] : (lt ? 'nelaminuojama' : 'not banded'))) + '</title></polygon>'; }).join(''); }).join('');
   var tb = function (act, lab, on, tip) { return '<button type="button" class="btn' + (on ? ' on' : '') + '" data-act="ecview" data-v="' + act + '"' + (on != null ? ' aria-pressed="' + !!on + '"' : '') + (tip ? ' title="' + esc(tip) + '"' : '') + '>' + lab + '</button>'; };
   return '<div class="ec-model"><div class="ec-tools">' + tb('front', lt ? 'Priekis' : 'Front') + tb('backv', lt ? 'Galas' : 'Back') + tb('under', lt ? 'Iš apačios' : 'From below') + tb('exp', lt ? 'Išskleisti' : 'Pull apart', V.exp) + tb('fronts', lt ? 'Fasadai' : 'Fronts', V.fronts) + tb('zin', '＋') + tb('zout', '−') + '</div>' +
     '<svg class="ec-msvg" viewBox="' + (-half) + ' ' + (-half) + ' ' + (2 * half) + ' ' + (2 * half) + '" preserveAspectRatio="xMidYMid meet">' + svg + '</svg>' +
-    '<p class="note" style="margin:6px 10px 8px">' + (lt ? 'Tempkite — sukite modelį, ratuku — artinkite. Spustelėkite kraštą: nelaminuojama → karkaso kraštas → pagal fasadą.' : 'Drag to turn the model, wheel to zoom. Click an edge: not banded → carcass edge → as the fronts.') + '</p></div>';
+    '<p class="note" style="margin:6px 10px 8px">' + (skm ? (lt ? 'Tempkite — sukite modelį, ratuku — artinkite. Spustelėkite detalę, kurią norite braižyti.' : 'Drag to turn the model, wheel to zoom. Click the part to draw on.')
+      : lt ? 'Tempkite — sukite modelį, ratuku — artinkite. Spustelėkite kraštą: nelaminuojama → karkaso kraštas → pagal fasadą.' : 'Drag to turn the model, wheel to zoom. Click an edge: not banded → carcass edge → as the fronts.') + '</p></div>';
 }
 (function () {   // turn the edges model by dragging, zoom with the wheel — only the model is redrawn
-  var D = null, redraw = function () { var m = document.querySelector('.ec-model'), c = cur(), inf = S._info && S._info[S.sel]; if (m && c && inf && inf.r) { m.outerHTML = ecModel(c, inf.r); var sv = document.querySelector('.ec-msvg'); if (sv && D && D.moved) sv.classList.add('drag'); } };
+  var D = null, redraw = function () { var ci = S.sk ? S.sk.cab : S.sel, m = document.querySelector('.ec-model'), c = S.proj.cabinets[ci], inf = S._info && S._info[ci]; if (m && c && inf && inf.r) { m.outerHTML = ecModel(c, inf.r, S.sk ? 'sk' : ''); var sv = document.querySelector('.ec-msvg'); if (sv && D && D.moved) sv.classList.add('drag'); } };
   document.addEventListener('pointerdown', function (e) { S.ecDrag = false; if (!e.target.closest || !e.target.closest('.ec-msvg')) return; var V = S.ecView; if (!V) return; D = { x:e.clientX, y:e.clientY, th:V.th, ph:V.ph, moved:false }; });
   document.addEventListener('pointermove', function (e) { if (!D) return; var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 5) return; D.moved = true; S.ecDrag = true;
     S.ecView.th = D.th - dx * 0.009; S.ecView.ph = Math.max(-1.35, Math.min(1.35, D.ph + dy * 0.007)); redraw(); e.preventDefault(); });   // as in the 3D window; here also from below
   document.addEventListener('pointerup', function () { if (D && D.moved) { var d0 = D; D = null; redraw(); setTimeout(function () { S.ecDrag = false; }, 60); void d0; } D = null; });
   document.addEventListener('wheel', function (e) { if (!e.target.closest || !e.target.closest('.ec-msvg') || !S.ecView) return; e.preventDefault(); S.ecView.zoom = Math.max(0.5, Math.min(6, (S.ecView.zoom || 1) * Math.exp(-(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015))); redraw(); }, { passive:false });
+})();
+/* ================= operations drawn by hand on a part (Detalių operacijos): pick the part on the model, draw on it
+   (lines, rectangles, circles — snapped to the grid, the panel's edges, the other shapes and the holes; lengths typed while drawing),
+   then say what each shape is: only a sketch, routed on the line, cut out, cut around, a pocket or a drilled hole. Stored in
+   c.sketch[part key], in the part's program frame (the part drawing: X0 left, Y0 at the bottom, face A up); the engine turns them
+   into the tool's paths and the programs (applySketch). */
+var SK_OPS = [['none', 'Tik eskizas', 'Sketch only'], ['on', 'Frezuoti per liniją', 'Route on the line'], ['in', 'Išpjauti (freza viduje)', 'Cut out (tool inside)'],
+  ['out', 'Apipjauti (freza išorėje)', 'Cut round (tool outside)'], ['pocket', 'Išfrezuoti plotą', 'Pocket'], ['drill', 'Gręžti', 'Drill']];
+function skList(c, key) { var m = (c && c.sketch) || {}; return m[key] || []; }
+function skCount(c) { var m = (c && c.sketch) || {}; return Object.keys(m).reduce(function (a, k) { return a + (m[k] || []).length; }, 0); }
+function skOpName(op) { var x = SK_OPS.filter(function (o) { return o[0] === op; })[0] || SK_OPS[0]; return S.lang === 'lt' ? x[1] : x[2]; }
+function skFaceNames(p) {
+  if (S.lang !== 'lt') return ['Face A (up in 1OP)', 'Face B (the other)'];
+  var m = /^([^,;]+?) viršuje/.exec(p.note || ''), a = m ? m[1].trim() : '';
+  var opp = { 'vidinė pusė':'išorinė pusė', 'išorė':'vidinė pusė', 'viršus':'apačia', 'apačia':'viršus', 'dešinė pusė':'kairė pusė', 'kairė pusė':'dešinė pusė', 'galinė (vidinė) pusė':'priekinė pusė' };
+  var up = function (x) { return x.charAt(0).toUpperCase() + x.slice(1); };
+  return [a ? up(a) : 'Pusė A', opp[a] ? up(opp[a]) : 'Kita pusė'];
+}
+function skView(p) { var K = S.sk, v = K && K.view; if (v && v.key === p.key) return v; var m = Math.max(p.L, p.W) * 0.05 + 30; return { key:p.key, x:-m, y:-(p.W + m), w:p.L + 2 * m, h:p.W + 2 * m }; }
+function skR(v) { return Math.round(v * 10) / 10; }
+function skPathD(o) { if (o.pts.length < 2) return ''; return 'M' + o.pts.map(function (q) { return skR(q[0]) + ' ' + skR(-q[1]); }).join(' L') + (o.closed ? ' Z' : ''); }
+function skHandles(sh) {   // grips of a selected shape: [x, y, id]
+  if (sh.t === 'rect') return [[sh.x, sh.y, 0], [sh.x + sh.w, sh.y, 1], [sh.x + sh.w, sh.y + sh.h, 2], [sh.x, sh.y + sh.h, 3]];
+  if (sh.t === 'circle') return [[sh.x, sh.y, 'c'], [sh.x + sh.r, sh.y, 'r']];
+  return (sh.pts || []).map(function (q, i) { return [q[0], q[1], i]; });
+}
+function skSvg(p, list, selId, preview) {
+  var V = skView(p), u = Math.max(V.w, V.h) / 100, L = p.L, W = p.W, s = '';
+  s += '<rect x="0" y="' + (-W) + '" width="' + L + '" height="' + W + '" fill="#fff" stroke="#1b211e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>';
+  var gstep = Math.max(L, W) > 1500 ? 100 : 50, gl = '';
+  for (var gx = gstep; gx < L; gx += gstep) gl += 'M' + gx + ' 0V' + (-W);
+  for (var gy = gstep; gy < W; gy += gstep) gl += 'M0 ' + (-gy) + 'H' + L;
+  s += '<path d="' + gl + '" stroke="#e7e9e4" stroke-width="1" vector-effect="non-scaling-stroke" fill="none" pointer-events="none"/>';
+  var ebMap = { y0:[0, 0, L, 0], y1:[0, W, L, W], x0:[0, 0, 0, W], x1:[L, 0, L, W] };
+  Object.keys(p.eb || {}).forEach(function (e) { if (!p.eb[e]) return; var a = ebMap[e]; s += '<line x1="' + a[0] + '" y1="' + (-a[1]) + '" x2="' + a[2] + '" y2="' + (-a[3]) + '" stroke="#1f5fbf" stroke-opacity=".55" stroke-width="4" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+  (p.grooves || []).forEach(function (g) { s += '<rect x="' + g.x0 + '" y="' + (-g.y1) + '" width="' + (g.x1 - g.x0) + '" height="' + (g.y1 - g.y0) + '" fill="#f1e3a0" stroke="#b39a2a" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+  p.holes.forEach(function (h) { if (h.op === 'sketch') return; s += '<circle cx="' + skR(h.x) + '" cy="' + skR(-h.y) + '" r="' + Math.max(h.d / 2, u * 0.35) + '" fill="' + (h.through ? '#9aa09a' : 'none') + '" stroke="#8b918b" stroke-width="1" vector-effect="non-scaling-stroke"' + (h.face === 'B' && !h.through ? ' stroke-dasharray="3 2"' : '') + ' pointer-events="none"/>'; });
+  p.edges.forEach(function (e) { var x = e.edge === 'x0' ? 0 : e.edge === 'x1' ? L : e.pos, y = e.edge === 'y0' ? 0 : e.edge === 'y1' ? W : e.pos, dx = e.edge === 'x0' ? 1 : e.edge === 'x1' ? -1 : 0, dy = e.edge === 'y0' ? 1 : e.edge === 'y1' ? -1 : 0;
+    s += '<line x1="' + skR(x) + '" y1="' + skR(-y) + '" x2="' + skR(x + dx * e.depth) + '" y2="' + skR(-(y + dy * e.depth)) + '" stroke="#8b918b" stroke-width="' + e.d + '" stroke-opacity=".45" pointer-events="none"/>'; });
+  if (!preview) (p.paths || []).forEach(function (g) {   // what the tool takes away: its centre's path, as wide as the cutter
+    s += '<polyline points="' + g.pts.map(function (q) { return skR(q[0]) + ',' + skR(-q[1]); }).join(' ') + '" fill="none" stroke="#7a3fc4" stroke-opacity=".16" stroke-width="' + E.R.rout.dia + '" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>'; });
+  list.forEach(function (sh, i) {
+    var o = E.skOutline(sh), on = sh.id === selId, op = sh.op || 'none', col = op === 'none' ? '#46514b' : '#7a3fc4', d = skPathD(o); if (!d) return;
+    var dash = op === 'none' ? ' stroke-dasharray="7 4"' : sh.face === 'B' ? ' stroke-dasharray="3 3"' : '';
+    s += '<path d="' + d + '" fill="' + (op === 'pocket' ? 'rgba(122,63,196,.18)' : op === 'drill' ? 'rgba(27,33,30,.85)' : 'none') + '" stroke="' + (on ? '#e07b00' : col) + '" stroke-width="' + (on ? 2.6 : 1.7) + '" vector-effect="non-scaling-stroke"' + dash + ' pointer-events="none"/>';
+    s += '<path class="sk-hit" d="' + d + '" fill="' + (o.closed ? 'rgba(0,0,0,0)' : 'none') + '" stroke="rgba(0,0,0,0)" stroke-width="14" vector-effect="non-scaling-stroke" data-skid="' + sh.id + '"/>';
+    var lx = sh.t === 'circle' ? sh.x : o.pts[0][0], ly = sh.t === 'circle' ? sh.y + sh.r : o.pts[0][1];
+    s += '<text x="' + skR(lx + u * 0.6) + '" y="' + skR(-ly - u * 0.6) + '" font-size="' + skR(u * 2.2) + '" fill="' + (on ? '#e07b00' : col) + '" font-weight="700" pointer-events="none">#' + (i + 1) + '</text>';
+  });
+  var sel = list.filter(function (sh) { return sh.id === selId; })[0];
+  if (sel && !preview) {
+    var o2 = E.skOutline(sel), xs = o2.pts.map(function (q) { return q[0]; }), ys = o2.pts.map(function (q) { return q[1]; });
+    if (xs.length) { var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), fz = skR(u * 1.9), dl = function (ax, ay, bx, by, t, tx, ty) {
+        return '<line x1="' + skR(ax) + '" y1="' + skR(-ay) + '" x2="' + skR(bx) + '" y2="' + skR(-by) + '" stroke="#e07b00" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" pointer-events="none"/>' +
+          '<text x="' + skR(tx) + '" y="' + skR(-ty) + '" font-size="' + fz + '" fill="#a35400" text-anchor="middle" pointer-events="none" paint-order="stroke" stroke="#fff" stroke-width="' + skR(u * 0.5) + '">' + fmt(skR(t)) + '</text>'; };
+      if (x0 > 0.05) s += dl(0, y0, x0, y0, x0, x0 / 2, y0 + u * 0.6);
+      if (x1 < L - 0.05) s += dl(x1, y1, L, y1, L - x1, (x1 + L) / 2, y1 + u * 0.6);
+      if (y0 > 0.05) s += dl(x0, 0, x0, y0, y0, x0 - u * 2.2, y0 / 2);
+      if (y1 < W - 0.05) s += dl(x1, y1, x1, W, W - y1, x1 + u * 2.2, (y1 + W) / 2); }
+    var hs = u * 0.75;
+    skHandles(sel).forEach(function (h) { s += '<rect class="sk-h" x="' + skR(h[0] - hs) + '" y="' + skR(-h[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="#fff" stroke="#e07b00" stroke-width="1.6" vector-effect="non-scaling-stroke" data-skh="' + h[2] + '" data-skid="' + sel.id + '"/>'; });
+  }
+  var fz2 = skR(u * 2.1);
+  s += '<text x="' + skR(L / 2) + '" y="' + skR(u * 3.4) + '" font-size="' + fz2 + '" text-anchor="middle" fill="#1b211e" pointer-events="none">' + fmt(L) + '</text>';
+  s += '<text x="' + skR(-u * 1.4) + '" y="' + skR(-W / 2) + '" font-size="' + fz2 + '" text-anchor="middle" fill="#1b211e" transform="rotate(-90 ' + skR(-u * 1.4) + ' ' + skR(-W / 2) + ')" pointer-events="none">' + fmt(W) + '</text>';
+  s += '<circle cx="0" cy="0" r="' + skR(u * 0.5) + '" fill="#b4291f" pointer-events="none"/><text x="' + skR(u * 0.8) + '" y="' + skR(u * 2.6) + '" font-size="' + skR(u * 1.6) + '" fill="#b4291f" pointer-events="none">X0 Y0</text>';
+  return s;
+}
+function skProps(c, p, r, sh, idx) {
+  var lt = S.lang === 'lt', n = idx + 1, o = E.skOutline(sh), op = sh.op || 'none', fn = skFaceNames(p), L = p.L, W = p.W;
+  var fld = function (label, f, val) { return '<label class="f sk-f"><span>' + label + '</span><input type="text" inputmode="decimal" data-skf="' + f + '" value="' + esc(String(skR(val))) + '"></label>'; };
+  var geo = '';
+  if (sh.t === 'rect') geo = '<div class="row sk-row">' + fld(lt ? 'X nuo kairės' : 'X from left', 'x', sh.x) + fld(lt ? 'iki dešinės' : 'to the right', 'xr', L - sh.x - sh.w) + fld(lt ? 'Y nuo apačios' : 'Y from bottom', 'y', sh.y) + fld(lt ? 'iki viršaus' : 'to the top', 'yt', W - sh.y - sh.h) + '</div>' +
+    '<div class="row sk-row">' + fld(lt ? 'Plotis (X)' : 'Width (X)', 'w', sh.w) + fld(lt ? 'Aukštis (Y)' : 'Height (Y)', 'h', sh.h) + '</div>';
+  else if (sh.t === 'circle') geo = '<div class="row sk-row">' + fld(lt ? 'Centras X' : 'Centre X', 'x', sh.x) + fld(lt ? 'iki dešinės' : 'to the right', 'xr', L - sh.x) + fld(lt ? 'Centras Y' : 'Centre Y', 'y', sh.y) + fld(lt ? 'iki viršaus' : 'to the top', 'yt', W - sh.y) + fld('Ø', 'd', 2 * sh.r) + '</div>';
+  else geo = '<div class="sk-pts">' + (sh.pts || []).map(function (q, k) { return '<div class="sk-pt"><span class="unit">' + (k + 1) + '</span>' + fld('X', 'px.' + k, q[0]) + fld('Y', 'py.' + k, q[1]) +
+      ((sh.pts.length > 2) ? '<button type="button" class="btn ghost" data-act="skptdel" data-i="' + k + '" title="' + (lt ? 'Pašalinti tašką' : 'Remove the point') + '">✕</button>' : '') + '</div>'; }).join('') + '</div>' +
+    ((sh.pts || []).length > 2 ? '<label class="chk"><input type="checkbox" data-skf="closed"' + (sh.closed ? ' checked' : '') + '> ' + (lt ? 'Uždaras kontūras' : 'Closed outline') + '</label>' : '');
+  var canOp = function (k) { return k === 'none' || k === 'on' || (k === 'drill' ? sh.t === 'circle' && E.R.drills.top.indexOf(Math.round(2 * sh.r * 100) / 100) >= 0 : o.closed); };
+  var ops = '<div class="sk-ops">' + SK_OPS.map(function (x) { var ok = canOp(x[0]);
+    return '<button type="button" class="btn' + (op === x[0] ? ' on' : '') + '" data-act="skop" data-v="' + x[0] + '"' + (ok ? '' : ' disabled title="' + esc(x[0] === 'drill' ? (lt ? 'Gręžti galima apskritimą, kurio Ø yra grąžtas: ' : 'Only a circle the size of a drill: ') + E.R.drills.top.join(', ') : (lt ? 'Tik uždaram kontūrui' : 'Closed outlines only')) + '"') + '>' + (lt ? x[1] : x[2]) + '</button>'; }).join('') + '</div>';
+  var how = '';
+  if (op !== 'none') {
+    var maxD = p.T - E.R.rout.skin;
+    how = '<div class="row sk-row" style="align-items:flex-end">' +
+      '<div class="f"><span>' + (lt ? 'Iš kurios pusės' : 'From which face') + '</span>' + '<div class="seg" role="group">' + [['A', fn[0]], ['B', fn[1]]].map(function (o) { var on = (sh.face === 'B' ? 'B' : 'A') === o[0]; return '<button type="button" data-act="skface" data-v="' + o[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>' + '</div>' +
+      (sh.through ? '' : fld(lt ? 'Gylis, mm' : 'Depth, mm', 'depth', sh.depth == null ? 8 : sh.depth)) +
+      '<label class="chk"><input type="checkbox" data-skf="through"' + (sh.through ? ' checked' : '') + '> ' + (lt ? 'Kiaurai' : 'Through') + '</label></div>' +
+      '<p class="note" style="margin:4px 0 0">' + (op === 'drill' ? (lt ? 'Gręžiama ø' : 'Drilled ø') + fmt(2 * sh.r) + (sh.through ? (lt ? ' kiaurai' : ' through') : '') :
+        (lt ? 'Freza ø' : 'Cutter ø') + fmt(E.R.rout.dia) + (sh.through ? (lt ? ', kiaurai paliekama ' + E.R.rout.skin + ' mm (' + fmt(maxD) + ' mm gylio) — išlaužiama rankomis' : ', through leaves ' + E.R.rout.skin + ' mm (' + fmt(maxD) + ' deep) — broken out by hand') : '') +
+        (op === 'in' || op === 'pocket' ? (lt ? '; vidiniai kampai lieka R' + fmt(E.R.rout.dia / 2) : '; inside corners stay R' + fmt(E.R.rout.dia / 2)) : '') +
+        (lt ? '. Frezos kelias rodomas violetine juosta.' : '. The cutter\'s path is the violet band.')) + '</p>';
+  }
+  var tag = p.short + ' eskizas #' + n + ':', ws = ((r && r.warnings) || []).filter(function (w) { return w.indexOf(tag) === 0; }).map(function (w) { return '<p class="sk-warn">⚠ ' + esc(w.slice(tag.length).trim()) + '</p>'; }).join('');
+  var tn = sh.t === 'rect' ? (lt ? 'Stačiakampis' : 'Rectangle') : sh.t === 'circle' ? (lt ? 'Apskritimas' : 'Circle') : (lt ? 'Linija' : 'Line') + ' (' + (sh.pts || []).length + (lt ? ' tšk.' : ' pts') + ')';
+  return '<div class="sk-props"><div class="sk-ph"><b>#' + n + ' ' + tn + '</b><span class="sk-pb"><button type="button" class="btn ghost" data-act="skdup">' + (lt ? 'Kopija' : 'Copy') + '</button><button type="button" class="btn ghost danger" data-act="skdel">' + (lt ? 'Ištrinti' : 'Delete') + '</button></span></div>' +
+    geo + '<div class="lbl" style="margin-top:8px">' + (lt ? 'Ką daryti' : 'What to do') + '</div>' + ops + how + ws + '</div>';
+}
+function skEditor(c, p, r) {
+  var K = S.sk, lt = S.lang === 'lt', list = skList(c, p.key), idx = -1;
+  list.forEach(function (sh, i) { if (sh.id === K.sel) idx = i; });
+  var tool = function (k, lab, key) { return '<button type="button" class="btn' + (K.tool === k ? ' on' : '') + '" data-act="sktool" data-v="' + k + '" title="' + esc(key) + '">' + lab + '</button>'; };
+  var V = skView(p);
+  var hint = { sel:lt ? 'Spustelėkite figūrą — ją pažymėsite; tempkite figūrą ar jos kampus. Tempiant tuščią vietą — slenkamas vaizdas, ratuku — artinama. Delete — ištrinti.' : 'Click a shape to select it; drag it or its grips. Drag empty space to pan, wheel to zoom. Delete removes it.',
+    line:lt ? 'Spauskite taškus. Ilgį galima įvesti klaviatūra (pvz. 300 ir Enter, arba 200,50). Enter arba dukart spustelėjus — baigti, spustelėjus pirmą tašką — uždaryti. Esc — atšaukti.' : 'Click the points. Type a length (300 Enter, or 200,50). Enter or double click finishes, the first point closes it. Esc cancels.',
+    rect:lt ? 'Spustelėkite kampą ir priešingą kampą (arba tempkite). Dydį galima įvesti: 200,100 ir Enter. Pradžios tašką — X,Y prieš pirmą spustelėjimą.' : 'Click a corner and the opposite one (or drag). Type the size: 200,100 Enter. Type X,Y before the first click to start there.',
+    circle:lt ? 'Spustelėkite centrą, tada kraštą — arba įveskite skersmenį ir Enter. Centrą — X,Y prieš pirmą spustelėjimą.' : 'Click the centre, then the rim — or type the diameter and Enter. Type X,Y before the first click for the centre.' }[K.tool] || '';
+  var rows = list.map(function (sh, i) { var op = sh.op || 'none';
+    return '<button type="button" class="sk-li' + (sh.id === K.sel ? ' on' : '') + '" data-act="sksel" data-v="' + sh.id + '"><b>#' + (i + 1) + '</b> ' + (sh.t === 'rect' ? '▭ ' + fmt(skR(sh.w)) + '×' + fmt(skR(sh.h)) : sh.t === 'circle' ? '◯ Ø' + fmt(skR(2 * sh.r)) : '╱ ' + (sh.pts || []).length + (lt ? ' tšk.' : ' pts')) +
+      ' · <span class="' + (op === 'none' ? 'unit' : 'sk-op') + '">' + esc(skOpName(op)) + (op !== 'none' && op !== 'drill' || op === 'drill' ? (sh.through ? (lt ? ', kiaurai' : ', through') : op !== 'none' ? ', ' + fmt(sh.depth == null ? 8 : sh.depth) + ' mm' : '') : '') + '</span></button>'; }).join('');
+  return '<div class="sk-ed"><div class="sk-head"><b>' + esc(p.short) + '</b><span class="unit">' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + fmt(p.T) + ' · ' + esc(p.mat || '') + '</span><span class="sk-face">' + (lt ? 'Žiūrima iš: ' : 'Seen from: ') + '<b>' + esc(skFaceNames(p)[0]) + '</b></span></div>' +
+    '<div class="sk-tools">' + tool('sel', '⌖ ' + (lt ? 'Rinktis' : 'Select'), 'V') + tool('line', '╱ ' + (lt ? 'Linija' : 'Line'), 'L') + tool('rect', '▭ ' + (lt ? 'Stačiakampis' : 'Rectangle'), 'R') + tool('circle', '◯ ' + (lt ? 'Apskritimas' : 'Circle'), 'C') +
+      '<label class="sk-grid">' + (lt ? 'Tinklelis' : 'Grid') + ' <select id="sk-grid">' + [1, 5, 10, 50].map(function (g) { return '<option value="' + g + '"' + ((K.grid || 5) === g ? ' selected' : '') + '>' + g + ' mm</option>'; }).join('') + '</select></label>' +
+      '<button type="button" class="btn ghost" data-act="skfit">⤢ ' + (lt ? 'Visa detalė' : 'Fit') + '</button></div>' +
+    '<div class="sk-wrap"><svg class="sk-svg tool-' + K.tool + '" viewBox="' + skR(V.x) + ' ' + skR(V.y) + ' ' + skR(V.w) + ' ' + skR(V.h) + '" preserveAspectRatio="xMidYMid meet" font-family="IBM Plex Mono,monospace">' + skSvg(p, list, K.sel) + '<g class="sk-live"></g></svg><div class="sk-hud"></div></div>' +
+    '<p class="note sk-hint">' + hint + '</p>' +
+    '<p class="note" style="margin:0 0 8px">' + esc(noteTxt(p.note)) + '</p>' +
+    '<div class="sk-below">' + (idx >= 0 ? skProps(c, p, r, list[idx], idx) : '') +
+    (list.length ? '<div class="sk-list">' + rows + '</div>' : '<p class="note">' + (lt ? 'Šioje detalėje operacijų dar nėra — pasirinkite įrankį ir braižykite.' : 'No operations on this part yet — pick a tool and draw.') + '</p>') + '</div></div>';
+}
+function skModal() {
+  var K = S.sk, c = S.proj.cabinets[K.cab], inf = S._info && S._info[K.cab]; if (!c || !inf || !inf.r) return '';
+  var lt = S.lang === 'lt', r = inf.r, p = K.key ? r.panels.filter(function (q) { return q.key === K.key; })[0] : null;
+  var chips = r.panels.map(function (q) { var n = skList(c, q.key).length; return '<button type="button" class="sk-chip' + (p && q.key === p.key ? ' on' : '') + (n ? ' has' : '') + '" data-act="skpick" data-v="' + esc(q.key) + '">' + esc(q.short || q.role) + (n ? ' <b>' + n + '</b>' : '') + '</button>'; }).join('');
+  var orphan = Object.keys(c.sketch || {}).filter(function (k) { return (c.sketch[k] || []).length && !r.panels.some(function (q) { return q.key === k; }); });
+  return '<div class="drwover jcover skover" data-act="skclose" role="dialog" aria-modal="true"><div class="drwbox jcbox skbox" data-stop="1"><div class="drwbar"><b>' + (lt ? 'Detalių operacijos' : 'Part operations') + ' — ' + esc(c.name || typeName(c)) + ' · ' + fmt(c.W) + '×' + fmt(c.H) + '×' + fmt(c.D) + '</b><button type="button" class="btn ghost" data-act="skclose" data-force="1" aria-label="' + esc(t('close')) + '">✕</button></div>' +
+    '<div class="jcbody"><div class="sk-cols"><div class="sk-left">' + ecModel(c, r, 'sk') + '<div class="sk-chips">' + chips + '</div>' +
+      (orphan.length ? '<p class="sk-warn">⚠ ' + esc((lt ? 'Operacijos detalėms, kurių spintelėje nebėra: ' : 'Operations on parts no longer in the cabinet: ') + orphan.join(', ')) + ' <button type="button" class="btn ghost" data-act="skorphan">' + (lt ? 'Ištrinti' : 'Delete') + '</button></p>' : '') + '</div>' +
+      '<div class="sk-right">' + (p ? skEditor(c, p, r) : '<div class="card empty">' + (lt ? 'Pasirinkite detalę modelyje arba sąraše.' : 'Pick a part on the model or in the list.') + '</div>') + '</div></div></div>' +
+    '<div class="jcfoot"><span class="note">' + (lt ? 'Operacijos patenka į detalės CNC programas (Detalės ir CNC).' : 'The operations go into the part\'s CNC programs (Parts and CNC).') + '</span><button type="button" class="btn pri big" data-act="skclose" data-force="1">✓ ' + (lt ? 'Baigti' : 'Done') + '</button></div></div></div>';
+}
+function skBanner(c) {
+  if (!c || c.dishwasher) return ''; var n = skCount(c), lt = S.lang === 'lt';
+  return '<button type="button" class="skbtn" data-act="skopen">✎ ' + (lt ? 'Detalių operacijos — braižyti ant detalės' : 'Part operations — draw on a part') + (n ? ' <b>' + n + '</b>' : '') + '</button>';
+}
+function skUndoPush(c, prev) { S.undo.push({ id:c.id, joints:clone(c.cnc.joints || {}), box:c.box ? clone(c.box) : null, sketch:prev }); if (S.undo.length > 40) S.undo.shift(); }
+function skCtx() {
+  var K = S.sk; if (!K || !K.key) return null; var c = S.proj && S.proj.cabinets[K.cab], inf = S._info && S._info[K.cab]; if (!c || !inf || !inf.r) return null;
+  var p = inf.r.panels.filter(function (q) { return q.key === K.key; })[0]; if (!p) return null;
+  return { K:K, c:c, p:p, r:inf.r, list:skList(c, p.key) };
+}
+function skSelShape(X) { return X && X.list.filter(function (sh) { return sh.id === X.K.sel; })[0]; }
+function skAdd(X, sh) {
+  var prev = clone(X.c.sketch || {}), m = X.c.sketch = X.c.sketch || {}, l = m[X.p.key] = m[X.p.key] || [];
+  sh.id = l.reduce(function (a, q) { return Math.max(a, q.id || 0); }, 0) + 1; sh.op = sh.op || 'none'; sh.face = 'A'; sh.depth = 8;
+  l.push(sh); skUndoPush(X.c, prev); X.K.sel = sh.id; X.K.draft = null; save(); render();
+}
+function skChange(fn) {   // change the selected shape: undo step, save, redraw
+  var X = skCtx(), sh = skSelShape(X); if (!sh) return false;
+  var prev = clone(X.c.sketch || {}); if (fn(sh, X) === false) return false;
+  skUndoPush(X.c, prev); save(); return true;
+}
+function skField(el) {
+  var f = el.getAttribute('data-skf'), lt = S.lang === 'lt';
+  var ok = skChange(function (sh, X) {
+    if (f === 'through' || f === 'closed') { sh[f] = !!el.checked; return; }
+    var v = parseFloat(String(el.value).replace(',', '.').replace(/[−–]/g, '-')); if (!isFinite(v)) { toast(lt ? 'Įveskite skaičių' : 'Enter a number', true); return false; }
+    var L = X.p.L, W = X.p.W;
+    if (f === 'depth') { if (!(v > 0)) { toast(lt ? 'Gylis turi būti didesnis už 0' : 'The depth must be above 0', true); return false; } sh.depth = v; return; }
+    if (/^p[xy]\.\d+$/.test(f)) { var k = +f.split('.')[1]; if (!sh.pts || !sh.pts[k]) return false; sh.pts[k][f[1] === 'x' ? 0 : 1] = v; return; }
+    if (sh.t === 'rect') { if (f === 'w' || f === 'h') { if (!(v > 0)) { toast(lt ? 'Dydis turi būti didesnis už 0' : 'The size must be above 0', true); return false; } sh[f] = v; }
+      else if (f === 'x' || f === 'y') sh[f] = v; else if (f === 'xr') sh.x = L - sh.w - v; else if (f === 'yt') sh.y = W - sh.h - v; return; }
+    if (sh.t === 'circle') { if (f === 'd') { if (!(v > 0)) { toast(lt ? 'Skersmuo turi būti didesnis už 0' : 'The diameter must be above 0', true); return false; } sh.r = v / 2; }
+      else if (f === 'x' || f === 'y') sh[f] = v; else if (f === 'xr') sh.x = L - v; else if (f === 'yt') sh.y = W - v; return; }
+    return false;
+  });
+  void ok; render();
+}
+var SK_IO = { downOver:false };
+(function () {   // drawing on the part: pointer, wheel and keys; while drawing only the drawing is redrawn, the page when a shape is done
+  var D = null, typed = '', cur = null, snapInfo = null;
+  var svgEl = function () { return document.querySelector('.sk-svg'); };
+  var toMM = function (e, sv) { var m = sv.getScreenCTM(); if (!m) return [0, 0]; var pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; var q = pt.matrixTransform(m.inverse()); return [q.x, -q.y]; };
+  var mmPx = function (sv) { var m = sv && sv.getScreenCTM(); return m && m.a ? 1 / m.a : 1; };
+  var grid = function () { return (S.sk && S.sk.grid) || 5; };
+  var setVB = function (sv, v) { S.sk.view = v; sv.setAttribute('viewBox', skR(v.x) + ' ' + skR(v.y) + ' ' + skR(v.w) + ' ' + skR(v.h)); };
+  /* snapping: points (corners, ends, middles, centres, holes) first, then lining up with them, the panel's edges, the last point; else the grid */
+  function snap(P, X, prev, e, exclId) {
+    var sv = svgEl(), tol = 9 * mmPx(sv), L = X.p.L, W = X.p.W, pts = [[0, 0], [L, 0], [L, W], [0, W], [L / 2, 0], [L / 2, W], [0, W / 2], [L, W / 2], [L / 2, W / 2]];
+    X.list.forEach(function (sh) { if (sh.id === exclId) return; var o = E.skOutline(sh);
+      if (sh.t === 'circle') { pts.push([sh.x, sh.y], [sh.x + sh.r, sh.y], [sh.x - sh.r, sh.y], [sh.x, sh.y + sh.r], [sh.x, sh.y - sh.r]); return; }
+      o.pts.forEach(function (q, i) { pts.push(q); var nx = o.pts[(i + 1) % o.pts.length]; if (i < o.pts.length - 1 || o.closed) pts.push([(q[0] + nx[0]) / 2, (q[1] + nx[1]) / 2]); });
+      if (sh.t === 'rect') pts.push([sh.x + sh.w / 2, sh.y + sh.h / 2]); });
+    var nAl = pts.length; X.p.holes.forEach(function (h) { if (h.op !== 'sketch') pts.push([h.x, h.y]); });   // holes: to snap onto, not to line up with
+    var dr = S.sk.draft; if (dr && dr.pts && dr.pts.length > 2) pts.push(dr.pts[0]);
+    if (dr && dr.pts) dr.pts.slice(0, -1).forEach(function (q) { pts.push(q); });
+    var best = null, bd = tol;
+    pts.forEach(function (q) { var d = Math.hypot(q[0] - P[0], q[1] - P[1]); if (d < bd) { bd = d; best = q; } });
+    if (best) return { p:[best[0], best[1]], kind:'pt', guides:[] };
+    var x = P[0], y = P[1], lx = false, ly = false, guides = [];
+    if (prev && e && e.shiftKey) { if (Math.abs(x - prev[0]) > Math.abs(y - prev[1])) { y = prev[1]; ly = true; } else { x = prev[0]; lx = true; } }
+    var bx = tol * 0.6, by = tol * 0.6, ax = null, ay = null;
+    pts.slice(0, nAl).concat(prev ? [prev] : []).forEach(function (q) { var dx = Math.abs(q[0] - x), dy = Math.abs(q[1] - y); if (!lx && dx < bx) { bx = dx; ax = q; } if (!ly && dy < by) { by = dy; ay = q; } });
+    if (ax) { x = ax[0]; lx = true; guides.push([ax[0], ax[1], x, y]); }
+    if (ay) { y = ay[1]; ly = true; guides.push([ay[0], ay[1], x, y]); }
+    var g = grid(); if (!lx) x = Math.round(x / g) * g; if (!ly) y = Math.round(y / g) * g;
+    return { p:[x, y], kind:lx || ly ? 'al' : 'grid', guides:guides };
+  }
+  function parseTyped() {   // "300", "200,100", "200x100", "200 100" (a comma separates; decimals with a point)
+    var q = typed.trim().replace(/[x×*; ]+/g, ',').split(',').filter(function (z) { return z !== ''; }).map(Number);
+    if (!q.length || q.length > 2 || q.some(function (z) { return !isFinite(z); })) return null; return [q[0], q.length > 1 ? q[1] : null]; }
+  function hud(X) {
+    var el = document.querySelector('.sk-hud'); if (!el) return; var lt = S.lang === 'lt', dr = S.sk.draft, t2 = [];
+    if (cur) t2.push('X ' + fmt(skR(cur[0])) + '  Y ' + fmt(skR(cur[1])));
+    if (dr && cur) {
+      if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], len = Math.hypot(cur[0] - a[0], cur[1] - a[1]), ang = Math.atan2(cur[1] - a[1], cur[0] - a[0]) * 180 / Math.PI; t2.push((lt ? 'ilgis ' : 'length ') + fmt(skR(len)) + ' · ' + fmt(Math.round(ang * 10) / 10) + '°'); }
+      if (dr.t === 'rect') t2.push(fmt(skR(Math.abs(cur[0] - dr.a[0]))) + ' × ' + fmt(skR(Math.abs(cur[1] - dr.a[1]))));
+      if (dr.t === 'circle') t2.push('Ø ' + fmt(skR(2 * Math.hypot(cur[0] - dr.a[0], cur[1] - dr.a[1]))));
+    }
+    if (typed) t2.push('⌨ ' + typed + '▌');
+    el.textContent = t2.join('   '); el.style.display = t2.length ? 'block' : 'none';
+  }
+  function live(X) {
+    var sv = svgEl(), g = sv && sv.querySelector('.sk-live'); if (!g) return;
+    var V = skView(X.p), u = Math.max(V.w, V.h) / 100, dr = S.sk.draft, s = '', st = ' stroke="#e07b00" stroke-width="1.8" vector-effect="non-scaling-stroke" fill="none" pointer-events="none"';
+    if (dr && cur) {
+      if (dr.t === 'line') s += '<path d="' + skPathD({ pts:dr.pts.concat([cur]), closed:false }) + '"' + st + '/>';
+      if (dr.t === 'rect') { var x0 = Math.min(dr.a[0], cur[0]), y0 = Math.min(dr.a[1], cur[1]); s += '<rect x="' + skR(x0) + '" y="' + skR(-Math.max(dr.a[1], cur[1])) + '" width="' + skR(Math.abs(cur[0] - dr.a[0])) + '" height="' + skR(Math.abs(cur[1] - dr.a[1])) + '"' + st + '/>'; }
+      if (dr.t === 'circle') s += '<circle cx="' + skR(dr.a[0]) + '" cy="' + skR(-dr.a[1]) + '" r="' + skR(Math.hypot(cur[0] - dr.a[0], cur[1] - dr.a[1])) + '"' + st + '/><line x1="' + skR(dr.a[0]) + '" y1="' + skR(-dr.a[1]) + '" x2="' + skR(cur[0]) + '" y2="' + skR(-cur[1]) + '"' + st + ' stroke-dasharray="4 3"/>';
+    }
+    if (dr && dr.pts) dr.pts.forEach(function (q) { s += '<circle cx="' + skR(q[0]) + '" cy="' + skR(-q[1]) + '" r="' + skR(u * 0.45) + '" fill="#e07b00" pointer-events="none"/>'; });
+    if (dr && dr.a) s += '<circle cx="' + skR(dr.a[0]) + '" cy="' + skR(-dr.a[1]) + '" r="' + skR(u * 0.45) + '" fill="#e07b00" pointer-events="none"/>';
+    if (cur && S.sk.tool !== 'sel') {
+      (snapInfo && snapInfo.guides || []).forEach(function (gd) { s += '<line x1="' + skR(gd[0]) + '" y1="' + skR(-gd[1]) + '" x2="' + skR(gd[2]) + '" y2="' + skR(-gd[3]) + '" stroke="#2f7d55" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+      var c0 = snapInfo && snapInfo.kind === 'pt' ? '#2f7d55' : '#e07b00', hs = u * (snapInfo && snapInfo.kind === 'pt' ? 1 : 0.6);
+      s += snapInfo && snapInfo.kind === 'pt' ? '<rect x="' + skR(cur[0] - hs) + '" y="' + skR(-cur[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="none" stroke="' + c0 + '" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>'
+        : '<path d="M' + skR(cur[0] - hs) + ' ' + skR(-cur[1]) + 'h' + skR(2 * hs) + 'M' + skR(cur[0]) + ' ' + skR(-cur[1] - hs) + 'v' + skR(2 * hs) + '" stroke="' + c0 + '" stroke-width="1.5" vector-effect="non-scaling-stroke" pointer-events="none"/>';
+    }
+    g.innerHTML = s; hud(X);
+  }
+  function redrawSvg(X) { var sv = svgEl(); if (!sv) return; sv.innerHTML = skSvg(X.p, X.list, X.K.sel, true) + '<g class="sk-live"></g>'; }
+  function finishLine(X, closed) { var dr = S.sk.draft; if (!dr || dr.t !== 'line') return; var pts = dr.pts; typed = '';
+    if (pts.length < 2) { S.sk.draft = null; live(X); return; } skAdd(X, { t:'line', pts:pts.map(function (q) { return [skR(q[0]), skR(q[1])]; }), closed:!!closed && pts.length > 2 }); }
+  function addRect(X, a, b) { var w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]); if (w < 0.5 || h < 0.5) return false; skAdd(X, { t:'rect', x:skR(Math.min(a[0], b[0])), y:skR(Math.min(a[1], b[1])), w:skR(w), h:skR(h) }); return true; }
+  function addCircle(X, a, rr) { if (!(rr >= 0.5)) return false; skAdd(X, { t:'circle', x:skR(a[0]), y:skR(a[1]), r:Math.round(rr * 100) / 100 }); return true; }
+  function clickPoint(X, P, e) {   // a click (or a typed point) with a drawing tool
+    var K = X.K, dr = K.draft;
+    if (K.tool === 'line') {
+      if (!dr) { K.draft = { t:'line', pts:[P] }; return; }
+      var f = dr.pts[0], l = dr.pts[dr.pts.length - 1], tol = 6 * mmPx(svgEl());
+      if (dr.pts.length > 2 && Math.hypot(P[0] - f[0], P[1] - f[1]) < tol) { finishLine(X, true); return; }
+      if (Math.hypot(P[0] - l[0], P[1] - l[1]) < tol) { finishLine(X, false); return; }   // the same point twice (a double click): done
+      dr.pts.push(P); return;
+    }
+    if (!dr) { K.draft = { t:K.tool, a:P }; return; }
+    if (K.tool === 'rect') addRect(X, dr.a, P); else addCircle(X, dr.a, Math.hypot(P[0] - dr.a[0], P[1] - dr.a[1]));
+  }
+  function applyTyped(X) {
+    var v = parseTyped(), K = X.K, dr = K.draft; typed = ''; if (!v) { live(X); return; }
+    if (!dr) { if (v[1] == null) { toast(S.lang === 'lt' ? 'Pradžios taškas: X,Y (pvz. 100,50)' : 'Start point: X,Y (e.g. 100,50)', true); live(X); return; } clickPoint(X, [v[0], v[1]]); cur = [v[0], v[1]]; live(X); return; }
+    if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], q;
+      if (v[1] != null) q = [a[0] + v[0], a[1] + v[1]];
+      else { var dx = cur ? cur[0] - a[0] : 1, dy = cur ? cur[1] - a[1] : 0, ln = Math.hypot(dx, dy) || 1; if (!cur || ln < 1e-6) { dx = 1; dy = 0; ln = 1; } q = [a[0] + dx / ln * v[0], a[1] + dy / ln * v[0]]; }
+      q = [skR(q[0]), skR(q[1])]; dr.pts.push(q); cur = q; live(X); return; }
+    if (dr.t === 'rect') { var w = v[0], h = v[1] == null ? v[0] : v[1], sx = cur && cur[0] < dr.a[0] ? -1 : 1, sy = cur && cur[1] < dr.a[1] ? -1 : 1; addRect(X, dr.a, [dr.a[0] + sx * Math.abs(w), dr.a[1] + sy * Math.abs(h)]); return; }
+    if (dr.t === 'circle') addCircle(X, dr.a, Math.abs(v[0]) / 2);
+  }
+  document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.sk-svg')) e.preventDefault(); });
+  document.addEventListener('pointerdown', function (e) {
+    SK_IO.downOver = !!(e.target && e.target.classList && e.target.classList.contains('skover'));
+    var sv = e.target.closest && e.target.closest('.sk-svg'); if (!sv) return; var X = skCtx(); if (!X) return;
+    e.preventDefault(); try { sv.setPointerCapture(e.pointerId); } catch (er) {}
+    var P = toMM(e, sv), K = X.K, V = skView(X.p);
+    if (e.button === 1) { D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv), sv:sv }; return; }
+    if (e.button === 2) { if (K.draft && K.draft.t === 'line') finishLine(X, false); else { K.draft = null; typed = ''; live(X); } return; }
+    if (K.tool === 'sel') {
+      var hEl = e.target.closest('[data-skh]'), sEl = e.target.closest('[data-skid]');
+      if (hEl) { var id = +hEl.getAttribute('data-skid'), sh = X.list.filter(function (q) { return q.id === id; })[0]; if (!sh) return;
+        D = { mode:'grip', id:id, h:hEl.getAttribute('data-skh'), orig:clone(sh), start:P, prev:clone(X.c.sketch || {}), x:e.clientX, y:e.clientY, moved:false }; return; }
+      if (sEl) { var id2 = +sEl.getAttribute('data-skid'), sh2 = X.list.filter(function (q) { return q.id === id2; })[0]; if (!sh2) return;
+        var was = K.sel === id2; K.sel = id2; if (!was) redrawSvg(X);
+        D = { mode:'move', id:id2, orig:clone(sh2), start:P, prev:clone(X.c.sketch || {}), x:e.clientX, y:e.clientY, moved:false, picked:!was }; return; }
+      D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv), sv:sv, desel:K.sel != null }; return;
+    }
+    var prev = K.draft && K.draft.pts ? K.draft.pts[K.draft.pts.length - 1] : K.draft && K.draft.a;
+    snapInfo = snap(P, X, prev, e); var Q = snapInfo.p;
+    var had = !!K.draft; clickPoint(X, Q, e); cur = Q;
+    if (!had && S.sk && S.sk.draft && S.sk.draft.a) D = { mode:'press', x:e.clientX, y:e.clientY };   // a rectangle or a circle may also be dragged out
+    live(X);
+  });
+  document.addEventListener('pointermove', function (e) {
+    var sv = svgEl(); if (!sv || !S.sk) { return; }
+    var X = skCtx(); if (!X) return;
+    if (D && D.mode === 'pan') { var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 4) return; D.moved = true; setVB(sv, { key:X.p.key, x:D.v.x - dx * D.k, y:D.v.y - dy * D.k, w:D.v.w, h:D.v.h }); return; }
+    if (!e.target.closest || (!e.target.closest('.sk-svg') && !D)) return;
+    var P = toMM(e, sv);
+    if (D && (D.mode === 'move' || D.mode === 'grip')) {
+      if (!D.moved && Math.hypot(e.clientX - D.x, e.clientY - D.y) < 4) return; D.moved = true;
+      var sh = X.list.filter(function (q) { return q.id === D.id; })[0]; if (!sh) return; var o = D.orig;
+      if (D.mode === 'move') {   // the grabbed shape follows the pointer; its first point snaps
+        var base = o.t === 'line' ? o.pts[0] : [o.x, o.y], tgt = snap([base[0] + P[0] - D.start[0], base[1] + P[1] - D.start[1]], X, null, e, sh.id).p, ddx = tgt[0] - base[0], ddy = tgt[1] - base[1];
+        if (o.t === 'line') sh.pts = o.pts.map(function (q) { return [skR(q[0] + ddx), skR(q[1] + ddy)]; }); else { sh.x = skR(o.x + ddx); sh.y = skR(o.y + ddy); }
+      } else {
+        var Q = snap(P, X, null, e, sh.id).p, h = D.h;
+        if (o.t === 'line') sh.pts[+h] = [skR(Q[0]), skR(Q[1])];
+        else if (o.t === 'circle') { if (h === 'c') { sh.x = skR(Q[0]); sh.y = skR(Q[1]); } else sh.r = Math.max(0.5, Math.round(Math.hypot(Q[0] - o.x, Q[1] - o.y) * 100) / 100); }
+        else { var cs = [[o.x, o.y], [o.x + o.w, o.y], [o.x + o.w, o.y + o.h], [o.x, o.y + o.h]], op = cs[(+h + 2) % 4];
+          sh.x = skR(Math.min(op[0], Q[0])); sh.y = skR(Math.min(op[1], Q[1])); sh.w = Math.max(0.5, skR(Math.abs(Q[0] - op[0]))); sh.h = Math.max(0.5, skR(Math.abs(Q[1] - op[1]))); }
+      }
+      redrawSvg(X); return;
+    }
+    if (X.K.tool === 'sel') return;
+    var dr = X.K.draft, prev = dr && dr.pts ? dr.pts[dr.pts.length - 1] : dr && dr.a;
+    snapInfo = snap(P, X, prev, e); cur = snapInfo.p; live(X);
+  });
+  document.addEventListener('pointerup', function (e) {
+    var d = D; D = null; if (!d || !S.sk) return; var X = skCtx(); if (!X) return;
+    if (d.mode === 'pan') { if (!d.moved && d.desel) { X.K.sel = null; render(); } return; }
+    if (d.mode === 'move' || d.mode === 'grip') { if (d.moved) { skUndoPush(X.c, d.prev); save(); } render(); return; }
+    if (d.mode === 'press' && Math.hypot(e.clientX - d.x, e.clientY - d.y) > 6 && X.K.draft && X.K.draft.a && cur) {   // dragged out: done at the pointer
+      if (X.K.draft.t === 'rect') addRect(X, X.K.draft.a, cur); else addCircle(X, X.K.draft.a, Math.hypot(cur[0] - X.K.draft.a[0], cur[1] - X.K.draft.a[1])); }
+  });
+  document.addEventListener('wheel', function (e) {
+    var sv = e.target.closest && e.target.closest('.sk-svg'); if (!sv || !S.sk) return; var X = skCtx(); if (!X) return; e.preventDefault();
+    var V = skView(X.p), P = toMM(e, sv), f = Math.exp((e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015), w = Math.max(20, Math.min(V.w * f, 20000)); f = w / V.w;
+    var sy = -P[1]; setVB(sv, { key:X.p.key, x:P[0] - (P[0] - V.x) * f, y:sy - (sy - V.y) * f, w:V.w * f, h:V.h * f });
+    if (X.K.tool !== 'sel') live(X);
+  }, { passive:false });
+  document.addEventListener('keydown', function (e) {
+    if (!S.sk || e.ctrlKey || e.metaKey || e.altKey) return;
+    var tg = e.target, inField = /INPUT|SELECT|TEXTAREA/.test(tg.tagName); var X = skCtx(), K = S.sk, k = e.key;
+    if (inField) { if (k === 'Enter' && tg.hasAttribute('data-skf')) { e.preventDefault(); tg.blur(); } return; }
+    if (k === 'Escape') { e.preventDefault(); e.stopPropagation(); if (typed) { typed = ''; if (X) live(X); return; } if (K.draft) { K.draft = null; if (X) live(X); return; } if (K.sel != null) { K.sel = null; render(); return; } S.sk = null; render(); return; }
+    if (!X) return;
+    if (/^[0-9.,x×*;\- ]$/.test(k) && K.tool !== 'sel' && !(k === ' ' && !typed)) { typed += k === ';' ? ',' : k; e.preventDefault(); live(X); return; }
+    if (k === 'Backspace' && typed) { typed = typed.slice(0, -1); e.preventDefault(); live(X); return; }
+    if (k === 'Enter') { e.preventDefault(); if (typed) { applyTyped(X); return; } if (K.draft && K.draft.t === 'line') finishLine(X, false); return; }
+    if ((k === 'Delete' || k === 'Backspace') && K.sel != null && !K.draft) { e.preventDefault(); var prev = clone(X.c.sketch || {}); X.c.sketch[X.p.key] = X.list.filter(function (q) { return q.id !== K.sel; }); K.sel = null; skUndoPush(X.c, prev); save(); render(); return; }
+    var tools = { v:'sel', l:'line', r:'rect', c:'circle' }; if (tools[k.toLowerCase()] && !typed) { K.tool = tools[k.toLowerCase()]; K.draft = null; render(); return; }
+    var ar = { ArrowLeft:[-1, 0], ArrowRight:[1, 0], ArrowUp:[0, 1], ArrowDown:[0, -1] }[k];
+    if (ar && K.sel != null && K.tool === 'sel') { e.preventDefault(); var st = e.shiftKey ? 10 : 1;
+      skChange(function (sh) { if (sh.t === 'line') sh.pts = sh.pts.map(function (q) { return [skR(q[0] + ar[0] * st), skR(q[1] + ar[1] * st)]; }); else { sh.x = skR(sh.x + ar[0] * st); sh.y = skR(sh.y + ar[1] * st); } }); render(); }
+  }, true);
 })();
 function ecModal(c, inf) {
   var r = inf.r, lt = S.lang === 'lt', need = ecNeeded(c, r), fe = c.edge.facade || 'PAGAL FASADA';
@@ -13441,7 +13873,7 @@ function viewPart() {
       '<div class="card empty">' + (S.lang === 'lt' ? 'Šiai detalei CNC programos nėra — ji pjaunama pjūklu.' : 'This part has no CNC program — it is cut on the saw.') + '</div>'; }
   var pr = E.programs(p), f = pr.files[Math.min(S.ptab, pr.files.length - 1)];
   var tabs = pr.files.map(function (x, i) { return '<button class="btn' + (i === S.ptab ? ' pri' : '') + '" data-act="ptab" data-v="' + i + '">' + (x.kind === 'rot' ? '↻ ' : '') + (i + 1) + 'OP</button>'; }).join('');
-  return '<div class="paper"><div class="tb"><b>' + esc(p.short) + '</b><span>' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + E.num(p.T) + '</span></div>' + ebEditor(p, pr.files[0] ? pr.files[0].up : 'A') + '<div class="draw">' + panelSVG(p, pr.files[0] ? pr.files[0].up : 'A') + '</div>' +
+  return '<div class="paper"><div class="tb"><b>' + esc(p.short) + '</b><span>' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + E.num(p.T) + '</span><button type="button" class="btn ghost noprint" data-act="skopen" data-i="' + (p.cab - 1) + '" data-v="' + esc(p.key) + '">✎ ' + (S.lang === 'lt' ? 'Operacijos' : 'Operations') + ((p.sketch || []).length ? ' (' + p.sketch.length + ')' : '') + '</button></div>' + ebEditor(p, pr.files[0] ? pr.files[0].up : 'A') + '<div class="draw">' + panelSVG(p, pr.files[0] ? pr.files[0].up : 'A') + '</div>' +
     '<div class="legend"><span><i style="border:1.5px solid #2448c9;background:#dfe6fb"></i>' + t('lgA') + '</span><span><i style="border:1.5px dashed #b4291f"></i>' + t('lgB') + '</span><span><i style="background:#1b211e"></i>' + t('lgT') + '</span><span><i style="background:#9a6a00;width:7px;height:7px"></i>' + t('lgM') + '</span><span><i style="border-radius:1px;background:#2f7d55;height:5px"></i>' + t('lgE') + '</span><span><i style="border-radius:0;background:#f2b705;height:4px"></i>' + t('lgEb') + '</span></div>' +
     '<div class="note" style="margin-top:6px;color:#5f6a64">' + esc(noteTxt(p.note)) + '</div></div>' +
     (f && f.kind === 'rot' ? '<p class="note" style="margin:0">' + t('rotHint') + '</p>' : '') +
@@ -13468,6 +13900,9 @@ function panelSVG(p, up) {
   (p.grooves || []).forEach(function (g) {   // routed grooves (LED profile): filled on the face up, dashed on the other
     var ya = my(g.y0), yb = my(g.y1), on = g.face === up;
     s += '<rect x="' + X(g.x0).toFixed(1) + '" y="' + Y(Math.max(ya, yb)).toFixed(1) + '" width="' + ((g.x1 - g.x0) * k).toFixed(1) + '" height="' + Math.max(2, Math.abs(yb - ya) * k).toFixed(1) + '" fill="' + (on ? '#ffd860' : 'none') + '" fill-opacity=".8" stroke="#c99a00" stroke-width="1.2"' + (on ? '' : ' stroke-dasharray="4 3"') + '/>'; });
+  (p.sketch || []).forEach(function (sh) {   // operations drawn by hand: routed ones violet (dashed on the other face), sketches grey dashed
+    if (sh.pts.length < 2 || sh.op === 'drill') return; var on = sh.face === up, pts = sh.pts.map(function (q) { return X(q[0]).toFixed(1) + ',' + Y(my(q[1])).toFixed(1); }).join(' ');
+    s += '<' + (sh.closed ? 'polygon' : 'polyline') + ' points="' + pts + '" fill="' + (sh.op === 'pocket' && on ? 'rgba(122,63,196,.2)' : 'none') + '" stroke="' + (sh.op === 'none' ? '#8b918b' : '#7a3fc4') + '" stroke-width="1.4"' + (sh.op === 'none' || !on ? ' stroke-dasharray="4 3"' : '') + '/>'; });
   p.holes.forEach(function (h) {
     var cx = X(h.x), cy = Y(my(h.y)), r = Math.max(h.mark ? 1.6 : 2, h.d * k / 2);
     if (h.mark) s += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="' + r.toFixed(1) + '" fill="#9a6a00"/>';
@@ -13611,11 +14046,11 @@ function refreshLive() {
 
 /* ----------------------------------------------------------------- 3D connector editor (iso.js) */
 S.iso = null; S.undo = [];
-function pushUndo() { var c = cur(); if (!c) return; S.undo.push({ id:c.id, joints:clone(c.cnc.joints || {}), box:c.box ? clone(c.box) : null }); if (S.undo.length > 40) S.undo.shift(); }
+function pushUndo() { var c = cur(); if (!c) return; S.undo.push({ id:c.id, joints:clone(c.cnc.joints || {}), box:c.box ? clone(c.box) : null, sketch:clone(c.sketch || {}) }); if (S.undo.length > 40) S.undo.shift(); }
 function canUndo() { var c = cur(); return !!c && S.undo.some(function (u) { return u.id === c.id; }); }
 function undoJoints() {
   var c = cur(); if (!c) return false;
-  for (var i = S.undo.length - 1; i >= 0; i--) if (S.undo[i].id === c.id) { c.cnc.joints = S.undo[i].joints; if (S.undo[i].box) c.box = S.undo[i].box; S.undo.splice(i, 1); save(); render(); toast(t('isoUndone')); return true; }
+  for (var i = S.undo.length - 1; i >= 0; i--) if (S.undo[i].id === c.id) { c.cnc.joints = S.undo[i].joints; if (S.undo[i].box) c.box = S.undo[i].box; if (S.undo[i].sketch) c.sketch = S.undo[i].sketch; S.undo.splice(i, 1); save(); render(); toast(t('isoUndone')); return true; }
   return false;
 }
 /* patch from the 3D editor: { side:null|'L'|'R', type, pos|null }. side null → both sides; otherwise only that side
@@ -13837,6 +14272,8 @@ app.addEventListener('change', function (e) {
   if (el.getAttribute('data-act-change') === 'import') { importFile(el.files && el.files[0]); return; }
   if (el.getAttribute('data-act-change') === 'tpl') { loadTemplateFile(el.files && el.files[0]); el.value = ''; return; }
   if (el.getAttribute('data-act-change') === 'prjson' && S.admin) { var fl = el.files && el.files[0]; if (!fl) return; var rdr = new FileReader(); rdr.onload = function () { try { var nJ = prFromOffer(JSON.parse(rdr.result)); prSave(); render(); toast(nJ ? (S.lang === 'lt' ? 'Perimta kainų: ' : 'Prices taken: ') + nJ : (S.lang === 'lt' ? 'Faile kainų nerasta' : 'No prices in the file'), !nJ); } catch (er) { toast(t('badFile'), true); } }; rdr.readAsText(fl); el.value = ''; return; }
+  if (el.hasAttribute('data-skf')) { skField(el); return; }
+  if (el.id === 'sk-grid') { if (S.sk) S.sk.grid = +el.value || 5; return; }
   if (el.hasAttribute('data-bkfront')) {   // the inside back's front face from the cabinet front → its inset from the back edge
     var bf = numOrNull(el.value), bmax = +el.getAttribute('data-bkfront'), bc = cur();
     if (bc && bf != null && bf >= 0 && bf <= bmax) { bc.cnc.backInset = Math.round((bmax - bf) * 10) / 10; save(); }
@@ -13903,7 +14340,7 @@ app.addEventListener('keydown', function (e) {
 });
 document.addEventListener('keydown', function (e) {   // undo, wherever the focus is (after a click it is on the page body)
   if (!(e.ctrlKey || e.metaKey) || e.shiftKey || (e.key !== 'z' && e.key !== 'Z') || /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || S.home) return;
-  if (S.tab === 'cab' && undoJoints()) e.preventDefault(); else if (S.tab === 'room' && roomUndo()) e.preventDefault();
+  if ((S.tab === 'cab' || S.sk) && undoJoints()) e.preventDefault(); else if (S.tab === 'room' && roomUndo()) e.preventDefault();
 });
 app.addEventListener('click', function (e) {
   var el = e.target.closest('[data-act]'); if (!el) return;
@@ -14031,6 +14468,23 @@ app.addEventListener('click', function (e) {
     case 'jreset': pushUndo(); if (cur().cnc.joints) delete cur().cnc.joints[v]; save(); break;
     case 'jcopen': S.jcheck = true; S.echeck = false; break;
     case 'ecopen': S.echeck = true; S.jcheck = false; break;
+    case 'skopen': { var ci = el.hasAttribute('data-i') ? i : S.sel, skc = S.proj.cabinets[ci]; if (!skc) break; var is = S._info && S._info[ci];
+      var k0 = v || (is && is.r ? (is.r.panels.filter(function (q) { return skList(skc, q.key).length; })[0] || {}).key : null) || null;
+      S.sk = { cab:ci, key:k0, tool:'sel', sel:null, grid:(S.sk && S.sk.grid) || 5 }; S.sel = ci; S.jcheck = false; S.echeck = false; break; }
+    case 'skclose': if (!el.getAttribute('data-force') && (e.target.closest('[data-stop]') || !SK_IO.downOver)) return; S.sk = null; break;
+    case 'skpick': if (S.ecDrag) { S.ecDrag = false; return; } if (S.sk) { if (S.sk.key !== v) { S.sk.view = null; S.sk.sel = null; } S.sk.key = v; S.sk.draft = null; } break;
+    case 'sktool': if (S.sk) { S.sk.tool = v; S.sk.draft = null; } break;
+    case 'skfit': if (S.sk) S.sk.view = null; break;
+    case 'sksel': if (S.sk) { S.sk.sel = +v; S.sk.tool = 'sel'; S.sk.draft = null; } break;
+    case 'skop': skChange(function (sh) { if (sh.op === v) return false; sh.op = v; if (v === 'drill' && sh.depth == null) sh.depth = 12; }); break;
+    case 'skface': skChange(function (sh) { if ((sh.face || 'A') === v) return false; sh.face = v; }); break;
+    case 'skptdel': skChange(function (sh) { if (!sh.pts || sh.pts.length < 3) return false; sh.pts.splice(i, 1); if (sh.pts.length < 3) sh.closed = false; }); break;
+    case 'skdel': { var Xd = skCtx(), shd = skSelShape(Xd); if (!shd) break; var pd = clone(Xd.c.sketch || {}); Xd.c.sketch[Xd.p.key] = Xd.list.filter(function (q) { return q !== shd; }); S.sk.sel = null; skUndoPush(Xd.c, pd); save(); break; }
+    case 'skdup': { var Xc = skCtx(), shc = skSelShape(Xc); if (!shc) break; var pc = clone(Xc.c.sketch || {}), skcp = clone(shc), off = 20;
+      if (skcp.t === 'line') skcp.pts = skcp.pts.map(function (q) { return [q[0] + off, q[1] + off]; }); else { skcp.x += off; skcp.y += off; }
+      skcp.id = Xc.list.reduce(function (a, q) { return Math.max(a, q.id || 0); }, 0) + 1; Xc.list.push(skcp); S.sk.sel = skcp.id; skUndoPush(Xc.c, pc); save(); break; }
+    case 'skorphan': { var Xo = S.sk && S.proj.cabinets[S.sk.cab], io = S._info && S._info[S.sk.cab]; if (!Xo || !io || !io.r) break; var po = clone(Xo.sketch || {});
+      Object.keys(Xo.sketch || {}).forEach(function (k) { if (!io.r.panels.some(function (q) { return q.key === k; })) delete Xo.sketch[k]; }); skUndoPush(Xo, po); save(); break; }
     case 'ecview': { var EV = S.ecView = S.ecView || { th:0.62, ph:0.42, zoom:1, exp:false, fronts:false };
       if (v === 'front') { EV.th = 0.62; EV.ph = 0.42; } else if (v === 'backv') { EV.th = 0.62 + Math.PI; EV.ph = 0.42; } else if (v === 'under') { EV.th = 0.62; EV.ph = -0.7; }
       else if (v === 'zin') EV.zoom = Math.min(6, (EV.zoom || 1) * 1.3); else if (v === 'zout') EV.zoom = Math.max(0.5, (EV.zoom || 1) / 1.3); else EV[v] = !EV[v]; break; }
