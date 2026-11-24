@@ -214,7 +214,7 @@ line.mk-conf{stroke:#2448c9} line.mk-cam{stroke:#d9480f} line.mk-dow{stroke:#2f7
 .drwbox.skbox{max-width:1500px}.sk-cols{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.6fr);gap:14px;align-items:start}.sk-left{position:sticky;top:0}.sk-left .ec-msvg{height:min(46vh,460px)}
 .sk-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}.sk-chip{font:inherit;font-size:12px;padding:3px 8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:inherit;cursor:pointer}.sk-chip.has{border-color:#b9a3ea;background:#f3eeff}.sk-chip.on{background:#ffd65a;border-color:#9a6a00}.sk-chip b{color:#5b2aa0}
 .sk-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}.sk-tools{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px}.sk-tools .btn{padding:5px 10px;font-size:13px}.sk-tools .btn.on{background:var(--ink);color:var(--panel)}.sk-grid{font-size:13px;display:flex;gap:6px;align-items:center;margin-left:auto}.sk-grid select{width:auto;padding:4px 6px}
-.sk-face{margin-left:auto;font-size:13px;color:#5b2aa0}.sk-below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}.sk-below>.sk-list,.sk-below>.note{margin-top:8px}@media(max-width:1200px){.sk-below{grid-template-columns:minmax(0,1fr)}}
+.sk-face{margin-left:auto;font-size:13px;display:flex;gap:8px;align-items:center}.sk-side button{padding:4px 10px;font-size:13px}.sk-dim{cursor:pointer}.sk-dim:hover{fill:#e07b00}.sk-dimin{position:absolute;width:90px;padding:5px 8px;font:600 15px IBM Plex Mono,monospace;border:2px solid #e07b00;border-radius:6px;background:#fff;z-index:5;box-shadow:0 4px 14px rgba(0,0,0,.18)}.sk-below{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:10px;align-items:start}.sk-below>.sk-list,.sk-below>.note{margin-top:8px}@media(max-width:1200px){.sk-below{grid-template-columns:minmax(0,1fr)}}
 .sk-wrap{position:relative}.sk-svg{display:block;width:100%;height:min(50vh,540px);background:#eef0ec;border:1px solid var(--line);border-radius:8px;touch-action:none;user-select:none;-webkit-user-select:none}.sk-svg.tool-line,.sk-svg.tool-rect,.sk-svg.tool-circle{cursor:crosshair}.sk-svg.tool-sel{cursor:default}.sk-svg.tool-sel .sk-hit{cursor:move}.sk-svg .sk-h{cursor:grab}
 .sk-hud{position:absolute;left:10px;bottom:10px;background:rgba(27,33,30,.86);color:#fff;font:12px IBM Plex Mono,monospace;padding:4px 8px;border-radius:6px;pointer-events:none;display:none;white-space:pre}.sk-hint{margin:6px 0 4px}
 .sk-props{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:8px 0;background:var(--panel)}.sk-ph{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}.sk-pb{display:flex;gap:6px}.sk-pb .btn{padding:4px 10px;font-size:13px}.sk-pb .danger{color:#b4291f}
@@ -1389,6 +1389,17 @@ function skOutline(s) {
   var P = (s.pts || []).map(function (q) { return [+q[0] || 0, +q[1] || 0]; });
   return { pts:P, closed:!!s.closed && P.length > 2 };
 }
+function triangulate(P) {   // ear clipping: a simple polygon (either way round) → triangles
+  var Q = P.slice(); if (polyArea(Q) < 0) Q.reverse(); var out = [], guard = 0;
+  var inside = function (p, a, b, c) { var s1 = (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0]), s2 = (c[0] - b[0]) * (p[1] - b[1]) - (c[1] - b[1]) * (p[0] - b[0]), s3 = (a[0] - c[0]) * (p[1] - c[1]) - (a[1] - c[1]) * (p[0] - c[0]); return s1 >= 0 && s2 >= 0 && s3 >= 0; };
+  while (Q.length > 3 && guard++ < 5000) { var n = Q.length, cut = false;
+    for (var i = 0; i < n; i++) { var a = Q[(i + n - 1) % n], b = Q[i], c = Q[(i + 1) % n];
+      if ((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]) <= 1e-9) continue;
+      var ok = true; for (var j = 0; j < n && ok; j++) { var q = Q[j]; if (q === a || q === b || q === c) continue; if (inside(q, a, b, c)) ok = false; }
+      if (ok) { out.push([a, b, c]); Q.splice(i, 1); cut = true; break; } }
+    if (!cut) break; }
+  if (Q.length === 3) out.push(Q); return out;
+}
 function polyArea(P) { var a = 0; for (var i = 0; i < P.length; i++) { var p = P[i], q = P[(i + 1) % P.length]; a += p[0] * q[1] - q[0] * p[1]; } return a / 2; }
 /* a closed polygon moved d inwards (d < 0: outwards), corners mitred; null when it no longer exists at that distance */
 function offsetPoly(P, d) {
@@ -1412,7 +1423,7 @@ function applySketch(p, list, warn) {
   var nOp = 0, nThr = 0;
   list.forEach(function (s, i) {
     var o = skOutline(s), op = s.op || 'none', face = s.face === 'B' ? 'B' : 'A', tag = lbl + (i + 1) + ': ';
-    p.sketch.push({ pts:o.pts, closed:o.closed, op:op, face:face, id:s.id, n:i + 1, t:s.t });
+    p.sketch.push({ pts:o.pts, closed:o.closed, op:op, face:face, id:s.id, n:i + 1, t:s.t, thr:!!s.through || (op === 'drill' && (+s.depth || 0) >= p.T) });
     if (op === 'none' || o.pts.length < 2) return;
     if (o.pts.some(function (q) { return q[0] < -air || q[0] > p.L + air || q[1] < -air || q[1] > p.W + air; })) { warn.push(tag + 'išeina daugiau nei ' + air + ' mm už detalės — NEPROGRAMUOTA'); return; }
     if (op === 'drill') {
@@ -3213,7 +3224,7 @@ var api = { R:R, shelfSetSb:shelfSetSb, DRAWER_HW:DRAWER_HW, DOOR_HW:DOOR_HW, CA
             buildCabinet:function (c, idx, pn) { var r = buildCabinet(c, idx, pn); r.worktop = worktopOf(c);
               var bad = r.panels.filter(function (p) { return !(p.L >= 1 && p.W >= 1 && p.T > 0 && isFinite(p.L + p.W + p.T)); });   // a part with no size (dimensions too small for the layout) is left out
               if (bad.length) { r.panels = r.panels.filter(function (p) { return bad.indexOf(p) < 0; }); r.warnings.push(bad.map(function (p) { return p.short || p.role; }).join(', ') + ': per maži matmenys (' + bad.map(function (p) { return num(Math.round(p.L)) + '×' + num(Math.round(p.W)); }).join(', ') + ') — detalės nepridėtos, padidinkite spintelę'); }
-              return r; }, worktopOf:worktopOf, sidePanels:sidePanels, sideWidths:sideWidths, WT_DEF:WT_DEF, programs:programs, skOutline:skOutline, offsetPoly:offsetPoly, num:num, ascii:ascii, safeName:safeName, hingesPerDoor:hingesPerDoor,
+              return r; }, worktopOf:worktopOf, sidePanels:sidePanels, sideWidths:sideWidths, WT_DEF:WT_DEF, programs:programs, skOutline:skOutline, offsetPoly:offsetPoly, triangulate:triangulate, num:num, ascii:ascii, safeName:safeName, hingesPerDoor:hingesPerDoor,
             hingeYs:hingeYs, hingesFit:hingesFit, setRules:setRules, splitFronts:splitFronts, pairedDowels:pairedDowels, legHeight:legHeight,
             buildBox:buildBox, underDeduct:underDeduct, boxDefaults:boxDefaults, BOX_IDS:BOX_IDS, BOX_DEF:BOX_DEF, boxPair:boxPair, boxCoverDefault:boxCoverDefault };
 if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.DBEngine = api;
@@ -4798,6 +4809,19 @@ function mount(el,c,r,lang,hooks={}){
  function scene(){faces=[];guides=[];PKS=[];CUR_PK=0;
  // Actual panel placement, including panel rotations performed by the manufacturing engine.
  (r.panels||[]).forEach(p=>{if(!p.place||p.drawerOf||/^(DURYS|FASADAS)$/.test(p.role))return;CUR_PK=pkOf({kind:'panel',role:p.role,name:p.name});let q=p.place;const tf=v=>add(q.o,add(mul(q.u,v[0]),add(mul(q.v,v[1]),mul(q.n,-v[2]))));const bi=isBox?r.box.boards.findIndex(b=>b.name===p.name):-1,sel=V.boards&&bi>=0&&r.box.boards[bi].id===BX.sel,k0=faces.length;box([0,0,0],[p.L,p.W,p.T],sel?'#9fd0b4':mat(p.mat,'#e5e2da'),tf,!sel&&wood(p.mat),false,false,sel?null:{name:p.mat,g:0});for(let k=k0;k<faces.length;k++)faces[k].bid=bi+1;});
+ // operations drawn by hand (Detalių operacijos): what the cutter takes away, on the face it works from — dark when it goes through
+ (r.panels||[]).forEach(p=>{if(!p.place||p.drawerOf||/^(DURYS|FASADAS)$/.test(p.role)||!p.sketch||!p.sketch.length)return;const q=p.place,RO=window.DBEngine.R.rout,rr=RO.dia/2,thrD=p.T-RO.skin-.01;
+  const W3=(x,y,fB)=>add(q.o,add(mul(q.u,x),add(mul(q.v,y),mul(q.n,fB?-(p.T+.4):.4))));
+  const put=(pts,fB,col,both)=>{if(both){put(pts,false,col);put(pts,true,col);return;}if(pts.length<3)return;let a=0;for(let i=0;i<pts.length;i++){const s0=pts[i],t0=pts[(i+1)%pts.length];a+=s0[0]*t0[1]-t0[0]*s0[1];}if(Math.abs(a)<1e-6)return;if((a>0)===fB)pts=pts.slice().reverse();face(pts.map(s0=>W3(s0[0],s0[1],fB)),col);};
+  const disc=(c0,rad,fB,col,both)=>put(Array.from({length:20},(_,i)=>[c0[0]+rad*Math.cos(i*Math.PI/10),c0[1]+rad*Math.sin(i*Math.PI/10)]),fB,col,both);
+  (p.paths||[]).forEach(g=>{const fB=g.face==='B',thr=g.depth>=thrD,col=thr?'#2b302d':'#7a6650',P=g.pts;   // through: seen from both faces
+   for(let i=0;i<P.length-1;i++){const a=P[i],b=P[i+1],dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy);if(l<1e-6)continue;const nx=-dy/l*rr,ny=dx/l*rr;put([[a[0]+nx,a[1]+ny],[b[0]+nx,b[1]+ny],[b[0]-nx,b[1]-ny],[a[0]-nx,a[1]-ny]],fB,col,thr);
+    if(i>0){const z=P[i-1],ang=Math.abs(Math.atan2((a[0]-z[0])*dy-(a[1]-z[1])*dx,(a[0]-z[0])*dx+(a[1]-z[1])*dy));if(ang>.35)disc(a,rr,fB,col,thr);}}
+   if(P.length){disc(P[0],rr,fB,col,thr);disc(P[P.length-1],rr,fB,col,thr);}});
+  p.sketch.forEach(sh=>{if((sh.op==='in'||sh.op==='pocket')&&sh.closed&&(p.paths||[]).some(g=>g.name==='ESKIZAS_'+sh.n||g.name.indexOf('ESKIZAS_'+sh.n+'_')===0)){const g0=(p.paths||[]).filter(g=>g.name==='ESKIZAS_'+sh.n||g.name.indexOf('ESKIZAS_'+sh.n+'_')===0)[0];
+   window.DBEngine.triangulate(sh.pts).forEach(t=>put(t,sh.face==='B',g0.depth>=thrD?'#2b302d':'#7a6650',g0.depth>=thrD));}});
+  (p.holes||[]).forEach(h=>{if(h.op==='sketch')disc([h.x,h.y],h.d/2,h.face==='B',h.through?'#2b302d':'#5d4f3f',!!h.through);});
+ });
  CUR_PK=0;faces.forEach(f=>f.carcass=true);
  (r.legs||[]).forEach(l=>{if(l.feet){cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.5,l.h,'#343b3a');return;}cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.5,l.h,'#343b3a');cylinder([l.x,l.y,-l.h],[0,0,1],l.d*.68,8,'#272e2c');cylinder([l.x,l.y,-12],[0,0,1],30,12,'#414844');});
  {const pl=(r.visual||{}).plinth;CUR_PK=pl?pkOf({kind:'plinth'}):0;if(pl&&V.mode==='assembly'&&!V.edit)box([pl.x0,pl.y0,pl.z0],[pl.x1-pl.x0,pl.t,pl.z1-pl.z0],mat(pl.mat,'#d5cbbd'),null,wood(pl.mat),false,true,{name:pl.mat,g:0});}
@@ -12388,10 +12412,11 @@ function ecModel(c, r, mode) {
   document.addEventListener('wheel', function (e) { if (!e.target.closest || !e.target.closest('.ec-msvg') || !S.ecView) return; e.preventDefault(); S.ecView.zoom = Math.max(0.5, Math.min(6, (S.ecView.zoom || 1) * Math.exp(-(e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015))); redraw(); }, { passive:false });
 })();
 /* ================= operations drawn by hand on a part (Detalių operacijos): pick the part on the model, draw on it
-   (lines, rectangles, circles — snapped to the grid, the panel's edges, the other shapes and the holes; lengths typed while drawing),
-   then say what each shape is: only a sketch, routed on the line, cut out, cut around, a pocket or a drilled hole. Stored in
-   c.sketch[part key], in the part's program frame (the part drawing: X0 left, Y0 at the bottom, face A up); the engine turns them
-   into the tool's paths and the programs (applySketch). */
+   (lines, rectangles, circles — snapped to the grid, the panel's edges, the other shapes and the holes; sizes typed while drawing),
+   then say what each shape is: only a sketch, routed on the line, cut out, cut round, a pocket or a drilled hole.
+   Stored in c.sketch[part key] in the part's program frame (X along the part, Y across, as seen from face A); the editor shows
+   the part as it stands in the cabinet (up is up; a bottom or a shelf seen from above, the back at the top), seen from the
+   face being worked on, every edge named (priekis, galas, viršus, apačia, kairė, dešinė). The engine makes the cutter's paths. */
 var SK_OPS = [['none', 'Tik eskizas', 'Sketch only'], ['on', 'Frezuoti per liniją', 'Route on the line'], ['in', 'Išpjauti (freza viduje)', 'Cut out (tool inside)'],
   ['out', 'Apipjauti (freza išorėje)', 'Cut round (tool outside)'], ['pocket', 'Išfrezuoti plotą', 'Pocket'], ['drill', 'Gręžti', 'Drill']];
 function skList(c, key) { var m = (c && c.sketch) || {}; return m[key] || []; }
@@ -12404,65 +12429,118 @@ function skFaceNames(p) {
   var up = function (x) { return x.charAt(0).toUpperCase() + x.slice(1); };
   return [a ? up(a) : 'Pusė A', opp[a] ? up(opp[a]) : 'Kita pusė'];
 }
-function skView(p) { var K = S.sk, v = K && K.view; if (v && v.key === p.key) return v; var m = Math.max(p.L, p.W) * 0.05 + 30; return { key:p.key, x:-m, y:-(p.W + m), w:p.L + 2 * m, h:p.W + 2 * m }; }
 function skR(v) { return Math.round(v * 10) / 10; }
-function skPathD(o) { if (o.pts.length < 2) return ''; return 'M' + o.pts.map(function (q) { return skR(q[0]) + ' ' + skR(-q[1]); }).join(' L') + (o.closed ? ' Z' : ''); }
-function skHandles(sh) {   // grips of a selected shape: [x, y, id]
+var SK_DIR = { 'x-':['KAIRĖ', 'kairės', 'LEFT', 'left'], 'x+':['DEŠINĖ', 'dešinės', 'RIGHT', 'right'], 'y-':['PRIEKIS', 'priekio', 'FRONT', 'front'], 'y+':['GALAS', 'galo', 'BACK', 'back'], 'z+':['VIRŠUS', 'viršaus', 'TOP', 'top'], 'z-':['APAČIA', 'apačios', 'BOTTOM', 'bottom'] };
+/* how the part is shown: seen from face A (side 'A') or B, up = the cabinet's up (or, for a lying part, its back); program (x, y) ↔ shown (X, Y) */
+function skFrame(p, side) {
+  var q = p.place, nm = function (v) { var i = Math.abs(v[0]) > 0.5 ? 0 : Math.abs(v[1]) > 0.5 ? 1 : 2; return SK_DIR['xyz'[i] + (v[i] < 0 ? '-' : '+')]; };
+  var ux = 1, vx = 0, uy = 0, vy = 1, Rt = null, Up = null;
+  if (q) { var n = side === 'B' ? q.n.map(function (x) { return -x; }) : q.n;   // towards the one looking
+    Up = Math.abs(n[2]) < 0.7 ? [0, 0, 1] : [0, 1, 0];
+    var f = n.map(function (x) { return -x; }); Rt = [f[1] * Up[2] - f[2] * Up[1], f[2] * Up[0] - f[0] * Up[2], f[0] * Up[1] - f[1] * Up[0]];
+    var d3 = function (a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; };
+    ux = Math.round(d3(q.u, Rt)); vx = Math.round(d3(q.v, Rt)); uy = Math.round(d3(q.u, Up)); vy = Math.round(d3(q.v, Up)); }
+  else if (side === 'B') ux = -1;
+  var cs = [[0, 0], [p.L, 0], [0, p.W], [p.L, p.W]].map(function (c) { return [c[0] * ux + c[1] * vx, c[0] * uy + c[1] * vy]; });
+  var ox = -Math.min.apply(null, cs.map(function (c) { return c[0]; })), oy = -Math.min.apply(null, cs.map(function (c) { return c[1]; }));
+  var Dw = Math.abs(p.L * ux) + Math.abs(p.W * vx), Dh = Math.abs(p.L * uy) + Math.abs(p.W * vy);
+  var neg = function (v) { return v.map(function (x) { return -x; }); };
+  var names = Rt ? { l:nm(neg(Rt)), r:nm(Rt), b:nm(neg(Up)), t:nm(Up) } : { l:['X0', 'X0', 'X0', 'X0'], r:['X=' + p.L, 'X=' + p.L, 'X=' + p.L, 'X=' + p.L], b:['Y0', 'Y0', 'Y0', 'Y0'], t:['Y=' + p.W, 'Y=' + p.W, 'Y=' + p.W, 'Y=' + p.W] };
+  return { Dw:Dw, Dh:Dh, names:names,
+    to:function (x, y) { return [x * ux + y * vx + ox, x * uy + y * vy + oy]; },
+    from:function (X, Y) { var a2 = X - ox, b2 = Y - oy; return [a2 * ux + b2 * uy, a2 * vx + b2 * vy]; },
+    dv:function (dX, dY) { return [dX * ux + dY * uy, dX * vx + dY * vy]; } };
+}
+function skSide() { return (S.sk && S.sk.side) === 'B' ? 'B' : 'A'; }
+function skView(p, F) { var K = S.sk, v = K && K.view; if (v && v.key === p.key + skSide()) return v; F = F || skFrame(p, skSide()); var m = Math.max(F.Dw, F.Dh) * 0.07 + 45; return { key:p.key + skSide(), x:-m, y:-(F.Dh + m), w:F.Dw + 2 * m, h:F.Dh + 2 * m }; }
+function skHandles(sh) {   // grips of a selected shape, in program coordinates: [x, y, id]
   if (sh.t === 'rect') return [[sh.x, sh.y, 0], [sh.x + sh.w, sh.y, 1], [sh.x + sh.w, sh.y + sh.h, 2], [sh.x, sh.y + sh.h, 3]];
   if (sh.t === 'circle') return [[sh.x, sh.y, 'c'], [sh.x + sh.r, sh.y, 'r']];
   return (sh.pts || []).map(function (q, i) { return [q[0], q[1], i]; });
 }
+function skBox(sh, F) {   // the shape as shown: bounding box (rect, line) or centre (circle)
+  if (sh.t === 'circle') { var c0 = F.to(sh.x, sh.y); return { x0:c0[0], x1:c0[0], y0:c0[1], y1:c0[1], c:true }; }
+  var pts = E.skOutline(sh).pts.map(function (q) { return F.to(q[0], q[1]); }); if (!pts.length) return null;
+  var xs = pts.map(function (q) { return q[0]; }), ys = pts.map(function (q) { return q[1]; });
+  return { x0:Math.min.apply(null, xs), x1:Math.max.apply(null, xs), y0:Math.min.apply(null, ys), y1:Math.max.apply(null, ys) };
+}
+/* a size set by hand (on the drawing or in the fields), in the shown frame: l/r/b/t = distance from that edge, w/h = size, d = Ø, s.k = length of segment k, pX.k/pY.k = a point */
+function skSetDim(sh, key, v, F) {
+  var bx = skBox(sh, F); if (!bx) return false;
+  var move = function (dX, dY) { var d = F.dv(dX, dY); if (sh.t === 'line') sh.pts = sh.pts.map(function (q) { return [skR(q[0] + d[0]), skR(q[1] + d[1])]; }); else { sh.x = skR(sh.x + d[0]); sh.y = skR(sh.y + d[1]); } };
+  if (key === 'l') move(v - bx.x0, 0); else if (key === 'r') move(F.Dw - v - bx.x1, 0); else if (key === 'b') move(0, v - bx.y0); else if (key === 't') move(0, F.Dh - v - bx.y1);
+  else if ((key === 'w' || key === 'h') && sh.t === 'rect') { if (!(v > 0)) return false;
+    var X0 = bx.x0, X1 = key === 'w' ? bx.x0 + v : bx.x1, Y0 = bx.y0, Y1 = key === 'h' ? bx.y0 + v : bx.y1, a = F.from(X0, Y0), b = F.from(X1, Y1);
+    sh.x = skR(Math.min(a[0], b[0])); sh.y = skR(Math.min(a[1], b[1])); sh.w = skR(Math.abs(b[0] - a[0])); sh.h = skR(Math.abs(b[1] - a[1])); }
+  else if (key === 'd' && sh.t === 'circle') { if (!(v > 0)) return false; sh.r = Math.round(v * 50) / 100; }
+  else if (/^s\.\d+$/.test(key) && sh.t === 'line') { var k = +key.split('.')[1], P = sh.pts, A = P[k], B = P[(k + 1) % P.length]; if (!A || !B || !(v > 0)) return false;
+    var L0 = Math.hypot(B[0] - A[0], B[1] - A[1]) || 1, nb = [A[0] + (B[0] - A[0]) / L0 * v, A[1] + (B[1] - A[1]) / L0 * v], dx = nb[0] - B[0], dy = nb[1] - B[1];
+    if (k + 1 >= P.length) return false; for (var i = k + 1; i < P.length; i++) P[i] = [skR(P[i][0] + dx), skR(P[i][1] + dy)]; }
+  else if (/^p[XY]\.\d+$/.test(key) && sh.t === 'line') { var j = +key.split('.')[1], q0 = sh.pts[j]; if (!q0) return false; var D = F.to(q0[0], q0[1]);
+    if (key[1] === 'X') D[0] = v; else D[1] = v; var pp = F.from(D[0], D[1]); sh.pts[j] = [skR(pp[0]), skR(pp[1])]; }
+  else return false;
+  return true;
+}
 function skSvg(p, list, selId, preview) {
-  var V = skView(p), u = Math.max(V.w, V.h) / 100, L = p.L, W = p.W, s = '';
-  s += '<rect x="0" y="' + (-W) + '" width="' + L + '" height="' + W + '" fill="#fff" stroke="#1b211e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>';
-  var gstep = Math.max(L, W) > 1500 ? 100 : 50, gl = '';
-  for (var gx = gstep; gx < L; gx += gstep) gl += 'M' + gx + ' 0V' + (-W);
-  for (var gy = gstep; gy < W; gy += gstep) gl += 'M0 ' + (-gy) + 'H' + L;
+  var F = skFrame(p, skSide()), V = skView(p, F), u = Math.max(V.w, V.h) / 100, Dw = F.Dw, Dh = F.Dh, s = '', lt = S.lang === 'lt';
+  var P = function (x, y) { var d = F.to(x, y); return [skR(d[0]), skR(-d[1])]; }, Ps = function (q) { return P(q[0], q[1]).join(','); };
+  s += '<rect x="0" y="' + (-Dh) + '" width="' + Dw + '" height="' + Dh + '" fill="#fff" stroke="#1b211e" stroke-width="1.4" vector-effect="non-scaling-stroke"/>';
+  var gstep = Math.max(Dw, Dh) > 1500 ? 100 : 50, gl = '';
+  for (var gx = gstep; gx < Dw; gx += gstep) gl += 'M' + gx + ' 0V' + (-Dh);
+  for (var gy = gstep; gy < Dh; gy += gstep) gl += 'M0 ' + (-gy) + 'H' + Dw;
   s += '<path d="' + gl + '" stroke="#e7e9e4" stroke-width="1" vector-effect="non-scaling-stroke" fill="none" pointer-events="none"/>';
-  var ebMap = { y0:[0, 0, L, 0], y1:[0, W, L, W], x0:[0, 0, 0, W], x1:[L, 0, L, W] };
-  Object.keys(p.eb || {}).forEach(function (e) { if (!p.eb[e]) return; var a = ebMap[e]; s += '<line x1="' + a[0] + '" y1="' + (-a[1]) + '" x2="' + a[2] + '" y2="' + (-a[3]) + '" stroke="#1f5fbf" stroke-opacity=".55" stroke-width="4" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
-  (p.grooves || []).forEach(function (g) { s += '<rect x="' + g.x0 + '" y="' + (-g.y1) + '" width="' + (g.x1 - g.x0) + '" height="' + (g.y1 - g.y0) + '" fill="#f1e3a0" stroke="#b39a2a" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
-  p.holes.forEach(function (h) { if (h.op === 'sketch') return; s += '<circle cx="' + skR(h.x) + '" cy="' + skR(-h.y) + '" r="' + Math.max(h.d / 2, u * 0.35) + '" fill="' + (h.through ? '#9aa09a' : 'none') + '" stroke="#8b918b" stroke-width="1" vector-effect="non-scaling-stroke"' + (h.face === 'B' && !h.through ? ' stroke-dasharray="3 2"' : '') + ' pointer-events="none"/>'; });
-  p.edges.forEach(function (e) { var x = e.edge === 'x0' ? 0 : e.edge === 'x1' ? L : e.pos, y = e.edge === 'y0' ? 0 : e.edge === 'y1' ? W : e.pos, dx = e.edge === 'x0' ? 1 : e.edge === 'x1' ? -1 : 0, dy = e.edge === 'y0' ? 1 : e.edge === 'y1' ? -1 : 0;
-    s += '<line x1="' + skR(x) + '" y1="' + skR(-y) + '" x2="' + skR(x + dx * e.depth) + '" y2="' + skR(-(y + dy * e.depth)) + '" stroke="#8b918b" stroke-width="' + e.d + '" stroke-opacity=".45" pointer-events="none"/>'; });
-  if (!preview) (p.paths || []).forEach(function (g) {   // what the tool takes away: its centre's path, as wide as the cutter
-    s += '<polyline points="' + g.pts.map(function (q) { return skR(q[0]) + ',' + skR(-q[1]); }).join(' ') + '" fill="none" stroke="#7a3fc4" stroke-opacity=".16" stroke-width="' + E.R.rout.dia + '" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>'; });
+  var ebMap = { y0:[0, 0, p.L, 0], y1:[0, p.W, p.L, p.W], x0:[0, 0, 0, p.W], x1:[p.L, 0, p.L, p.W] };
+  Object.keys(p.eb || {}).forEach(function (e) { if (!p.eb[e]) return; var a = ebMap[e], A = P(a[0], a[1]), B = P(a[2], a[3]); s += '<line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + B[0] + '" y2="' + B[1] + '" stroke="#1f5fbf" stroke-opacity=".55" stroke-width="5" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+  (p.grooves || []).forEach(function (g) { s += '<polygon points="' + [[g.x0, g.y0], [g.x1, g.y0], [g.x1, g.y1], [g.x0, g.y1]].map(Ps).join(' ') + '" fill="#f1e3a0" stroke="#b39a2a" stroke-width="1" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+  p.holes.forEach(function (h) { if (h.op === 'sketch') return; var c0 = P(h.x, h.y); s += '<circle cx="' + c0[0] + '" cy="' + c0[1] + '" r="' + Math.max(h.d / 2, u * 0.35) + '" fill="' + (h.through ? '#9aa09a' : 'none') + '" stroke="#8b918b" stroke-width="1" vector-effect="non-scaling-stroke"' + (h.face !== skSide() && !h.through ? ' stroke-dasharray="3 2"' : '') + ' pointer-events="none"/>'; });
+  p.edges.forEach(function (e) { var x = e.edge === 'x0' ? 0 : e.edge === 'x1' ? p.L : e.pos, y = e.edge === 'y0' ? 0 : e.edge === 'y1' ? p.W : e.pos, dx = e.edge === 'x0' ? 1 : e.edge === 'x1' ? -1 : 0, dy = e.edge === 'y0' ? 1 : e.edge === 'y1' ? -1 : 0, A = P(x, y), B = P(x + dx * e.depth, y + dy * e.depth);
+    s += '<line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + B[0] + '" y2="' + B[1] + '" stroke="#8b918b" stroke-width="' + e.d + '" stroke-opacity=".45" pointer-events="none"/>'; });
+  if (!preview) (p.paths || []).forEach(function (g) {   // what the cutter takes away: its centre's path, as wide as the cutter
+    s += '<polyline points="' + g.pts.map(Ps).join(' ') + '" fill="none" stroke="#7a3fc4" stroke-opacity="' + (g.face === skSide() ? 0.2 : 0.08) + '" stroke-width="' + E.R.rout.dia + '" stroke-linejoin="round" stroke-linecap="round" pointer-events="none"/>'; });
   list.forEach(function (sh, i) {
-    var o = E.skOutline(sh), on = sh.id === selId, op = sh.op || 'none', col = op === 'none' ? '#46514b' : '#7a3fc4', d = skPathD(o); if (!d) return;
-    var dash = op === 'none' ? ' stroke-dasharray="7 4"' : sh.face === 'B' ? ' stroke-dasharray="3 3"' : '';
-    s += '<path d="' + d + '" fill="' + (op === 'pocket' ? 'rgba(122,63,196,.18)' : op === 'drill' ? 'rgba(27,33,30,.85)' : 'none') + '" stroke="' + (on ? '#e07b00' : col) + '" stroke-width="' + (on ? 2.6 : 1.7) + '" vector-effect="non-scaling-stroke"' + dash + ' pointer-events="none"/>';
+    var o = E.skOutline(sh), on = sh.id === selId, op = sh.op || 'none', col = op === 'none' ? '#46514b' : '#7a3fc4'; if (o.pts.length < 2) return;
+    var d = 'M' + o.pts.map(function (q) { return P(q[0], q[1]).join(' '); }).join(' L') + (o.closed ? ' Z' : ''), other = op !== 'none' && (sh.face || 'A') !== skSide();
+    var dash = op === 'none' ? ' stroke-dasharray="7 4"' : other ? ' stroke-dasharray="3 3"' : '';
+    s += '<path d="' + d + '" fill="' + (op === 'pocket' ? 'rgba(122,63,196,.18)' : op === 'drill' ? 'rgba(27,33,30,.85)' : 'none') + '" stroke="' + (on ? '#e07b00' : col) + '" stroke-width="' + (on ? 2.6 : 1.7) + '" stroke-opacity="' + (other ? 0.55 : 1) + '" vector-effect="non-scaling-stroke"' + dash + ' pointer-events="none"/>';
     s += '<path class="sk-hit" d="' + d + '" fill="' + (o.closed ? 'rgba(0,0,0,0)' : 'none') + '" stroke="rgba(0,0,0,0)" stroke-width="14" vector-effect="non-scaling-stroke" data-skid="' + sh.id + '"/>';
-    var lx = sh.t === 'circle' ? sh.x : o.pts[0][0], ly = sh.t === 'circle' ? sh.y + sh.r : o.pts[0][1];
-    s += '<text x="' + skR(lx + u * 0.6) + '" y="' + skR(-ly - u * 0.6) + '" font-size="' + skR(u * 2.2) + '" fill="' + (on ? '#e07b00' : col) + '" font-weight="700" pointer-events="none">#' + (i + 1) + '</text>';
+    var bx = skBox(sh, F), lx = sh.t === 'circle' ? bx.x0 + sh.r : bx.x0, ly = sh.t === 'circle' ? bx.y0 + sh.r : bx.y1;
+    s += '<text x="' + skR(lx + u * 0.4) + '" y="' + skR(-ly - u * 0.6) + '" font-size="' + skR(u * 2.1) + '" fill="' + (on ? '#e07b00' : col) + '" font-weight="700" pointer-events="none">#' + (i + 1) + '</text>';
   });
+  /* the edges' names, outside the panel */
+  var fz = skR(u * 2.3), nmI = lt ? 0 : 2, tag = function (x, y, txt, rot) { return '<text x="' + skR(x) + '" y="' + skR(y) + '" font-size="' + fz + '" font-weight="700" fill="#1b211e" text-anchor="middle" letter-spacing=".08em" pointer-events="none"' + (rot ? ' transform="rotate(' + rot + ' ' + skR(x) + ' ' + skR(y) + ')"' : '') + '>' + esc(txt) + '</text>'; };
+  s += tag(Dw / 2, u * 3.3 + u * 2.6, F.names.b[nmI] + ' · ' + fmt(Dw)) + tag(Dw / 2, -Dh - u * 1.4, F.names.t[nmI] + ' · ' + fmt(Dw)) +
+    tag(-u * 1.6, -Dh / 2, F.names.l[nmI] + ' · ' + fmt(Dh), -90) + tag(Dw + u * 1.6, -Dh / 2, F.names.r[nmI] + ' · ' + fmt(Dh), 90);
   var sel = list.filter(function (sh) { return sh.id === selId; })[0];
-  if (sel && !preview) {
-    var o2 = E.skOutline(sel), xs = o2.pts.map(function (q) { return q[0]; }), ys = o2.pts.map(function (q) { return q[1]; });
-    if (xs.length) { var x0 = Math.min.apply(null, xs), x1 = Math.max.apply(null, xs), y0 = Math.min.apply(null, ys), y1 = Math.max.apply(null, ys), fz = skR(u * 1.9), dl = function (ax, ay, bx, by, t, tx, ty) {
-        return '<line x1="' + skR(ax) + '" y1="' + skR(-ay) + '" x2="' + skR(bx) + '" y2="' + skR(-by) + '" stroke="#e07b00" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" pointer-events="none"/>' +
-          '<text x="' + skR(tx) + '" y="' + skR(-ty) + '" font-size="' + fz + '" fill="#a35400" text-anchor="middle" pointer-events="none" paint-order="stroke" stroke="#fff" stroke-width="' + skR(u * 0.5) + '">' + fmt(skR(t)) + '</text>'; };
-      if (x0 > 0.05) s += dl(0, y0, x0, y0, x0, x0 / 2, y0 + u * 0.6);
-      if (x1 < L - 0.05) s += dl(x1, y1, L, y1, L - x1, (x1 + L) / 2, y1 + u * 0.6);
-      if (y0 > 0.05) s += dl(x0, 0, x0, y0, y0, x0 - u * 2.2, y0 / 2);
-      if (y1 < W - 0.05) s += dl(x1, y1, x1, W, W - y1, x1 + u * 2.2, (y1 + W) / 2); }
+  if (sel && !preview) {   // its distances from the edges and its sizes — click one to type it
+    var bx2 = skBox(sel, F), fz2 = skR(u * 2), pad = skR(u * 0.5);
+    var dim = function (key, ax, ay, bxx, byy, val, tx, ty, rot) { if (Math.abs(val) < 0.05) return '';
+      return '<line x1="' + skR(ax) + '" y1="' + skR(-ay) + '" x2="' + skR(bxx) + '" y2="' + skR(-byy) + '" stroke="#e07b00" stroke-width="1" stroke-dasharray="4 3" vector-effect="non-scaling-stroke" pointer-events="none"/>' +
+        '<text class="sk-dim" data-skdim="' + key + '" x="' + skR(tx) + '" y="' + skR(-ty) + '" font-size="' + fz2 + '" font-weight="700" fill="#a35400" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="' + pad + '"' + (rot ? ' transform="rotate(' + rot + ' ' + skR(tx) + ' ' + skR(-ty) + ')"' : '') + '>' + fmt(skR(val)) + '</text>'; };
+    var my = (bx2.y0 + bx2.y1) / 2, mx = (bx2.x0 + bx2.x1) / 2;
+    s += dim('l', 0, my, bx2.x0, my, bx2.x0, bx2.x0 / 2, my + u * 0.7) + dim('r', bx2.x1, my, Dw, my, Dw - bx2.x1, (bx2.x1 + Dw) / 2, my + u * 0.7) +
+      dim('b', mx, 0, mx, bx2.y0, bx2.y0, mx - u * 0.7, bx2.y0 / 2, -90) + dim('t', mx, bx2.y1, mx, Dh, Dh - bx2.y1, mx - u * 0.7, (bx2.y1 + Dh) / 2, -90);
+    var lab = function (key, tx, ty, txt) { return '<text class="sk-dim" data-skdim="' + key + '" x="' + skR(tx) + '" y="' + skR(-ty) + '" font-size="' + fz2 + '" font-weight="700" fill="#7a3fc4" text-anchor="middle" paint-order="stroke" stroke="#fff" stroke-width="' + pad + '">' + txt + '</text>'; };
+    if (sel.t === 'rect') s += lab('w', mx, bx2.y1 + u * 1.2, fmt(skR(bx2.x1 - bx2.x0))) + lab('h', bx2.x1 + u * 2.6, my, fmt(skR(bx2.y1 - bx2.y0)));
+    else if (sel.t === 'circle') s += lab('d', mx + sel.r + u * 3, my + u * 0.7, 'Ø' + fmt(skR(2 * sel.r)));
+    else (sel.pts || []).forEach(function (q, k) { var nx = sel.pts[k + 1]; if (!nx) return; var A = F.to(q[0], q[1]), B = F.to(nx[0], nx[1]);
+      s += lab('s.' + k, (A[0] + B[0]) / 2, (A[1] + B[1]) / 2 + u * 0.8, fmt(skR(Math.hypot(nx[0] - q[0], nx[1] - q[1])))); });
     var hs = u * 0.75;
-    skHandles(sel).forEach(function (h) { s += '<rect class="sk-h" x="' + skR(h[0] - hs) + '" y="' + skR(-h[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="#fff" stroke="#e07b00" stroke-width="1.6" vector-effect="non-scaling-stroke" data-skh="' + h[2] + '" data-skid="' + sel.id + '"/>'; });
+    skHandles(sel).forEach(function (h) { var c0 = P(h[0], h[1]); s += '<rect class="sk-h" x="' + skR(c0[0] - hs) + '" y="' + skR(c0[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="#fff" stroke="#e07b00" stroke-width="1.6" vector-effect="non-scaling-stroke" data-skh="' + h[2] + '" data-skid="' + sel.id + '"/>'; });
   }
-  var fz2 = skR(u * 2.1);
-  s += '<text x="' + skR(L / 2) + '" y="' + skR(u * 3.4) + '" font-size="' + fz2 + '" text-anchor="middle" fill="#1b211e" pointer-events="none">' + fmt(L) + '</text>';
-  s += '<text x="' + skR(-u * 1.4) + '" y="' + skR(-W / 2) + '" font-size="' + fz2 + '" text-anchor="middle" fill="#1b211e" transform="rotate(-90 ' + skR(-u * 1.4) + ' ' + skR(-W / 2) + ')" pointer-events="none">' + fmt(W) + '</text>';
-  s += '<circle cx="0" cy="0" r="' + skR(u * 0.5) + '" fill="#b4291f" pointer-events="none"/><text x="' + skR(u * 0.8) + '" y="' + skR(u * 2.6) + '" font-size="' + skR(u * 1.6) + '" fill="#b4291f" pointer-events="none">X0 Y0</text>';
   return s;
 }
 function skProps(c, p, r, sh, idx) {
-  var lt = S.lang === 'lt', n = idx + 1, o = E.skOutline(sh), op = sh.op || 'none', fn = skFaceNames(p), L = p.L, W = p.W;
+  var lt = S.lang === 'lt', n = idx + 1, o = E.skOutline(sh), op = sh.op || 'none', fn = skFaceNames(p), F = skFrame(p, skSide()), bx = skBox(sh, F), N = F.names, g = lt ? 1 : 3;
   var fld = function (label, f, val) { return '<label class="f sk-f"><span>' + label + '</span><input type="text" inputmode="decimal" data-skf="' + f + '" value="' + esc(String(skR(val))) + '"></label>'; };
+  var from = function (k) { return (lt ? 'nuo ' : 'from ') + N[k][g]; };
   var geo = '';
-  if (sh.t === 'rect') geo = '<div class="row sk-row">' + fld(lt ? 'X nuo kairės' : 'X from left', 'x', sh.x) + fld(lt ? 'iki dešinės' : 'to the right', 'xr', L - sh.x - sh.w) + fld(lt ? 'Y nuo apačios' : 'Y from bottom', 'y', sh.y) + fld(lt ? 'iki viršaus' : 'to the top', 'yt', W - sh.y - sh.h) + '</div>' +
-    '<div class="row sk-row">' + fld(lt ? 'Plotis (X)' : 'Width (X)', 'w', sh.w) + fld(lt ? 'Aukštis (Y)' : 'Height (Y)', 'h', sh.h) + '</div>';
-  else if (sh.t === 'circle') geo = '<div class="row sk-row">' + fld(lt ? 'Centras X' : 'Centre X', 'x', sh.x) + fld(lt ? 'iki dešinės' : 'to the right', 'xr', L - sh.x) + fld(lt ? 'Centras Y' : 'Centre Y', 'y', sh.y) + fld(lt ? 'iki viršaus' : 'to the top', 'yt', W - sh.y) + fld('Ø', 'd', 2 * sh.r) + '</div>';
-  else geo = '<div class="sk-pts">' + (sh.pts || []).map(function (q, k) { return '<div class="sk-pt"><span class="unit">' + (k + 1) + '</span>' + fld('X', 'px.' + k, q[0]) + fld('Y', 'py.' + k, q[1]) +
-      ((sh.pts.length > 2) ? '<button type="button" class="btn ghost" data-act="skptdel" data-i="' + k + '" title="' + (lt ? 'Pašalinti tašką' : 'Remove the point') + '">✕</button>' : '') + '</div>'; }).join('') + '</div>' +
+  if (sh.t === 'rect' || sh.t === 'circle') geo = '<div class="row sk-row">' + fld('← ' + from('l'), 'l', bx.x0) + fld('→ ' + from('r'), 'r', F.Dw - bx.x1) + fld('↓ ' + from('b'), 'b', bx.y0) + fld('↑ ' + from('t'), 't', F.Dh - bx.y1) + '</div>' +
+    (sh.t === 'rect' ? '<div class="row sk-row">' + fld((lt ? 'Plotis' : 'Width') + ' ↔', 'w', bx.x1 - bx.x0) + fld((lt ? 'Aukštis' : 'Height') + ' ↕', 'h', bx.y1 - bx.y0) + '</div>' : '<div class="row sk-row">' + fld('Ø', 'd', 2 * sh.r) + '</div>') +
+    (sh.t === 'circle' ? '<p class="note" style="margin:0">' + (lt ? 'Atstumai — iki centro.' : 'Distances to the centre.') + '</p>' : '');
+  else geo = '<div class="row sk-row">' + fld('← ' + from('l'), 'l', bx.x0) + fld('↓ ' + from('b'), 'b', bx.y0) + '</div><div class="sk-pts">' + (sh.pts || []).map(function (q, k) { var D = F.to(q[0], q[1]);
+      return '<div class="sk-pt"><span class="unit">' + (k + 1) + '</span>' + fld('↔ ' + from('l'), 'pX.' + k, D[0]) + fld('↕ ' + from('b'), 'pY.' + k, D[1]) +
+        (sh.pts[k + 1] ? fld(lt ? 'ilgis iki ' + (k + 2) : 'length to ' + (k + 2), 's.' + k, Math.hypot(sh.pts[k + 1][0] - q[0], sh.pts[k + 1][1] - q[1])) : '') +
+        ((sh.pts.length > 2) ? '<button type="button" class="btn ghost" data-act="skptdel" data-i="' + k + '" title="' + (lt ? 'Pašalinti tašką' : 'Remove the point') + '">✕</button>' : '') + '</div>'; }).join('') + '</div>' +
     ((sh.pts || []).length > 2 ? '<label class="chk"><input type="checkbox" data-skf="closed"' + (sh.closed ? ' checked' : '') + '> ' + (lt ? 'Uždaras kontūras' : 'Closed outline') + '</label>' : '');
   var canOp = function (k) { return k === 'none' || k === 'on' || (k === 'drill' ? sh.t === 'circle' && E.R.drills.top.indexOf(Math.round(2 * sh.r * 100) / 100) >= 0 : o.closed); };
   var ops = '<div class="sk-ops">' + SK_OPS.map(function (x) { var ok = canOp(x[0]);
@@ -12471,38 +12549,39 @@ function skProps(c, p, r, sh, idx) {
   if (op !== 'none') {
     var maxD = p.T - E.R.rout.skin;
     how = '<div class="row sk-row" style="align-items:flex-end">' +
-      '<div class="f"><span>' + (lt ? 'Iš kurios pusės' : 'From which face') + '</span>' + '<div class="seg" role="group">' + [['A', fn[0]], ['B', fn[1]]].map(function (o) { var on = (sh.face === 'B' ? 'B' : 'A') === o[0]; return '<button type="button" data-act="skface" data-v="' + o[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + esc(o[1]) + '</button>'; }).join('') + '</div>' + '</div>' +
+      '<div class="f"><span>' + (lt ? 'Iš kurios pusės' : 'From which face') + '</span><div class="seg" role="group">' + [['A', fn[0]], ['B', fn[1]]].map(function (x) { var on = (sh.face === 'B' ? 'B' : 'A') === x[0]; return '<button type="button" data-act="skface" data-v="' + x[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + esc(x[1]) + '</button>'; }).join('') + '</div></div>' +
       (sh.through ? '' : fld(lt ? 'Gylis, mm' : 'Depth, mm', 'depth', sh.depth == null ? 8 : sh.depth)) +
       '<label class="chk"><input type="checkbox" data-skf="through"' + (sh.through ? ' checked' : '') + '> ' + (lt ? 'Kiaurai' : 'Through') + '</label></div>' +
       '<p class="note" style="margin:4px 0 0">' + (op === 'drill' ? (lt ? 'Gręžiama ø' : 'Drilled ø') + fmt(2 * sh.r) + (sh.through ? (lt ? ' kiaurai' : ' through') : '') :
         (lt ? 'Freza ø' : 'Cutter ø') + fmt(E.R.rout.dia) + (sh.through ? (lt ? ', kiaurai paliekama ' + E.R.rout.skin + ' mm (' + fmt(maxD) + ' mm gylio) — išlaužiama rankomis' : ', through leaves ' + E.R.rout.skin + ' mm (' + fmt(maxD) + ' deep) — broken out by hand') : '') +
         (op === 'in' || op === 'pocket' ? (lt ? '; vidiniai kampai lieka R' + fmt(E.R.rout.dia / 2) : '; inside corners stay R' + fmt(E.R.rout.dia / 2)) : '') +
-        (lt ? '. Frezos kelias rodomas violetine juosta.' : '. The cutter\'s path is the violet band.')) + '</p>';
+        (lt ? '. Frezos kelias — violetinė juosta.' : '. The cutter\'s path is the violet band.')) + '</p>';
   }
   var tag = p.short + ' eskizas #' + n + ':', ws = ((r && r.warnings) || []).filter(function (w) { return w.indexOf(tag) === 0; }).map(function (w) { return '<p class="sk-warn">⚠ ' + esc(w.slice(tag.length).trim()) + '</p>'; }).join('');
   var tn = sh.t === 'rect' ? (lt ? 'Stačiakampis' : 'Rectangle') : sh.t === 'circle' ? (lt ? 'Apskritimas' : 'Circle') : (lt ? 'Linija' : 'Line') + ' (' + (sh.pts || []).length + (lt ? ' tšk.' : ' pts') + ')';
   return '<div class="sk-props"><div class="sk-ph"><b>#' + n + ' ' + tn + '</b><span class="sk-pb"><button type="button" class="btn ghost" data-act="skdup">' + (lt ? 'Kopija' : 'Copy') + '</button><button type="button" class="btn ghost danger" data-act="skdel">' + (lt ? 'Ištrinti' : 'Delete') + '</button></span></div>' +
-    geo + '<div class="lbl" style="margin-top:8px">' + (lt ? 'Ką daryti' : 'What to do') + '</div>' + ops + how + ws + '</div>';
+    '<div class="lbl">' + (lt ? 'Kur ir kokio dydžio' : 'Where and how big') + ' <span class="unit">' + (lt ? '— arba spustelėkite matmenį brėžinyje' : '— or click a size on the drawing') + '</span></div>' + geo +
+    '<div class="lbl" style="margin-top:8px">' + (lt ? 'Ką daryti' : 'What to do') + '</div>' + ops + how + ws + '</div>';
 }
 function skEditor(c, p, r) {
-  var K = S.sk, lt = S.lang === 'lt', list = skList(c, p.key), idx = -1;
+  var K = S.sk, lt = S.lang === 'lt', list = skList(c, p.key), idx = -1, fn = skFaceNames(p);
   list.forEach(function (sh, i) { if (sh.id === K.sel) idx = i; });
   var tool = function (k, lab, key) { return '<button type="button" class="btn' + (K.tool === k ? ' on' : '') + '" data-act="sktool" data-v="' + k + '" title="' + esc(key) + '">' + lab + '</button>'; };
   var V = skView(p);
-  var hint = { sel:lt ? 'Spustelėkite figūrą — ją pažymėsite; tempkite figūrą ar jos kampus. Tempiant tuščią vietą — slenkamas vaizdas, ratuku — artinama. Delete — ištrinti.' : 'Click a shape to select it; drag it or its grips. Drag empty space to pan, wheel to zoom. Delete removes it.',
-    line:lt ? 'Spauskite taškus. Ilgį galima įvesti klaviatūra (pvz. 300 ir Enter, arba 200,50). Enter arba dukart spustelėjus — baigti, spustelėjus pirmą tašką — uždaryti. Esc — atšaukti.' : 'Click the points. Type a length (300 Enter, or 200,50). Enter or double click finishes, the first point closes it. Esc cancels.',
-    rect:lt ? 'Spustelėkite kampą ir priešingą kampą (arba tempkite). Dydį galima įvesti: 200,100 ir Enter. Pradžios tašką — X,Y prieš pirmą spustelėjimą.' : 'Click a corner and the opposite one (or drag). Type the size: 200,100 Enter. Type X,Y before the first click to start there.',
-    circle:lt ? 'Spustelėkite centrą, tada kraštą — arba įveskite skersmenį ir Enter. Centrą — X,Y prieš pirmą spustelėjimą.' : 'Click the centre, then the rim — or type the diameter and Enter. Type X,Y before the first click for the centre.' }[K.tool] || '';
+  var hint = { sel:lt ? 'Spustelėkite figūrą — pažymėsite; tempkite ją ar jos kampus. Oranžinius matmenis spustelėkite ir įveskite tikslų dydį. Tempiant tuščią vietą — slenkama, ratuku — artinama.' : 'Click a shape to select it; drag it or its grips. Click an orange size to type it. Drag empty space to pan, wheel to zoom.',
+    line:lt ? 'Spauskite taškus. Ilgį rašykite klaviatūra (300 ir Enter — ta kryptimi, kur pelė; 200,50 — poslinkis). Enter arba dukart — baigti, pirmas taškas — uždaryti.' : 'Click the points. Type a length (300 Enter — towards the pointer; 200,50 — an offset). Enter or double click finishes, the first point closes it.',
+    rect:lt ? 'Spustelėkite kampą ir priešingą kampą (arba tempkite). Dydis: 200,100 ir Enter. Paskui matmenis galima pataisyti spustelėjus.' : 'Click a corner and the opposite one (or drag). Size: 200,100 Enter. Fix the sizes afterwards by clicking them.',
+    circle:lt ? 'Spustelėkite centrą, tada kraštą — arba įveskite skersmenį ir Enter.' : 'Click the centre, then the rim — or type the diameter and Enter.' }[K.tool] || '';
   var rows = list.map(function (sh, i) { var op = sh.op || 'none';
     return '<button type="button" class="sk-li' + (sh.id === K.sel ? ' on' : '') + '" data-act="sksel" data-v="' + sh.id + '"><b>#' + (i + 1) + '</b> ' + (sh.t === 'rect' ? '▭ ' + fmt(skR(sh.w)) + '×' + fmt(skR(sh.h)) : sh.t === 'circle' ? '◯ Ø' + fmt(skR(2 * sh.r)) : '╱ ' + (sh.pts || []).length + (lt ? ' tšk.' : ' pts')) +
-      ' · <span class="' + (op === 'none' ? 'unit' : 'sk-op') + '">' + esc(skOpName(op)) + (op !== 'none' && op !== 'drill' || op === 'drill' ? (sh.through ? (lt ? ', kiaurai' : ', through') : op !== 'none' ? ', ' + fmt(sh.depth == null ? 8 : sh.depth) + ' mm' : '') : '') + '</span></button>'; }).join('');
-  return '<div class="sk-ed"><div class="sk-head"><b>' + esc(p.short) + '</b><span class="unit">' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + fmt(p.T) + ' · ' + esc(p.mat || '') + '</span><span class="sk-face">' + (lt ? 'Žiūrima iš: ' : 'Seen from: ') + '<b>' + esc(skFaceNames(p)[0]) + '</b></span></div>' +
+      ' · <span class="' + (op === 'none' ? 'unit' : 'sk-op') + '">' + esc(skOpName(op)) + (op === 'none' ? '' : sh.through ? (lt ? ', kiaurai' : ', through') : ', ' + fmt(sh.depth == null ? 8 : sh.depth) + ' mm') + (op !== 'none' && (sh.face || 'A') !== skSide() ? (lt ? ' (kitoje pusėje)' : ' (other face)') : '') + '</span></button>'; }).join('');
+  var sides = '<div class="seg sk-side" role="group">' + [['A', fn[0]], ['B', fn[1]]].map(function (x) { var on = skSide() === x[0]; return '<button type="button" data-act="skside" data-v="' + x[0] + '" class="' + (on ? 'on' : '') + '" aria-pressed="' + on + '">' + esc(x[1]) + '</button>'; }).join('') + '</div>';
+  return '<div class="sk-ed"><div class="sk-head"><b>' + esc(p.short) + '</b><span class="unit">' + fmt(p.L) + ' × ' + fmt(p.W) + ' × ' + fmt(p.T) + ' · ' + esc(p.mat || '') + '</span><span class="sk-face">' + (lt ? 'Žiūrima iš:' : 'Seen from:') + sides + '</span></div>' +
     '<div class="sk-tools">' + tool('sel', '⌖ ' + (lt ? 'Rinktis' : 'Select'), 'V') + tool('line', '╱ ' + (lt ? 'Linija' : 'Line'), 'L') + tool('rect', '▭ ' + (lt ? 'Stačiakampis' : 'Rectangle'), 'R') + tool('circle', '◯ ' + (lt ? 'Apskritimas' : 'Circle'), 'C') +
       '<label class="sk-grid">' + (lt ? 'Tinklelis' : 'Grid') + ' <select id="sk-grid">' + [1, 5, 10, 50].map(function (g) { return '<option value="' + g + '"' + ((K.grid || 5) === g ? ' selected' : '') + '>' + g + ' mm</option>'; }).join('') + '</select></label>' +
       '<button type="button" class="btn ghost" data-act="skfit">⤢ ' + (lt ? 'Visa detalė' : 'Fit') + '</button></div>' +
-    '<div class="sk-wrap"><svg class="sk-svg tool-' + K.tool + '" viewBox="' + skR(V.x) + ' ' + skR(V.y) + ' ' + skR(V.w) + ' ' + skR(V.h) + '" preserveAspectRatio="xMidYMid meet" font-family="IBM Plex Mono,monospace">' + skSvg(p, list, K.sel) + '<g class="sk-live"></g></svg><div class="sk-hud"></div></div>' +
+    '<div class="sk-wrap"><svg class="sk-svg tool-' + K.tool + '" viewBox="' + skR(V.x) + ' ' + skR(V.y) + ' ' + skR(V.w) + ' ' + skR(V.h) + '" preserveAspectRatio="xMidYMid meet" font-family="IBM Plex Sans,system-ui,sans-serif">' + skSvg(p, list, K.sel) + '<g class="sk-live"></g></svg><div class="sk-hud"></div></div>' +
     '<p class="note sk-hint">' + hint + '</p>' +
-    '<p class="note" style="margin:0 0 8px">' + esc(noteTxt(p.note)) + '</p>' +
     '<div class="sk-below">' + (idx >= 0 ? skProps(c, p, r, list[idx], idx) : '') +
     (list.length ? '<div class="sk-list">' + rows + '</div>' : '<p class="note">' + (lt ? 'Šioje detalėje operacijų dar nėra — pasirinkite įrankį ir braižykite.' : 'No operations on this part yet — pick a tool and draw.') + '</p>') + '</div></div>';
 }
@@ -12515,7 +12594,7 @@ function skModal() {
     '<div class="jcbody"><div class="sk-cols"><div class="sk-left">' + ecModel(c, r, 'sk') + '<div class="sk-chips">' + chips + '</div>' +
       (orphan.length ? '<p class="sk-warn">⚠ ' + esc((lt ? 'Operacijos detalėms, kurių spintelėje nebėra: ' : 'Operations on parts no longer in the cabinet: ') + orphan.join(', ')) + ' <button type="button" class="btn ghost" data-act="skorphan">' + (lt ? 'Ištrinti' : 'Delete') + '</button></p>' : '') + '</div>' +
       '<div class="sk-right">' + (p ? skEditor(c, p, r) : '<div class="card empty">' + (lt ? 'Pasirinkite detalę modelyje arba sąraše.' : 'Pick a part on the model or in the list.') + '</div>') + '</div></div></div>' +
-    '<div class="jcfoot"><span class="note">' + (lt ? 'Operacijos patenka į detalės CNC programas (Detalės ir CNC).' : 'The operations go into the part\'s CNC programs (Parts and CNC).') + '</span><button type="button" class="btn pri big" data-act="skclose" data-force="1">✓ ' + (lt ? 'Baigti' : 'Done') + '</button></div></div></div>';
+    '<div class="jcfoot"><span class="note">' + (lt ? 'Operacijos patenka į detalės CNC programas ir rodomos spintelės 3D peržiūroje.' : 'The operations go into the part\'s CNC programs and show in the cabinet\'s 3D preview.') + '</span><button type="button" class="btn pri big" data-act="skclose" data-force="1">✓ ' + (lt ? 'Baigti' : 'Done') + '</button></div></div></div>';
 }
 function skBanner(c) {
   if (!c || c.dishwasher) return ''; var n = skCount(c), lt = S.lang === 'lt';
@@ -12525,53 +12604,50 @@ function skUndoPush(c, prev) { S.undo.push({ id:c.id, joints:clone(c.cnc.joints 
 function skCtx() {
   var K = S.sk; if (!K || !K.key) return null; var c = S.proj && S.proj.cabinets[K.cab], inf = S._info && S._info[K.cab]; if (!c || !inf || !inf.r) return null;
   var p = inf.r.panels.filter(function (q) { return q.key === K.key; })[0]; if (!p) return null;
-  return { K:K, c:c, p:p, r:inf.r, list:skList(c, p.key) };
+  return { K:K, c:c, p:p, r:inf.r, list:skList(c, p.key), F:skFrame(p, skSide()) };
 }
 function skSelShape(X) { return X && X.list.filter(function (sh) { return sh.id === X.K.sel; })[0]; }
 function skAdd(X, sh) {
   var prev = clone(X.c.sketch || {}), m = X.c.sketch = X.c.sketch || {}, l = m[X.p.key] = m[X.p.key] || [];
-  sh.id = l.reduce(function (a, q) { return Math.max(a, q.id || 0); }, 0) + 1; sh.op = sh.op || 'none'; sh.face = 'A'; sh.depth = 8;
+  sh.id = l.reduce(function (a, q) { return Math.max(a, q.id || 0); }, 0) + 1; sh.op = sh.op || 'none'; sh.face = skSide(); sh.depth = 8;
   l.push(sh); skUndoPush(X.c, prev); X.K.sel = sh.id; X.K.draft = null; save(); render();
 }
-function skChange(fn) {   // change the selected shape: undo step, save, redraw
+function skChange(fn) {   // change the selected shape: undo step, save
   var X = skCtx(), sh = skSelShape(X); if (!sh) return false;
   var prev = clone(X.c.sketch || {}); if (fn(sh, X) === false) return false;
   skUndoPush(X.c, prev); save(); return true;
 }
+function skNum(v) { var x = parseFloat(String(v).replace(',', '.').replace(/[−–]/g, '-')); return isFinite(x) ? x : null; }
 function skField(el) {
   var f = el.getAttribute('data-skf'), lt = S.lang === 'lt';
-  var ok = skChange(function (sh, X) {
+  skChange(function (sh, X) {
     if (f === 'through' || f === 'closed') { sh[f] = !!el.checked; return; }
-    var v = parseFloat(String(el.value).replace(',', '.').replace(/[−–]/g, '-')); if (!isFinite(v)) { toast(lt ? 'Įveskite skaičių' : 'Enter a number', true); return false; }
-    var L = X.p.L, W = X.p.W;
+    var v = skNum(el.value); if (v == null) { toast(lt ? 'Įveskite skaičių' : 'Enter a number', true); return false; }
     if (f === 'depth') { if (!(v > 0)) { toast(lt ? 'Gylis turi būti didesnis už 0' : 'The depth must be above 0', true); return false; } sh.depth = v; return; }
-    if (/^p[xy]\.\d+$/.test(f)) { var k = +f.split('.')[1]; if (!sh.pts || !sh.pts[k]) return false; sh.pts[k][f[1] === 'x' ? 0 : 1] = v; return; }
-    if (sh.t === 'rect') { if (f === 'w' || f === 'h') { if (!(v > 0)) { toast(lt ? 'Dydis turi būti didesnis už 0' : 'The size must be above 0', true); return false; } sh[f] = v; }
-      else if (f === 'x' || f === 'y') sh[f] = v; else if (f === 'xr') sh.x = L - sh.w - v; else if (f === 'yt') sh.y = W - sh.h - v; return; }
-    if (sh.t === 'circle') { if (f === 'd') { if (!(v > 0)) { toast(lt ? 'Skersmuo turi būti didesnis už 0' : 'The diameter must be above 0', true); return false; } sh.r = v / 2; }
-      else if (f === 'x' || f === 'y') sh[f] = v; else if (f === 'xr') sh.x = L - v; else if (f === 'yt') sh.y = W - v; return; }
-    return false;
+    if (skSetDim(sh, f, v, X.F) === false) { toast(lt ? 'Netinkamas dydis' : 'Not a usable size', true); return false; }
   });
-  void ok; render();
+  render();
 }
 var SK_IO = { downOver:false };
 (function () {   // drawing on the part: pointer, wheel and keys; while drawing only the drawing is redrawn, the page when a shape is done
   var D = null, typed = '', cur = null, snapInfo = null;
   var svgEl = function () { return document.querySelector('.sk-svg'); };
-  var toMM = function (e, sv) { var m = sv.getScreenCTM(); if (!m) return [0, 0]; var pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; var q = pt.matrixTransform(m.inverse()); return [q.x, -q.y]; };
+  var toShown = function (e, sv) { var m = sv.getScreenCTM(); if (!m) return [0, 0]; var pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; var q = pt.matrixTransform(m.inverse()); return [q.x, -q.y]; };
+  var toProg = function (e, sv, X) { var d = toShown(e, sv); return X.F.from(d[0], d[1]); };
   var mmPx = function (sv) { var m = sv && sv.getScreenCTM(); return m && m.a ? 1 / m.a : 1; };
   var grid = function () { return (S.sk && S.sk.grid) || 5; };
   var setVB = function (sv, v) { S.sk.view = v; sv.setAttribute('viewBox', skR(v.x) + ' ' + skR(v.y) + ' ' + skR(v.w) + ' ' + skR(v.h)); };
-  /* snapping: points (corners, ends, middles, centres, holes) first, then lining up with them, the panel's edges, the last point; else the grid */
+  var sP = function (X, q) { var d = X.F.to(q[0], q[1]); return [skR(d[0]), skR(-d[1])]; };
+  /* snapping (program coordinates): points (corners, ends, middles, centres, holes) first, then lining up with them, the panel's edges, the last point; else the grid */
   function snap(P, X, prev, e, exclId) {
     var sv = svgEl(), tol = 9 * mmPx(sv), L = X.p.L, W = X.p.W, pts = [[0, 0], [L, 0], [L, W], [0, W], [L / 2, 0], [L / 2, W], [0, W / 2], [L, W / 2], [L / 2, W / 2]];
     X.list.forEach(function (sh) { if (sh.id === exclId) return; var o = E.skOutline(sh);
       if (sh.t === 'circle') { pts.push([sh.x, sh.y], [sh.x + sh.r, sh.y], [sh.x - sh.r, sh.y], [sh.x, sh.y + sh.r], [sh.x, sh.y - sh.r]); return; }
       o.pts.forEach(function (q, i) { pts.push(q); var nx = o.pts[(i + 1) % o.pts.length]; if (i < o.pts.length - 1 || o.closed) pts.push([(q[0] + nx[0]) / 2, (q[1] + nx[1]) / 2]); });
       if (sh.t === 'rect') pts.push([sh.x + sh.w / 2, sh.y + sh.h / 2]); });
-    var nAl = pts.length; X.p.holes.forEach(function (h) { if (h.op !== 'sketch') pts.push([h.x, h.y]); });   // holes: to snap onto, not to line up with
     var dr = S.sk.draft; if (dr && dr.pts && dr.pts.length > 2) pts.push(dr.pts[0]);
     if (dr && dr.pts) dr.pts.slice(0, -1).forEach(function (q) { pts.push(q); });
+    var nAl = pts.length; X.p.holes.forEach(function (h) { if (h.op !== 'sketch') pts.push([h.x, h.y]); });   // holes: to snap onto, not to line up with
     var best = null, bd = tol;
     pts.forEach(function (q) { var d = Math.hypot(q[0] - P[0], q[1] - P[1]); if (d < bd) { bd = d; best = q; } });
     if (best) return { p:[best[0], best[1]], kind:'pt', guides:[] };
@@ -12588,31 +12664,34 @@ var SK_IO = { downOver:false };
     var q = typed.trim().replace(/[x×*; ]+/g, ',').split(',').filter(function (z) { return z !== ''; }).map(Number);
     if (!q.length || q.length > 2 || q.some(function (z) { return !isFinite(z); })) return null; return [q[0], q.length > 1 ? q[1] : null]; }
   function hud(X) {
-    var el = document.querySelector('.sk-hud'); if (!el) return; var lt = S.lang === 'lt', dr = S.sk.draft, t2 = [];
-    if (cur) t2.push('X ' + fmt(skR(cur[0])) + '  Y ' + fmt(skR(cur[1])));
+    var el = document.querySelector('.sk-hud'); if (!el) return; var lt = S.lang === 'lt', dr = S.sk.draft, t2 = [], F = X.F;
+    if (cur && S.sk.tool !== 'sel') { var cd = F.to(cur[0], cur[1]); t2.push('← ' + fmt(skR(cd[0])) + '   ↓ ' + fmt(skR(cd[1]))); }
     if (dr && cur) {
-      if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], len = Math.hypot(cur[0] - a[0], cur[1] - a[1]), ang = Math.atan2(cur[1] - a[1], cur[0] - a[0]) * 180 / Math.PI; t2.push((lt ? 'ilgis ' : 'length ') + fmt(skR(len)) + ' · ' + fmt(Math.round(ang * 10) / 10) + '°'); }
+      if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], len = Math.hypot(cur[0] - a[0], cur[1] - a[1]), A = F.to(a[0], a[1]), B = F.to(cur[0], cur[1]), ang = Math.atan2(B[1] - A[1], B[0] - A[0]) * 180 / Math.PI; t2.push((lt ? 'ilgis ' : 'length ') + fmt(skR(len)) + ' · ' + fmt(Math.round(ang * 10) / 10) + '°'); }
       if (dr.t === 'rect') t2.push(fmt(skR(Math.abs(cur[0] - dr.a[0]))) + ' × ' + fmt(skR(Math.abs(cur[1] - dr.a[1]))));
       if (dr.t === 'circle') t2.push('Ø ' + fmt(skR(2 * Math.hypot(cur[0] - dr.a[0], cur[1] - dr.a[1]))));
     }
-    if (typed) t2.push('⌨ ' + typed + '▌');
+    if (typed) t2.push('⌨ ' + typed + '▌ Enter');
+    else if (S.sk.tool !== 'sel') t2.push(lt ? (dr ? (dr.t === 'line' ? 'rašykite ilgį' : dr.t === 'rect' ? 'rašykite plotis,aukštis' : 'rašykite Ø') : 'X,Y — pradžia') : (dr ? 'type the size' : 'X,Y — start'));
     el.textContent = t2.join('   '); el.style.display = t2.length ? 'block' : 'none';
   }
   function live(X) {
     var sv = svgEl(), g = sv && sv.querySelector('.sk-live'); if (!g) return;
-    var V = skView(X.p), u = Math.max(V.w, V.h) / 100, dr = S.sk.draft, s = '', st = ' stroke="#e07b00" stroke-width="1.8" vector-effect="non-scaling-stroke" fill="none" pointer-events="none"';
+    var V = skView(X.p, X.F), u = Math.max(V.w, V.h) / 100, dr = S.sk.draft, s = '', st = ' stroke="#e07b00" stroke-width="1.8" vector-effect="non-scaling-stroke" fill="none" pointer-events="none"';
+    var pl = function (pts, closed) { return '<path d="M' + pts.map(function (q) { return sP(X, q).join(' '); }).join(' L') + (closed ? ' Z' : '') + '"' + st + '/>'; };
     if (dr && cur) {
-      if (dr.t === 'line') s += '<path d="' + skPathD({ pts:dr.pts.concat([cur]), closed:false }) + '"' + st + '/>';
-      if (dr.t === 'rect') { var x0 = Math.min(dr.a[0], cur[0]), y0 = Math.min(dr.a[1], cur[1]); s += '<rect x="' + skR(x0) + '" y="' + skR(-Math.max(dr.a[1], cur[1])) + '" width="' + skR(Math.abs(cur[0] - dr.a[0])) + '" height="' + skR(Math.abs(cur[1] - dr.a[1])) + '"' + st + '/>'; }
-      if (dr.t === 'circle') s += '<circle cx="' + skR(dr.a[0]) + '" cy="' + skR(-dr.a[1]) + '" r="' + skR(Math.hypot(cur[0] - dr.a[0], cur[1] - dr.a[1])) + '"' + st + '/><line x1="' + skR(dr.a[0]) + '" y1="' + skR(-dr.a[1]) + '" x2="' + skR(cur[0]) + '" y2="' + skR(-cur[1]) + '"' + st + ' stroke-dasharray="4 3"/>';
+      if (dr.t === 'line') s += pl(dr.pts.concat([cur]));
+      if (dr.t === 'rect') s += pl([dr.a, [cur[0], dr.a[1]], cur, [dr.a[0], cur[1]]], true);
+      if (dr.t === 'circle') { var c0 = sP(X, dr.a), e0 = sP(X, cur); s += '<circle cx="' + c0[0] + '" cy="' + c0[1] + '" r="' + skR(Math.hypot(cur[0] - dr.a[0], cur[1] - dr.a[1])) + '"' + st + '/><line x1="' + c0[0] + '" y1="' + c0[1] + '" x2="' + e0[0] + '" y2="' + e0[1] + '"' + st + ' stroke-dasharray="4 3"/>'; }
     }
-    if (dr && dr.pts) dr.pts.forEach(function (q) { s += '<circle cx="' + skR(q[0]) + '" cy="' + skR(-q[1]) + '" r="' + skR(u * 0.45) + '" fill="#e07b00" pointer-events="none"/>'; });
-    if (dr && dr.a) s += '<circle cx="' + skR(dr.a[0]) + '" cy="' + skR(-dr.a[1]) + '" r="' + skR(u * 0.45) + '" fill="#e07b00" pointer-events="none"/>';
+    var dot = function (q) { var d = sP(X, q); return '<circle cx="' + d[0] + '" cy="' + d[1] + '" r="' + skR(u * 0.45) + '" fill="#e07b00" pointer-events="none"/>'; };
+    if (dr && dr.pts) dr.pts.forEach(function (q) { s += dot(q); });
+    if (dr && dr.a) s += dot(dr.a);
     if (cur && S.sk.tool !== 'sel') {
-      (snapInfo && snapInfo.guides || []).forEach(function (gd) { s += '<line x1="' + skR(gd[0]) + '" y1="' + skR(-gd[1]) + '" x2="' + skR(gd[2]) + '" y2="' + skR(-gd[3]) + '" stroke="#2f7d55" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
-      var c0 = snapInfo && snapInfo.kind === 'pt' ? '#2f7d55' : '#e07b00', hs = u * (snapInfo && snapInfo.kind === 'pt' ? 1 : 0.6);
-      s += snapInfo && snapInfo.kind === 'pt' ? '<rect x="' + skR(cur[0] - hs) + '" y="' + skR(-cur[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="none" stroke="' + c0 + '" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>'
-        : '<path d="M' + skR(cur[0] - hs) + ' ' + skR(-cur[1]) + 'h' + skR(2 * hs) + 'M' + skR(cur[0]) + ' ' + skR(-cur[1] - hs) + 'v' + skR(2 * hs) + '" stroke="' + c0 + '" stroke-width="1.5" vector-effect="non-scaling-stroke" pointer-events="none"/>';
+      (snapInfo && snapInfo.guides || []).forEach(function (gd) { var A = sP(X, [gd[0], gd[1]]), B = sP(X, [gd[2], gd[3]]); s += '<line x1="' + A[0] + '" y1="' + A[1] + '" x2="' + B[0] + '" y2="' + B[1] + '" stroke="#2f7d55" stroke-width="1" stroke-dasharray="3 3" vector-effect="non-scaling-stroke" pointer-events="none"/>'; });
+      var isPt = snapInfo && snapInfo.kind === 'pt', c1 = isPt ? '#2f7d55' : '#e07b00', hs = u * (isPt ? 1 : 0.6), C = sP(X, cur);
+      s += isPt ? '<rect x="' + skR(C[0] - hs) + '" y="' + skR(C[1] - hs) + '" width="' + skR(2 * hs) + '" height="' + skR(2 * hs) + '" fill="none" stroke="' + c1 + '" stroke-width="2" vector-effect="non-scaling-stroke" pointer-events="none"/>'
+        : '<path d="M' + skR(C[0] - hs) + ' ' + C[1] + 'h' + skR(2 * hs) + 'M' + C[0] + ' ' + skR(C[1] - hs) + 'v' + skR(2 * hs) + '" stroke="' + c1 + '" stroke-width="1.5" vector-effect="non-scaling-stroke" pointer-events="none"/>';
     }
     g.innerHTML = s; hud(X);
   }
@@ -12621,7 +12700,7 @@ var SK_IO = { downOver:false };
     if (pts.length < 2) { S.sk.draft = null; live(X); return; } skAdd(X, { t:'line', pts:pts.map(function (q) { return [skR(q[0]), skR(q[1])]; }), closed:!!closed && pts.length > 2 }); }
   function addRect(X, a, b) { var w = Math.abs(b[0] - a[0]), h = Math.abs(b[1] - a[1]); if (w < 0.5 || h < 0.5) return false; skAdd(X, { t:'rect', x:skR(Math.min(a[0], b[0])), y:skR(Math.min(a[1], b[1])), w:skR(w), h:skR(h) }); return true; }
   function addCircle(X, a, rr) { if (!(rr >= 0.5)) return false; skAdd(X, { t:'circle', x:skR(a[0]), y:skR(a[1]), r:Math.round(rr * 100) / 100 }); return true; }
-  function clickPoint(X, P, e) {   // a click (or a typed point) with a drawing tool
+  function clickPoint(X, P) {   // a click (or a typed point) with a drawing tool
     var K = X.K, dr = K.draft;
     if (K.tool === 'line') {
       if (!dr) { K.draft = { t:'line', pts:[P] }; return; }
@@ -12633,45 +12712,61 @@ var SK_IO = { downOver:false };
     if (!dr) { K.draft = { t:K.tool, a:P }; return; }
     if (K.tool === 'rect') addRect(X, dr.a, P); else addCircle(X, dr.a, Math.hypot(P[0] - dr.a[0], P[1] - dr.a[1]));
   }
-  function applyTyped(X) {
-    var v = parseTyped(), K = X.K, dr = K.draft; typed = ''; if (!v) { live(X); return; }
-    if (!dr) { if (v[1] == null) { toast(S.lang === 'lt' ? 'Pradžios taškas: X,Y (pvz. 100,50)' : 'Start point: X,Y (e.g. 100,50)', true); live(X); return; } clickPoint(X, [v[0], v[1]]); cur = [v[0], v[1]]; live(X); return; }
-    if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], q;
-      if (v[1] != null) q = [a[0] + v[0], a[1] + v[1]];
-      else { var dx = cur ? cur[0] - a[0] : 1, dy = cur ? cur[1] - a[1] : 0, ln = Math.hypot(dx, dy) || 1; if (!cur || ln < 1e-6) { dx = 1; dy = 0; ln = 1; } q = [a[0] + dx / ln * v[0], a[1] + dy / ln * v[0]]; }
-      q = [skR(q[0]), skR(q[1])]; dr.pts.push(q); cur = q; live(X); return; }
-    if (dr.t === 'rect') { var w = v[0], h = v[1] == null ? v[0] : v[1], sx = cur && cur[0] < dr.a[0] ? -1 : 1, sy = cur && cur[1] < dr.a[1] ? -1 : 1; addRect(X, dr.a, [dr.a[0] + sx * Math.abs(w), dr.a[1] + sy * Math.abs(h)]); return; }
+  function applyTyped(X) {   // typed numbers are in the shown frame (→ right, ↑ up)
+    var v = parseTyped(), K = X.K, dr = K.draft, F = X.F; typed = ''; if (!v) { live(X); return; }
+    if (!dr) { if (v[1] == null) { toast(S.lang === 'lt' ? 'Pradžios taškas: atstumas nuo kairio krašto, nuo apatinio (pvz. 100,50)' : 'Start point: from the left edge, from the bottom (e.g. 100,50)', true); live(X); return; }
+      var P0 = F.from(v[0], v[1]); clickPoint(X, P0); cur = P0; live(X); return; }
+    var dirOf = function (a) { var A = F.to(a[0], a[1]), B = cur ? F.to(cur[0], cur[1]) : [A[0] + 1, A[1]], dx = B[0] - A[0], dy = B[1] - A[1], ln = Math.hypot(dx, dy); return ln < 1e-6 ? [1, 0] : [dx / ln, dy / ln]; };
+    if (dr.t === 'line') { var a = dr.pts[dr.pts.length - 1], A = F.to(a[0], a[1]), N;
+      if (v[1] != null) N = [A[0] + v[0], A[1] + v[1]]; else { var dd = dirOf(a); N = [A[0] + dd[0] * v[0], A[1] + dd[1] * v[0]]; }
+      var q = F.from(N[0], N[1]); q = [skR(q[0]), skR(q[1])]; dr.pts.push(q); cur = q; live(X); return; }
+    if (dr.t === 'rect') { var A2 = F.to(dr.a[0], dr.a[1]), B2 = cur ? F.to(cur[0], cur[1]) : [A2[0] + 1, A2[1] + 1], w = Math.abs(v[0]), h = Math.abs(v[1] == null ? v[0] : v[1]);
+      var o2 = F.from(A2[0] + (B2[0] < A2[0] ? -w : w), A2[1] + (B2[1] < A2[1] ? -h : h)); addRect(X, dr.a, o2); return; }
     if (dr.t === 'circle') addCircle(X, dr.a, Math.abs(v[0]) / 2);
+  }
+  /* a size clicked on the drawing: a small field on top of it */
+  function dimEdit(el, X) {
+    var sh = skSelShape(X); if (!sh) return; var key = el.getAttribute('data-skdim'), wrap = document.querySelector('.sk-wrap'); if (!wrap) return;
+    var old = wrap.querySelector('.sk-dimin'); if (old) old.remove();
+    var rc = el.getBoundingClientRect(), wr = wrap.getBoundingClientRect(), inp = document.createElement('input');
+    inp.className = 'sk-dimin'; inp.type = 'text'; inp.inputMode = 'decimal'; inp.value = String(el.textContent).replace('Ø', '');
+    inp.style.left = Math.round(rc.left - wr.left + rc.width / 2 - 45) + 'px'; inp.style.top = Math.round(rc.top - wr.top + rc.height / 2 - 16) + 'px';
+    wrap.appendChild(inp); inp.focus(); inp.select();
+    var done = false, commit = function (ok) { if (done) return; done = true; var v = skNum(inp.value); inp.remove();
+      if (ok && v != null) { var ch = skChange(function (s2, X2) { return skSetDim(s2, key, v, X2.F); }); if (!ch) toast(S.lang === 'lt' ? 'Netinkamas dydis' : 'Not a usable size', true); }
+      render(); };
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); commit(true); } else if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); commit(false); } });
+    inp.addEventListener('blur', function () { commit(true); });
   }
   document.addEventListener('contextmenu', function (e) { if (e.target.closest && e.target.closest('.sk-svg')) e.preventDefault(); });
   document.addEventListener('pointerdown', function (e) {
     SK_IO.downOver = !!(e.target && e.target.classList && e.target.classList.contains('skover'));
     var sv = e.target.closest && e.target.closest('.sk-svg'); if (!sv) return; var X = skCtx(); if (!X) return;
+    var dimT = e.target.closest('[data-skdim]'); if (dimT && e.button === 0) { e.preventDefault(); dimEdit(dimT, X); return; }
     e.preventDefault(); try { sv.setPointerCapture(e.pointerId); } catch (er) {}
-    var P = toMM(e, sv), K = X.K, V = skView(X.p);
-    if (e.button === 1) { D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv), sv:sv }; return; }
+    var P = toProg(e, sv, X), K = X.K, V = skView(X.p, X.F);
+    if (e.button === 1) { D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv) }; return; }
     if (e.button === 2) { if (K.draft && K.draft.t === 'line') finishLine(X, false); else { K.draft = null; typed = ''; live(X); } return; }
     if (K.tool === 'sel') {
       var hEl = e.target.closest('[data-skh]'), sEl = e.target.closest('[data-skid]');
       if (hEl) { var id = +hEl.getAttribute('data-skid'), sh = X.list.filter(function (q) { return q.id === id; })[0]; if (!sh) return;
         D = { mode:'grip', id:id, h:hEl.getAttribute('data-skh'), orig:clone(sh), start:P, prev:clone(X.c.sketch || {}), x:e.clientX, y:e.clientY, moved:false }; return; }
       if (sEl) { var id2 = +sEl.getAttribute('data-skid'), sh2 = X.list.filter(function (q) { return q.id === id2; })[0]; if (!sh2) return;
-        var was = K.sel === id2; K.sel = id2; if (!was) redrawSvg(X);
+        var was = K.sel === id2; K.sel = id2;
         D = { mode:'move', id:id2, orig:clone(sh2), start:P, prev:clone(X.c.sketch || {}), x:e.clientX, y:e.clientY, moved:false, picked:!was }; return; }
-      D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv), sv:sv, desel:K.sel != null }; return;
+      D = { mode:'pan', x:e.clientX, y:e.clientY, v:Object.assign({}, V), k:mmPx(sv), desel:K.sel != null }; return;
     }
-    var prev = K.draft && K.draft.pts ? K.draft.pts[K.draft.pts.length - 1] : K.draft && K.draft.a;
+    var dr0 = K.draft, prev = dr0 && dr0.pts ? dr0.pts[dr0.pts.length - 1] : dr0 && dr0.a;
     snapInfo = snap(P, X, prev, e); var Q = snapInfo.p;
-    var had = !!K.draft; clickPoint(X, Q, e); cur = Q;
+    var had = !!K.draft; clickPoint(X, Q); cur = Q;
     if (!had && S.sk && S.sk.draft && S.sk.draft.a) D = { mode:'press', x:e.clientX, y:e.clientY };   // a rectangle or a circle may also be dragged out
     live(X);
   });
   document.addEventListener('pointermove', function (e) {
-    var sv = svgEl(); if (!sv || !S.sk) { return; }
-    var X = skCtx(); if (!X) return;
-    if (D && D.mode === 'pan') { var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 4) return; D.moved = true; setVB(sv, { key:X.p.key, x:D.v.x - dx * D.k, y:D.v.y - dy * D.k, w:D.v.w, h:D.v.h }); return; }
+    var sv = svgEl(); if (!sv || !S.sk) return; var X = skCtx(); if (!X) return;
+    if (D && D.mode === 'pan') { var dx = e.clientX - D.x, dy = e.clientY - D.y; if (!D.moved && Math.hypot(dx, dy) < 4) return; D.moved = true; setVB(sv, { key:X.p.key + skSide(), x:D.v.x - dx * D.k, y:D.v.y - dy * D.k, w:D.v.w, h:D.v.h }); return; }
     if (!e.target.closest || (!e.target.closest('.sk-svg') && !D)) return;
-    var P = toMM(e, sv);
+    var P = toProg(e, sv, X);
     if (D && (D.mode === 'move' || D.mode === 'grip')) {
       if (!D.moved && Math.hypot(e.clientX - D.x, e.clientY - D.y) < 4) return; D.moved = true;
       var sh = X.list.filter(function (q) { return q.id === D.id; })[0]; if (!sh) return; var o = D.orig;
@@ -12700,8 +12795,9 @@ var SK_IO = { downOver:false };
   });
   document.addEventListener('wheel', function (e) {
     var sv = e.target.closest && e.target.closest('.sk-svg'); if (!sv || !S.sk) return; var X = skCtx(); if (!X) return; e.preventDefault();
-    var V = skView(X.p), P = toMM(e, sv), f = Math.exp((e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015), w = Math.max(20, Math.min(V.w * f, 20000)); f = w / V.w;
-    var sy = -P[1]; setVB(sv, { key:X.p.key, x:P[0] - (P[0] - V.x) * f, y:sy - (sy - V.y) * f, w:V.w * f, h:V.h * f });
+    var V = skView(X.p, X.F), m = sv.getScreenCTM(), pt = sv.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY; var Pv = pt.matrixTransform(m.inverse());
+    var f = Math.exp((e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY) * 0.0015), w = Math.max(20, Math.min(V.w * f, 20000)); f = w / V.w;
+    setVB(sv, { key:X.p.key + skSide(), x:Pv.x - (Pv.x - V.x) * f, y:Pv.y - (Pv.y - V.y) * f, w:V.w * f, h:V.h * f });
     if (X.K.tool !== 'sel') live(X);
   }, { passive:false });
   document.addEventListener('keydown', function (e) {
@@ -12716,8 +12812,8 @@ var SK_IO = { downOver:false };
     if ((k === 'Delete' || k === 'Backspace') && K.sel != null && !K.draft) { e.preventDefault(); var prev = clone(X.c.sketch || {}); X.c.sketch[X.p.key] = X.list.filter(function (q) { return q.id !== K.sel; }); K.sel = null; skUndoPush(X.c, prev); save(); render(); return; }
     var tools = { v:'sel', l:'line', r:'rect', c:'circle' }; if (tools[k.toLowerCase()] && !typed) { K.tool = tools[k.toLowerCase()]; K.draft = null; render(); return; }
     var ar = { ArrowLeft:[-1, 0], ArrowRight:[1, 0], ArrowUp:[0, 1], ArrowDown:[0, -1] }[k];
-    if (ar && K.sel != null && K.tool === 'sel') { e.preventDefault(); var st = e.shiftKey ? 10 : 1;
-      skChange(function (sh) { if (sh.t === 'line') sh.pts = sh.pts.map(function (q) { return [skR(q[0] + ar[0] * st), skR(q[1] + ar[1] * st)]; }); else { sh.x = skR(sh.x + ar[0] * st); sh.y = skR(sh.y + ar[1] * st); } }); render(); }
+    if (ar && K.sel != null && K.tool === 'sel') { e.preventDefault(); var st = e.shiftKey ? 10 : 1, dv = X.F.dv(ar[0] * st, ar[1] * st);
+      skChange(function (sh) { if (sh.t === 'line') sh.pts = sh.pts.map(function (q) { return [skR(q[0] + dv[0]), skR(q[1] + dv[1])]; }); else { sh.x = skR(sh.x + dv[0]); sh.y = skR(sh.y + dv[1]); } }); render(); }
   }, true);
 })();
 function ecModal(c, inf) {
@@ -14470,10 +14566,11 @@ app.addEventListener('click', function (e) {
     case 'ecopen': S.echeck = true; S.jcheck = false; break;
     case 'skopen': { var ci = el.hasAttribute('data-i') ? i : S.sel, skc = S.proj.cabinets[ci]; if (!skc) break; var is = S._info && S._info[ci];
       var k0 = v || (is && is.r ? (is.r.panels.filter(function (q) { return skList(skc, q.key).length; })[0] || {}).key : null) || null;
-      S.sk = { cab:ci, key:k0, tool:'sel', sel:null, grid:(S.sk && S.sk.grid) || 5 }; S.sel = ci; S.jcheck = false; S.echeck = false; break; }
+      S.sk = { cab:ci, key:k0, tool:'sel', sel:null, side:'A', grid:(S.sk && S.sk.grid) || 5 }; S.sel = ci; S.jcheck = false; S.echeck = false; break; }
     case 'skclose': if (!el.getAttribute('data-force') && (e.target.closest('[data-stop]') || !SK_IO.downOver)) return; S.sk = null; break;
-    case 'skpick': if (S.ecDrag) { S.ecDrag = false; return; } if (S.sk) { if (S.sk.key !== v) { S.sk.view = null; S.sk.sel = null; } S.sk.key = v; S.sk.draft = null; } break;
+    case 'skpick': if (S.ecDrag) { S.ecDrag = false; return; } if (S.sk) { if (S.sk.key !== v) { S.sk.view = null; S.sk.sel = null; S.sk.side = 'A'; } S.sk.key = v; S.sk.draft = null; } break;
     case 'sktool': if (S.sk) { S.sk.tool = v; S.sk.draft = null; } break;
+    case 'skside': if (S.sk) { S.sk.side = v === 'B' ? 'B' : 'A'; S.sk.draft = null; } break;
     case 'skfit': if (S.sk) S.sk.view = null; break;
     case 'sksel': if (S.sk) { S.sk.sel = +v; S.sk.tool = 'sel'; S.sk.draft = null; } break;
     case 'skop': skChange(function (sh) { if (sh.op === v) return false; sh.op = v; if (v === 'drill' && sh.depth == null) sh.depth = 12; }); break;
