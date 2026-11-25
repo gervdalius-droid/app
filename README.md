@@ -5,7 +5,8 @@ All workshop and office apps on one address, one sign-in.
 | Address | App |
 |---|---|
 | `/hub/shopfloor/` | Hub — all apps (behind the hub password) |
-| `/builder/` | Spintelių kūrėjas |
+| `/builder/` | Spintelių kūrėjas — the new interface, **built** from the `design` repository (see `builder/README.md`) |
+| `/builder-old/` | Spintelių kūrėjas as it was before (the single-file page, its sources and tests) — kept to fall back on |
 | `/nesting/` | Nesting |
 | `/cad/`, `/cad/draft.html` | Braižyklė, DXF redaktorius |
 | `/xxl-fix/` | XXL Fix |
