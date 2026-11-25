@@ -223,7 +223,18 @@ body.tv h1{font-size:3.6vh;white-space:nowrap;overflow:hidden;text-overflow:elli
 body.tv .counts{font-size:3.4vh;flex-wrap:nowrap;white-space:nowrap;gap:2vh}
 body.tv .dot{width:1.8vh;height:1.8vh}
 body.tv .clock{font-size:4.6vh;order:-1}
-body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR,body.tv #btnAw,body.tv #btnDay{display:none!important}
+body.tv #btnHub,body.tv #btnAuth,body.tv #btnLang,body.tv #btnTime,body.tv #btnQR,body.tv #btnAw,body.tv #btnDay,body.tv #btnTvi{display:none!important}
+/* TV: priority projects + kitchen rota, top-left over the plan */
+#tvinfo{position:absolute;left:1.2vh;top:1.2vh;z-index:2;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-left:.6vh solid var(--mark);border-radius:1vh;padding:1.2vh 1.6vh;max-width:min(34vw,560px);box-shadow:0 .6vh 2.4vh rgba(0,0,0,.18);pointer-events:none;font-size:2.3vh;line-height:1.3}
+body:not(.tv) #tvinfo{display:none}
+#tvinfo .ti-h{font:700 1.7vh/1.2 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:.6vh}
+#tvinfo ol{margin:0;padding-left:3.2vh;display:flex;flex-direction:column;gap:.5vh}
+#tvinfo li::marker{font-family:var(--mono);font-weight:700;color:var(--mark)}
+#tvinfo li b{font-family:var(--display);font-weight:700}
+#tvinfo li span{display:block;font-size:1.9vh;color:var(--muted)}
+#tvinfo li:first-child b{font-size:2.8vh}
+#tvinfo .ti-k{margin-top:1vh;padding-top:.9vh;border-top:1px solid var(--line);font-size:2.1vh}
+#tvinfo .ti-h+.ti-k,#tvinfo .ti-k:first-child{margin-top:0;padding-top:0;border-top:0}
 body.tv .tools{flex-wrap:nowrap;gap:1vh}
 body.tv .btn{font-size:2.8vh;padding:.7vh 1.6vh;border-radius:.8vh;white-space:nowrap}
 body.tv main{display:grid;grid-template-columns:minmax(0,1fr);gap:0}
@@ -479,14 +490,26 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #ci .done strong{font:800 24px/1.1 var(--display)}
 /* report and QR sheet */
 #rep .rbox{border-radius:16px}
-#aw{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow:auto}
-#aw .rbox{background:var(--panel);color:var(--ink);border-radius:16px;width:min(900px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
-#aw .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#aw,#tvi{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) 16px max(16px,env(safe-area-inset-left,0px));overflow:auto}
+#aw .rbox,#tvi .rbox{background:var(--panel);color:var(--ink);border-radius:16px;width:min(900px,100%);padding:18px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+#aw .rh,#tvi .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #aw h2{font:800 22px/1.1 var(--display);letter-spacing:-0.01em;margin:0}
+#tvi .rbox{width:min(720px,100%)}
+#tvi .tr{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+#tvi .tr .n{font:700 14px/1 var(--mono);min-width:22px;color:var(--muted)}
+#tvi .tr input,#tvi .tr select{min-width:0}
+#tvi .tr .pj{flex:2 1 220px}#tvi .tr .nt{flex:1 1 150px}#tvi .tr select{flex:1 1 180px}
+#tvi .tr .x{flex:0 0 auto}
+#tvi .cur{display:flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);white-space:nowrap}
+#tvi .prev{font-size:14px;background:var(--panel);border:1px dashed var(--line);border-radius:10px;padding:8px 10px}
+#tvi .foot{display:flex;gap:8px;flex-wrap:wrap}
+#tvi .btn.sv{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:700}
+.card.tvic ol{margin:0 0 6px;padding-left:22px;display:flex;flex-direction:column;gap:3px}
+.card.tvic li span{color:var(--muted);font-size:12.5px}
 #aw .ctl{display:flex;flex-wrap:wrap;gap:8px}
 #aw select{font:inherit;padding:7px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink)}
-#aw .awp{display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
-#aw .awp label{font:600 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+#aw .awp,#tvi .awp{display:flex;flex-direction:column;gap:6px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}
+#aw .awp label,#tvi .awp>label{font:600 11px/1.3 var(--mono);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
 #aw .awwin{font-size:15px}
 #aw .lk{background:none;border:0;color:var(--muted);text-decoration:underline;cursor:pointer;font-size:13px}
 #aw .tw{overflow-x:auto}
@@ -503,7 +526,7 @@ input[type=text],input[type=number],input[type=search],select,textarea{border-ra
 #aw tr.awlog table{font-size:13.5px}
 #aw tr.awlog td{border-top:1px solid var(--line);padding:5px 6px}
 #aw .mono{font-family:var(--mono);font-size:12.5px;white-space:nowrap;color:var(--muted)}
-#aw .note{font-size:13px;color:var(--muted)}
+#tvi .note,#aw .note{font-size:13px;color:var(--muted)}
 #dv{position:fixed;inset:0;z-index:28;background:rgba(20,24,22,.5);display:flex;align-items:flex-start;justify-content:center;padding:max(16px,env(safe-area-inset-top,0px)) max(12px,env(safe-area-inset-right,0px)) 16px max(12px,env(safe-area-inset-left,0px));overflow:auto}
 #dv .rbox{background:var(--panel);color:var(--ink);border-radius:16px;width:min(860px,100%);padding:16px;display:flex;flex-direction:column;gap:12px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
 #dv .rh{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -610,6 +633,7 @@ body.tv .mapwrap{border-radius:1.4vh}
     <button class="btn" id="btnTime" type="button" aria-haspopup="dialog"></button>
     <button class="btn" id="btnDay" type="button" aria-haspopup="dialog" hidden></button>
     <button class="btn" id="btnAw" type="button" aria-haspopup="dialog" hidden></button>
+    <button class="btn" id="btnTvi" type="button" aria-haspopup="dialog" hidden></button>
     <button class="btn" id="btnQR" type="button" hidden></button>
     <button class="btn" id="btnPeople" type="button" hidden></button>
     <button class="btn" id="btnView" type="button"></button>
@@ -620,7 +644,7 @@ body.tv .mapwrap{border-radius:1.4vh}
   <span class="clock" id="clock"></span>
 </header>
 <main>
-  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div><div id="tvhint"></div><div id="ctl3" hidden><button type="button" class="tv-only" data-c="rot"></button><button type="button" data-c="l">⟲</button><button type="button" data-c="r">⟳</button><button type="button" data-c="u">↑</button><button type="button" data-c="d">↓</button><button type="button" data-c="in">+</button><button type="button" data-c="out">−</button><button type="button" data-c="fit"></button></div></div>
+  <div class="mapwrap" id="mapwrap"><svg id="map" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid meet"></svg><div id="three" hidden></div><div id="brk" hidden></div><div class="hint3" id="hint3" hidden></div><div id="tvhint"></div><div id="tvinfo" hidden></div><div id="ctl3" hidden><button type="button" class="tv-only" data-c="rot"></button><button type="button" data-c="l">⟲</button><button type="button" data-c="r">⟳</button><button type="button" data-c="u">↑</button><button type="button" data-c="d">↓</button><button type="button" data-c="in">+</button><button type="button" data-c="out">−</button><button type="button" data-c="fit"></button></div></div>
   <aside class="rail" id="rail"></aside>
 </main>
 <div id="toast" hidden></div>
@@ -629,6 +653,7 @@ body.tv .mapwrap{border-radius:1.4vh}
 <div id="pq"></div>
 <div id="rep" hidden role="dialog" aria-labelledby="rp-h"></div>
 <div id="aw" hidden role="dialog" aria-labelledby="aw-h"></div>
+<div id="tvi" hidden role="dialog" aria-labelledby="tvi-h"></div>
 <div id="dv" hidden role="dialog" aria-labelledby="dv-h"></div>
 <div id="shout" hidden role="status" aria-live="polite"><canvas id="sh-cv"></canvas><div class="shbox" id="sh-box"></div></div>
 <div id="qrs" hidden></div>
@@ -669,7 +694,7 @@ const L={
   ciSF:'ShopFlow užsakymai',ciOther:'Kiti projektai',ciPart:'Detalė / darbas (nebūtina)',ciStart:'▶ Pradedu čia',ciStop:'■ Baigiau darbą',ciLeave:'Išeinu iš cecho',
   ciNobody:'Pažymėk bent vieną žmogų.',ciNeedProj:'Pasirink projektą arba įrašyk naują.',ciSaving:'Saugoma…',ciSaved:'Išsaugota',ciNotSaved:'Dar neišsaugota – patikrink internetą, bandysime dar kartą.',
   ciOk:'Gerai',ciHere:'Dabar čia',ciMach:'Staklių būsena',ciNoOne:'Dabar čia niekas nepažymėtas.',ciPlan:'Atidaryti cecho planą',ciOut:'Atsijungti',ciGone:'Šios vietos plane nebėra. Pasirink vietą:',
-  ciWhere:'Vieta',ciOffT:'Išeinu',dvBtn:'Diena',dvH:'Dienos darbai',dvAll:'Visi',dvMine:'Mano diena',dvOk:'patvirtinta',dvConfirm:'Patvirtinti dieną',dvEdit:'Taisyti',dvDel:'Ištrinti',dvAdd:'Pridėti pamirštą darbą',dvSave:'Siųsti',dvWait:'laukia vadovo patvirtinimo',dvNo:'atmesta',dvPendN:'Laukia patvirtinimo',dvSent:'Išsiųsta vadovui patvirtinti',dvApplied:'Pataisymas patvirtintas',dvRejected:'Pataisymas atmestas',dvNoRight:'Tvirtinti gali tik vadovas. Prisijunk savo vardu ir PIN.',dvBadTime:'Pabaiga turi būti vėliau nei pradžia.',dvTapAgain:'Paspausk dar kartą, kad patvirtintum',dvNoteW:'Jei kažkas neteisingai – pataisyk ar pridėk. Pataisymai įsigalioja, kai juos patvirtina vadovas.',dvNoteM:'Darbuotojų pataisymai laukia tavo ✓. Tavo paties pataisymai įsigalioja iš karto. „Patvirtinti dieną“ – diena peržiūrėta ir tinka.',sumK:'Dienos suvestinė',sumH:'Ką šiandien nuveikėme',sumFix:'Jei kas neteisingai – pataisyk telefone: „Mano diena“',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',clShow:'Rodyti tvarkymosi priminimą',clK:'Darbo diena baigiasi',clH:'Laikas susitvarkyti!',clS:'Išvalyk savo darbo vietą ir sudėk visus įrankius į jų vietas.',clA:'🧹 Švari darbo vieta',clB:'🔧 Įrankiai – į vietas',clC:'🗑 Atliekos – išneštos',clD:'💨 Staklės nuvalytos',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
+  ciWhere:'Vieta',ciOffT:'Išeinu',dvBtn:'Diena',dvH:'Dienos darbai',dvAll:'Visi',dvMine:'Mano diena',dvOk:'patvirtinta',dvConfirm:'Patvirtinti dieną',dvEdit:'Taisyti',dvDel:'Ištrinti',dvAdd:'Pridėti pamirštą darbą',dvSave:'Siųsti',dvWait:'laukia vadovo patvirtinimo',dvNo:'atmesta',dvPendN:'Laukia patvirtinimo',dvSent:'Išsiųsta vadovui patvirtinti',dvApplied:'Pataisymas patvirtintas',dvRejected:'Pataisymas atmestas',dvNoRight:'Tvirtinti gali tik vadovas. Prisijunk savo vardu ir PIN.',dvBadTime:'Pabaiga turi būti vėliau nei pradžia.',dvTapAgain:'Paspausk dar kartą, kad patvirtintum',dvNoteW:'Jei kažkas neteisingai – pataisyk ar pridėk. Pataisymai įsigalioja, kai juos patvirtina vadovas.',dvNoteM:'Darbuotojų pataisymai laukia tavo ✓. Tavo paties pataisymai įsigalioja iš karto. „Patvirtinti dieną“ – diena peržiūrėta ir tinka.',sumK:'Dienos suvestinė',sumH:'Ką šiandien nuveikėme',sumFix:'Jei kas neteisingai – pataisyk telefone: „Mano diena“',shKicker:'Dienos šaunuolis',shJobs:'darbai',shAlso:'Taip pat šauniai padirbėjo',shClose:'Paspausk bet kurį mygtuką, kad uždarytum',shShow:'Rodyti dienos šaunuolį',clShow:'Rodyti tvarkymosi priminimą',clK:'Darbo diena baigiasi',clH:'Laikas susitvarkyti!',clS:'Išvalyk savo darbo vietą ir sudėk visus įrankius į jų vietas.',clA:'🧹 Švari darbo vieta',clB:'🔧 Įrankiai – į vietas',clC:'🗑 Atliekos – išneštos',clD:'💨 Staklės nuvalytos',shNone:'Šiandien dar niekas nepažymėjo bent 2 h darbo.',awBtn:'Nominacija',prioBtn:'Prioritetai',tviH:'TV: prioritetai ir virtuvė',prioH:'Prioritetiniai projektai',prioHint:'Rodoma TV ekrane tokia tvarka – pirmas svarbiausias. Iki 8 projektų.',prioNt:'Pastaba, pvz. iki penktadienio',prioAdd:'+ Pridėti projektą',prioNone:'Prioritetų nenustatyta.',kitH:'Virtuvės tvarkymas',kitHint:'Eilė keičiasi kas pirmadienį: po paskutinio vėl pirmas. Pažymėk, kas tvarko šią savaitę.',kitThis:'šią savaitę',kitAdd:'+ Pridėti žmogų',kitNow:'Virtuvę šią savaitę tvarko',kitNext:'kitą savaitę',kitThen:'po to',tviEdit:'Keisti',awH:'Mėnesio darbuotojas',awNow:'vyksta',awPrize:'Prizas šiam mėnesiui',awPrizePh:'Pvz. 50 € dovanų kortelė, papildoma laisva diena…',awSavePrize:'Išsaugoti prizą',awWinner:'Nugalėtojas',awUndo:'atšaukti',awWho:'Darbuotojas',awDays:'Dienos',awHours:'Valandos',awJobs:'Darbai',awPick:'Skirti nominaciją',awSaved:'Išsaugota',awErr:'Nepavyko išsaugoti – patikrink internetą.',awOnly:'Matoma tik vadovams.',awNote:'Aktyviausias – daugiausia darbo dienų per mėnesį (diena skaičiuojama nuo 30 min pažymėto darbo), lygiųjų atveju – daugiau valandų. Darbai – skirtingi projektai ir vietos per dieną. Paspausk vardą – matysi visus jo darbus.',awOngoing:'Mėnuo dar vyksta, skaičiai keisis.',instDone:'✓ Grįžo',instBack:'Grįžo',sfStep:'ShopFlow etapas',sfDef:'Pagal tipą',sfNone:'Nesieti su ShopFlow',sfHint:'Kai kas nors pažymimas čia su projektu, ShopFlow užsakyme pradedamas šis etapas.',ciPause:'⏸ Pauzė',ciResume:'▶ Tęsti',ciEnd:'■ Baigti',ciPaused:'pauzė',ciResumed:'tęsia darbą',ciEnded:'baigė darbą',ciOffS:'Pažymėk, kas baigė darbą ir išeina.',ciFrom:'nuo',ciNext:'Kitam žmogui',
   time:'⏱ Laikas',repH:'Darbo laikas',repToday:'Šiandien',repYest:'Vakar',repWeek:'Ši savaitė',repLWeek:'Praeita savaitė',repMonth:'Šis mėnuo',repLMonth:'Praeitas mėnuo',
   repByP:'Pagal projektą',repByW:'Pagal darbuotoją',repByS:'Pagal vietą',repTot:'Iš viso',repN:'įrašai',repNone:'Šiam laikotarpiui įrašų nėra.',repCsv:'Atsisiųsti CSV',repLoad:'Kraunama…',
   repNote:'Skaičiuojama iš žymėjimų plane ir QR kodais: nuo pažymėjimo iki kito pažymėjimo ar „Baigiau darbą“. Pertraukos neįskaitomos. Jei niekas nepažymėjo pabaigos, diena baigiasi 17:00.',
@@ -686,7 +711,7 @@ const L={
   ciSF:'ShopFlow orders',ciOther:'Other projects',ciPart:'Part / task (optional)',ciStart:'▶ I start here',ciStop:'■ Finished',ciLeave:'Leaving the workshop',
   ciNobody:'Pick at least one person.',ciNeedProj:'Pick a project or type a new one.',ciSaving:'Saving…',ciSaved:'Saved',ciNotSaved:'Not saved yet – check the internet, it will retry.',
   ciOk:'OK',ciHere:'Here now',ciMach:'Machine status',ciNoOne:'Nobody is marked here now.',ciPlan:'Open the workshop plan',ciOut:'Sign out',ciGone:'This place is no longer on the plan. Pick a place:',
-  ciWhere:'Place',ciOffT:'Leaving',dvBtn:'Day',dvH:'Day log',dvAll:'Everyone',dvMine:'My day',dvOk:'confirmed',dvConfirm:'Confirm day',dvEdit:'Edit',dvDel:'Delete',dvAdd:'Add forgotten work',dvSave:'Send',dvWait:'waiting for a manager',dvNo:'rejected',dvPendN:'Waiting for approval',dvSent:'Sent to a manager for approval',dvApplied:'Correction approved',dvRejected:'Correction rejected',dvNoRight:'Only a manager can approve. Sign in with your own name and PIN.',dvBadTime:'The end must be later than the start.',dvTapAgain:'Tap again to confirm',dvNoteW:'If something is wrong, fix it or add what is missing. Corrections count once a manager approves them.',dvNoteM:'Workers’ corrections wait for your ✓. Your own corrections count at once. “Confirm day” = the day was checked and is right.',sumK:'Day summary',sumH:'What we did today',sumFix:'Anything wrong? Fix it on your phone: “My day”',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',clShow:'Show tidy-up reminder',clK:'The working day is ending',clH:'Time to tidy up!',clS:'Clean your work area and put every tool back in its place.',clA:'🧹 Clean work area',clB:'🔧 Tools back in place',clC:'🗑 Waste taken out',clD:'💨 Machines wiped down',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
+  ciWhere:'Place',ciOffT:'Leaving',dvBtn:'Day',dvH:'Day log',dvAll:'Everyone',dvMine:'My day',dvOk:'confirmed',dvConfirm:'Confirm day',dvEdit:'Edit',dvDel:'Delete',dvAdd:'Add forgotten work',dvSave:'Send',dvWait:'waiting for a manager',dvNo:'rejected',dvPendN:'Waiting for approval',dvSent:'Sent to a manager for approval',dvApplied:'Correction approved',dvRejected:'Correction rejected',dvNoRight:'Only a manager can approve. Sign in with your own name and PIN.',dvBadTime:'The end must be later than the start.',dvTapAgain:'Tap again to confirm',dvNoteW:'If something is wrong, fix it or add what is missing. Corrections count once a manager approves them.',dvNoteM:'Workers’ corrections wait for your ✓. Your own corrections count at once. “Confirm day” = the day was checked and is right.',sumK:'Day summary',sumH:'What we did today',sumFix:'Anything wrong? Fix it on your phone: “My day”',shKicker:'Star of the day',shJobs:'jobs',shAlso:'Also a great day for',shClose:'Press any key to close',shShow:'Show star of the day',clShow:'Show tidy-up reminder',clK:'The working day is ending',clH:'Time to tidy up!',clS:'Clean your work area and put every tool back in its place.',clA:'🧹 Clean work area',clB:'🔧 Tools back in place',clC:'🗑 Waste taken out',clD:'💨 Machines wiped down',shNone:'Nobody has 2 h of marked work today yet.',awBtn:'Award',prioBtn:'Priorities',tviH:'TV: priorities and kitchen',prioH:'Priority projects',prioHint:'Shown on the TV in this order – the first is the most important. Up to 8 projects.',prioNt:'Note, e.g. by Friday',prioAdd:'+ Add project',prioNone:'No priorities set.',kitH:'Kitchen cleaning',kitHint:'The turn moves on every Monday; after the last person it starts again. Mark who has it this week.',kitThis:'this week',kitAdd:'+ Add person',kitNow:'Kitchen this week',kitNext:'next week',kitThen:'then',tviEdit:'Edit',awH:'Employee of the month',awNow:'ongoing',awPrize:'Prize this month',awPrizePh:'E.g. €50 gift card, an extra day off…',awSavePrize:'Save prize',awWinner:'Winner',awUndo:'undo',awWho:'Employee',awDays:'Days',awHours:'Hours',awJobs:'Jobs',awPick:'Give the award',awSaved:'Saved',awErr:'Could not save – check the internet.',awOnly:'Managers only.',awNote:'Most active = most working days in the month (a day counts from 30 min of logged work), ties go to more hours. Jobs = different projects and places per day. Click a name to see all their work.',awOngoing:'The month is still running; numbers will change.',instDone:'✓ Back',instBack:'Back',sfStep:'ShopFlow step',sfDef:'By type',sfNone:'Not linked to ShopFlow',sfHint:'When someone is marked here with a project, this step starts on that ShopFlow order.',ciPause:'⏸ Pause',ciResume:'▶ Resume',ciEnd:'■ Finish',ciPaused:'paused',ciResumed:'back at work',ciEnded:'finished',ciOffS:'Mark who finished work and is leaving.',ciFrom:'since',ciNext:'Next person',
   time:'⏱ Time',repH:'Working time',repToday:'Today',repYest:'Yesterday',repWeek:'This week',repLWeek:'Last week',repMonth:'This month',repLMonth:'Last month',
   repByP:'By project',repByW:'By worker',repByS:'By place',repTot:'Total',repN:'entries',repNone:'No entries for this period.',repCsv:'Download CSV',repLoad:'Loading…',
   repNote:'Counted from check-ins on the plan and by QR code: from one check-in to the next or to “Finished”. Breaks are left out. If nobody marked the end, the day ends at 17:00.',
@@ -899,6 +924,8 @@ function normalize(){
   for(const k of ['st','people','stock','inst'])for(const id of Object.keys(s[k]))if(s[k][id]==null)delete s[k][id];
   for(const id of Object.keys(l.items))if(l.items[id]==null)delete l.items[id];
   if(!Array.isArray(s.projects))s.projects=[];
+  if(!Array.isArray(s.prio))s.prio=[];
+  if(!isObj(s.kitchen))s.kitchen=null;
 }
 function canWrite(){
   if(readOnly){toast(t('ro'));return false}
@@ -1354,7 +1381,7 @@ function renderHeader(){
   $('#btnView').textContent=view==='3d'?'2D':'3D';$('#hint3').textContent=t('hint3');ctl3();
   $('#tvhint').textContent=view==='3d'?t('tvHint3'):t('tvHint2');
   $('#btnEdit').textContent=editing?t('editOn'):t('edit');$('#btnEdit').setAttribute('aria-pressed',editing);
-  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnDay').textContent='📋 '+t('dvBtn')+(isMgr()&&fixPending?' · '+fixPending:'');$('#btnDay').hidden=mode!=='db';$('#btnDay').classList.toggle('alert',isMgr()&&fixPending>0);$('#btnAw').textContent='🏆 '+t('awBtn');$('#btnAw').hidden=mode!=='db'||!isMgr();$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
+  $('#btnTime').textContent=t('time');$('#btnTime').hidden=mode!=='db';$('#btnDay').textContent='📋 '+t('dvBtn')+(isMgr()&&fixPending?' · '+fixPending:'');$('#btnDay').hidden=mode!=='db';$('#btnDay').classList.toggle('alert',isMgr()&&fixPending>0);$('#btnAw').textContent='🏆 '+t('awBtn');$('#btnAw').hidden=mode!=='db'||!isMgr();$('#btnTvi').textContent='⚑ '+t('prioBtn');$('#btnTvi').hidden=mode!=='db'||!isMgr();$('#btnQR').textContent='🔳 '+t('qr');$('#btnQR').hidden=!editing;
   const tv=document.body.classList.contains('tv');
   $('#btnTv').textContent=tv?t('tvOff'):t('tv');$('#btnTv').setAttribute('aria-pressed',tv);
 }
@@ -1410,6 +1437,7 @@ function renderRail(){
     s+='<div class="row"><button class="btn" type="button" data-act="off">'+esc(t('toOff'))+'</button><button class="btn" type="button" data-act="cancel">'+esc(t('cancel'))+'</button></div></section>';
   }
   if(selItem&&LAY().items[selItem])s+='<div class="edit-only">'+inspector(selItem)+'</div>';
+  if(!tvOn())s+=tviCard();
   const iA=s.length;let iB=0,iC=0,iD=0,iE=0,iF=0;
   s+='<section class="card"><h2>'+esc(t('workers'))+'</h2>';
   if(!ppl.length)s+='<div class="sub">'+esc(t('noWorkers'))+'</div>';
@@ -1490,7 +1518,7 @@ function render(){
   if(CHK||CIM)renderCI();
   if(selItem&&!LAY().items[selItem])selItem=null;
   if(selPerson&&!ST().people[selPerson])selPerson=null;
-  renderHeader();renderMap();if(view==='3d')build3D();
+  renderHeader();renderMap();if(view==='3d')build3D();renderTvInfo();if(TVI.open&&!$('#tvi').contains(document.activeElement))renderTvi();
   const a=document.activeElement;
   if(a&&$('#rail').contains(a)&&/^(INPUT|SELECT|TEXTAREA)$/.test(a.tagName))railDirty=true;else renderRail();
   if(typeof renderPQ==='function')renderPQ();
@@ -2467,6 +2495,96 @@ function renderAw(){
   box.innerHTML=h;
   if(keep){const i=$('#aw-prize');i.value=keep.v;i.focus();try{i.setSelectionRange(keep.s,keep.s)}catch(e){}}
 }
+/* ---------- TV notes: priority projects and the weekly kitchen rota (state.prio, state.kitchen) ---------- */
+const TVI={open:false,prio:[],kit:[],cur:0};
+const ymdL=d=>{const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())};
+function mondayOf(d){d=d?new Date(d):new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-((d.getDay()+6)%7));return ymdL(d)}
+const dayNum=s=>{const a=String(s).split('-').map(Number);return Math.round(Date.UTC(a[0],a[1]-1,a[2])/864e5)};
+/* who has the kitchen `off` weeks from now: the order goes round, moving on every Monday */
+function kitchenWho(off,k){k=k||ST().kitchen;if(!k||!Array.isArray(k.order)||!k.from)return null;const L=k.order.filter(Boolean);if(!L.length)return null;
+  const w=Math.round((dayNum(mondayOf())-dayNum(k.from))/7)+(off||0);return L[((w%L.length)+L.length)%L.length]}
+const prioList=()=>(Array.isArray(ST().prio)?ST().prio:[]).filter(x=>x&&x.p).slice(0,8);
+function renderTvInfo(){
+  const el=$('#tvinfo');if(!el)return;const P=prioList(),k=kitchenWho(0);
+  if(!P.length&&!k){el.hidden=true;if(el.innerHTML)el.innerHTML='';return}
+  let h='';
+  if(P.length)h+='<div class="ti-h">⚑ '+esc(t('prioH'))+'</div><ol>'+P.map(x=>'<li><b>'+esc(prLabel(x.p))+'</b>'+(x.nt?'<span>'+esc(x.nt)+'</span>':'')+'</li>').join('')+'</ol>';
+  if(k)h+='<div class="ti-k">🧽 '+esc(t('kitNow'))+': <b>'+esc(k)+'</b></div>';
+  if(el.innerHTML!==h)el.innerHTML=h;el.hidden=false;
+}
+function tviCard(){
+  const P=prioList(),k=kitchenWho(0),k2=kitchenWho(1),mgr=isMgr()&&mode==='db';
+  if(!P.length&&!k&&!mgr)return '';
+  let s='<section class="card tvic"><h2>⚑ '+esc(t('prioH'))+'</h2>';
+  s+=P.length?'<ol>'+P.map(x=>'<li><b>'+esc(prLabel(x.p))+'</b>'+(x.nt?' <span>· '+esc(x.nt)+'</span>':'')+'</li>').join('')+'</ol>':'<div class="sub">'+esc(t('prioNone'))+'</div>';
+  if(k)s+='<div class="sub">🧽 '+esc(t('kitNow'))+': <b>'+esc(k)+'</b>'+(k2&&k2!==k?' · '+esc(t('kitNext'))+': '+esc(k2):'')+'</div>';
+  if(mgr)s+='<div class="row"><button class="btn" type="button" data-act="tvi">'+esc(t('tviEdit'))+'</button></div>';
+  return s+'</section>';
+}
+function tviNames(){const n=new Set();if(TEAM)for(const m of TEAM.list)if(m.name)n.add(String(m.name));for(const p of Object.values(ST().people))if(p&&p.n)n.add(String(p.n));for(const x of TVI.kit)if(x)n.add(x);
+  return [...n].sort((a,b)=>a.localeCompare(b,'lt'))}
+function tviPreview(){
+  const order=TVI.kit.filter(Boolean);if(!order.length)return '';
+  const ci=Math.max(0,order.indexOf(TVI.kit[TVI.cur]||'')),at=i=>order[(ci+i)%order.length];
+  return '🧽 '+esc(t('kitThis'))+': <b>'+esc(at(0))+'</b>'+(order.length>1?' · '+esc(t('kitNext'))+': '+esc(at(1)):'')+(order.length>2?' · '+esc(t('kitThen'))+': '+esc(at(2)):'');
+}
+function renderTvi(){
+  const box=$('#tvi');box.hidden=!TVI.open;if(!TVI.open){box.innerHTML='';return}
+  const opts=SF.orders.map(o=>o.label).concat(ST().projects.filter(p=>!SF.orders.some(o=>o.label===p))),names=tviNames();
+  let h='<div class="rbox"><div class="rh"><h2 id="tvi-h">⚑ '+esc(t('tviH'))+'</h2><button type="button" class="x" data-tv="close" aria-label="✕">✕</button></div>';
+  h+='<datalist id="tvi-pl">'+opts.map(p=>'<option value="'+esc(p)+'"></option>').join('')+'</datalist>';
+  h+='<div class="awp"><label>'+esc(t('prioH'))+'</label><div class="note">'+esc(t('prioHint'))+'</div>';
+  TVI.prio.forEach((x,i)=>{h+='<div class="tr"><span class="n">'+(i+1)+'.</span><input class="pj" type="text" list="tvi-pl" maxlength="80" data-tvf="p" data-i="'+i+'" value="'+esc(x.p||'')+'" placeholder="'+esc(t('proj'))+'" aria-label="'+esc(t('proj'))+' '+(i+1)+'">'+
+    '<input class="nt" type="text" maxlength="60" data-tvf="nt" data-i="'+i+'" value="'+esc(x.nt||'')+'" placeholder="'+esc(t('prioNt'))+'" aria-label="'+esc(t('prioNt'))+'">'+
+    '<button type="button" class="x" data-tv="up" data-i="'+i+'" aria-label="↑"'+(i?'':' disabled')+'>↑</button><button type="button" class="x" data-tv="dn" data-i="'+i+'" aria-label="↓"'+(i<TVI.prio.length-1?'':' disabled')+'>↓</button><button type="button" class="x" data-tv="del" data-i="'+i+'" aria-label="✕">✕</button></div>'});
+  if(TVI.prio.length<8)h+='<div><button type="button" class="btn" data-tv="add">'+esc(t('prioAdd'))+'</button></div>';
+  h+='</div><div class="awp"><label>'+esc(t('kitH'))+'</label><div class="note">'+esc(t('kitHint'))+'</div>';
+  TVI.kit.forEach((x,i)=>{h+='<div class="tr"><span class="n">'+(i+1)+'.</span><select data-tvf="k" data-i="'+i+'" aria-label="'+esc(t('kitH'))+' '+(i+1)+'"><option value="">—</option>'+names.map(n=>'<option'+(n===x?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select>'+
+    '<label class="cur"><input type="radio" name="tvi-cur" data-tvf="cur" value="'+i+'"'+(TVI.cur===i?' checked':'')+'> '+esc(t('kitThis'))+'</label><button type="button" class="x" data-tv="kdel" data-i="'+i+'" aria-label="✕">✕</button></div>'});
+  if(TVI.kit.length<12)h+='<div><button type="button" class="btn" data-tv="kadd">'+esc(t('kitAdd'))+'</button></div>';
+  h+='<div class="prev" id="tvi-prev">'+tviPreview()+'</div></div>';
+  h+='<div class="foot"><button type="button" class="btn sv" data-tv="save">'+esc(t('save'))+'</button><button type="button" class="btn" data-tv="close">'+esc(t('cancel'))+'</button></div></div>';
+  box.innerHTML=h;
+}
+function tviOpen(on){
+  if(on&&!isMgr()){toast(t('awOnly'));return}
+  TVI.open=on;
+  if(on){TVI.prio=clone(prioList());const k=ST().kitchen,L=k&&Array.isArray(k.order)?k.order.slice():[];while(L.length<4)L.push('');TVI.kit=L;
+    const w=kitchenWho(0);TVI.cur=Math.max(0,w?L.indexOf(w):0);if(!TEAM&&WA)loadTeam().then(()=>{if(TVI.open)renderTvi()}).catch(()=>{})}
+  renderTvi();
+}
+function tviSave(){
+  if(!isMgr()||!canWrite())return;
+  const prio=TVI.prio.map(x=>({p:String(x.p||'').trim().slice(0,80),nt:String(x.nt||'').trim().slice(0,60)})).filter(x=>x.p).slice(0,8);
+  const order=TVI.kit.map(x=>String(x||'').trim()).filter(Boolean),ci=Math.max(0,order.indexOf(TVI.kit[TVI.cur]||''));
+  let kitchen=null;
+  if(order.length){const d=new Date(mondayOf()+'T12:00:00');d.setDate(d.getDate()-7*ci);kitchen={order,from:ymdL(d)}}
+  const p={prio};p.kitchen=kitchen;
+  if(ST().kitchen&&kitchen)ST().kitchen=null;   /* replace the whole rota, not merge it */
+  commit(docs.state,p);TVI.open=false;renderTvi();toast(t('awSaved'));
+}
+$('#btnTvi').addEventListener('click',()=>tviOpen(true));
+$('#rail').addEventListener('click',e=>{if(e.target.closest('[data-act="tvi"]'))tviOpen(true)});
+$('#tvi').addEventListener('click',e=>{
+  if(e.target.id==='tvi'){tviOpen(false);return}
+  const b=e.target.closest('[data-tv]');if(!b)return;const k=b.dataset.tv,i=+b.dataset.i;
+  if(k==='close'){tviOpen(false);return}
+  if(k==='save'){tviSave();return}
+  if(k==='add')TVI.prio.push({p:'',nt:''});
+  else if(k==='del')TVI.prio.splice(i,1);
+  else if(k==='up'&&i>0)[TVI.prio[i-1],TVI.prio[i]]=[TVI.prio[i],TVI.prio[i-1]];
+  else if(k==='dn'&&i<TVI.prio.length-1)[TVI.prio[i+1],TVI.prio[i]]=[TVI.prio[i],TVI.prio[i+1]];
+  else if(k==='kadd')TVI.kit.push('');
+  else if(k==='kdel'){TVI.kit.splice(i,1);if(TVI.cur>=TVI.kit.length)TVI.cur=0;else if(TVI.cur>i)TVI.cur--}
+  else return;
+  renderTvi();if(k==='add'){const l=document.querySelectorAll('#tvi [data-tvf="p"]');if(l.length)l[l.length-1].focus()}
+});
+$('#tvi').addEventListener('input',e=>{const f=e.target.dataset.tvf,i=+e.target.dataset.i;if(!f)return;
+  if(f==='p'||f==='nt')TVI.prio[i][f]=e.target.value;
+  else if(f==='k')TVI.kit[i]=e.target.value;
+  else if(f==='cur')TVI.cur=i||+e.target.value;
+  const pv=$('#tvi-prev');if(pv)pv.innerHTML=tviPreview()});
+$('#tvi').addEventListener('change',e=>{if(e.target.dataset.tvf==='cur'){TVI.cur=+e.target.value;const pv=$('#tvi-prev');if(pv)pv.innerHTML=tviPreview()}});
 function awOpen(on){if(on&&!isMgr()){toast(t('awOnly'));return}AW.open=on;AW.sel=null;renderAw();if(on)awLoad()}
 $('#btnAw').addEventListener('click',()=>awOpen(true));
 $('#aw').addEventListener('click',e=>{if(e.target.id==='aw'){awOpen(false);return}const b=e.target.closest('[data-aw]');if(!b)return;const k=b.dataset.aw;
@@ -2880,6 +2998,6 @@ if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{if(view==
 })();
 </script>
 <script src="/hub/shared/back.js"></script>
-<script>HubBackQ.push(function(B){B.layer('#ci.modal,#dv,#qrs,#rep,#shout,#aw');B.ignore('#auth');});</script>
+<script>HubBackQ.push(function(B){B.layer('#ci.modal,#dv,#qrs,#rep,#shout,#aw,#tvi');B.ignore('#auth');});</script>
 </body>
 </html>
