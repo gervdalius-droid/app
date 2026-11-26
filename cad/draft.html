@@ -168,6 +168,7 @@ details.tips{margin-top:10px}details.tips summary{cursor:pointer;font-size:11px;
 .dimedit{position:fixed;z-index:45;pointer-events:none;transform:translate(-50%,-50%);display:flex;align-items:center;gap:2px;padding:3px;background:var(--raise);border:1.5px solid var(--accent);border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 .dimedit input,.dimedit button{pointer-events:auto}
 .dimedit input{width:72px;font:600 13px var(--mono);padding:4px 6px;border:1px solid var(--line);border-radius:4px;background:var(--bg);color:var(--fg)}
+.dimedit button.eqb{background:transparent;color:var(--accent);border:1px solid var(--accent)}
 .dimedit button{min-width:28px;height:28px;border:0;border-radius:4px;background:var(--accent);color:var(--accent-fg);font-weight:700;cursor:pointer}
 .ctx{position:fixed;z-index:40;min-width:210px;background:var(--panel);border:1px solid var(--line);border-radius:6px;box-shadow:0 8px 28px rgba(0,0,0,.22);padding:4px;display:flex;flex-direction:column}
 .ctx button{display:flex;justify-content:space-between;gap:16px;align-items:center;text-align:left;border:0;background:none;padding:6px 10px;border-radius:4px;cursor:pointer;font-size:13px}
@@ -4544,9 +4545,11 @@ const I18N = {
     pTrim: 'Spustelėkite dalį, kurią norite pašalinti (iki artimiausių sankirtų)',
     pCham: 'Spustelėkite kampą arba pirmą liniją · atstumai {0} / {1} mm (įveskite 5 arba 5,8)',
     pFil: 'Spustelėkite kampą arba pirmą liniją · spindulys {0} mm (įveskite skaičių)', pSecond: 'Antra linija',
+    pTanArc: 'Tangentinis lankas: galinis taškas (A – atgal į liniją)', nextPointArc: 'Kitas taškas (A – tangentinis lankas, Enter – baigti)',
+    hudW: 'Plotis', hudH: 'Aukštis', hudHint: 'Tab – kitas laukas · Enter – dėti · Backspace – atrakinti', autoDim: 'Įvestos reikšmės tampa matmenimis', loopClosed: 'Kontūras uždarytas – galite pradėti naują', eqSel: 'Padaryti lygius', eqSelBad: 'Pažymėkite bent dvi linijas arba bent du apskritimus / lankus', eqSelDone: 'Sulyginta: {0} = {1}', pEqRev: 'Spustelėkite matmenį, kurio reikšmę perimti (Esc – atšaukti)', dimEqBtn: 'Lygus kitam matmeniui – spustelėkite jį',
     dimValue: 'Matmens reikšmė', dimEditTip: 'Įveskite naują reikšmę – figūra persitvarkys (Enter – taikyti, Esc – palikti)', dimBad: 'Reikšmė turi būti didesnė už 0', cornerJoined: 'Kampas suapvalintas – abi dalys sujungtos į vieną kontūrą', dimSel: 'Matmuo pažymėtas · Delete – ištrinti · dukart spustelėti – keisti reikšmę · = – sulyginti su kitais', dimEqual: 'Sulyginti su kitais matmenimis…', dimUnlink: 'Panaikinti lygybę', pEq: 'Spustelėkite matmenis, kurie turi būti lygūs pažymėtam (Esc – baigti)', eqDone: 'Sulyginta: {0}', dimDeleted: 'Matmuo ištrintas', dimEdit: 'Keisti reikšmę…', dimDelete: 'Ištrinti matmenį', dimDeleteAll: 'Ištrinti visus matmenis', dimHideAll: 'Slėpti matmenis', dimBroke: 'Kitaip nepavyko – pasikeitė ir kiti matmenys: {0}', dimFree: 'Matmuo nepririštas prie jokios figūros', dimCorner: 'Pririškite matmenį prie kampų ar galų, kad galėtumėte keisti figūrą', pM1: 'Matavimo pradžia', pM2: 'Matavimo pabaiga', pM3: 'Padėkite matmenį (arba įveskite atstumą) · H horiz. · V vert. · A lygiagretus',
     selection: 'Pasirinkta', nothingSel: 'Nieko nepažymėta.',
-    tips: '<li><b>Ratukas</b> – priartinti, <b>vidurinis</b> arba <b>dešinys</b> mygtukas tempiant – slinkti, <b>Z</b> – visas vaizdas</li><li>Pažymėtą figūrą keiskite tempdami <b>rankenėles</b>. Kraštinės vidurio rankenėlė stumia visą kraštinę.</li><li>Apačioje įveskite: <code>50</code> – atstumas pelės kryptimi, <code>600,400</code> – poslinkis X,Y, <code>#0,0</code> – absoliuti vieta, <code>100&lt;45</code> – atstumas ir kampas</li><li>Galima skaičiuoti: <code>720-18*2</code></li><li>Dydį keiskite skiltyje <b>Dydis</b>: „Ištempti“ nekeičia skylių, nuožulų ir apvalinimų</li><li>Atidaro DXF, DWG ir 3D (STEP, IGES, STL, OBJ). Failą galima tiesiog nutempti į langą</li><li>Lapas su detalėmis: įrankis <b>Detalės lape</b> (G) – tempkite detales, R – pasukti</li>',
+    tips: '<li><b>Ratukas</b> – priartinti, <b>vidurinis</b> arba <b>dešinys</b> mygtukas tempiant – slinkti, <b>Z</b> – visas vaizdas</li><li>Pažymėtą figūrą keiskite tempdami <b>rankenėles</b>. Kraštinės vidurio rankenėlė stumia visą kraštinę.</li><li>Apačioje įveskite: <code>50</code> – atstumas pelės kryptimi, <code>600,400</code> – poslinkis X,Y, <code>#0,0</code> – absoliuti vieta, <code>100&lt;45</code> – atstumas ir kampas</li><li>Galima skaičiuoti: <code>720-18*2</code></li><li>Dydį keiskite skiltyje <b>Dydis</b>: „Ištempti“ nekeičia skylių, nuožulų ir apvalinimų</li><li>Atidaro DXF, DWG ir 3D (STEP, IGES, STL, OBJ). Failą galima tiesiog nutempti į langą</li><li>Lapas su detalėmis: įrankis <b>Detalės lape</b> (G) – tempkite detales, R – pasukti</li><li><b>Braižant</b> skaičiai rodomi prie žymeklio: įveskite ilgį, <b>Tab</b> – kampas, <b>Enter</b> – dėti. Įvestos reikšmės tampa matmenimis. <code>=d1</code> – lygus matmeniui d1, <code>d1*2</code> – skaičiuoti iš jo.</li><li>Pažymėkite dvi linijas ar du apskritimus ir spauskite <b>=</b> – jie taps lygūs ir keisis kartu.</li>',
     W: 'Plotis', H: 'Aukštis', layer: 'Sluoksnis', layers: 'Sluoksniai', addLayer: 'Naujas sluoksnis', current: 'dabartinis',
     size: 'Dydis', width: 'Plotis (X)', height: 'Aukštis (Y)', lock: 'Išlaikyti proporcijas', anchor: 'Fiksuotas taškas',
     modeStretch: 'Ištempti – kraštai pasislenka, skylės ir apvalinimai nesikeičia', modeScale: 'Mastelis – viskas keičiasi proporcingai',
@@ -4556,7 +4559,7 @@ const I18N = {
     toolOpts: 'Įrankis', d1: 'Atstumas 1', d2: 'Atstumas 2', radius: 'Spindulys', dist: 'Atstumas', keepOrig: 'Palikti originalą',
     allCorners: 'Visiems pažymėtų figūrų kampams (esami apvalinimai pakeičiami)', cornerR: 'Kampų spindulys', useDia: 'Įvesti skersmenį', closePoly: 'Uždaryti', finish: 'Baigti',
     help_select: 'Pažymėkite objektą – dešinėje matysite jo matmenis ir galėsite juos įvesti tiksliai.',
-    help_line: 'Spustelėkite taškus arba įveskite atstumą ir kryptį pele.', help_poly: 'Uždara polilinija tinka kontūrams CNC.',
+    help_line: 'Spustelėkite taškus. Ilgį įveskite skaičiumi – jis rodomas prie žymeklio (Tab – pereiti prie kampo), Enter – dėti. Įvestos reikšmės tampa matmenimis. Linija pati prisitraukia horizontaliai, vertikaliai, statmenai ar lygiagrečiai ankstesnei. A – kitas segmentas tangentinis lankas. Esc – baigti grandinę.', help_poly: 'Uždara polilinija tinka kontūrams CNC. Ilgį įveskite skaičiumi (Tab – kampas, Enter – dėti) – įvestos reikšmės tampa matmenimis.',
     help_rect: 'Antram kampui įveskite plotis,aukštis, pvz. 600,400.', help_circle: 'Centras, tada spindulys (arba skersmuo).',
     help_arc: 'Trys taškai: pradžia, taškas ant lanko, pabaiga.', help_move: 'Bazinis taškas → paskirtis. Galima įvesti 100 arba 100,0.',
     help_copy: 'Galima dėti kelias kopijas iš eilės.', help_rotate: 'Bazinis taškas → kampas.', help_scale: 'Bazinis taškas → koeficientas.',
@@ -4640,9 +4643,11 @@ const I18N = {
     pTrim: 'Click the part to remove (up to the nearest intersections)',
     pCham: 'Click a corner or the first line · distances {0} / {1} mm (type 5 or 5,8)',
     pFil: 'Click a corner or the first line · radius {0} mm (type a number)', pSecond: 'Second line',
+    pTanArc: 'Tangent arc: end point (A – back to line)', nextPointArc: 'Next point (A – tangent arc, Enter to finish)',
+    hudW: 'Width', hudH: 'Height', hudHint: 'Tab next field · Enter place · Backspace unlock', autoDim: 'Typed values become dimensions', loopClosed: 'Outline closed – click to start a new one', eqSel: 'Make equal', eqSelBad: 'Select at least two lines, or at least two circles / arcs', eqSelDone: 'Made equal: {0} = {1}', pEqRev: 'Click the dimension to take the value from (Esc to cancel)', dimEqBtn: 'Equal to another dimension – click it',
     dimValue: 'Dimension value', dimEditTip: 'Type a new value and the shape follows (Enter apply, Esc keep)', dimBad: 'The value must be greater than 0', cornerJoined: 'Corner done – the two pieces are now one outline', dimSel: 'Dimension selected · Delete removes it · double-click changes the value · = makes others equal', dimEqual: 'Make other dimensions equal…', dimUnlink: 'Remove equal link', pEq: 'Click the dimensions that should equal the selected one (Esc to finish)', eqDone: 'Set equal: {0}', dimDeleted: 'Dimension deleted', dimEdit: 'Change value…', dimDelete: 'Delete dimension', dimDeleteAll: 'Delete all dimensions', dimHideAll: 'Hide dimensions', dimBroke: 'No other way – other dimensions changed too: {0}', dimFree: 'This dimension is not attached to any shape', dimCorner: 'Attach the dimension to corners or ends to change the shape', pM1: 'Measure from', pM2: 'Measure to', pM3: 'Place the dimension (or type the distance) · H horizontal · V vertical · A aligned',
     selection: 'Selection', nothingSel: 'Nothing selected.',
-    tips: '<li><b>Wheel</b> zooms, drag with the <b>middle</b> or <b>right</b> button to pan, <b>Z</b> zooms to everything</li><li>Drag the <b>grips</b> of a selected shape. The midpoint grip of an edge moves the whole edge.</li><li>Type at the bottom: <code>50</code> – distance in the mouse direction, <code>600,400</code> – offset X,Y, <code>#0,0</code> – absolute, <code>100&lt;45</code> – distance and angle</li><li>Math works: <code>720-18*2</code></li><li>Change sizes in <b>Size</b>: “Stretch” keeps holes, chamfers and fillets unchanged</li><li>Opens DXF, DWG and 3D (STEP, IGES, STL, OBJ). Just drop a file on the window</li><li>Sheets with parts: the <b>Parts on sheet</b> tool (G) – drag parts, R rotates</li>',
+    tips: '<li><b>Wheel</b> zooms, drag with the <b>middle</b> or <b>right</b> button to pan, <b>Z</b> zooms to everything</li><li>Drag the <b>grips</b> of a selected shape. The midpoint grip of an edge moves the whole edge.</li><li>Type at the bottom: <code>50</code> – distance in the mouse direction, <code>600,400</code> – offset X,Y, <code>#0,0</code> – absolute, <code>100&lt;45</code> – distance and angle</li><li>Math works: <code>720-18*2</code></li><li>Change sizes in <b>Size</b>: “Stretch” keeps holes, chamfers and fillets unchanged</li><li>Opens DXF, DWG and 3D (STEP, IGES, STL, OBJ). Just drop a file on the window</li><li>Sheets with parts: the <b>Parts on sheet</b> tool (G) – drag parts, R rotates</li><li>While <b>drawing</b> the numbers show by the cursor: type a length, <b>Tab</b> for the angle, <b>Enter</b> to place. Typed values become dimensions. <code>=d1</code> – equal to dimension d1, <code>d1*2</code> – work from it.</li><li>Select two lines or two circles and press <b>=</b> – they become equal and change together.</li>',
     W: 'Width', H: 'Height', layer: 'Layer', layers: 'Layers', addLayer: 'New layer', current: 'current',
     size: 'Size', width: 'Width (X)', height: 'Height (Y)', lock: 'Keep proportions', anchor: 'Fixed point',
     modeStretch: 'Stretch – edges move, holes and fillets stay the same', modeScale: 'Scale – everything changes proportionally',
@@ -4652,7 +4657,7 @@ const I18N = {
     toolOpts: 'Tool', d1: 'Distance 1', d2: 'Distance 2', radius: 'Radius', dist: 'Distance', keepOrig: 'Keep original',
     allCorners: 'All corners of selected shapes (existing fillets are replaced)', cornerR: 'Corner radius', useDia: 'Enter diameter', closePoly: 'Close', finish: 'Finish',
     help_select: 'Select an object to see its dimensions on the right and type exact values.',
-    help_line: 'Click points or type a distance and aim with the mouse.', help_poly: 'Closed polylines are best for CNC contours.',
+    help_line: 'Click points. Type a length – it shows by the cursor (Tab moves to the angle), Enter places it. Typed values become dimensions. The line snaps horizontal, vertical, square to or along the previous one. A – the next segment is a tangent arc. Esc ends the chain.', help_poly: 'Closed polylines are best for CNC contours. Type a length (Tab for the angle, Enter to place) – typed values become dimensions.',
     help_rect: 'For the second corner type width,height, e.g. 600,400.', help_circle: 'Center, then radius (or diameter).',
     help_arc: 'Three points: start, a point on the arc, end.', help_move: 'Base point → destination. You can type 100 or 100,0.',
     help_copy: 'Place several copies in a row.', help_rotate: 'Base point → angle.', help_scale: 'Base point → factor.',
@@ -4722,7 +4727,7 @@ const S = {
   sel: new Set(), view: { cx: 0, cy: 0, s: 1 }, fname: '', sample: false,
   snaps: Object.assign({ end: true, mid: true, cen: true, int: true, qua: false, per: true, nea: true, grid: false, trk: true }, LS.get('dxfed.snaps', {})),
   ortho: LS.get('dxfed.ortho', false), polar: LS.get('dxfed.polar', true), curLayer: '0', undo: [], redo: [],
-  opts: Object.assign({ chD1: 5, chD2: 5, fR: 5, offD: 16, mirrorKeep: false, rectR: 0, circDia: false, anchor: 'bl', rsMode: 'stretch', keepHoles: true, lock: false, gap: 8, margin: 4, withNested: true, allowRot: true }, LS.get('dxfed.opts', {})),
+  opts: Object.assign({ chD1: 5, chD2: 5, fR: 5, offD: 16, mirrorKeep: false, rectR: 0, circDia: false, autoDim: true, anchor: 'bl', rsMode: 'stretch', keepHoles: true, lock: false, gap: 8, margin: 4, withNested: true, allowRot: true }, LS.get('dxfed.opts', {})),
   fmt: LS.get('dxfed.fmt', 'r12'), lastTool: null, hover: null, snap: null, shift: false, mouse: null, world: { x: 0, y: 0 }, measure: null,
   dims: LS.get('dxfed.dims', []), dimsHidden: false, an: null, partChk: null, sheetRect: null, alt: false
 };
@@ -4888,6 +4893,21 @@ function renderBase() {
 }
 
 /* ---------- grips ---------- */
+// dragging a corner of a sketch: lines, arcs and polylines that end in the same point come along (they stay joined)
+function gripFollow(e, ne) {
+  const none = { list: [], mv: [] };
+  if (!ne || e.type === 'circle' || e.type === 'text') return none;
+  const a = entPoints(e), b = entPoints(ne); if (a.length !== b.length) return none;
+  const mv = []; for (let i = 0; i < a.length; i++) { const d = vsub(b[i], a[i]); if (vlen(d) > 1e-12) mv.push({ p: a[i], d }); }
+  if (!mv.length) return none;
+  const f = q => { const m = mv.find(m => veq(m.p, q, 1e-6)); return m ? m.d : { x: 0, y: 0 }; }, list = [];
+  for (const o of visEnts()) {
+    if (o.id === e.id || o.layer !== e.layer || o.type === 'circle' || o.type === 'text') continue;
+    if (!entPoints(o).some(q => mv.some(m => veq(m.p, q, 1e-6)))) continue;
+    const on = stretchEnt(o, f); if (on) list.push({ id: o.id, ne: on });
+  }
+  return { list, mv };
+}
 function gripsOf(e) {
   const G = [];
   const mv = d => stretchEnt(e, () => d);
@@ -5097,7 +5117,35 @@ function axisLock(w, base) {
   if (Math.hypot(ax, ay) < band * 1.5) return null;
   if (ay <= band && ax > ay * 2) return 'h';
   if (ax <= band && ay > ax * 2) return 'v';
+  // like SolidWorks: square to the previous segment, or carrying straight on along it
+  const pd = prevDir(base); if (!pd) return null;
+  for (const [u, rel] of [[{ x: -pd.y, y: pd.x }, 'per'], [{ x: pd.y, y: -pd.x }, 'per'], [pd, 'par'], [{ x: -pd.x, y: -pd.y }, 'par']]) {
+    const along = d.x * u.x + d.y * u.y, off = Math.abs(d.x * u.y - d.y * u.x);
+    if (along > band * 1.5 && off <= band && along > off * 2) return { u, rel };
+  }
   return null;
+}
+// direction of the segment the new one starts from (the chain being drawn, or a line whose end we are on); null when square to the axes
+function prevDir(base) {
+  if (!tool || !(tool.name === 'line' || tool.name === 'poly') || !base) return null;
+  const P = tool.pts; let d = null;
+  if (tool.tan && P && P.length >= 2) d = tool.tan;
+  else if (P && P.length >= 2) d = vsub(P[P.length - 1], P[P.length - 2]);
+  else {
+    const key = S.rev + ':' + base.x + ',' + base.y;
+    if (prevDir.key === key) d = prevDir.d;
+    else {
+      for (const e of visEnts()) {
+        if (e.type !== 'line') continue;
+        if (veq({ x: e.x2, y: e.y2 }, base, 1e-6)) { d = { x: e.x2 - e.x1, y: e.y2 - e.y1 }; break; }
+        if (veq({ x: e.x1, y: e.y1 }, base, 1e-6)) { d = { x: e.x1 - e.x2, y: e.y1 - e.y2 }; break; }
+      }
+      prevDir.key = key; prevDir.d = d;
+    }
+  }
+  if (!d || vlen(d) < 1e-9) return null; const u = vnorm(d);
+  if (Math.abs(u.x) < 1e-6 || Math.abs(u.y) < 1e-6) return null; // square to the axes: the H / V lock covers it
+  return u;
 }
 /* ---------- alignment guides: show (and snap to) the X or Y of corners, midpoints and centres around the cursor ---------- */
 function guidePoints() {
@@ -5121,10 +5169,27 @@ function nearGuide(arr, axis, w, band, skip) {
   for (let i = lo; i < arr.length && arr[i][axis] <= v + band && n < 400; i++, n++) { const q = arr[i]; if (skip && vdist(q, skip) < 1e-9) continue; const d = Math.abs(q[axis] - v) * 1e3 + Math.abs(q[o] - w[o]) * 1e-3; if (Math.abs(q[o] - w[o]) * S.view.s < 4) continue; if (d < bd) { bd = d; best = q; } }
   return best;
 }
+// the point the tool gets: snaps and locks, then the on-screen numbers typed so far
 function curPoint() {
+  const p = curPoint1(), F = hudSync();
+  if (!F) return p;
+  S.hud.free = p;
+  return Object.keys(S.hud.lock).length ? hudApply(tool.base(), p, S.hud.lock) : p;
+}
+function curPoint1() {
   S.guides = null; const p0 = curPoint0(), base = tool && tool.base ? tool.base() : null;
   if (!S.snaps.trk || !(tool && tool.wantsPoint && tool.wantsPoint()) || (tool.noSnap && tool.noSnap()) || (S.snap && S.snap.kind !== 'grid' && S.snap.kind !== 'nea')) return p0;
   const band = 7 / S.view.s, G = guidePoints(), p = { ...p0 }, lock = S.lock && S.lock.kind, orth = base && (S.ortho !== S.shift);
+  if (lock === 'a') { // along a slanted lock: stop where it lines up with another point
+    const u = S.lock.u; let best = null;
+    for (const [g, ax] of [[nearGuide(G.bx, 'x', S.world, band, null), 'x'], [nearGuide(G.by, 'y', S.world, band, null), 'y']]) {
+      if (!g || Math.abs(u[ax]) < .2) continue;
+      const q = vadd(base, vmul(u, (g[ax] - base[ax]) / u[ax])), dd = vdist(q, p0);
+      if (dd < band * 1.5 && (!best || dd < best.d)) best = { g, ax, q, d: dd };
+    }
+    if (best) { S.guides = { gx: best.ax === 'x' ? best.g : null, gy: best.ax === 'y' ? best.g : null, p: best.q }; return best.q; }
+    return p0;
+  }
   const fixX = lock === 'v' || (orth && Math.abs(p.x - base.x) < 1e-12), fixY = lock === 'h' || (orth && Math.abs(p.y - base.y) < 1e-12);
   const gx = fixX ? null : nearGuide(G.bx, 'x', S.world, band, null), gy = fixY ? null : nearGuide(G.by, 'y', S.world, band, null);
   if (gx) p.x = gx.x; if (gy) p.y = gy.y;
@@ -5137,23 +5202,34 @@ function drawGuides(c, g) {
   c.restore();
 }
 function curPoint0() {
-  const w = S.world, base = tool && tool.base ? tool.base() : null, lock = axisLock(w, base); S.lock = lock ? { kind: lock, base } : null;
+  const w = S.world, base = tool && tool.base ? tool.base() : null, lk = axisLock(w, base), lock = lk && typeof lk === 'object' ? 'a' : lk;
+  S.lock = lock ? { kind: lock, base, u: lk.u, rel: lk.rel } : null;
+  const onA = q => vadd(base, vmul(lk.u, (q.x - base.x) * lk.u.x + (q.y - base.y) * lk.u.y));
   if (S.snap && S.snap.kind !== 'grid') {
     const sp = S.snap.p; if (!lock) return sp;
     const band = 10 / S.view.s;
     if (lock === 'h' && Math.abs(sp.y - base.y) <= band) return { x: sp.x, y: base.y };
     if (lock === 'v' && Math.abs(sp.x - base.x) <= band) return { x: base.x, y: sp.y };
+    if (lock === 'a') { const q = onA(sp); if (vdist(q, sp) <= band) return q; }
     if (vdist(sp, w) < 4 / S.view.s) { S.lock = null; return sp; } // right on a snap point off the line: the snap wins
   }
   let p = S.snap && S.snap.kind === 'grid' ? S.snap.p : roundPt(w);
   if (base && (S.ortho !== S.shift)) { const d = vsub(w, base); p = Math.abs(d.x) >= Math.abs(d.y) ? { x: p.x, y: base.y } : { x: base.x, y: p.y }; }
-  else if (lock === 'h') p = { x: p.x, y: base.y }; else if (lock === 'v') p = { x: base.x, y: p.y };
+  else if (lock === 'h') p = { x: p.x, y: base.y }; else if (lock === 'v') p = { x: base.x, y: p.y }; else if (lock === 'a') p = onA(w);
   return p;
 }
-function drawLock(c, L) { // dashed guide along the locked direction
+function drawLock(c, L) { // dashed guide along the locked direction + the relation sign by the cursor (like SolidWorks)
   const b = w2s(L.base); c.save(); c.strokeStyle = col.win; c.globalAlpha = .7; c.lineWidth = 1; c.setLineDash([6, 5]); c.beginPath();
-  if (L.kind === 'h') { c.moveTo(0, Math.round(b.y) + .5); c.lineTo(W, Math.round(b.y) + .5); } else { c.moveTo(Math.round(b.x) + .5, 0); c.lineTo(Math.round(b.x) + .5, H); }
+  if (L.kind === 'h') { c.moveTo(0, Math.round(b.y) + .5); c.lineTo(W, Math.round(b.y) + .5); }
+  else if (L.kind === 'v') { c.moveTo(Math.round(b.x) + .5, 0); c.lineTo(Math.round(b.x) + .5, H); }
+  else { const k = W + H; c.moveTo(b.x - L.u.x * k, b.y + L.u.y * k); c.lineTo(b.x + L.u.x * k, b.y - L.u.y * k); }
   c.stroke(); c.restore();
+  if (S.mouse) relGlyph(c, S.mouse.x + 14, S.mouse.y - 30, L.kind === 'h' ? '—' : L.kind === 'v' ? '|' : L.rel === 'per' ? '⊥' : '∥');
+}
+function relGlyph(c, x, y, g) {
+  c.save(); c.font = '700 13px ' + getComputedStyle(document.body).getPropertyValue('--mono'); c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillStyle = col.hot; c.globalAlpha = .16; c.fillRect(x, y, 20, 18); c.globalAlpha = 1; c.strokeStyle = col.hot; c.lineWidth = 1; c.strokeRect(x + .5, y + .5, 19, 17);
+  c.fillStyle = col.hot; c.fillText(g, x + 10, y + 9.5); c.restore();
 }
 
 /* ---------- overlay ---------- */
@@ -5262,20 +5338,21 @@ function renderOverlay() {
     if (S.lock && tool.wantsPoint && tool.wantsPoint()) drawLock(c, S.lock);
     if (S.guides && tool.wantsPoint && tool.wantsPoint()) drawGuides(c, S.guides);
     if (S.snap) drawSnap(c, S.snap);
-    const base = tool.base ? tool.base() : null;
-    if (base && tool.wantsPoint && tool.wantsPoint()) {
+    const base = tool.base ? tool.base() : null, HF = base ? hudSync() : null, hudOn = !!HF && (!cmd.value.trim() || hudNumeric(cmd.value.trim()));
+    if (hudOn) drawHud(c, HF, base, cur);
+    else if (base && tool.wantsPoint && tool.wantsPoint()) {
       const d = vsub(cur, base), L = vlen(d); let a = deg(vang(d)); if (a < 0) a += 360;
       const txt = tool.tipText ? tool.tipText(cur) : `${fmt(L, 2)}  ∠${fmt(a, 1)}°  (${fmt(d.x, 2)}, ${fmt(d.y, 2)})`;
       label(c, S.mouse.x + 16, S.mouse.y + 16, txt);
     } else if (tool.tipText) { const tt = tool.tipText(cur); if (tt) label(c, S.mouse.x + 16, S.mouse.y + 16, tt); }
     if (S.hover != null && !boxDrag && (tool.name === 'select' && !tool.hot && !(tool.mv && tool.mv.moved) || tool.phase === 'pick')) { const e = getEnt(S.hover); if (e) label(c, S.mouse.x + 16, S.mouse.y + 18, describeEnt(e)); }
-    if (cmd.value) dynBox(c, S.mouse.x + 16, S.mouse.y + 40);
+    if (cmd.value && !hudOn) dynBox(c, S.mouse.x + 16, S.mouse.y + 40);
   }
 }
 
 /* ---------- tools ---------- */
 let tool = null, boxDrag = null, pick = null;
-const NEED_SEL = new Set(['move', 'copy', 'rotate', 'scale', 'mirror']);
+const NEED_SEL = new Set(['move', 'copy', 'rotate', 'scale', 'mirror']), DRAW_TOOLS = new Set(['line', 'poly', 'rect', 'circle', 'arc']);
 // centre of the selection's outline box – the natural point to move or rotate a part about
 function selCenter() { if (!S.sel.size) return null; if (selCenter.rev === S.rev && selCenter.c) return selCenter.c; const bb = bboxOf(selEnts()); selCenter.rev = S.rev; selCenter.c = bb ? { x: (bb[0] + bb[2]) / 2, y: (bb[1] + bb[3]) / 2 } : null; return selCenter.c; }
 function selCenterSnap() { if (!tool || !NEED_SEL.has(tool.name) || !(tool.phase === 'base' || (tool.name === 'mirror' && tool.phase === 'p1'))) return null; return selCenter(); }
@@ -5510,10 +5587,15 @@ const TOOLS = {
       pick = null; boxDrag = null;
     },
     point(p) { if (this.hot) this.place(p); },
-    place(p) { const h = this.hot; this.hot = null; updatePrompt(); const e = getEnt(h.id); if (!e) return; const ne = h.apply(p); if (ne) { pushUndo(); replaceEnt(e.id, ne); commit(); } else requestDraw(); },
+    place(p) {
+      const h = this.hot; this.hot = null; updatePrompt(); const e = getEnt(h.id); if (!e) return; const ne = h.apply(p); if (!ne) { requestDraw(); return; }
+      const F = gripFollow(e, ne); pushUndo(); replaceEnt(e.id, ne); for (const o of F.list) replaceEnt(o.id, o.ne);
+      if (F.mv.length) { for (const dm of S.dims) for (const k of ['a', 'b', 'v']) if (dm[k]) { const m = F.mv.find(m => veq(m.p, dm[k], 1e-6)); if (m) dm[k] = vadd(dm[k], m.d); } saveDims(); }
+      commit();
+    },
     draw(c, cur) {
       if (this.mv && this.mv.moved) { const d = vsub(cur, this.mv.start); ghostSel(c, mTrans(d.x, d.y)); rubber(c, this.mv.start, cur); return; }
-      if (!this.hot) return; const e = getEnt(this.hot.id); if (!e) return; const ne = this.hot.apply(cur); if (ne) ghost(c, [ne]); rubber(c, this.hot.p, cur); },
+      if (!this.hot) return; const e = getEnt(this.hot.id); if (!e) return; const ne = this.hot.apply(cur); if (ne) ghost(c, [ne, ...gripFollow(e, ne).list.map(o => o.ne)]); rubber(c, this.hot.p, cur); },
     enter() { if (this.hot) { this.hot = null; updatePrompt(); requestDraw(); return; } if (S.lastTool) setTool(S.lastTool); },
     onKey(ev) { // arrows: nudge the selection 1 mm (Shift 10 mm); with nothing selected they scroll the view
       const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[ev.key];
@@ -5525,21 +5607,63 @@ const TOOLS = {
     esc() { if (this.mv) { this.mv = null; updatePrompt(); requestDraw(); return; } if (this.hot) { this.hot = null; return; } if (S.sel.size) { S.sel.clear(); selChanged(); } }
   }),
   line: () => ({
-    name: 'line', pts: [],
-    prompt() { return this.pts.length ? t('nextPoint') : t('firstPoint'); },
+    name: 'line', pts: [], tan: null, arcMode: false,
+    prompt() { return this.arcMode ? t('pTanArc') : this.pts.length ? (this.tan ? t('nextPointArc') : t('nextPoint')) : t('firstPoint'); },
     base() { return this.pts[this.pts.length - 1] || null; }, wantsPoint: () => true,
-    point(p) { const a = this.base(); if (a) { if (vdist(a, p) < 1e-9) return; pushUndo(); addEnt({ type: 'line', x1: a.x, y1: a.y, x2: p.x, y2: p.y }); commit(); } this.pts.push(p); },
-    draw(c, cur) { const a = this.base(); if (a) ghost(c, [{ type: 'line', x1: a.x, y1: a.y, x2: cur.x, y2: cur.y }]); },
+    // tangent arc from the end of the chain to p: the bulge of the arc (0 = straight on)
+    tanBulge(p) { const a = this.base(), u = this.tan; if (!a || !u) return 0; const c = vsub(p, a), th = Math.atan2(u.x * c.y - u.y * c.x, u.x * c.x + u.y * c.y); return Math.abs(th) < 1e-6 || Math.abs(Math.abs(th) - PI) < 1e-6 ? 0 : Math.tan(th / 2); },
+    point(p) {
+      const a = this.base(), lk = this.arcMode ? null : hudTake();
+      if (a) {
+        if (vdist(a, p) < 1e-9) return;
+        const b = this.arcMode ? this.tanBulge(p) : 0, A = b ? bulgeArc(a, p, b) : null;
+        pushUndo();
+        if (A) { addEnt({ type: 'arc', cx: A.c.x, cy: A.c.y, r: A.r, a0: A.sw > 0 ? A.a0 : A.a0 + A.sw, a1: A.sw > 0 ? A.a0 + A.sw : A.a0 }); const sw = 4 * Math.atan(b), u = this.tan; this.tan = { x: u.x * Math.cos(sw) - u.y * Math.sin(sw), y: u.x * Math.sin(sw) + u.y * Math.cos(sw) }; }
+        else { addEnt({ type: 'line', x1: a.x, y1: a.y, x2: p.x, y2: p.y }); autoDimSeg(this, a, p, lk, false); this.tan = vnorm(vsub(p, a)); }
+        this.arcMode = false; commit();
+      }
+      // back on the first point of the chain: the outline is closed – the next click starts a new one
+      if (a && this.pts.length >= 3 && vdist(p, this.pts[0]) < 1e-9) { this.pts = []; this._ad = null; this.tan = null; toast(t('loopClosed')); sketchZoom(); return; }
+      this.pts.push(p);
+    },
+    onKey(ev) { // A: the next segment is an arc tangent to the last one (like SolidWorks' tangent arc)
+      if (ev.key.toLowerCase() !== 'a' || ev.ctrlKey || ev.metaKey || ev.altKey || !this.tan || !this.pts.length) return false;
+      this.arcMode = !this.arcMode; updatePrompt(); requestDraw(); return true;
+    },
+    tipText(cur) {
+      const a = this.base(); if (!a) return '';
+      const b = this.arcMode ? this.tanBulge(cur) : 0, A = b ? bulgeArc(a, cur, b) : null;
+      if (A) return `R ${fmt(A.r, 2)}  ${fmt(Math.abs(deg(A.sw)), 1)}°`;
+      const d = vsub(cur, a); let an = deg(vang(d)); if (an < 0) an += 360; return `${fmt(vlen(d), 2)}  ∠${fmt(an, 1)}°  (${fmt(d.x, 2)}, ${fmt(d.y, 2)})`;
+    },
+    draw(c, cur) {
+      const a = this.base(); if (!a) return;
+      const b = this.arcMode ? this.tanBulge(cur) : 0;
+      ghost(c, [b ? { type: 'poly', closed: false, pts: [{ ...a, b }, { ...cur, b: 0 }] } : { type: 'line', x1: a.x, y1: a.y, x2: cur.x, y2: cur.y }], null, []);
+    },
     extraSnaps() { return this.pts.slice(0, 1); },
-    undoStep() { if (this.pts.length >= 2) { undoKeepTool(); this.pts.pop(); return true; } if (this.pts.length) { this.pts = []; return true; } return false; }
+    enter() { if (this.pts.length) { this.pts = []; this._ad = null; this.tan = null; this.arcMode = false; updatePrompt(); requestDraw(); } else setTool('select'); },
+    cancel() { if (this.arcMode) { this.arcMode = false; return true; } if (this.pts.length) { this.pts = []; this._ad = null; this.tan = null; return true; } return false; },
+    undoStep() { this.arcMode = false; if (this.pts.length >= 2) { undoKeepTool(); this.pts.pop(); this.tan = this.pts.length >= 2 ? vnorm(vsub(this.pts[this.pts.length - 1], this.pts[this.pts.length - 2])) : null; return true; } if (this.pts.length) { this.pts = []; this.tan = null; return true; } return false; }
   }),
   poly: () => ({
     name: 'poly', pts: [],
     prompt() { return this.pts.length ? t('polyNext') : t('firstPoint'); },
     base() { return this.pts[this.pts.length - 1] || null; }, wantsPoint: () => true,
-    point(p) { if (this.pts.length >= 3 && vdist(p, this.pts[0]) < 1e-7) return this.finish(true); const a = this.base(); if (a && vdist(a, p) < 1e-9) return; this.pts.push(p); renderPanel(); },
-    finish(closed) { if (this.pts.length >= 2) { pushUndo(); addEnt({ type: 'poly', closed: !!closed && this.pts.length >= 3, pts: this.pts.map(p => ({ x: p.x, y: p.y, b: 0 })) }); commit(); } this.pts = []; renderPanel(); updatePrompt(); },
-    draw(c, cur) { if (!this.pts.length) return; ghost(c, [{ type: 'poly', closed: false, pts: [...this.pts, cur].map(p => ({ ...p, b: 0 })) }]); },
+    point(p) {
+      const a = this.base(), lk = hudTake();
+      if (this.pts.length >= 3 && vdist(p, this.pts[0]) < 1e-7) { autoDimSeg(this, a, p, lk, true); return this.finish(true); }
+      if (a && vdist(a, p) < 1e-9) return; if (a) autoDimSeg(this, a, p, lk, true); this.pts.push(p); renderPanel();
+    },
+    finish(closed) {
+      if (this.pts.length >= 2) {
+        pushUndo(); addEnt({ type: 'poly', closed: !!closed && this.pts.length >= 3, pts: this.pts.map(p => ({ x: p.x, y: p.y, b: 0 })) });
+        if (this._ad && this._ad.length) { S.dims.push(...this._ad); saveDims(); renderDims(); } // typed lengths become dimensions
+        commit();
+      }
+      this.pts = []; this._ad = null; renderPanel(); updatePrompt();
+    },
+    draw(c, cur) { if (!this.pts.length) return; ghost(c, [{ type: 'poly', closed: false, pts: [...this.pts, cur].map(p => ({ ...p, b: 0 })) }], null, []); if (this._ad && !S.dimsHidden) for (const m of this._ad) drawDim(c, m); },
     extraSnaps() { return this.pts.slice(0, 1); },
     enter() { if (this.pts.length) this.finish(false); else setTool('select'); },
     cancel() { if (this.pts.length) { this.finish(false); return true; } return false; }
@@ -5548,19 +5672,21 @@ const TOOLS = {
     name: 'rect', a: null,
     prompt() { return this.a ? t('rectP2') : t('rectP1'); }, base() { return this.a; }, wantsPoint: () => true,
     make(a, b) { const e = { type: 'poly', closed: true, pts: rectPts(a, b) }; if (S.opts.rectR > 0) { const r = cornerPolyAll(e, 'fillet', S.opts.rectR); if (r.ent && r.count) return r.ent; } return e; },
-    point(p) { if (!this.a) { this.a = p; return; } if (Math.abs(p.x - this.a.x) < 1e-9 || Math.abs(p.y - this.a.y) < 1e-9) return; pushUndo(); addEnt(this.make(this.a, p)); commit(); this.a = null; },
-    draw(c, cur) { if (this.a && Math.abs(cur.x - this.a.x) > 1e-9 && Math.abs(cur.y - this.a.y) > 1e-9) ghost(c, [this.make(this.a, cur)]); },
-    tipText(cur) { return this.a ? `${fmt(Math.abs(cur.x - this.a.x), 2)} × ${fmt(Math.abs(cur.y - this.a.y), 2)}` : ''; }
+    point(p) { if (!this.a) { this.a = p; return; } if (Math.abs(p.x - this.a.x) < 1e-9 || Math.abs(p.y - this.a.y) < 1e-9) return; const lk = hudTake(); pushUndo(); addEnt(this.make(this.a, p)); autoDimRect(this.a, p, lk); commit(); this.a = null; },
+    draw(c, cur) { if (this.a && Math.abs(cur.x - this.a.x) > 1e-9 && Math.abs(cur.y - this.a.y) > 1e-9) ghost(c, [this.make(this.a, cur)], null, []); },
+    tipText(cur) { return this.a ? `${fmt(Math.abs(cur.x - this.a.x), 2)} × ${fmt(Math.abs(cur.y - this.a.y), 2)}` : ''; },
+    cancel() { if (this.a) { this.a = null; return true; } return false; }
   }),
   circle: () => ({
     name: 'circle', c: null,
     prompt() { return this.c ? (S.opts.circDia ? t('circleD') : t('circleR')) : t('circleC'); }, base() { return this.c; }, wantsPoint: () => true,
     acceptsValue() { return !!this.c; },
-    value(v) { const r = S.opts.circDia ? v / 2 : v; if (r <= 0) return; this.make(r); },
-    point(p) { if (!this.c) { this.c = p; return; } const r = vdist(p, this.c); if (r > 1e-9) this.make(r); },
-    make(r) { pushUndo(); addEnt({ type: 'circle', cx: this.c.x, cy: this.c.y, r }); commit(); this.c = null; },
-    draw(c, cur) { if (this.c) { const r = vdist(cur, this.c); if (r > 0) ghost(c, [{ type: 'circle', cx: this.c.x, cy: this.c.y, r }]); } },
-    tipText(cur) { if (!this.c) return ''; const r = vdist(cur, this.c); return `R ${fmt(r, 2)}  Ø ${fmt(2 * r, 2)}`; }
+    value(v) { const r = S.opts.circDia ? v / 2 : v; if (r <= 0) return; this.make(r, { D: v }); },
+    point(p) { if (!this.c) { this.c = p; return; } const r = vdist(p, this.c); if (r > 1e-9) this.make(r, hudTake()); },
+    make(r, lk) { pushUndo(); addEnt({ type: 'circle', cx: this.c.x, cy: this.c.y, r }); if (lk && lk.D != null) autoDimCircle(this.c, r); commit(); this.c = null; },
+    draw(c, cur) { if (this.c) { const r = vdist(cur, this.c); if (r > 0) ghost(c, [{ type: 'circle', cx: this.c.x, cy: this.c.y, r }], null, []); } },
+    tipText(cur) { if (!this.c) return ''; const r = vdist(cur, this.c); return `R ${fmt(r, 2)}  Ø ${fmt(2 * r, 2)}`; },
+    cancel() { if (this.c) { this.c = null; return true; } return false; }
   }),
   arc: () => ({
     name: 'arc', pts: [],
@@ -5571,8 +5697,9 @@ const TOOLS = {
     },
     draw(c, cur) {
       if (this.pts.length === 1) ghost(c, [{ type: 'line', x1: this.pts[0].x, y1: this.pts[0].y, x2: cur.x, y2: cur.y }]);
-      if (this.pts.length === 2) { const A = arc3(this.pts[0], this.pts[1], cur); if (A) ghost(c, [{ type: 'poly', closed: false, pts: [{ ...this.pts[0], b: Math.tan(A.sw / 4) }, { ...cur, b: 0 }] }]); }
-    }
+      if (this.pts.length === 2) { const A = arc3(this.pts[0], this.pts[1], cur); if (A) ghost(c, [{ type: 'poly', closed: false, pts: [{ ...this.pts[0], b: Math.tan(A.sw / 4) }, { ...cur, b: 0 }] }], null, []); }
+    },
+    cancel() { if (this.pts.length) { this.pts = []; return true; } return false; }
   }),
   move: () => moveTool(false),
   copy: () => moveTool(true),
@@ -5693,14 +5820,14 @@ function setTool(name) {
 }
 function resetTool() { if (tool) setTool(tool.name === 'select' ? 'select' : tool.name); }
 function updatePrompt() {
-  let p = S.eqPick ? t('pEq') : tool.phase === 'pick' ? t('pickObj') : tool.prompt();
+  let p = S.eqPick ? t(S.eqPick.rev ? 'pEqRev' : 'pEq') : tool.phase === 'pick' ? t('pickObj') : tool.prompt();
   $('prompt').textContent = (tool.name !== 'select' ? t(tool.name) + ': ' : '') + p;
 }
 function escapeKey() {
   if (S.eqPick) { endEqPick(); return; }
   if (S.selDim) { S.selDim = null; renderDims(); requestDraw(); if (tool.name === 'select') return; }
   if (tool.name === 'parts') { tool.cancel(); if (S.sel.size) { S.sel.clear(); selChanged(); } updatePrompt(); requestDraw(); return; } // the sheet mode stays; Esc only drops the selection
-  if (tool.phase === 'pick' || tool.name !== 'select') { const kept = tool.cancel && tool.cancel(); if (!kept || tool.name !== 'select') setTool('select'); }
+  if (tool.phase === 'pick' || tool.name !== 'select') { const kept = tool.cancel && tool.cancel(); if (!kept || !(tool.name === 'select' || DRAW_TOOLS.has(tool.name))) setTool('select'); }
   else tool.esc();
   S.measure = null; updatePrompt(); requestDraw();
 }
@@ -5906,6 +6033,7 @@ function renderOpts() {
   if (n === 'offset') h += `<div class="kv" style="margin-top:8px">${num('offD', t('dist'))}</div>`;
   if (n === 'rect') h += `<div class="kv" style="margin-top:8px">${num('rectR', t('cornerR'))}</div>`;
   if (n === 'circle') h += `<div class="row"><label class="chk"><input type="checkbox" data-o="circDia" ${o.circDia ? 'checked' : ''}> ${t('useDia')}</label></div>`;
+  if (n === 'line' || n === 'poly' || n === 'rect' || n === 'circle') h += `<div class="row"><label class="chk"><input type="checkbox" data-o="autoDim" ${o.autoDim ? 'checked' : ''}> ${t('autoDim')}</label></div>`;
   if (n === 'mirror') h += `<div class="row"><label class="chk"><input type="checkbox" data-o="mirrorKeep" ${o.mirrorKeep ? 'checked' : ''}> ${t('keepOrig')}</label></div>`;
   if (n === 'poly' && tool.pts && tool.pts.length >= 2) h += `<div class="row">${tool.pts.length >= 3 ? `<button class="btn small" data-act="polyClose">${t('closePoly')}</button>` : ''}<button class="btn small" data-act="polyFinish">${t('finish')}</button></div>`;
   el.innerHTML = h;
@@ -6098,6 +6226,7 @@ const cmd = $('cmd');
 function focusCmd() { if (!matchMedia('(pointer:coarse)').matches) cmd.focus({ preventScroll: true }); }
 function onCmd() {
   const s = cmd.value.trim(); cmd.value = '';
+  if (hudEnter(s)) return;
   if (!s) return confirmKey();
   if (tool.phase === 'pick') return toast(t('pickObj'), true);
   if (tool.raw && tool.raw(s)) { updatePrompt(); return; }
@@ -6112,15 +6241,18 @@ cmd.addEventListener('input', () => requestDraw());
 cmd.addEventListener('keydown', ev => {
   if (overlayKey(ev)) { ev.stopPropagation(); return; }
   if (S3.mode === '3d') return;
+  if (ev.key === 'Tab' && !ev.ctrlKey && !ev.altKey && !ev.metaKey && hudTab(ev.shiftKey)) { ev.preventDefault(); return; }
   if (ev.key === 'Tab' && S.snapCands && S.snapCands.length > 1 && S.mouse && S.mouse.inside) { ev.preventDefault(); S.snapPick = (S.snapPick || 0) + 1; updateSnapNow(); requestDraw(); return; }
   if (ev.key === ' ' && !cmd.value) { ev.preventDefault(); if (!ev.repeat && !S.space) { S.space = { panned: false, panning: false }; updateCursor(); } return; }
   if (ev.key === '?' && !cmd.value) { ev.preventDefault(); openHelp(); return; }
   if (ev.key === 'Enter') { ev.preventDefault(); onCmd(); return; }
-  if (ev.key === 'Escape') { ev.preventDefault(); if (!$('helpOverlay').hidden) { closeHelp(); return; } if (!$('ctx').hidden) { closeCtx(); return; } if (cmd.value) { cmd.value = ''; requestDraw(); return; } escapeKey(); return; }
+  if (ev.key === 'Escape') { ev.preventDefault(); if (!$('helpOverlay').hidden) { closeHelp(); return; } if (!$('ctx').hidden) { closeCtx(); return; } if (cmd.value) { cmd.value = ''; requestDraw(); return; } if (hudClear()) return; escapeKey(); return; }
   if (!cmd.value && tool.onKey && tool.onKey(ev)) { ev.preventDefault(); ev.stopPropagation(); return; }
   if (!cmd.value && ev.key === '=' && tool.name === 'select' && selDimOk()) { ev.preventDefault(); startEqPick(S.selDim); return; }
+  if (!cmd.value && ev.key === '=' && tool.name === 'select' && S.sel.size >= 2) { ev.preventDefault(); makeEqualSel(); return; }
   if (cmd.value) return;
   if (ev.ctrlKey || ev.metaKey || ev.altKey) return;
+  if (ev.key === 'Backspace' && hudUnlock()) { ev.preventDefault(); return; }
   if (ev.key === 'Backspace' && stepBack()) { ev.preventDefault(); return; }
   if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); if (S.sel.size || selDimOk()) runAction('del'); return; }
   if (ev.key.length === 1 && /[a-zA-Z]/.test(ev.key)) { ev.preventDefault(); const tn = SHORT[ev.key.toLowerCase()]; if (tn) runShortcut(tn); }
@@ -6153,6 +6285,7 @@ document.addEventListener('keydown', ev => {
   if (ev.key === 'Backspace' && tg !== cmd && !textField && !ev.ctrlKey && !ev.metaKey && !ev.altKey && stepBack()) { ev.preventDefault(); return; }
   if ((ev.key === 'Delete' || ev.key === 'Backspace') && tg !== cmd && !textField && !ev.ctrlKey && !ev.metaKey && !ev.altKey && (S.sel.size || selDimOk())) { ev.preventDefault(); runAction('del'); focusCmd(); return; }
   if (inField) return;
+  if (ev.key === 'Tab' && !ev.ctrlKey && !ev.altKey && !ev.metaKey && hudTab(ev.shiftKey)) { ev.preventDefault(); focusCmd(); return; }
   if (ev.key === 'Tab' && S.snapCands && S.snapCands.length > 1 && S.mouse && S.mouse.inside) { ev.preventDefault(); S.snapPick = (S.snapPick || 0) + 1; updateSnapNow(); requestDraw(); return; }
   if (tool.onKey && tool.onKey(ev)) { ev.preventDefault(); return; }
   const onButton = /^(BUTTON|SUMMARY|A)$/.test(tg.tagName);
@@ -6161,6 +6294,7 @@ document.addEventListener('keydown', ev => {
   if (ev.key === ' ') { if (onButton) return; ev.preventDefault(); if (!ev.repeat && !S.space) { S.space = { panned: false, panning: false }; updateCursor(); } return; }
   if (ev.key === '?' || ev.key === 'F1') { ev.preventDefault(); openHelp(); return; }
   if (ev.key === '=' && tool.name === 'select' && selDimOk()) { ev.preventDefault(); startEqPick(S.selDim); return; }
+  if (ev.key === '=' && tool.name === 'select' && S.sel.size >= 2) { ev.preventDefault(); makeEqualSel(); return; }
   if (ev.key === 'Delete' || ev.key === 'Backspace') { ev.preventDefault(); if (S.sel.size || selDimOk()) runAction('del'); return; }
   if (!ev.ctrlKey && !ev.metaKey && !ev.altKey && ev.key.length === 1) {
     if (/[a-zA-Z]/.test(ev.key)) { ev.preventDefault(); const tn = SHORT[k]; if (tn) runShortcut(tn); return; }
@@ -6215,6 +6349,7 @@ ov.addEventListener('pointerdown', ev => {
   const sp = screenOf(ev); ptrs.set(ev.pointerId, sp);
   if (ptrs.size === 2) { const [a, b] = [...ptrs.values()]; pinch = { d: vdist(a, b), m: vlerp(a, b, .5) }; downInfo = null; pick = null; boxDrag = null; return; }
   closeCtx();
+  if (S.eqPick && ev.button === 0 && !S.space) { downInfo = null; eqPickAt(sp); updatePrompt(); requestDraw(); return; }
   if (ev.button === 1 || (ev.button === 0 && S.space)) { ev.preventDefault(); pan = { x: sp.x, y: sp.y, cx: S.view.cx, cy: S.view.cy }; if (S.space) S.space.panning = S.space.panned = true; updateCursor(); return; }
   if (ev.button === 2) { rdown = { x: sp.x, y: sp.y, cx: S.view.cx, cy: S.view.cy, moved: false }; return; }
   if (ev.button !== 0) return;
@@ -6222,6 +6357,7 @@ ov.addEventListener('pointerdown', ev => {
   S.shift = ev.shiftKey; S.world = s2w(sp.x, sp.y); updateSnapNow();
   const info = { screen: sp, world: S.world, shift: ev.shiftKey, ctrl: ev.ctrlKey || ev.metaKey, moved: false };
   downInfo = info;
+  hudClickTyped();
   const p = curPoint();
   if (tool.phase === 'pick') { pick = { start: sp }; return; }
   if (tool.down) tool.down(p, info);
@@ -6312,7 +6448,9 @@ $('bIns').onclick = () => $('fIns').click();
 $('fOpen').onchange = ev => { const f = ev.target.files[0]; if (f) readFile(f, false); ev.target.value = ''; };
 $('fIns').onchange = ev => { const f = ev.target.files[0]; if (f) readFile(f, true); ev.target.value = ''; };
 $('bSave').onclick = () => saveDXF(false);
-$('bNew').onclick = () => { pushUndo(); S.anMemo = null; S.doc = { ents: [], layers: { '0': { color: 7, visible: true } } }; S.sel.clear(); S.fname = ''; S.sample = false; S.curLayer = '0'; S.sheetRect = null; S.dims = []; saveDims(); switchMode('2d'); setTool('select'); commit(); toast(t('newDoc')); };
+$('bNew').onclick = () => { pushUndo(); S.anMemo = null; S.doc = { ents: [], layers: { '0': { color: 7, visible: true } } }; S.sel.clear(); S.fname = ''; S.sample = false; S.curLayer = '0'; S.sheetRect = null; S.dims = []; saveDims(); switchMode('2d'); setTool('select'); commit(); newSketchView(); toast(t('newDoc')); };
+// a new drawing: origin near the lower left corner, about a metre across the view
+function newSketchView() { const s = Math.max(.05, (W - 120) / 1000); S.view = { s, cx: (W / 2 - 60) / s, cy: (H / 2 - 60) / s }; dirtyBase = true; requestDraw(); }
 $('bUndo').onclick = () => { undoAction(); focusCmd(); }; $('bRedo').onclick = redo; $('bFit').onclick = () => S3.mode === '3d' ? fitView3D() : fit();
 $('bMode2').onclick = () => switchMode('2d'); $('bMode3').onclick = () => { if (S3.model3d) switchMode('3d'); else $('fOpen').click(); };
 $('fmt').value = S.fmt; $('fmt').onchange = ev => { S.fmt = ev.target.value; LS.set('dxfed.fmt', S.fmt); ev.target.blur(); focusCmd(); };
@@ -7719,7 +7857,8 @@ function drawDim(c, m) {
     if (ul > 1) for (const [px, py, s] of [[g.ax, g.ay, 1], [g.bx, g.by, -1]]) { c.beginPath(); c.moveTo(px, py); c.lineTo(px + (ux / ul * 8 + g.nx * 3) * s, py + (uy / ul * 8 + g.ny * 3) * s); c.lineTo(px + (ux / ul * 8 - g.nx * 3) * s, py + (uy / ul * 8 - g.ny * 3) * s); c.closePath(); c.fill(); }
     for (const p of [g.a, g.b]) { c.beginPath(); c.arc(p.x, p.y, 2.5, 0, TAU); c.fill(); }
     const dx = Math.abs(m.b.x - m.a.x), dy = Math.abs(m.b.y - m.a.y);
-    let txt = fmt(g.val, 2); if (!m.dir && dx > 1e-6 && dy > 1e-6) txt += `  (${fmt(dx, 2)} × ${fmt(dy, 2)})`;
+    let txt = (m.pre || '') + fmt(g.val, 2); if (!m.dir && !m.pre && dx > 1e-6 && dy > 1e-6) txt += `  (${fmt(dx, 2)} × ${fmt(dy, 2)})`;
+    if (dimNamesOn()) txt = 'd' + (S.dims.indexOf(m) + 1) + ': ' + txt;
     if (m.eq) txt += '  =' + eqNo(m);
     dimLabel(c, (g.ax + g.bx) / 2, (g.ay + g.by) / 2, g.ang, txt, hl, m);
   } else if (m.k === 'a') {
@@ -7939,7 +8078,17 @@ function startEqPick(src) {
 }
 function endEqPick() { if (!S.eqPick) return; S.eqPick = null; updatePrompt(); requestDraw(); }
 // a click while picking equal dimensions
+function startEqTake(m) { closeDimEdit(false); S.eqPick = { src: m, rev: true }; selectDim(m, true); toast(t('pEqRev')); updatePrompt(); focusCmd(); }
+function linkEqTo(m, ref) { // m takes ref's value and stays equal to it
+  const v = dimWorld(ref).val, old = { s: ref.eq, d: m.eq }, nU = S.undo.length;
+  pushUndo(); linkEqual(ref, m);
+  const r = dimDrive(m, v, { noUndo: true });
+  if (r.r !== 'ok' && r.r !== 'same') { ref.eq = old.s; m.eq = old.d; if (!ref.eq) delete ref.eq; if (!m.eq) delete m.eq; S.undo.length = nU; toast(t(r.r === 'free' ? 'dimFree' : r.r === 'bad' ? 'dimBad' : 'dimCorner'), true); return false; }
+  cleanEq(); saveDims(); renderDims(); requestDraw();
+  toast(r.broke ? t('dimBroke', r.broke) : t('eqDone', fmt(v, 2)), !!r.broke); return true;
+}
 function eqPickAt(sp) {
+  if (S.eqPick.rev) { const m = S.eqPick.src, dm = !S.dimsHidden && hitDim(sp); endEqPick(); if (dm && dm.k === 'd' && dm !== m && S.dims.includes(m)) linkEqTo(m, dm); return; }
   const src = S.eqPick.src, dm = !S.dimsHidden && hitDim(sp);
   if (!S.dims.includes(src) || !dm || dm.k !== 'd') { endEqPick(); return; }
   if (dm === src || (src.eq && dm.eq === src.eq)) return;
@@ -7965,7 +8114,9 @@ let dimEd = null;
 function closeDimEdit(apply) {
   const E = dimEd; if (!E) return; dimEd = null;
   if (apply && E.dirty) {
-    const v = evalNum(E.inp.value);
+    const ref = dimRefOf(E.inp.value);
+    if (ref && ref !== E.m) { linkEqTo(E.m, ref); E.el.remove(); requestDraw(); return; }
+    const v = evalDims(E.inp.value);
     const R = v === null ? { r: 'bad' } : driveDim(E.m, v), r = R.r;
     if (r === 'bad') toast(t('dimBad'), true); else if (r === 'free') toast(t('dimFree'), true); else if (r === 'corner') toast(t('dimCorner'), true);
     else if (r === 'ok' && R.broke) toast(t('dimBroke', R.broke), true);
@@ -7976,7 +8127,7 @@ function openDimEdit(m) {
   closeDimEdit(false);
   if (!m || m.k !== 'd' || !S.dims.includes(m)) return;
   const g = dimScreen(m), r = ov.getBoundingClientRect(), el = document.createElement('div');
-  el.className = 'dimedit'; el.innerHTML = `<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="${esc(t('dimValue'))}"><button type="button" aria-label="OK">✓</button>`;
+  el.className = 'dimedit'; el.innerHTML = `<input type="text" inputmode="decimal" autocomplete="off" spellcheck="false" aria-label="${esc(t('dimValue'))}"><button type="button" class="eqb" title="${esc(t('dimEqBtn'))}">=</button><button type="button" class="okb" aria-label="OK">✓</button>`;
   el.style.left = Math.round(r.left + (g.ax + g.bx) / 2) + 'px'; el.style.top = Math.round(r.top + (g.ay + g.by) / 2) + 'px'; el.title = t('dimEditTip');
   document.body.appendChild(el);
   const inp = el.querySelector('input'), E = dimEd = { m, el, inp, dirty: false };
@@ -7986,16 +8137,188 @@ function openDimEdit(m) {
     ev.stopPropagation();
     const k = ev.key.toLowerCase();
     if ((ev.ctrlKey || ev.metaKey) && (k === 'z' || k === 'y')) { ev.preventDefault(); closeDimEdit(false); focusCmd(); if (k === 'z' && !ev.shiftKey) undoAction(); else redo(); return; }
+    if (ev.key === '=' && !inp.value.trim().replace(/^[\d.]+$/, '') ) { ev.preventDefault(); startEqTake(E.m); return; }
     if (ev.key === 'Enter') { ev.preventDefault(); E.dirty = true; closeDimEdit(true); focusCmd(); }
     else if (ev.key === 'Escape') { ev.preventDefault(); closeDimEdit(false); focusCmd(); }
   });
   inp.addEventListener('blur', () => setTimeout(() => { if (dimEd === E) closeDimEdit(true); }, 0));
-  const btn = el.querySelector('button');
-  btn.addEventListener('pointerdown', ev => ev.preventDefault());
+  const btn = el.querySelector('.okb'), eqb = el.querySelector('.eqb');
+  btn.addEventListener('pointerdown', ev => ev.preventDefault()); eqb.addEventListener('pointerdown', ev => ev.preventDefault());
   btn.addEventListener('click', () => { E.dirty = true; closeDimEdit(true); focusCmd(); });
+  eqb.addEventListener('click', () => startEqTake(E.m));
   inp.focus({ preventScroll: true }); inp.select();
 }
 ov.addEventListener('wheel', () => { if (dimEd) closeDimEdit(true); }, { passive: true });
+/* ===================== sketching like SolidWorks / SolidCraft =====================
+   Value boxes follow the cursor once the first point is down: typing goes into the first box, Tab moves to the next,
+   Enter places the shape. A typed value locks that size while the mouse sets the rest, and becomes a dimension.
+   Values may use other dimensions: d2, 2*d1+5; "=d2" also keeps the two equal. */
+S.hud = { key: '', act: 0, lock: {}, refs: {} };
+function hudFields() {
+  if (!tool || tool.phase === 'pick' || !(tool.wantsPoint && tool.wantsPoint()) || !tool.base) return null;
+  const base = tool.base(); if (!base) return null;
+  if (tool.name === 'rect') return [{ k: 'W', lab: t('hudW') }, { k: 'H', lab: t('hudH') }];
+  if (tool.name === 'circle') return [{ k: 'D', lab: S.opts.circDia ? 'Ø' : 'R' }];
+  if ((tool.name === 'line' && !tool.arcMode) || tool.name === 'poly' || ((tool.name === 'move' || tool.name === 'copy') && tool.phase === 'dest')) return [{ k: 'L', lab: 'L' }, { k: 'A', lab: '∠' }];
+  return null;
+}
+function hudSync() { // the boxes start empty for every new point
+  const F = hudFields(), b = F ? tool.base() : null, key = F ? tool.name + ':' + b.x + ',' + b.y : '';
+  if (key !== S.hud.key) S.hud = { key, act: 0, lock: {}, refs: {} };
+  return F;
+}
+const hudLocked = () => Object.keys(S.hud.lock).length > 0;
+function hudTake() { const F = hudFields(); if (!F || !hudLocked()) return null; return { ...S.hud.lock, _refs: { ...S.hud.refs } }; }
+// numbers in boxes and in the Modify box: expressions, and dN = the value of dimension N
+function dimRefVal(i) { const m = S.dims[i - 1]; return m ? (m.k === 'd' ? dimWorld(m).val : angleOf(m)) : null; }
+function evalDims(s) {
+  s = String(s).trim().replace(/^=\s*/, ''); if (!s) return null; let bad = false;
+  const x = s.replace(/\bd(\d+)\b/gi, (_, n) => { const v = dimRefVal(+n); if (v === null) { bad = true; return '0'; } return '(' + v + ')'; });
+  return bad ? null : evalNum(x);
+}
+const dimRefOf = s => { const m = /^=?\s*d(\d+)\s*$/i.exec(String(s).trim()); return m ? S.dims[+m[1] - 1] || null : null; };
+const hudNumeric = s => !!s && !/[,;<#@]/.test(s) && evalDims(s) !== null;
+function hudSet(F, s) {
+  const f = F[S.hud.act], v = evalDims(s); if (v === null) return false;
+  if (f.k !== 'A' && !(v > 1e-9)) { toast(t('dimBad'), true); return false; }
+  S.hud.lock[f.k] = v; const r = dimRefOf(s); if (r) S.hud.refs[f.k] = r; else delete S.hud.refs[f.k];
+  return true;
+}
+function hudLive(base, p) { const d = vsub(p, base); let a = deg(vang(d)); if (a < 0) a += 360; const L = vlen(d); return { L, A: a, W: Math.abs(d.x), H: Math.abs(d.y), D: S.opts.circDia ? 2 * L : L }; }
+function hudApply(base, p, lk) {
+  if (tool.name === 'rect') { const sx = Math.sign(p.x - base.x) || 1, sy = Math.sign(p.y - base.y) || 1; return { x: lk.W != null ? base.x + sx * lk.W : p.x, y: lk.H != null ? base.y + sy * lk.H : p.y }; }
+  const dirOf = () => { const u = vnorm(vsub(p, base)); return vlen(u) > .5 ? u : { x: 1, y: 0 }; };
+  if (tool.name === 'circle') return lk.D == null ? p : vadd(base, vmul(dirOf(), S.opts.circDia ? lk.D / 2 : lk.D));
+  if (lk.A != null) { const u = { x: Math.cos(rad(lk.A)), y: Math.sin(rad(lk.A)) }, d = vsub(p, base); return vadd(base, vmul(u, lk.L != null ? lk.L : Math.max(0, d.x * u.x + d.y * u.y))); }
+  if (lk.L != null) return vadd(base, vmul(dirOf(), lk.L));
+  return p;
+}
+// Enter in the command line
+function hudEnter(s) {
+  const F = hudSync(); if (!F) return false;
+  if (s) {
+    if (!hudNumeric(s)) return false;
+    if (!hudSet(F, s)) return true;
+    // a rectangle needs both sizes: Enter on the first one moves on to the other
+    if (tool.name === 'rect' && F.some(f => S.hud.lock[f.k] == null)) { S.hud.act = F.findIndex(f => S.hud.lock[f.k] == null); requestDraw(); return true; }
+  } else if (!hudLocked()) return false;
+  const p = curPoint(); tool.point(p, { typed: true }); ensureVisible(p); updatePrompt(); requestDraw(); return true;
+}
+function hudTab(back) {
+  const F = hudSync(); if (!F) return false;
+  const s = cmd.value.trim();
+  if (s) { if (!hudNumeric(s)) return false; if (!hudSet(F, s)) return true; cmd.value = ''; }
+  else if (S.snapCands && S.snapCands.length > 1 && !hudLocked()) return false; // Tab still cycles overlapping snap points
+  if (F.length > 1) S.hud.act = (S.hud.act + (back ? F.length - 1 : 1)) % F.length;
+  requestDraw(); return true;
+}
+function hudUnlock() {
+  const F = hudSync(); if (!F || !hudLocked()) return false;
+  const k = F[S.hud.act].k; if (S.hud.lock[k] != null) delete S.hud.lock[k]; else { const ks = Object.keys(S.hud.lock); delete S.hud.lock[ks[ks.length - 1]]; }
+  requestDraw(); return true;
+}
+function hudClear() { if (!hudSync() || !hudLocked()) return false; S.hud.lock = {}; S.hud.refs = {}; requestDraw(); return true; }
+function hudClickTyped() { const F = hudSync(), s = cmd.value.trim(); if (F && s && hudNumeric(s)) { if (hudSet(F, s)) cmd.value = ''; } }
+function sketchZoom() {
+  if (S.doc.ents.length > 40) return; const bb = bboxOf(visEnts()); if (!bb) return;
+  const a = w2s({ x: bb[0], y: bb[1] }), b = w2s({ x: bb[2], y: bb[3] }), w = Math.abs(b.x - a.x), h = Math.abs(b.y - a.y);
+  if (w < W * .2 && h < H * .2) zoomToBB(bb);
+}
+function ensureVisible(p) {
+  const q = w2s(p); if (q.x > 30 && q.y > 30 && q.x < W - 30 && q.y < H - 30) return;
+  const bb = bboxOf(visEnts()); if (bb) zoomToBB([Math.min(bb[0], p.x), Math.min(bb[1], p.y), Math.max(bb[2], p.x), Math.max(bb[3], p.y)]);
+}
+function drawHud(c, F, base, cur) {
+  const mono = getComputedStyle(document.body).getPropertyValue('--mono'), live = hudLive(base, cur), lk = S.hud.lock, typing = cmd.value;
+  c.save(); c.textBaseline = 'middle';
+  const boxes = F.map((f, i) => {
+    const act = i === S.hud.act, locked = lk[f.k] != null, ref = S.hud.refs[f.k];
+    const txt = act && typing ? typing + '▏' : fmt(locked ? lk[f.k] : live[f.k], 2) + (f.k === 'A' ? '°' : '') + (ref ? '  =d' + (S.dims.indexOf(ref) + 1) : '');
+    c.font = '600 13px ' + mono; const w = c.measureText(txt).width; c.font = '11px ' + mono; const lw = c.measureText(f.lab).width;
+    return { f, act, locked, txt, lw, w: lw + w + 22 };
+  });
+  const tw = boxes.reduce((a, b) => a + b.w + 4, -4), bh = 24;
+  let x = clamp(S.mouse.x + 18, 2, W - tw - 2), y = clamp(S.mouse.y + 16, 2, H - bh - 18);
+  for (const b of boxes) {
+    c.fillStyle = col.panel; c.globalAlpha = .96; c.fillRect(x, y, b.w, bh); c.globalAlpha = 1;
+    if (b.locked) { c.fillStyle = col.accent; c.globalAlpha = .14; c.fillRect(x, y, b.w, bh); c.globalAlpha = 1; }
+    c.strokeStyle = b.act ? col.accent : col.line; c.lineWidth = b.act ? 1.6 : 1; c.strokeRect(x + .5, y + .5, b.w - 1, bh - 1);
+    c.font = '11px ' + mono; c.fillStyle = col.muted; c.fillText(b.f.lab, x + 6, y + bh / 2 + .5);
+    c.font = '600 13px ' + mono; c.fillStyle = b.locked ? col.accent : b.act && typing ? col.fg : col.fg; if (!b.locked && !(b.act && typing)) c.globalAlpha = .78;
+    c.fillText(b.txt, x + 12 + b.lw, y + bh / 2 + .5); c.globalAlpha = 1;
+    if (b.locked) { c.fillStyle = col.accent; c.fillRect(x + b.w - 7, y + 4, 3, 3); }
+    x += b.w + 4;
+  }
+  if (typing || hudLocked()) { c.font = '10px ' + mono; const hw = c.measureText(t('hudHint')).width + 8, hx = clamp(S.mouse.x + 18, 2, W - hw - 2); c.fillStyle = col.panel; c.globalAlpha = .9; c.fillRect(hx, y + bh + 2, hw, 14); c.globalAlpha = 1; c.fillStyle = col.muted; c.fillText(t('hudHint'), hx + 4, y + bh + 9.5); }
+  c.restore();
+}
+// typed sizes become dimensions (like SolidWorks numeric input / SolidCraft value boxes)
+const autoGap = () => 24 / S.view.s;
+function linkEqual(src, m) { if (!src || !m || src === m) return; if (!src.eq) src.eq = Math.max(0, ...S.dims.map(d => d.eq || 0)) + 1; m.eq = src.eq; }
+function autoDimSeg(T, a, b, lk, pending) {
+  if (!S.opts.autoDim || !lk || lk.L == null || !a) return;
+  const m = { k: 'd', a: { x: a.x, y: a.y }, b: { x: b.x, y: b.y }, off: autoGap() };
+  (T._ad || (T._ad = [])).push(m);
+  if (!pending) { S.dims.push(m); if (lk._refs && lk._refs.L && S.dims.includes(lk._refs.L)) linkEqual(lk._refs.L, m); saveDims(); renderDims(); }
+  else if (lk._refs && lk._refs.L) m._eqTo = lk._refs.L;
+  // a chain's dimensions sit on its outside
+  const P = [...T.pts, b]; if (!pending) T._ad = T._ad.filter(x => S.dims.includes(x));
+  if (P.length < 3) return;
+  const cx = P.reduce((s, q) => s + q.x, 0) / P.length, cy = P.reduce((s, q) => s + q.y, 0) / P.length;
+  for (const d of T._ad) { const v = vsub(d.b, d.a), L = vlen(v) || 1, mx = (d.a.x + d.b.x) / 2, my = (d.a.y + d.b.y) / 2; d.off = (Math.sign((mx - cx) * -v.y / L + (my - cy) * v.x / L) || 1) * Math.abs(d.off); }
+}
+function autoDimRect(a, b, lk) {
+  if (!S.opts.autoDim || !lk) return;
+  const x0 = Math.min(a.x, b.x), x1 = Math.max(a.x, b.x), y0 = Math.min(a.y, b.y), y1 = Math.max(a.y, b.y), xm = (x0 + x1) / 2, ym = (y0 + y1) / 2, g = autoGap();
+  const add = (m, ref) => { S.dims.push(m); if (ref && S.dims.includes(ref)) linkEqual(ref, m); };
+  // measured between the middles of the sides, so a rounded rectangle can be driven too
+  if (lk.W != null) add({ k: 'd', a: { x: x0, y: ym }, b: { x: x1, y: ym }, dir: 'h', off: (y0 - g) - ym }, lk._refs && lk._refs.W);
+  if (lk.H != null) add({ k: 'd', a: { x: xm, y: y0 }, b: { x: xm, y: y1 }, dir: 'v', off: (x0 - g) - xm }, lk._refs && lk._refs.H);
+  saveDims(); renderDims();
+}
+// the dimension line sits just above the circle so its value never covers the circle
+function circDimFor(cx, cy, r, radius) { const off = r + autoGap(); return radius ? { k: 'd', a: { x: cx, y: cy }, b: { x: cx + r, y: cy }, off, pre: 'R' } : { k: 'd', a: { x: cx - r, y: cy }, b: { x: cx + r, y: cy }, off, pre: 'Ø' }; }
+function autoDimCircle(c, r) {
+  if (!S.opts.autoDim) return;
+  const m = circDimFor(c.x, c.y, r, !S.opts.circDia); S.dims.push(m);
+  const ref = S.hud.refs && S.hud.refs.D; if (ref && S.dims.includes(ref)) linkEqual(ref, m);
+  saveDims(); renderDims();
+}
+// Equal (like SolidWorks' relation): pick lines, or circles / arcs, the first one picked keeps its size
+function dimForEnt(e, radius) {
+  const tol = 1e-6;
+  if (e.type === 'line') {
+    const a = { x: e.x1, y: e.y1 }, b = { x: e.x2, y: e.y2 }, L = vdist(a, b);
+    let m = S.dims.find(d => d.k === 'd' && ((veq(d.a, a, tol) && veq(d.b, b, tol)) || (veq(d.a, b, tol) && veq(d.b, a, tol))) && Math.abs(dimWorld(d).val - L) < 1e-6);
+    if (!m) { m = { k: 'd', a, b, off: autoGap() }; S.dims.push(m); }
+    return m;
+  }
+  if (e.type === 'circle' || e.type === 'arc') {
+    let m = S.dims.find(d => d.k === 'd' && d.pre === (radius ? 'R' : 'Ø') && dvTouch(e, d.a, 1e-3) && dvTouch(e, d.b, 1e-3));
+    if (!m) {
+      if (e.type === 'arc') { const q = ptOn(prims(e)[0], .5); m = { k: 'd', a: { x: e.cx, y: e.cy }, b: q, off: 0, pre: 'R' }; }
+      else if (radius) m = circDimFor(e.cx, e.cy, e.r, true);
+      else m = circDimFor(e.cx, e.cy, e.r, false);
+      S.dims.push(m);
+    }
+    return m;
+  }
+  return null;
+}
+function equalCandidates() {
+  const L = [...S.sel].map(getEnt).filter(Boolean), lines = L.filter(e => e.type === 'line'), circ = L.filter(e => e.type === 'circle' || e.type === 'arc');
+  return lines.length >= 2 && lines.length === L.length ? lines : circ.length >= 2 && circ.length === L.length ? circ : null;
+}
+function makeEqualSel() {
+  const list = equalCandidates(); if (!list) return toast(t('eqSelBad'), true);
+  const radius = list.some(e => e.type === 'arc');
+  pushUndo(); updateInfo();
+  const dims = list.map(e => dimForEnt(e, radius)), src = dims[0], v = dimWorld(src).val; let broke = 0, bad = 0;
+  for (const m of dims.slice(1)) { linkEqual(src, m); const r = dimDrive(m, v, { noUndo: true }); if (r.r === 'ok') broke += r.broke || 0; else if (r.r !== 'same') bad++; }
+  cleanEq(); saveDims(); renderDims(); commit(); requestDraw();
+  toast(bad ? t('dimCorner') : broke ? t('dimBroke', broke) : t('eqSelDone', list.length, fmt(v, 2)), !!(bad || broke));
+}
+const dimNamesOn = () => !!dimEd || /^=|\bd\d*$|[*+\-/(]\s*d/i.test(cmd.value.trim());
 TOOLS.angle = () => ({
   name: 'angle', pts: [],
   prompt() { return [t('pAng1'), t('pAng2'), t('pAng3')][this.pts.length]; }, base() { return this.pts[this.pts.length - 1] || null; }, wantsPoint: () => true,
@@ -8009,7 +8332,7 @@ function renderDims() {
   const el = $('measPanel'); if (!el) return;
   if (!S.dims.length) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
-  el.innerHTML = `<h3>${t('measurements')} <em>${S.dims.length}</em></h3><div class="mlist">${S.dims.map((m, i) => `<div class="mrow${m === S.selDim ? ' on' : ''}" data-act="dimPick" data-i="${i}"><span class="mn">#${i + 1}</span><span class="mv">${m.k === 'd' ? (m.dir === 'h' ? '↔ ' : m.dir === 'v' ? '↕ ' : 'L ') + fmt(dimWorld(m).val, 2) + (m.eq ? '  =' + eqNo(m) : '') : '∠ ' + fmt(angleOf(m), 2) + '°'}</span><button class="x" data-act="dimDel" data-i="${i}" aria-label="${t('del')}">✕</button></div>`).join('')}</div>
+  el.innerHTML = `<h3>${t('measurements')} <em>${S.dims.length}</em></h3><div class="mlist">${S.dims.map((m, i) => `<div class="mrow${m === S.selDim ? ' on' : ''}" data-act="dimPick" data-i="${i}"><span class="mn">d${i + 1}</span><span class="mv">${m.k === 'd' ? (m.dir === 'h' ? '↔ ' : m.dir === 'v' ? '↕ ' : 'L ') + (m.pre || '') + fmt(dimWorld(m).val, 2) + (m.eq ? '  =' + eqNo(m) : '') : '∠ ' + fmt(angleOf(m), 2) + '°'}</span><button class="x" data-act="dimDel" data-i="${i}" aria-label="${t('del')}">✕</button></div>`).join('')}</div>
   <div class="row"><label class="chk"><input type="checkbox" id="dimsHide" ${S.dimsHidden ? 'checked' : ''}> ${t('hideDims')}</label><span class="spacer"></span><button class="btn small" data-act="dimClear">${t('clearAll')}</button></div>`;
 }
 
@@ -8428,6 +8751,7 @@ function openCtx(x, y) {
   it(t('flipH'), tool.name === 'parts' ? 'F' : '', () => quick('flipH'), !has);
   it(t('copyClip'), 'Ctrl+C', () => copySel(false), !has); it(t('paste'), 'Ctrl+V', pasteClip, !(S.clip || (() => { try { return localStorage.getItem('dxfed.clip'); } catch (e) { return null; } })()));
   it(t('join'), 'J', () => runAction('join'), !has); it(t('explode'), 'X', () => runAction('explode'), !has);
+  if (S.sel.size >= 2 && equalCandidates()) it(t('eqSel'), '=', makeEqualSel);
   it(t('del'), 'Del', () => runAction('del'), !has);
   items.push('-');
   it(t('extractSel'), '', () => saveDXF(true), !has); it(t('extractSel0'), '', () => saveDXF(true, true), !has);
