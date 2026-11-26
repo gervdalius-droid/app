@@ -8,6 +8,13 @@
    is signed in, the usual SWOOD import opens with that file already read:
    check the name, client, date and lines, then "Create project" (or into
    the project ShopFlow suggests when one of that name is already here).
+
+   The builder's drawing sheets come along (IndexedDB "db-handoff" → "drawings":
+   the very SVG sheets of its "Brėžiniai", each with its cabinet's part names).
+   When the project has been created or filled from this handoff, the sheets are
+   attached to it as files (f.drw = {builderId, sheet, cab, cont, name, parts});
+   sheets from an earlier handoff of the same builder project are replaced.
+   The assembly station (assembly.js) opens the sheet of the scanned part's cabinet.
    ============================================================ */
 "use strict";
 var BuilderLink = {
@@ -35,6 +42,7 @@ var BuilderLink = {
       this.drop();
       try { history.replaceState(null, "", location.pathname + location.hash); } catch (e) {}
       this.open(h);
+      if (h.drawings) this.takeDrawings(h);
     };
     setTimeout(wait, 400);
   },
@@ -54,5 +62,77 @@ var BuilderLink = {
       if (changed) SwoodImport.render(m);
     });
   }
+};
+/* ---------- the drawing sheets ---------- */
+BuilderLink.idb = function (mode, fn) {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) return reject(new Error("no IndexedDB"));
+    var rq = indexedDB.open("db-handoff", 1);
+    rq.onupgradeneeded = () => rq.result.createObjectStore("kv");
+    rq.onerror = () => reject(rq.error);
+    rq.onsuccess = () => {
+      var db = rq.result, tx = db.transaction("kv", mode), out = fn(tx.objectStore("kv"));
+      tx.oncomplete = () => { db.close(); resolve(out && "result" in out ? out.result : undefined); };
+      tx.onerror = () => { db.close(); reject(tx.error); };
+    };
+  });
+};
+BuilderLink.takeDrawings = function (h) {
+  var t0 = Date.now() - 5000;
+  this.idb("readonly", st => st.get("drawings")).then(v => {
+    if (!v || !Array.isArray(v.sheets) || !v.sheets.length) return;
+    if (h.builderId && v.project && v.project !== h.builderId) return;     // left over from another project
+    var solids = {};
+    v.sheets.forEach(sh => (sh.parts || []).forEach(n => { solids[String(n).toUpperCase()] = 1; }));
+    var tries = 0, watch = () => {                                         // until the import has made (or filled) the project
+      var o = (Store.state.orders || []).find(x => x.swood && x.swood.importedAt >= t0 &&
+        (x.parts || []).some(p => solids[String(p.solid || "").toUpperCase()]));
+      if (o) return this.attachDrawings(o, h.builderId || v.project || "", v.sheets);
+      if (tries++ < 1800) setTimeout(watch, 1000);                         // 30 minutes to finish the import
+    };
+    watch();
+  }).catch(e => console.warn("[builder-link] drawings", e));
+};
+BuilderLink.thumb = function (blob) {
+  return new Promise(resolve => {
+    var u = URL.createObjectURL(blob), img = new Image();
+    img.onload = () => {
+      try {
+        var k = Math.min(1, 360 / Math.max(img.naturalWidth || 1, img.naturalHeight || 1)), cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round((img.naturalWidth || 420) * k)); cv.height = Math.max(1, Math.round((img.naturalHeight || 297) * k));
+        var g = cv.getContext("2d"); g.fillStyle = "#fff"; g.fillRect(0, 0, cv.width, cv.height); g.drawImage(img, 0, 0, cv.width, cv.height);
+        resolve({ w: img.naturalWidth || null, h: img.naturalHeight || null, thumb: cv.toDataURL("image/jpeg", 0.7) });
+      } catch (e) { resolve({}); }
+      URL.revokeObjectURL(u);
+    };
+    img.onerror = () => { URL.revokeObjectURL(u); resolve({}); };
+    img.src = u;
+  });
+};
+BuilderLink.attachDrawings = function (o, builderId, sheets) {
+  var by = App.me && App.me.id;
+  D.files().filter(f => f.orderId === o.id && f.drw && f.drw.builderId === builderId).forEach(f => {   // the previous handoff's sheets
+    if (typeof Files !== "undefined" && Files.remove) Files.remove(f.id, by); else M.removeFile(f.id, by);
+  });
+  var n = 0, next = i => {
+    if (i >= sheets.length) {
+      this.idb("readwrite", st => st.delete("drawings")).catch(() => {});
+      if (typeof Toast !== "undefined") Toast.show((this.lt() ? "Pridėti brėžiniai iš Spintelių kūrėjo: " : "Drawings added from the cabinet builder: ") + n + " · " + o.num, { emoji: "📦" });
+      if (typeof App !== "undefined") App.render();
+      return;
+    }
+    var sh = sheets[i], blob = new Blob([sh.svg], { type: "image/svg+xml" }), id = uid("f");
+    this.thumb(blob).then(t => Files.putBlob(id, blob).then(() => {
+      M.addFileMeta({
+        id, name: String(sh.title || ("Brėžinys " + (i + 1))).replace(/[\\/:*?"<>|]+/g, " ").trim() + ".svg", type: "image/svg+xml", size: blob.size,
+        w: t.w || null, h: t.h || null, thumb: t.thumb || "", orderId: o.id, opId: null, path: Files.path(id),
+        store: Files.storage() ? "uploading" : "local", devices: [Files.deviceId()],
+        drw: { builderId: builderId, sheet: sh.id, cab: sh.cab == null ? null : sh.cab, cont: !!sh.cont, name: sh.name || "", parts: (sh.parts || []).slice(0, 400) }
+      }, by);
+      if (Files.storage()) Files.upload(id, blob);
+      n++;
+    })).catch(e => console.warn("[builder-link] sheet", sh.title, e)).then(() => next(i + 1));
+  };
+  next(0);
 };
 BuilderLink.boot();

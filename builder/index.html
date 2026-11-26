@@ -13008,7 +13008,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="2ec4d8c3b8"</script>
+<script>window.NV_BUILD="ef7f1b40c6"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -21330,15 +21330,50 @@ NVA.mxxlzip = function () {   // only the CNC programs, every .XXL in one ZIP (i
   return false;
 };
 /* the finished project into ShopFlow: its report list (the same .xlsx as "Detalių sąrašas") goes through localStorage to
-   /shopflow-app/?from=builder, where the SWOOD import opens with it (shopflow-app/builder-link.js) */
+   /shopflow-app/?from=builder, where the SWOOD import opens with it (shopflow-app/builder-link.js).
+   The drawing sheets go along too — the very sheets of "Brėžiniai" (A3, SVG), each with the names of its cabinet's
+   parts — through IndexedDB (they are too big for localStorage): ShopFlow attaches them to the project, and the
+   assembly station opens the sheet of the cabinet whose part was scanned. */
+function nvmDrwHandoff(pj) {
+  var list = []; try { list = DR ? drwSheets('all', 'A3') : []; } catch (e) { if (window.console) console.warn('drawings for ShopFlow', e); list = []; }
+  return list.filter(function (x) { return x && x.svg && !x.error; }).map(function (x) {
+    var c = x.cab != null ? S.proj.cabinets[x.cab] : null;
+    return { id: x.id, cab: x.cab == null ? null : x.cab, cont: !!x.cont, title: x.title, name: c ? (c.name || '') : '',
+      parts: x.cab == null ? [] : pj.parts.filter(function (p) { return p.cab === x.cab + 1; }).map(function (p) { return p.name; }), svg: x.svg };
+  });
+}
+function nvmIdbPut(key, val) {
+  return new Promise(function (res, rej) {
+    if (!window.indexedDB) return rej(new Error('no IndexedDB'));
+    var rq = indexedDB.open('db-handoff', 1);
+    rq.onupgradeneeded = function () { rq.result.createObjectStore('kv'); };
+    rq.onerror = function () { rej(rq.error); };
+    rq.onsuccess = function () { var db = rq.result, tx = db.transaction('kv', 'readwrite'); tx.objectStore('kv').put(val, key);
+      tx.oncomplete = function () { db.close(); res(); }; tx.onerror = function () { db.close(); rej(tx.error); }; };
+  });
+}
+/* the 3-D assembly picture on the sheets needs three.js: wait for it a moment (else the sheets keep their line drawing) */
+function nvmWait3d(ms) {
+  return new Promise(function (res) {
+    if (typeof nvdReady !== 'function' || nvdReady()) return res();
+    if (typeof nv3Load === 'function') try { nv3Load(); } catch (e) {}
+    var t0 = Date.now(), tick = function () { if (nvdReady() || (typeof NV3 !== 'undefined' && NV3.failed) || Date.now() - t0 > ms) return res(); setTimeout(tick, 150); };
+    tick();
+  });
+}
 NVA.mshop = function () {
   if (!nvmPass()) return false;
   if (S.busy) { toast(t('building')); return false; }
   var pj = buildProjectAll(), w = window.open('about:blank', '_blank'); S.busy = true; toast(t('building'));
-  xlsmBytes(pj).then(function (bytes) {
+  var drw = 0;
+  Promise.all([xlsmBytes(pj), nvmWait3d(5000).then(function () {
+    var sheets = nvmDrwHandoff(pj); if (!sheets.length) return 0;
+    return nvmIdbPut('drawings', { project: S.proj.id, at: Date.now(), sheets: sheets }).then(function () { return sheets.length; }, function () { return 0; });
+  })]).then(function (r) {
+    var bytes = r[0]; drw = r[1];
     S.busy = false;
     var b = '', u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); for (var i = 0; i < u8.length; i += 0x8000) b += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
-    try { localStorage.setItem('dbShopflowHandoff', JSON.stringify({ name: projName() + '_ReportLists_to_Excel.xlsx', b64: btoa(b), project: S.proj.name || projName(), at: Date.now() })); }
+    try { localStorage.setItem('dbShopflowHandoff', JSON.stringify({ name: projName() + '_ReportLists_to_Excel.xlsx', b64: btoa(b), project: S.proj.name || projName(), builderId: S.proj.id, drawings: drw, at: Date.now() })); }
     catch (e) { if (w) w.close(); toast(L('Nepavyko perduoti į ShopFlow — atsisiųskite detalių sąrašą ir importuokite jį ShopFlow.', 'Could not hand over to ShopFlow — download the part list and import it in ShopFlow.'), true); return; }
     var url = (location.pathname.indexOf('/builder') >= 0 ? location.pathname.replace(/\/builder\/?.*$/, '/shopflow-app/') : '/shopflow-app/') + '?from=builder';
     if (w) w.location.href = url; else location.href = url;
@@ -21864,6 +21899,7 @@ window.__nv = {
   go: nvGo, undo: nvUndo, redo: nvRedo, render: function () { render(); },
   S: S, cur: cur, info: function () { return S._info; },
   build: function () { return buildProjectAll(); },
+  drwHandoff: function () { return nvmDrwHandoff(buildProjectAll()); },   // the drawing sheets that go to ShopFlow with the project (60-make.js)
   topics: function () { return typeof NVTOPICS !== 'undefined' ? NVTOPICS : []; },
   /* the drawing on a part: a program point → where it is on the screen (tests click there) */
   skScreen: function (x, y) { var X = skCtx(), sv = document.querySelector('.sk-svg'); if (!X || !sv) return null; var d = X.F.to(x, y), pt = sv.createSVGPoint(); pt.x = d[0]; pt.y = -d[1]; var q = pt.matrixTransform(sv.getScreenCTM()); return [q.x, q.y]; },

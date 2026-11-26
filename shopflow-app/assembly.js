@@ -58,6 +58,19 @@ var Assembly = {
     return (o.parts || []).filter(p => p.solid ? this.keyOf(o, p) === key : p.name === key);
   },
   label(m) { return m ? (m.num ? m.num + " · " : "") + m.name : ""; },
+  /* the cabinet builder's sheet of this cabinet (its parts are the cabinet's parts) */
+  sheetFor(o, key) {
+    var mine = {}, n = 0;
+    this.partsOf(o, key).forEach(p => { if (p.solid) { mine[String(p.solid).toUpperCase()] = 1; n++; } });
+    if (!n) return null;
+    return D.files().find(f => f.orderId === o.id && f.drw && f.drw.cab != null && !f.drw.cont && (f.drw.parts || []).some(x => mine[String(x).toUpperCase()])) || null;
+  },
+  /* what the people at the bench call the cabinet: the builder's "2 „Kriauklė“", else SP-3 · name */
+  title(o, m, key) {
+    var f = this.sheetFor(o, key || (m && (m.key || m.name)));
+    if (f) return this._base(f.name).replace(/^(Spintelė|Cabinet)\s+/i, "");
+    return m ? this.label(m) : key || "";
+  },
 
   /* ---------- start the assembly step ---------- */
   start(o, stationId, force) {
@@ -113,10 +126,19 @@ var Assembly = {
     var want = this._toks([o.product, o.num, o.swood && o.swood.project].join(" "));
     var client = this._toks(o.client);
     var nk = this._norm(key), nn = this._norm(m && m.name);
+    var mine = {};                                                         // this cabinet's parts (their SolidWorks / builder names)
+    this.partsOf(o, key).forEach(p => { if (p.solid) mine[String(p.solid).toUpperCase()] = 1; });
+    var mineN = Object.keys(mine).length;
     this.related(o).forEach(r => {
       D.files().filter(f => f.orderId === r.o.id && f.kind !== "email" && /pdf|image/i.test(f.type || "") ).forEach(f => {
         var b = self._norm(self._base(f.name));
         var s = { own: 100, eng: 80, client: 0 }[r.src];
+        if (f.drw) {                                                       // a sheet from the cabinet builder's own drawings
+          var hit = mineN && (f.drw.parts || []).some(n => mine[String(n).toUpperCase()]);
+          s += hit ? (f.drw.cont ? 1190 : 1200) : f.drw.cab == null ? 160 : 60;
+          list.push({ f: f, score: s, cab: !!hit, src: r.src, from: r.o, drw: true });
+          return;
+        }
         var cab = !!(nk && (b === nk || (nn && b === nn)));
         if (cab) s += 1000;
         else if (nk && b.length > 6 && nk.indexOf(b) >= 0) s += 300;
@@ -129,7 +151,7 @@ var Assembly = {
         list.push({ f: f, score: s, cab: cab, src: r.src, from: r.o });
       });
     });
-    list.sort((a, b) => b.score - a.score || b.f.at - a.f.at);
+    list.sort((a, b) => b.score - a.score || (a.drw && b.drw ? (a.f.drw.cab == null ? -1 : a.f.drw.cab) - (b.f.drw.cab == null ? -1 : b.f.drw.cab) : b.f.at - a.f.at));
     return list;
   },
 
@@ -265,14 +287,15 @@ var Assembly = {
         <aside class="asm-side">
           <div class="asm-cab">
             <span class="t-caption">${m ? L("Cabinet", "Spintelė") : c.key ? L("Part of", "Detalė iš") : L("Project", "Projektas")}</span>
-            <b class="asm-cab-name">${esc(m ? this.label(m) : (c.key || o.product || o.num))}</b>
+            <b class="asm-cab-name">${esc(m || c.key ? this.title(o, m, c.key) : (o.product || o.num))}</b>
             ${c.partCode ? `<span class="t-caption">${L("Scanned", "Nuskenuota")}: <b>${esc(c.partCode)}</b></span>` : ""}
           </div>
           ${m ? `<button class="btn ${mDone ? "" : "primary"} asm-done" id="asm-done">${icon(mDone ? "check-circle" : "check", 18)} ${mDone ? L("Assembled — undo", "Surinkta — atšaukti") : L("Cabinet assembled", "Spintelė surinkta")}</button>` : ""}
           ${parts.length ? `<div class="asm-parts"><div class="t-caption">${L("Panels in this cabinet", "Šios spintelės detalės")} · ${parts.length}</div>
             ${parts.map(p => `<div class="asm-part ${String(p.code).toUpperCase() === String(c.partCode).toUpperCase() ? "hit" : ""}"><span>${esc(p.name || p.code)}</span><span class="t-num">${p.l && p.w ? p.l + "×" + p.w : ""}</span></div>`).join("")}</div>` : ""}
           ${mods.length > 1 ? `<div class="asm-mods"><div class="t-caption">${L("All cabinets", "Visos spintelės")}</div><div class="asm-mod-list">
-            ${mods.map(x => `<button class="asm-mod ${x.id === c.moduleId ? "on" : ""} ${(x.done || 0) >= (x.qty || 1) ? "done" : ""}" data-mod="${x.id}" title="${esc(x.name)}">${(x.done || 0) >= (x.qty || 1) ? icon("check", 12) + " " : ""}${esc(x.num || x.name)}</button>`).join("")}
+            ${mods.map(x => { var sh = this.sheetFor(o, x.key || x.name), nm = x.num || (sh ? this._base(sh.name).replace(/^(Spintelė|Cabinet)\s+/i, "") : x.name);
+              return `<button class="asm-mod ${x.id === c.moduleId ? "on" : ""} ${(x.done || 0) >= (x.qty || 1) ? "done" : ""}" data-mod="${x.id}" title="${esc(x.name)}">${(x.done || 0) >= (x.qty || 1) ? icon("check", 12) + " " : ""}${esc(nm)}</button>`; }).join("")}
           </div></div>` : ""}
           <div class="asm-next">${icon("qr", 16)} ${L("Scan the next panel — its cabinet opens here", "Skenuokite kitą detalę — atsidarys jos spintelė")}</div>
         </aside>
@@ -314,12 +337,19 @@ var Assembly = {
     var f = D.file(c.fileId); if (!f) return;
     var box = document.getElementById("asm-canvas");
     if (!/pdf/i.test(f.type)) {
+      c.pages = 0;
+      var tools = document.getElementById("asm-tools"); if (tools) tools.hidden = false;
+      var pg = document.getElementById("asm-pg"); if (pg) pg.textContent = "";
+      var hint = document.getElementById("asm-hint"); if (hint) hint.textContent = f.drw ? self.L("Cabinet builder drawing", "Spintelių kūrėjo brėžinys") : "";
+      $$("#asm-prev,#asm-next").forEach(b => { b.style.display = "none"; });
       Files.url(f.id).then(u => {
         if (!self.cur || self.cur.fileId !== f.id || !box) return;
-        box.innerHTML = u ? `<div class="asm-scroll"><img src="${u}" alt="${esc(f.name)}" style="width:${100 * c.zoom}%"></div>` : self._missing(f);
+        var st = c.zoom > 1 ? `width:${Math.round(100 * c.zoom)}%;height:auto` : "max-width:100%;max-height:100%;width:100%;height:100%;object-fit:contain";
+        box.innerHTML = u ? `<div class="asm-scroll${c.zoom > 1 ? " zoomed" : ""}"><img src="${u}" alt="${esc(f.name)}" style="${st}"></div>` : self._missing(f);
       });
       return;
     }
+    $$("#asm-prev,#asm-next").forEach(b => { b.style.display = ""; });
     this.doc(f.id).then(doc => {
       if (!self.cur || self.cur.fileId !== f.id) return;
       c.pages = doc.numPages;
@@ -387,7 +417,7 @@ var Assembly = {
 .asm-canvas{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;background:#e9eaec;margin:0 12px;border-radius:var(--r-md);overflow:hidden}
 .asm-scroll{position:absolute;inset:0;overflow:auto;display:flex;align-items:center;justify-content:center;-webkit-overflow-scrolling:touch}
 .asm-scroll.zoomed{display:block}.asm-scroll canvas{background:#fff;box-shadow:var(--shadow-2);margin:4px auto;display:block}
-.asm-scroll img{display:block;margin:auto;max-width:none}
+.asm-scroll img{display:block;margin:auto;background:#fff}
 .asm-tools{display:flex;align-items:center;gap:8px;padding:8px 12px}.asm-tools .icon-btn{width:44px;height:44px;font-size:22px}
 .asm-tools .grow{flex:1}
 .asm-empty{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;max-width:420px;padding:24px;color:var(--text-2)}.asm-empty b{color:var(--text);font-size:17px}
