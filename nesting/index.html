@@ -13976,14 +13976,19 @@ function draw(lay){
         ctx.fillText('✓', bx+bSize/2, by+bSize/2+0.5);
       }
     }
-    if(w>42&&h>24){
-      var fs=Math.max(9,Math.min(13,w/10));
-      var showDims=window.NEST_UI_DIMENSIONS!==false && h>38;
+    // Part name: along the long side, so tall (vertical) parts are named too.
+    var _lblVert=h>w, _lL=_lblVert?h:w, _lS=_lblVert?w:h;
+    if(_lL>42&&_lS>14){
+      var fs=Math.max(9,Math.min(13,_lL/10,_lS*0.6));
+      var showDims=window.NEST_UI_DIMENSIONS!==false && _lS>38;
+      ctx.save();
+      ctx.translate(x+w/2,y+h/2); if(_lblVert) ctx.rotate(-Math.PI/2);
       ctx.fillStyle='#263d3b';ctx.font='600 '+fs+'px Inter, system-ui, sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';
       var partLabel=layName(p.part);
-      while(partLabel.length>3 && ctx.measureText(partLabel).width>w-18)partLabel=partLabel.slice(0,-2)+'…';
-      ctx.fillText(partLabel,x+w/2,y+h/2-(showDims?8:0));
-      if(showDims){ctx.font='400 '+Math.max(9,fs-1)+'px Inter, system-ui, sans-serif';ctx.fillStyle='#607975';ctx.fillText(p.pw+' × '+p.ph,x+w/2,y+h/2+10,w-12);}
+      while(partLabel.length>3 && ctx.measureText(partLabel).width>_lL-18)partLabel=partLabel.slice(0,-2)+'…';
+      ctx.fillText(partLabel,0,-(showDims?8:0));
+      if(showDims){ctx.font='400 '+Math.max(9,fs-1)+'px Inter, system-ui, sans-serif';ctx.fillStyle='#607975';ctx.fillText(p.pw+' × '+p.ph,0,10,_lL-12);}
+      ctx.restore();
     }
     // Collision flash for dragged piece
     if(isDragged&&!p.nestPoly&&checkCollision(lay,p,p.x,p.y)){
