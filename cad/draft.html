@@ -4895,18 +4895,47 @@ function renderBase() {
 }
 
 /* ---------- grips ---------- */
-// dragging a corner of a sketch: lines, arcs and polylines that end in the same point come along (they stay joined)
+// dragging a corner or a side of a sketch (like SolidWorks): lines, arcs and polylines that end in the same point come along
+// (they stay joined), and edges that were horizontal / vertical stay so – a rectangle stays a rectangle
+// the middle grip of a horizontal / vertical side of an outline pushes the side straight out (it does not slide along)
+function gripPt(h, p) {
+  if (h.kind !== 'mid') return p; const e = getEnt(h.id); if (!e || !(e.type === 'line' || e.type === 'poly')) return p;
+  let a, b;
+  if (e.type === 'line') {
+    a = { x: e.x1, y: e.y1 }; b = { x: e.x2, y: e.y2 };
+    const joined = visEnts().some(o => o.id !== e.id && o.layer === e.layer && entPoints(o).some(q => veq(q, a, 1e-6) || veq(q, b, 1e-6)));
+    if (!joined) return p; // a lone line moves freely
+  } else { const P = prims(e).find(P => P.k === 'L' && veq(ptOn(P, .5), h.p, 1e-6)); if (!P) return p; a = ptOn(P, 0); b = ptOn(P, 1); }
+  if (Math.abs(a.y - b.y) < 1e-9) return { x: h.p.x, y: p.y };
+  if (Math.abs(a.x - b.x) < 1e-9) return { x: p.x, y: h.p.y };
+  return p;
+}
 function gripFollow(e, ne) {
   const none = { list: [], mv: [] };
   if (!ne || e.type === 'circle' || e.type === 'text') return none;
   const a = entPoints(e), b = entPoints(ne); if (a.length !== b.length) return none;
   const mv = []; for (let i = 0; i < a.length; i++) { const d = vsub(b[i], a[i]); if (vlen(d) > 1e-12) mv.push({ p: a[i], d }); }
   if (!mv.length) return none;
-  const f = q => { const m = mv.find(m => veq(m.p, q, 1e-6)); return m ? m.d : { x: 0, y: 0 }; }, list = [];
-  for (const o of visEnts()) {
-    if (o.id === e.id || o.layer !== e.layer || o.type === 'circle' || o.type === 'text') continue;
-    if (!entPoints(o).some(q => mv.some(m => veq(m.p, q, 1e-6)))) continue;
-    const on = stretchEnt(o, f); if (on) list.push({ id: o.id, ne: on });
+  const near = (p, q) => veq(p, q, 1e-6), at = q => mv.find(m => near(m.p, q));
+  const pool = visEnts().filter(o => o.layer === e.layer && o.type !== 'circle' && o.type !== 'text');
+  // straight edges leaving a moved point: a horizontal one hands on the vertical part of the move, a vertical one the horizontal part
+  const seeds = mv.slice();
+  for (const o of pool) for (const Q of prims(o)) {
+    if (Q.k !== 'L') continue;
+    const s0 = ptOn(Q, 0), s1 = ptOn(Q, 1), L = vdist(s0, s1); if (L < 1e-9) continue;
+    for (const [p0, p1] of [[s0, s1], [s1, s0]]) {
+      const m = seeds.find(m => near(m.p, p0)); if (!m || at(p1)) continue;
+      const h = Math.abs(p1.y - p0.y) <= L * 1e-9 + 1e-9, v = Math.abs(p1.x - p0.x) <= L * 1e-9 + 1e-9;
+      if (h && Math.abs(m.d.y) > 1e-12) mv.push({ p: p1, d: { x: 0, y: m.d.y } });
+      else if (v && Math.abs(m.d.x) > 1e-12) mv.push({ p: p1, d: { x: m.d.x, y: 0 } });
+    }
+  }
+  const f = q => { const m = at(q); return m ? m.d : { x: 0, y: 0 }; }, list = [];
+  for (const o of pool) {
+    if (!entPoints(o).some(q => at(q))) continue;
+    let on = stretchEnt(o, f); if (!on) continue;
+    if (on.type === 'poly') { const dd = dedupePts(on.pts, !!on.closed, 1e-6); if (dd.length < (on.closed ? 3 : 2)) continue; on = { ...on, pts: dd }; }
+    list.push({ id: o.id, ne: on });
   }
   return { list, mv };
 }
@@ -5591,14 +5620,14 @@ const TOOLS = {
     },
     point(p) { if (this.hot) this.place(p); },
     place(p) {
-      const h = this.hot; this.hot = null; updatePrompt(); const e = getEnt(h.id); if (!e) return; const ne = h.apply(p); if (!ne) { requestDraw(); return; }
-      const F = gripFollow(e, ne); pushUndo(); replaceEnt(e.id, ne); for (const o of F.list) replaceEnt(o.id, o.ne);
+      const h = this.hot; this.hot = null; updatePrompt(); const e = getEnt(h.id); if (!e) return; const ne = h.apply(gripPt(h, p)); if (!ne) { requestDraw(); return; }
+      const F = gripFollow(e, ne); pushUndo(); if (!F.list.some(o => o.id === e.id)) replaceEnt(e.id, ne); for (const o of F.list) replaceEnt(o.id, o.ne);
       if (F.mv.length) { for (const dm of S.dims) for (const k of ['a', 'b', 'v']) if (dm[k]) { const m = F.mv.find(m => veq(m.p, dm[k], 1e-6)); if (m) dm[k] = vadd(dm[k], m.d); } saveDims(); }
       commit();
     },
     draw(c, cur) {
       if (this.mv && this.mv.moved) { const d = vsub(cur, this.mv.start); ghostSel(c, mTrans(d.x, d.y)); rubber(c, this.mv.start, cur); return; }
-      if (!this.hot) return; const e = getEnt(this.hot.id); if (!e) return; const ne = this.hot.apply(cur); if (ne) ghost(c, [ne, ...gripFollow(e, ne).list.map(o => o.ne)]); rubber(c, this.hot.p, cur); },
+      if (!this.hot) return; const e = getEnt(this.hot.id); if (!e) return; const ne = this.hot.apply(gripPt(this.hot, cur)); if (ne) { const L = gripFollow(e, ne).list; ghost(c, L.some(o => o.id === e.id) ? L.map(o => o.ne) : [ne, ...L.map(o => o.ne)]); } rubber(c, this.hot.p, cur); },
     enter() { if (this.hot) { this.hot = null; updatePrompt(); requestDraw(); return; } if (S.lastTool) setTool(S.lastTool); },
     onKey(ev) { // arrows: nudge the selection 1 mm (Shift 10 mm); with nothing selected they scroll the view
       const dir = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] }[ev.key];
@@ -5616,18 +5645,33 @@ const TOOLS = {
     // tangent arc from the end of the chain to p: the bulge of the arc (0 = straight on)
     tanBulge(p) { const a = this.base(), u = this.tan; if (!a || !u) return 0; const c = vsub(p, a), th = Math.atan2(u.x * c.y - u.y * c.x, u.x * c.x + u.y * c.y); return Math.abs(th) < 1e-6 || Math.abs(Math.abs(th) - PI) < 1e-6 ? 0 : Math.tan(th / 2); },
     point(p) {
-      const a = this.base(), lk = this.arcMode ? null : hudTake();
+      let a = this.base(); const lk = this.arcMode ? null : hudTake();
       if (a) {
         if (vdist(a, p) < 1e-9) return;
         const b = this.arcMode ? this.tanBulge(p) : 0, A = b ? bulgeArc(a, p, b) : null;
         pushUndo();
+        if (!A && this.pts.length >= 3 && vdist(p, this.pts[0]) < 1e-9) a = this.squareClose(a, p);
         if (A) { addEnt({ type: 'arc', cx: A.c.x, cy: A.c.y, r: A.r, a0: A.sw > 0 ? A.a0 : A.a0 + A.sw, a1: A.sw > 0 ? A.a0 + A.sw : A.a0 }); const sw = 4 * Math.atan(b), u = this.tan; this.tan = { x: u.x * Math.cos(sw) - u.y * Math.sin(sw), y: u.x * Math.sin(sw) + u.y * Math.cos(sw) }; }
-        else { addEnt({ type: 'line', x1: a.x, y1: a.y, x2: p.x, y2: p.y }); autoDimSeg(this, a, p, lk, false); this.tan = vnorm(vsub(p, a)); }
+        else { this.lastId = addEnt({ type: 'line', x1: a.x, y1: a.y, x2: p.x, y2: p.y }).id; autoDimSeg(this, a, p, lk, false); this.tan = vnorm(vsub(p, a)); }
         this.arcMode = false; commit();
       }
       // back on the first point of the chain: the outline is closed – the next click starts a new one
       if (a && this.pts.length >= 3 && vdist(p, this.pts[0]) < 1e-9) { this.pts = []; this._ad = null; this.tan = null; toast(t('loopClosed')); sketchZoom(); return; }
       this.pts.push(p);
+    },
+    // closing an outline: a last side within 8° of square is made exact by nudging the last corner along its own side
+    // (so a rectangle drawn by hand comes out square); a side whose length was typed is not changed
+    squareClose(a, p) {
+      const pr = this.pts[this.pts.length - 2], le = this.lastId != null ? getEnt(this.lastId) : null;
+      if (!pr || !le || le.type !== 'line' || !veq({ x: le.x2, y: le.y2 }, a, 1e-9)) return a;
+      if (S.dims.some(m => (veq(m.a, a, 1e-9) && veq(m.b, pr, 1e-9)) || (veq(m.b, a, 1e-9) && veq(m.a, pr, 1e-9)))) return a;
+      const dx = p.x - a.x, dy = p.y - a.y, L = Math.hypot(dx, dy); let na = null;
+      if (Math.abs(dx) > 1e-9 && Math.abs(dx) < L * .14 && Math.abs(pr.y - a.y) < 1e-9) na = { x: p.x, y: a.y };
+      else if (Math.abs(dy) > 1e-9 && Math.abs(dy) < L * .14 && Math.abs(pr.x - a.x) < 1e-9) na = { x: a.x, y: p.y };
+      if (!na) return a;
+      replaceEnt(le.id, { ...le, x2: na.x, y2: na.y });
+      for (const m of S.dims) for (const k of ['a', 'b', 'v']) if (m[k] && veq(m[k], a, 1e-9)) m[k] = { ...na };
+      this.pts[this.pts.length - 1] = na; return na;
     },
     onKey(ev) { // A: the next segment is an arc tangent to the last one (like SolidWorks' tangent arc)
       if (ev.key.toLowerCase() !== 'a' || ev.ctrlKey || ev.metaKey || ev.altKey || !this.tan || !this.pts.length) return false;
