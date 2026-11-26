@@ -13002,7 +13002,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="8bb30df14d"</script>
+<script>window.NV_BUILD="cb9060c097"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -21312,6 +21312,16 @@ NVA.mpdf = function () {   // all drawing sheets, freshly built (the live drwpdf
   if (!list.length) { toast(t('drwNone'), true); return false; }
   savePdf(list, projName() + '_brezinai.pdf'); return false;
 };
+NVA.mxxlzip = function () {   // only the CNC programs, every .XXL in one ZIP (in a folder <project>_XXL)
+  if (!nvmPass()) return false;
+  if (S.busy) { toast(t('building')); return false; }
+  var pj = buildProjectAll(), base = pj.project;
+  if (!pj.files.length) { toast(L('CNC programų nėra.', 'There are no CNC programs.'), true); return false; }
+  S.busy = true; toast(t('building'));
+  Promise.resolve(Z.zip(pj.files.map(function (f) { return { name: base + '_XXL/' + f.name, data: f.text }; }))).then(function (u) {
+    S.busy = false; saveFile(base + '_XXL.zip', u); }, function (er) { S.busy = false; toast(String(er && er.message || er), true); });
+  return false;
+};
 NVA.mjson = function () {   // the project itself, as the ZIP carries it: prices stay with the admin
   if (!nvmPass()) return false;
   var p = clone(S.proj); if (!S.admin) delete p.pricing;
@@ -21334,7 +21344,7 @@ function nvmFiles(open, nFiles) {
   var d = open ? '' : ' disabled', dl = '⤓ ' + L('Atsisiųsti', 'Download');
   var b = function (attrs, label, cls) { return '<button type="button" class="nv-btn sm' + (cls ? ' ' + cls : '') + '" ' + attrs + d + '>' + label + '</button>'; };
   return '<div class="nvm-files"><h3 class="nv-h3">' + L('Atskiri failai', 'Single files') + '</h3><div class="nvm-fgrid">' +
-    nvmFile('.XXL', L('CNC programos', 'CNC programs') + ' <i>' + nFiles + '</i>', L('Į CNC stakles — po programą kiekvienai gręžiamai detalei.', 'To the CNC machine — one program for every drilled part.'), b('data-act="dlall" title="' + esc(t('xxlAllT')) + '"', dl)) +
+    nvmFile('.XXL', L('CNC programos', 'CNC programs') + ' <i>' + nFiles + '</i>', L('Į CNC stakles — po programą kiekvienai gręžiamai detalei.', 'To the CNC machine — one program for every drilled part.'), b('data-nv="mxxlzip" title="' + esc(L('Visos .XXL programos viename ZIP faile (aplanke ', 'Every .XXL program in one ZIP file (in the folder ') + projName() + '_XXL)') + '"', '⤓ ZIP') + b('data-act="dlall" title="' + esc(t('xxlAllT')) + '"', L('Po vieną', 'One by one'), 'ghost')) +
     nvmFile('.xlsx', L('Detalių sąrašas', 'Part list'), L('Į Nesting programą — pjovimui ir etiketėms.', 'To the Nesting app — for cutting and labels.'), b('data-act="dl" data-v="xlsm"', dl) + b('data-act="nestopen" title="' + esc(t('nestOpenT')) + '"', '↗ Nesting', 'ghost')) +
     nvmFile('PDF', L('Brėžiniai', 'Drawings') + ' <i>' + esc(S.drwPaper || 'A3') + '</i>', L('Spausdinti surinkimui ir montavimui.', 'Print them for assembly and fitting.'), b('data-nv="mpdf"', dl)) +
     nvmFile('.csv', L('Detalių lentelė', 'Part table'), L('Jei sąrašo reikia skaičiuoklėje ar kitoje programoje.', 'When the list is needed in a spreadsheet or another program.'), b('data-act="dl" data-v="csv"', dl)) +
