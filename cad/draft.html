@@ -4546,6 +4546,7 @@ const I18N = {
     pCham: 'Spustelėkite kampą arba pirmą liniją · atstumai {0} / {1} mm (įveskite 5 arba 5,8)',
     pFil: 'Spustelėkite kampą arba pirmą liniją · spindulys {0} mm (įveskite skaičių)', pSecond: 'Antra linija',
     pTanArc: 'Tangentinis lankas: galinis taškas (A – atgal į liniją)', nextPointArc: 'Kitas taškas (A – tangentinis lankas, Enter – baigti)',
+    straighten: 'Ištiesinti (horizontaliai / vertikaliai)', straightNone: 'Nėra ką tiesinti – linijos jau tiesios', straightDone: 'Ištiesinta kraštinių: {0}',
     hudW: 'Plotis', hudH: 'Aukštis', hudHint: 'Tab – kitas laukas · Enter – dėti · Backspace – atrakinti', autoDim: 'Įvestos reikšmės tampa matmenimis', loopClosed: 'Kontūras uždarytas – galite pradėti naują', eqSel: 'Padaryti lygius', eqSelBad: 'Pažymėkite bent dvi linijas arba bent du apskritimus / lankus', eqSelDone: 'Sulyginta: {0} = {1}', pEqRev: 'Spustelėkite matmenį, kurio reikšmę perimti (Esc – atšaukti)', dimEqBtn: 'Lygus kitam matmeniui – spustelėkite jį',
     dimValue: 'Matmens reikšmė', dimEditTip: 'Įveskite naują reikšmę – figūra persitvarkys (Enter – taikyti, Esc – palikti)', dimBad: 'Reikšmė turi būti didesnė už 0', cornerJoined: 'Kampas suapvalintas – abi dalys sujungtos į vieną kontūrą', dimSel: 'Matmuo pažymėtas · Delete – ištrinti · dukart spustelėti – keisti reikšmę · = – sulyginti su kitais', dimEqual: 'Sulyginti su kitais matmenimis…', dimUnlink: 'Panaikinti lygybę', pEq: 'Spustelėkite matmenis, kurie turi būti lygūs pažymėtam (Esc – baigti)', eqDone: 'Sulyginta: {0}', dimDeleted: 'Matmuo ištrintas', dimEdit: 'Keisti reikšmę…', dimDelete: 'Ištrinti matmenį', dimDeleteAll: 'Ištrinti visus matmenis', dimHideAll: 'Slėpti matmenis', dimBroke: 'Kitaip nepavyko – pasikeitė ir kiti matmenys: {0}', dimFree: 'Matmuo nepririštas prie jokios figūros', dimCorner: 'Pririškite matmenį prie kampų ar galų, kad galėtumėte keisti figūrą', pM1: 'Matavimo pradžia', pM2: 'Matavimo pabaiga', pM3: 'Padėkite matmenį (arba įveskite atstumą) · H horiz. · V vert. · A lygiagretus',
     selection: 'Pasirinkta', nothingSel: 'Nieko nepažymėta.',
@@ -4644,6 +4645,7 @@ const I18N = {
     pCham: 'Click a corner or the first line · distances {0} / {1} mm (type 5 or 5,8)',
     pFil: 'Click a corner or the first line · radius {0} mm (type a number)', pSecond: 'Second line',
     pTanArc: 'Tangent arc: end point (A – back to line)', nextPointArc: 'Next point (A – tangent arc, Enter to finish)',
+    straighten: 'Straighten (horizontal / vertical)', straightNone: 'Nothing to straighten – the lines are already square', straightDone: 'Straightened sides: {0}',
     hudW: 'Width', hudH: 'Height', hudHint: 'Tab next field · Enter place · Backspace unlock', autoDim: 'Typed values become dimensions', loopClosed: 'Outline closed – click to start a new one', eqSel: 'Make equal', eqSelBad: 'Select at least two lines, or at least two circles / arcs', eqSelDone: 'Made equal: {0} = {1}', pEqRev: 'Click the dimension to take the value from (Esc to cancel)', dimEqBtn: 'Equal to another dimension – click it',
     dimValue: 'Dimension value', dimEditTip: 'Type a new value and the shape follows (Enter apply, Esc keep)', dimBad: 'The value must be greater than 0', cornerJoined: 'Corner done – the two pieces are now one outline', dimSel: 'Dimension selected · Delete removes it · double-click changes the value · = makes others equal', dimEqual: 'Make other dimensions equal…', dimUnlink: 'Remove equal link', pEq: 'Click the dimensions that should equal the selected one (Esc to finish)', eqDone: 'Set equal: {0}', dimDeleted: 'Dimension deleted', dimEdit: 'Change value…', dimDelete: 'Delete dimension', dimDeleteAll: 'Delete all dimensions', dimHideAll: 'Hide dimensions', dimBroke: 'No other way – other dimensions changed too: {0}', dimFree: 'This dimension is not attached to any shape', dimCorner: 'Attach the dimension to corners or ends to change the shape', pM1: 'Measure from', pM2: 'Measure to', pM3: 'Place the dimension (or type the distance) · H horizontal · V vertical · A aligned',
     selection: 'Selection', nothingSel: 'Nothing selected.',
@@ -5115,13 +5117,14 @@ function axisLock(w, base) {
   if (!base || !S.polar || (S.ortho !== S.shift)) return null;
   const d = vsub(w, base), ax = Math.abs(d.x), ay = Math.abs(d.y), band = 10 / S.view.s;
   if (Math.hypot(ax, ay) < band * 1.5) return null;
-  if (ay <= band && ax > ay * 2) return 'h';
-  if (ax <= band && ay > ax * 2) return 'v';
+  // within 10 px of the axis, or within ~2° of it far from the base point (long lines stay straight)
+  if (ay <= Math.max(band, ax * 0.035) && ax > ay * 2) return 'h';
+  if (ax <= Math.max(band, ay * 0.035) && ay > ax * 2) return 'v';
   // like SolidWorks: square to the previous segment, or carrying straight on along it
   const pd = prevDir(base); if (!pd) return null;
   for (const [u, rel] of [[{ x: -pd.y, y: pd.x }, 'per'], [{ x: pd.y, y: -pd.x }, 'per'], [pd, 'par'], [{ x: -pd.x, y: -pd.y }, 'par']]) {
     const along = d.x * u.x + d.y * u.y, off = Math.abs(d.x * u.y - d.y * u.x);
-    if (along > band * 1.5 && off <= band && along > off * 2) return { u, rel };
+    if (along > band * 1.5 && off <= Math.max(band, along * 0.035) && along > off * 2) return { u, rel };
   }
   return null;
 }
@@ -7964,34 +7967,45 @@ function dvGroup(seeds, ents, tol) {
 // stretch one shape across the moving line through P: the edge P sits on (or the corner P is) slides by d together with
 // the straight edges square to the motion and the rounded corners joined to them; everything else stays
 function dvStretch(list, P, u, d, val, tol, ct) {
-  const proj = p => (p.x - P.x) * u.x + (p.y - P.y) * u.y, on = p => Math.abs(proj(p)) < tol;
-  const M = [], inM = p => M.some(q => vdist(q, p) < tol), add = p => { if (inM(p)) return false; M.push(p); return true; };
+  // every point that moves gets its own shift: points on the moving line (and the far ends of edges square to the motion)
+  // land exactly on the new line, so a side that was drawn a hair off vertical comes out straight instead of leaning more;
+  // a rounded corner moves rigidly with the point it hangs on
+  const dl = d.x * u.x + d.y * u.y, proj = p => (p.x - P.x) * u.x + (p.y - P.y) * u.y;
+  const sq = (s0, s1) => Math.abs(proj(s0) - proj(s1)) < Math.max(tol, vdist(s0, s1) * 0.006); // ≈ 0.35°
+  const M = [], find = p => M.find(m => vdist(m.p, p) < tol), inM = p => !!find(p);
+  const add = (p, disp) => { if (find(p)) return false; M.push({ p, disp }); return true; }, onLine = p => vmul(u, dl - proj(p));
   const segs = [];
   for (const e of list) {
-    if (e.type === 'circle') { if (vdist({ x: e.cx, y: e.cy }, P) < ct) add({ x: e.cx, y: e.cy }); continue; }
+    if (e.type === 'circle') { if (vdist({ x: e.cx, y: e.cy }, P) < ct) add({ x: e.cx, y: e.cy }, d); continue; }
     for (const Q of prims(e)) segs.push([ptOn(Q, 0), ptOn(Q, 1), Q]);
   }
   for (const [s0, s1, Q] of segs) {
-    if (vdist(s0, P) < ct) add(s0); if (vdist(s1, P) < ct) add(s1);
-    if (Q.k === 'L' && on(s0) && on(s1) && distPrim(P, Q) < ct) { add(s0); add(s1); }
+    if (vdist(s0, P) < ct) add(s0, onLine(s0)); if (vdist(s1, P) < ct) add(s1, onLine(s1));
+    if (Q.k === 'L' && Math.abs(proj(s0)) < Math.max(tol, vdist(s0, s1) * 0.006) && sq(s0, s1) && distPrim(P, Q) < ct) { add(s0, onLine(s0)); add(s1, onLine(s1)); }
   }
   if (!M.length) return null;
   for (let again = true, g = 0; again && g < 500; g++) {
     again = false;
     for (const [s0, s1, Q] of segs) {
-      const m0 = inM(s0), m1 = inM(s1); if (m0 === m1) continue;
-      const o = m0 ? s1 : s0;
+      const m0 = find(s0), m1 = find(s1); if (!!m0 === !!m1) continue;
+      const o = m0 ? s1 : s0, m = m0 || m1;
       // straight edges square to the motion slide along whole; arcs come along when they stay on the moving side
-      if (Q.k === 'L' ? Math.abs(proj(s0) - proj(s1)) < tol : proj(o) > -val / 2) { add(o); again = true; }
+      if (Q.k === 'L' ? sq(s0, s1) : proj(o) > -val / 2) { add(o, Q.k === 'L' && Math.abs(proj(m.p)) < Math.max(tol, vdist(s0, s1) * 0.006) ? onLine(o) : m.disp); again = true; }
     }
   }
   const Z = { x: 0, y: 0 }, targets = list.filter(e => entPoints(e).some(inM));
-  const rigid = segs.filter(([s0, s1]) => inM(s0) && inM(s1)).map(x => x[2]);
+  const rigid = segs.filter(([s0, s1]) => inM(s0) && inM(s1));
   const circ = list.filter(e => e.type === 'circle' && inM({ x: e.cx, y: e.cy }));
-  return {
-    targets, entF: p => inM(p) ? d : Z,
-    ptMap: p => (inM(p) || rigid.some(Q => distPrim(p, Q) < ct || (Q.k === 'A' && vdist(p, Q.c) < ct)) || circ.some(e => dvTouch(e, p, ct))) ? vadd(p, d) : null
+  const dispAt = p => {
+    const m = find(p); if (m) return m.disp;
+    for (const [s0, s1, Q] of rigid) {
+      if (Q.k === 'A' && vdist(p, Q.c) < ct) return find(s0).disp;
+      if (distPrim(p, Q) < ct) { const L2 = vdist(s0, s1) ** 2 || 1, tt = clamp(((p.x - s0.x) * (s1.x - s0.x) + (p.y - s0.y) * (s1.y - s0.y)) / L2, 0, 1); return vlerp(find(s0).disp, find(s1).disp, tt); }
+    }
+    if (circ.some(e => dvTouch(e, p, ct))) return d;
+    return null;
   };
+  return { targets, entF: p => { const m = find(p); return m ? m.disp : Z; }, ptMap: p => { const v = dispAt(p); return v ? vadd(p, v) : null; } };
 }
 function dvTranslate(list, d, ct) { return { targets: list, entF: () => d, ptMap: p => list.some(e => dvTouch(e, p, ct)) ? vadd(p, d) : null }; }
 // 1.22 − 1.22 should give 0, not −6.7e-16
@@ -8317,6 +8331,25 @@ function makeEqualSel() {
   for (const m of dims.slice(1)) { linkEqual(src, m); const r = dimDrive(m, v, { noUndo: true }); if (r.r === 'ok') broke += r.broke || 0; else if (r.r !== 'same') bad++; }
   cleanEq(); saveDims(); renderDims(); commit(); requestDraw();
   toast(bad ? t('dimCorner') : broke ? t('dimBroke', broke) : t('eqSelDone', list.length, fmt(v, 2)), !!(bad || broke));
+}
+// Straighten: lines drawn a hair off horizontal / vertical (< 1°) become exactly so; joined lines stay joined
+function straightenSel() {
+  const key = p => p.x.toFixed(5) + ',' + p.y.toFixed(5), fix = new Map(); let n = 0;
+  const note = (p, k, v) => { const K = key(p), o = fix.get(K) || {}; o[k] = v; fix.set(K, o); };
+  for (const e of selEnts()) {
+    const segs = e.type === 'line' ? [[{ x: e.x1, y: e.y1 }, { x: e.x2, y: e.y2 }]] : e.type === 'poly' ? e.pts.map((q, i) => [q, e.pts[(i + 1) % e.pts.length], q.b]).filter((sg, i) => (e.closed || i < e.pts.length - 1) && !sg[2]) : [];
+    for (const [a, b] of segs) {
+      const dx = b.x - a.x, dy = b.y - a.y, L = Math.hypot(dx, dy); if (L < 1e-9) continue;
+      if (Math.abs(dx) > 1e-9 && Math.abs(dx) < L * .0175) { const x = (a.x + b.x) / 2; note(a, 'x', x); note(b, 'x', x); n++; }
+      else if (Math.abs(dy) > 1e-9 && Math.abs(dy) < L * .0175) { const y = (a.y + b.y) / 2; note(a, 'y', y); note(b, 'y', y); n++; }
+    }
+  }
+  if (!n) return toast(t('straightNone'));
+  const f = q => { const o = fix.get(key(q)); return o ? { x: o.x != null ? o.x - q.x : 0, y: o.y != null ? o.y - q.y : 0 } : { x: 0, y: 0 }; };
+  pushUndo(); updateInfo();
+  for (const e of visEnts()) if (e.type !== 'circle' && e.type !== 'text' && entPoints(e).some(q => fix.has(key(q)))) replaceEnt(e.id, stretchEnt(e, f));
+  for (const dm of S.dims) for (const k of ['a', 'b', 'v']) if (dm[k] && fix.has(key(dm[k]))) dm[k] = vadd(dm[k], f(dm[k]));
+  saveDims(); commit(); toast(t('straightDone', n));
 }
 const dimNamesOn = () => !!dimEd || /^=|\bd\d*$|[*+\-/(]\s*d/i.test(cmd.value.trim());
 TOOLS.angle = () => ({
@@ -8752,6 +8785,7 @@ function openCtx(x, y) {
   it(t('copyClip'), 'Ctrl+C', () => copySel(false), !has); it(t('paste'), 'Ctrl+V', pasteClip, !(S.clip || (() => { try { return localStorage.getItem('dxfed.clip'); } catch (e) { return null; } })()));
   it(t('join'), 'J', () => runAction('join'), !has); it(t('explode'), 'X', () => runAction('explode'), !has);
   if (S.sel.size >= 2 && equalCandidates()) it(t('eqSel'), '=', makeEqualSel);
+  if (has) it(t('straighten'), '', straightenSel);
   it(t('del'), 'Del', () => runAction('del'), !has);
   items.push('-');
   it(t('extractSel'), '', () => saveDXF(true), !has); it(t('extractSel0'), '', () => saveDXF(true, true), !has);
