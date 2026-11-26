@@ -554,6 +554,7 @@ var Router = {
   topOverlay() {
     var ntc = $(".ntc-panel.on");   // the bell's list (hub/shared/notices.js)
     if (ntc) return () => { var sc = $(".ntc-scrim"); if (sc) sc.click(); };
+    if (typeof Assembly !== "undefined" && Assembly.isOpen()) return () => Assembly.close();   // the assembly station's drawing
     if ($("#pop-root")) return () => Popover.close();
     if (Palette.isOpen) return () => Palette.close();
     if ($(".modal-scrim", $("#modal-root"))) return () => Modal.close();

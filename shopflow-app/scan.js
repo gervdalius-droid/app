@@ -30,6 +30,9 @@ var ScanStation = {
   isActive() {
     return App.me && App.view === "scan";
   },
+  touch() {
+    return typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches;
+  },
   view() {
     if (this.stationId && !D.station(this.stationId)) this.stationId = null;
     return this.stationId ? this.kiosk() : this.picker();
@@ -81,7 +84,8 @@ var ScanStation = {
             <div class="scan-status-title">Ready to scan</div>
             <div class="scan-status-sub">Point the scanner at a part label’s QR code</div>
           </div>
-          <input id="scan-capture" class="scan-capture" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="…or type / paste a part code and press Enter">
+          <input id="scan-capture" class="scan-capture" autocomplete="off" autocapitalize="off" spellcheck="false" ${this.touch() ? 'inputmode="none"' : ""} placeholder="…or type / paste a part code and press Enter">
+          ${this.touch() ? `<button class="btn ghost" id="scan-kbd" style="align-self:center">${icon("type", 14)} Type a code</button>` : ""}
         </div>
         <div class="scan-side">
           <div class="scan-side-head">${icon("history", 14)} Recent scans</div>
@@ -101,7 +105,8 @@ var ScanStation = {
       notrouted: ["warn", "alert"],
       stationDone: ["info", "check-circle"],
       notfound: ["err", "ban"],
-      nostation: ["err", "alert"]
+      nostation: ["err", "alert"],
+      opened: ["ok", "ruler"]       // assembly station: the cabinet's drawing was opened (assembly.js)
     };
     return rows.map(r => {
       var _ref = meta[r.status] || ["info", "info"],
@@ -154,6 +159,9 @@ var ScanStation = {
       if (this.isActive() && !this.camera && !$(".modal-scrim")) focus();
     }, 60);
     $("#scan-cam-btn", root).onclick = () => this.camera ? this.stopCamera() : this.startCamera();
+    /* a touch tablet: the field listens for the scanner without the on-screen keyboard; this button brings it up */
+    var kb = $("#scan-kbd", root);
+    if (kb) kb.onclick = () => { cap.setAttribute("inputmode", "text"); cap.blur(); setTimeout(() => cap.focus(), 30); cap.addEventListener("blur", () => cap.setAttribute("inputmode", "none"), { once: true }); };
   },
   /* ---------- scan handling ---------- */
   onScan(payload) {
