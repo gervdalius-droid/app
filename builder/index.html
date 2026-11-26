@@ -9868,7 +9868,7 @@ function sheetCabinet(c, r, nr, meta, plan) {
   var nRows = rows.length + 1 + (more ? 1 : 0), best = plan.best;
   var vb = viewsBlock(r, best.s, LX + 2, top, best.two, c); svg += vb.svg;
   /* parts and hardware under the views (what does not fit goes on the next sheet) */
-  var yT = vb.bottom + 8, rh = Math.max(2.7, Math.min(5, (bottomY - yT - 8) / nRows)), fs = Math.min(2.7, rh * 0.58);
+  var rh = Math.max(2.7, Math.min(4, (bottomY - vb.bottom - 16) / nRows)), yT = Math.max(vb.bottom + 8, bottomY - 2 - rh * nRows), fs = Math.min(2.7, rh * 0.58);   // the list at the bottom of the column
   svg += txt(LX, yT - 1.8, L.parts, 3.2, { bold:true });
   var tp = partTable(LX, yT, rows, { rh:rh, fs:fs });
   svg += tp.svg;
@@ -9878,14 +9878,20 @@ function sheetCabinet(c, r, nr, meta, plan) {
   /* exploded assembly on the right */
   var AX = LX + LW + 10, legH = hwList.length ? Math.ceil(hwList.length / 4) * 15 + 2 : 0, area = [AX + 16, SW - FR - 16, FR + 26, SH - FR - TB.h - 10 - legH];
   svg += line([AX - 4, FR + 4], [AX - 4, SH - FR - 4], 0.15, '#c3c8c5');
+  var SNAP = null; try { SNAP = meta.snap ? meta.snap(c, r, { w:area[1] - area[0] - 30, h:area[3] - area[2] - 8 }) : null; } catch (eS) { SNAP = null; }
   var V = viewIso(ISO_D), boxes = cabBoxes(r, { plinth:false, fit:true, c:c }); explode(r, boxes);
-  var order = solve(boxes, V), fp = fitPic(order, area[0] + 4, area[2] + 4, area[1] - area[0] - 8, area[3] - area[2] - 8);
+  var order = SNAP ? [] : solve(boxes, V), fp;
+  if (SNAP) { var bw0 = area[1] - area[0] - 30, bh0 = area[3] - area[2] - 8, kS = Math.min(bw0 / SNAP.w, bh0 / SNAP.h), ixS = area[0] + (area[1] - area[0] - SNAP.w * kS) / 2, iyS = area[2] + 4 + (bh0 - SNAP.h * kS) / 2;
+    fp = { m:function (q) { return [ixS + q[0] * kS, iyS + q[1] * kS]; }, pb:[0, SNAP.w, SNAP.h, 0] }; }   // picture pixels → sheet
+  else fp = fitPic(order, area[0] + 4, area[2] + 4, area[1] - area[0] - 8, area[3] - area[2] - 8);
   svg += viewTitle(AX, top, L.expl, L.nts);
   var anchors = {};
-  svg += drawBoxes(order, fp.m, { lw:0.26, shade:true, after:connectorLines(r, boxes, V, function (q) { return fp.m(q); }, order, anchors) });
+  if (SNAP) { var i0 = fp.m([0, 0]); svg += '<image x="' + f2(i0[0]) + '" y="' + f2(i0[1]) + '" width="' + f2(SNAP.w * kS) + '" height="' + f2(SNAP.h * kS) + '" preserveAspectRatio="none" href="' + SNAP.url + '"/>'; }
+  else svg += drawBoxes(order, fp.m, { lw:0.26, shade:true, after:connectorLines(r, boxes, V, function (q) { return fp.m(q); }, order, anchors) });
   var items = [], gotNr = {};
   ls0.groups.forEach(function (g) {   // the balloon goes to the piece of the line that is seen best (the biggest one in front)
     if (!g.main) return;   // balloons only on the carcass and the fronts: drawer boxes and fittings are in the lists
+    if (SNAP) { var sp = g.members.map(function (q) { return SNAP.pts[q.name]; }).filter(Boolean)[0]; if (sp && !gotNr[g.nr]) { gotNr[g.nr] = 1; items.push({ a:fp.m(sp), n:g.nr }); } return; }
     var mine = order.filter(function (b) { return b.p && posOf[b.p.name] === g.nr; });
     var seen = mine.map(function (b) { return { b:b, a:anchorOf(b, order, true), sz:(b.e[0][1] - b.e[0][0]) * (b.e[2][1] - b.e[2][0]) + (b.e[1][1] - b.e[1][0]) * (b.e[2][1] - b.e[2][0]) }; }).filter(function (q) { return q.a; }).sort(function (x, y) { return y.sz - x.sz; });
     var a = seen.length ? seen[0].a : mine.length ? anchorOf(mine[mine.length - 1], order) : null;
@@ -10101,7 +10107,7 @@ function sheetAllFronts(proj, infos, RM, meta) {   // nothing placed: every cabi
 /* opts: { lang, project, date, paper, only: cabinet index or null, RM } → [{ id, title, svg }] */
 function sheets(proj, infos, opts) {
   opts = opts || {}; setLang(opts.lang); WT_PIECES = opts.worktops || null; var RM = opts.RM || root.DBRoom, list = [];
-  var meta = { project:opts.project || proj.name || '', date:opts.date || '', paper:opts.paper || 'A3' };
+  var meta = { project:opts.project || proj.name || '', date:opts.date || '', paper:opts.paper || 'A3', snap:opts.snap || null };
   var only = opts.only == null ? null : +opts.only;
   if (only == null && RM) {
     var hasLayout = proj.layout && RM.placed(proj).length > 0;
@@ -13002,7 +13008,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="cb9060c097"</script>
+<script>window.NV_BUILD="f61c1836d0"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -15603,9 +15609,9 @@ function drwSheets(only, paper) {
   if (only === undefined) drwOnlyFix();
   var o = only === undefined ? S.drwOnly : only, oi = only === undefined ? drwOnlyIdx() : (o === 'all' || o === 'furn' ? null : +o);
   if (RM && RM.ensure(S.proj)) save();   // never opened in Baldai: place the cabinets the way the Baldai tab does, so the furniture is drawn
-  var day = new Date().toISOString().slice(0, 10), key = JSON.stringify([S.proj, S.settings, S.lang, pp, o, oi, day]);
+  var day = new Date().toISOString().slice(0, 10), key = JSON.stringify([S.proj, S.settings, S.lang, pp, o, oi, day, typeof nvdReady === 'function' && nvdReady()]);   // the 3-D assembly picture once three.js is there
   if (DRW_CACHE && DRW_CACHE.key === key) return DRW_CACHE.list;   // the same project and options: the sheets are not drawn again
-  var list = DR.sheets(S.proj, S._info || [], { worktops:worktopPieces().pieces, lang:S.lang, project:S.proj.name || projName(), date:day, paper:pp, only:o === 'all' || o === 'furn' ? null : oi, RM:RM });
+  var list = DR.sheets(S.proj, S._info || [], { worktops:worktopPieces().pieces, lang:S.lang, project:S.proj.name || projName(), date:day, paper:pp, only:o === 'all' || o === 'furn' ? null : oi, RM:RM, snap:typeof nvdSnap === 'function' ? nvdSnap : null });
   if (o === 'furn') { list = list.filter(function (x) { return x.cab == null; }); list.forEach(function (x, k) { x.svg = x.svg.replace(/>\d+ \/ \d+</, '>' + (k + 1) + ' / ' + list.length + '<'); }); }
   DRW_CACHE = { key:key, list:list };
   return list;
@@ -20611,7 +20617,8 @@ function nv3Build() {
     } else {
       var rail = Math.min(+sec.rail || 500, D - 45); NV3.moving.push({ g: g, door: false, travel: rail * 0.8 });
       var own = (r.panels || []).filter(function (q) { return q.drawerOf === p.name && q.place; });
-      if (own.length) own.forEach(function (q) { inner.add(nv3Board(q, MC(q.mat, '#e5e2da'))); });
+      if ((sec.hw || m.hw) === 'BLUM TANDEMBOX' && !m.cargo && !door && nv3BlumDrawer(c, r, m, sec, x, z, w, h, inner, root, rail)) { /* its base / back are parts now (TANDEMBOX, build.py): the Blum model draws the whole box */ }
+      else if (own.length) own.forEach(function (q) { inner.add(nv3Board(q, MC(q.mat, '#e5e2da'))); });
       else if (!m.cargo && !door && nv3BlumDrawer(c, r, m, sec, x, z, w, h, inner, root, rail)) { /* drawn from Blum's models */ }
       else if (!m.cargo && !door) {   // a metal-sided box (TANDEMBOX and the like): sides, bottom, back
         var bw = w - 36, bx = x + 18, sh = Math.max(60, Math.min(h - 45, 170)), bz = z + 22, dep = rail - 10, grey = Object.assign({ noLine: false }, { metalness: 0.75, roughness: 0.38 });
@@ -21660,6 +21667,94 @@ document.addEventListener('click', function (e) {
 }, true);
 
 
+/* ======== src/ui/66-drwsnap.js ======== */
+/* 66-drwsnap.js — the cabinet sheet's "Surinkimo schema" as the 3-D view shows it with "Jungtys" on: the carcass pulled
+   apart, every joint's connectors (confirmats, cams, dowels) between the boards, the drawers in their place with their
+   runners (no fronts). Drawn by three.js into a picture the sheet carries (drawings.js sheetCabinet via build.py PATCHES:
+   opts.snap); the part numbers go where each board lands in the picture. Without three.js (offline, still loading) the
+   sheet keeps its own line drawing — drwSheets asks again once it is there (nvdReady is part of its cache key). */
+var NVD = { R: null, env: null, cache: {}, keys: [] };
+function nvdReady() { return typeof NV3 !== 'undefined' && !!NV3.T && !NV3.failed; }
+function nvdSnap(c, r, box) {
+  if (!nvdReady()) { if (typeof nv3Load === 'function' && typeof NV3 !== 'undefined' && !NV3.failed) nv3Load(); return null; }
+  var ci = S.proj.cabinets.indexOf(c); if (ci < 0 || !r || !r.panels || !r.panels.some(function (p) { return p.place; })) return null;
+  if (c.kind === 'box' || c.kind === 'panel') return null;   // free constructions: the sheet's own drawing
+  var key = JSON.stringify([c, Math.round(box.w), Math.round(box.h)]);
+  if (NVD.cache[key]) return NVD.cache[key];
+  var out = null, T = NV3.T, sel0 = S.sel, st = document.getElementById('nv3-stage');
+  var keep = { pick: NV3.pick, moving: NV3.moving, links: NV3.links, jSel: NV3.jSel, edges: NV3.edges, hw: NV3.hw, jPairs: NV3.jPairs, jGeom: NV3.jGeom, jpick: NV3.jpick, labels: NV3.labels };
+  if (st) st.id = 'nv3-stage-busy';   // the joints' names are labels on the live view's stage: none for the picture
+  try {
+    S.sel = ci; NV3.jSel = null; NV3.edges = false; NV3.hw = true; NV3.pick = []; NV3.moving = []; NV3.links = []; NV3.jpick = []; NV3.labels = [];
+    out = nvdDraw(c, r, box);
+  } catch (e) { if (window.console) console.warn('drawings: the 3-D assembly picture failed — the line drawing is used', e); out = null; }
+  finally { S.sel = sel0; Object.keys(keep).forEach(function (k) { NV3[k] = keep[k]; }); if (st) st.id = 'nv3-stage'; }
+  if (out) { NVD.cache[key] = out; NVD.keys.push(key); while (NVD.keys.length > 24) delete NVD.cache[NVD.keys.shift()]; }
+  return out;
+}
+/* a door's hinges without the door: the arms on the side they are screwed to, moved out with that side */
+function nvdHinges(m, root, expOff, W, mid) {
+  var F = window.DBFit; if (m.hinged === false || m.inset || !F || !F.has('hinge')) return;
+  var T = NV3.T, right = !m.hingeLeft, cupE = +((E.R.hinge || {}).cupFromEdge) || 22.5, cxp = right ? m.x + m.w - cupE : m.x + cupE, HG = F.HINGE;
+  var eo = expOff([right ? W : 0, mid[1], mid[2]]), g = new T.Group(); g.position.set(eo[0], eo[1], eo[2]); root.add(g);
+  (m.ys || []).forEach(function (yy) { var hz = m.z + yy, mapH = function (sx, sy, sz) { return [right ? cxp + (sx - HG.cupX) : cxp - (sx - HG.cupX), -(sz - HG.doorZ), hz + sy]; };
+    var arm = nv3Fit('hinge', 0, mapH, '#a3adb2', !right); if (arm) g.add(arm); });
+}
+function nvdDraw(c, r, box) {
+  var T = NV3.T, MC = function (name, d) { return window.DBFront && window.DBFront.matColor ? window.DBFront.matColor(name, d) : d; };
+  var isFront = function (p) { return p.role === 'FASADAS' || p.role === 'DURYS'; };
+  var D = num(c.D) || 560, W = num(c.dishwasher ? c.dishWidth : c.W) || 600, H = num(c.H) || 720, ext = [W, D, H], mid = [W / 2, D / 2, H / 2];
+  var expOff = function (cen) { return [0, 1, 2].map(function (i) { return Math.max(-1, Math.min(1, (cen[i] - mid[i]) / Math.max(1, ext[i] / 2))) * Math.max(130, Math.max(W, H, D) * 0.09); }); };   // as nv3Build pulls the boards apart
+  var root = new T.Group(); root.rotation.x = -Math.PI / 2; var anchors = {};
+  /* the carcass, pulled apart, with its joints and connectors */
+  (r.panels || []).forEach(function (p) { if (!p.place || p.drawerOf || isFront(p)) return;
+    var bm = nv3Board(p, MC(p.mat, '#e9e6de')), eo = expOff(bm.userData.cen), eg = new T.Group(); eg.position.set(eo[0], eo[1], eo[2]); eg.add(bm); root.add(eg);
+    anchors[p.name] = [bm.userData.cen[0] + eo[0], bm.userData.cen[1] + eo[1], bm.userData.cen[2] + eo[2]]; });
+  nv3Seams(r, root, expOff);
+  nv3Screws(r, root, expOff);
+  /* the drawers in their place, with their runners — not the fronts */
+  var vis = r.visual || {}, fi = 0, di = 0;
+  (r.panels || []).filter(isFront).forEach(function (p) {
+    if (p.role === 'DURYS') { var dm = (vis.doors || [])[di++]; if (dm && !c.dishwasher && !dm.cargo) nvdHinges(dm, root, expOff, W, mid); return; }
+    var m = (vis.drawers || [])[fi++]; if (!m || c.dishwasher || m.cargo) return;
+    var sec = m.box ? { hw: m.hw, rail: m.rail } : (c.sections || []).filter(function (s) { return (+s.col || 0) === (m.col || 0); })[m.sec] || {};
+    var rail = Math.min(+sec.rail || 500, D - 45), g = new T.Group(), inner = new T.Group(); g.add(inner);
+    var own = (r.panels || []).filter(function (q) { return q.drawerOf === p.name && q.place; });
+    if ((sec.hw || m.hw) === 'BLUM TANDEMBOX' && nv3BlumDrawer(c, r, m, sec, m.x, m.bottom, m.w, m.h, inner, root, rail)) { /* Blum's model */ }
+    else if (own.length) own.forEach(function (q) { inner.add(nv3Board(q, MC(q.mat, '#e5e2da'))); });
+    else nv3BlumDrawer(c, r, m, sec, m.x, m.bottom, m.w, m.h, inner, root, rail);
+    root.add(g);
+  });
+  /* the picture: white, lit as the 3-D view, from the front left above */
+  var px = 7, wpx = Math.max(300, Math.min(2200, Math.round(box.w * px))), hpx = Math.max(300, Math.min(2200, Math.round(box.h * px)));
+  var R = NVD.R; if (!R) { R = NVD.R = new T.WebGLRenderer({ antialias: true, alpha: false, preserveDrawingBuffer: true }); R.toneMapping = T.ACESFilmicToneMapping; R.toneMappingExposure = 1.05; R.outputColorSpace = T.SRGBColorSpace; R.setPixelRatio(1); }
+  R.setSize(wpx, hpx, false);
+  var sc = new T.Scene(); sc.background = new T.Color('#ffffff');
+  if (!NVD.env) { var pm = new T.PMREMGenerator(R); NVD.env = pm.fromScene(new NV3.RE(), 0.03).texture; }
+  sc.environment = NVD.env; sc.environmentIntensity = 0.55;
+  var key = new T.DirectionalLight(0xffffff, 1.6); key.position.set(-900, 1500, 1300); sc.add(key);
+  var fill = new T.DirectionalLight(0xffffff, 0.5); fill.position.set(1200, 500, 600); sc.add(fill); sc.add(new T.AmbientLight(0xffffff, 0.35));
+  sc.add(root); root.updateMatrixWorld(true);
+  var bb = new T.Box3().setFromObject(root), cen = bb.getCenter(new T.Vector3()), rad = bb.getBoundingSphere(new T.Sphere()).radius;
+  var cam = new T.PerspectiveCamera(26, wpx / hpx, 10, 60000), dir = new T.Vector3(-0.62, 0.48, 1).normalize(), tg = cen.clone();
+  var corners = []; [bb.min.x, bb.max.x].forEach(function (x) { [bb.min.y, bb.max.y].forEach(function (y) { [bb.min.z, bb.max.z].forEach(function (z) { corners.push(new T.Vector3(x, y, z)); }); }); });
+  var dist = rad / Math.sin(13 * Math.PI / 180);
+  for (var it = 0; it < 4; it++) {   // frame it: the box's corners fill the picture, centred
+    cam.position.copy(tg).addScaledVector(dir, dist); cam.near = dist / 60; cam.far = dist * 12; cam.lookAt(tg); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+    var x0 = 1, x1 = -1, y0 = 1, y1 = -1; corners.forEach(function (q) { var v = q.clone().project(cam); x0 = Math.min(x0, v.x); x1 = Math.max(x1, v.x); y0 = Math.min(y0, v.y); y1 = Math.max(y1, v.y); });
+    var right = new T.Vector3().setFromMatrixColumn(cam.matrixWorld, 0), up = new T.Vector3().setFromMatrixColumn(cam.matrixWorld, 1), hh = Math.tan(13 * Math.PI / 180) * dist, hw = hh * cam.aspect;
+    tg.addScaledVector(right, (x0 + x1) / 2 * hw).addScaledVector(up, (y0 + y1) / 2 * hh);
+    dist *= Math.max((x1 - x0) / 2, (y1 - y0) / 2) / 0.95;
+  }
+  cam.position.copy(tg).addScaledVector(dir, dist); cam.near = dist / 60; cam.far = dist * 12; cam.lookAt(tg); cam.updateProjectionMatrix(); cam.updateMatrixWorld(true);
+  R.render(sc, cam);
+  var url = R.domElement.toDataURL('image/jpeg', 0.92), pts = {};
+  Object.keys(anchors).forEach(function (n) { var v = root.localToWorld(new T.Vector3().fromArray(anchors[n])).project(cam); if (Math.abs(v.x) <= 1 && Math.abs(v.y) <= 1) pts[n] = [(v.x + 1) / 2 * wpx, (1 - v.y) / 2 * hpx]; });
+  sc.remove(root); nv3Clear(root);
+  return { url: url, w: wpx, h: hpx, pts: pts };
+}
+
+
 /* ======== src/ui/99-export.js ======== */
 /* 99-export.js — what the tests and the browser console may reach of the new interface (window.__nv).
    The live app's own window.__dbk is set right after this, at the end of the closure. */
@@ -21675,6 +21770,7 @@ window.__nv = {
   skScreen: function (x, y) { var X = skCtx(), sv = document.querySelector('.sk-svg'); if (!X || !sv) return null; var d = X.F.to(x, y), pt = sv.createSVGPoint(); pt.x = d[0]; pt.y = -d[1]; var q = pt.matrixTransform(sv.getScreenCTM()); return [q.x, q.y]; },
   skShapes: function () { var X = skCtx(); return X ? X.list : null; },
   routeNotes: function (p, n) { return nvqNotes(p, n); },
+  snap: function (c, r, box) { return nvdSnap(c, r, box); },   // the sheet's 3-D assembly picture (66-drwsnap.js)
   skSnap: function (P, prev, mm, o) { o = o || {}; return nvsSnap(P, skCtx(), prev || null, { altKey: !!o.alt, shiftKey: !!o.shift }, o.excl == null ? null : o.excl, o.drag || null, mm || 2, o.grid || 5); }
 };
 
