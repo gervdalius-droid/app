@@ -13008,7 +13008,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="f61c1836d0"</script>
+<script>window.NV_BUILD="ec3c8d8f12"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -21329,6 +21329,22 @@ NVA.mxxlzip = function () {   // only the CNC programs, every .XXL in one ZIP (i
     S.busy = false; saveFile(base + '_XXL.zip', u); }, function (er) { S.busy = false; toast(String(er && er.message || er), true); });
   return false;
 };
+/* the finished project into ShopFlow: its report list (the same .xlsx as "Detalių sąrašas") goes through localStorage to
+   /shopflow-app/?from=builder, where the SWOOD import opens with it (shopflow-app/builder-link.js) */
+NVA.mshop = function () {
+  if (!nvmPass()) return false;
+  if (S.busy) { toast(t('building')); return false; }
+  var pj = buildProjectAll(), w = window.open('about:blank', '_blank'); S.busy = true; toast(t('building'));
+  xlsmBytes(pj).then(function (bytes) {
+    S.busy = false;
+    var b = '', u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes); for (var i = 0; i < u8.length; i += 0x8000) b += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000));
+    try { localStorage.setItem('dbShopflowHandoff', JSON.stringify({ name: projName() + '_ReportLists_to_Excel.xlsx', b64: btoa(b), project: S.proj.name || projName(), at: Date.now() })); }
+    catch (e) { if (w) w.close(); toast(L('Nepavyko perduoti į ShopFlow — atsisiųskite detalių sąrašą ir importuokite jį ShopFlow.', 'Could not hand over to ShopFlow — download the part list and import it in ShopFlow.'), true); return; }
+    var url = (location.pathname.indexOf('/builder') >= 0 ? location.pathname.replace(/\/builder\/?.*$/, '/shopflow-app/') : '/shopflow-app/') + '?from=builder';
+    if (w) w.location.href = url; else location.href = url;
+  }, function (er) { S.busy = false; if (w) w.close(); toast(String(er && er.message || er), true); });
+  return false;
+};
 NVA.mjson = function () {   // the project itself, as the ZIP carries it: prices stay with the admin
   if (!nvmPass()) return false;
   var p = clone(S.proj); if (!S.admin) delete p.pricing;
@@ -21366,7 +21382,9 @@ function nvmAckBox(g) {
 }
 function nvmZip(open) {
   return '<div class="nvm-zip"><button type="button" class="nv-btn pri lg" id="nvm-zip" data-act="dl" data-v="zip"' + (open ? '' : ' disabled') + '>⤓ ' + L('Atsisiųsti viską (ZIP)', 'Download everything (ZIP)') + '</button>' +
-    '<small>' + L('Viename faile: programos, sąrašai, brėžiniai ir projekto kopija.', 'In one file: programs, lists, drawings and the project copy.') + '</small></div>';
+    '<small>' + L('Viename faile: programos, sąrašai, brėžiniai ir projekto kopija.', 'In one file: programs, lists, drawings and the project copy.') + '</small>' +
+    '<button type="button" class="nv-btn lg" id="nvm-shop" data-nv="mshop"' + (open ? '' : ' disabled') + '>↗ ' + L('Į ShopFlow gamybą', 'To ShopFlow production') + '</button>' +
+    '<small>' + L('Sukuria gamybos projektą ShopFlow iš šio detalių sąrašo.', 'Makes the production project in ShopFlow from this part list.') + '</small></div>';
 }
 function nvmPanel(g, nFiles) {
   var chk = '<button type="button" class="nv-btn sm ghost" data-act="tab" data-v="chk">' + L('Atidaryti patikrą', 'Open the check') + ' →</button>', nb = g.blockers.length, nw = g.warns.length;

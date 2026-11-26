@@ -4819,6 +4819,7 @@ var D = {
     if (at < 0) return s.startsWith(name + "_") ? s.slice(name.length + 1) : s; // the old rule
     var before = s.slice(0, at).replace(/_+$/, "");
     var inst = /^_(\d+)/.exec(s.slice(at + proj.length));
+    if (at === 0 && inst) return proj + "_" + inst[1]; // Spintelių kūrėjas: <PROJECT>_<cabinet no.>_<cabinet>_<part> — the cabinet is its number
     if (name && before.indexOf(name + "_") === 0) before = before.slice(name.length + 1);
     else if (name && before === name) before = "";
     var toks = before.split("_").filter(Boolean);
