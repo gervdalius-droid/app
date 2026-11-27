@@ -87,7 +87,7 @@ BuilderLink.takeDrawings = function (h) {
     var tries = 0, watch = () => {                                         // until the import has made (or filled) the project
       var o = (Store.state.orders || []).find(x => x.swood && x.swood.importedAt >= t0 &&
         (x.parts || []).some(p => solids[String(p.solid || "").toUpperCase()]));
-      if (o) return this.attachDrawings(o, h.builderId || v.project || "", v.sheets);
+      if (o) return this.attachDrawings(o, h.builderId || v.project || "", v.sheets, v.model);
       if (tries++ < 1800) setTimeout(watch, 1000);                         // 30 minutes to finish the import
     };
     watch();
@@ -109,12 +109,21 @@ BuilderLink.thumb = function (blob) {
     img.src = u;
   });
 };
-BuilderLink.attachDrawings = function (o, builderId, sheets) {
+BuilderLink.attachDrawings = function (o, builderId, sheets, model) {
   var by = App.me && App.me.id;
   D.files().filter(f => f.orderId === o.id && f.drw && f.drw.builderId === builderId).forEach(f => {   // the previous handoff's sheets
     if (typeof Files !== "undefined" && Files.remove) Files.remove(f.id, by); else M.removeFile(f.id, by);
   });
   var n = 0, next = i => {
+    if (i === sheets.length && Array.isArray(model) && model.length) {   // the cabinets in 3-D (the assembly station turns them round)
+      var mb = new Blob([JSON.stringify({ v: 1, builderId: builderId, cabs: model })], { type: "application/json" }), mid = uid("f");
+      return Files.putBlob(mid, mb).then(() => {
+        M.addFileMeta({ id: mid, name: (this.lt() ? "3D modelis" : "3D model") + ".json", type: "application/json", size: mb.size, orderId: o.id, opId: null, path: Files.path(mid),
+          store: Files.storage() ? "uploading" : "local", devices: [Files.deviceId()],
+          drw: { builderId: builderId, model: true, cab: null, parts: [] } }, by);
+        if (Files.storage()) Files.upload(mid, mb);
+      }).catch(e => console.warn("[builder-link] 3-D model", e)).then(() => next(i + 1));
+    }
     if (i >= sheets.length) {
       this.idb("readwrite", st => st.delete("drawings")).catch(() => {});
       if (typeof Toast !== "undefined") Toast.show((this.lt() ? "Pridėti brėžiniai iš Spintelių kūrėjo: " : "Drawings added from the cabinet builder: ") + n + " · " + o.num, { emoji: "📦" });
