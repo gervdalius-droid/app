@@ -304,7 +304,7 @@ var Assembly = {
     var host = document.getElementById("asm-sheet");
     if (!host) { host = document.createElement("div"); host.id = "asm-sheet"; host.className = "asm-sheet"; host.setAttribute("role", "dialog"); host.setAttribute("aria-modal", "true"); document.body.appendChild(host); this._css(); }
     var mDone = m && (m.done || 0) >= (m.qty || 1);
-    var mf = typeof Asm3D !== "undefined" && c.key ? Asm3D.modelFile(o) : null;
+    var mf = typeof Asm3D !== "undefined" && c.key ? (Asm3D.modelFile(o) || draws.find(d => d.drw)) : null;   // builder drawings without the model: the tab says to send again
     if (!mf && c.view === "3d") c.view = "drw";
     var is3d = c.view === "3d", A3 = typeof Asm3D !== "undefined" ? Asm3D : {};
     host.innerHTML = `
@@ -500,6 +500,10 @@ var Assembly = {
         var sc = document.createElement("div"); sc.className = "asm-scroll" + (c.zoom > 1 ? " zoomed" : "");
         sc.appendChild(el); box.innerHTML = ""; box.appendChild(sc);
         self.hiSvg(true);
+        if (!el.querySelector("[data-p]")) {   // sent before the sheets named their panels
+          var h2 = document.getElementById("asm-hint");
+          if (h2) h2.textContent = self.L("Older drawing — send the project from the cabinet builder again to light up panels", "Senas brėžinys — persiųskite projektą iš Spintelių kūrėjo, kad detalės švistų");
+        }
       }, () => { if (self.cur && self.cur.fileId === f.id) box.innerHTML = self._missing(f); });
       return;
     }
