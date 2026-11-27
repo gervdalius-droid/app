@@ -164,6 +164,14 @@ var ScanStation = {
     if (kb) kb.onclick = () => { cap.setAttribute("inputmode", "text"); cap.blur(); setTimeout(() => cap.focus(), 30); cap.addEventListener("blur", () => cap.setAttribute("inputmode", "none"), { once: true }); };
   },
   /* ---------- scan handling ---------- */
+  /* The camera sees a label many times a second for as long as it is held up: read it once,
+     and again only after it has been out of view for a moment (2.5 s). */
+  camSeen(v) {
+    var now = Date.now();
+    if (this._cam && this._cam.v === v && now - this._cam.t < 2500) { this._cam.t = now; return; }
+    this._cam = { v: v, t: now };
+    this.onScan(v);
+  },
   onScan(payload) {
     var now = Date.now();
     if (payload === this._last.payload && now - this._last.ts < 700) return; // scanners double-fire
@@ -335,7 +343,7 @@ var ScanStation = {
                       return _this._det.detect(v);
                     case 5:
                       codes = _context.sent;
-                      if (codes && codes[0]) _this.onScan(codes[0].rawValue);
+                      if (codes && codes[0]) _this.camSeen(codes[0].rawValue);
                       _context.next = 11;
                       break;
                     case 9:

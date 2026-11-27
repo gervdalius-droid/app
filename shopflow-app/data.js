@@ -3178,6 +3178,12 @@ var D = {
         stationId
       };
     }
+    // A label's QR often carries the CNC program name — the part code + "_1OP" / "_2OP" (cabinet builder,
+    // Nesting labels). When the code itself is not a part but the name without that ending is, use that.
+    if (!D.findByPart(body)) {
+      var bare = body.replace(/_(?:\d+OP|OP\d+)$/i, "");
+      if (bare !== body && D.findByPart(bare)) body = bare;
+    }
     var partCode = body;
     // An imported SWOOD part list is the most precise match we have: the code
     // names one physical panel, so it resolves the order AND the material line.
