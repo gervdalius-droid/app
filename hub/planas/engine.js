@@ -130,7 +130,9 @@
     var lanes = members.filter(function (m) { return (m.role === "worker" || m.role === "engineer") && ignore.indexOf(m.id) < 0; });
     lanes.forEach(function (m) { m.eng = m.role === "engineer"; });
     var N = root.Nasumas, ncfg = N && N.cfgOf ? N.cfgOf(input.nasCfg || null) : null;
-    var open = arr(input.orders).filter(function (o) { return o && !o.archived && !o.shipped && arr(o.ops).length; });
+    /* test projects (e.g. "TEST_SCAN") are never planned */
+    var isTest = function (o) { return /(^|[^a-z])test/i.test(String(o.product || "") + " " + String(o.client || "")); };
+    var open = arr(input.orders).filter(function (o) { return o && !o.archived && !o.shipped && arr(o.ops).length && !isTest(o); });
     var byId = {}; arr(input.orders).forEach(function (o) { if (o && o.id) byId[o.id] = o; });
     var withParts = N && N.attachNesting ? N.attachNesting(open, arr(input.nest), ncfg && ncfg.links) : open;
     var labelOf = function (o) { return [o.num, o.product].filter(Boolean).join(" · "); };

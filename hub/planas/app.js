@@ -10,12 +10,12 @@
   var COLORS = ["#2f55c8", "#127c52", "#c27c00", "#7a4ab8", "#c4321c", "#0f7c8c", "#8a5a2b", "#55606a"];
 
   /* ---------------- words ---------------- */
-  var LANG = "both"; try { LANG = localStorage.getItem("planas.lang") || "both"; } catch (e) {}
+  var LANG = "lt"; try { LANG = localStorage.getItem("planas.lang2") || "lt"; } catch (e) {}
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); }
   function T(lt, en) { return '<span class="il"><span class="lt">' + lt + '</span><span class="en">' + en + '</span></span>'; }
   function B(lt, en) { return '<span class="bl"><span class="lt">' + lt + '</span><span class="en">' + en + '</span></span>'; }
   function num(x, lang) { var s = (Math.round(x * 10) / 10).toFixed(Math.abs(x) < 10 && x % 1 ? 1 : (x % 1 ? 1 : 0)); return lang === "en" ? s : s.replace(".", ","); }
-  function H(h) { return T(num(h, "lt") + " h", num(h, "en") + " h"); }
+  function H(h) { return (LANG === "en" ? num(h, "en") : num(h, "lt")) + " h"; }
   function pl(n, one, few, many) { var a = n % 10, b = n % 100; return a === 1 && b !== 11 ? one : a >= 2 && a <= 9 && (b < 11 || b > 19) ? few : many; }
   var WD = { lt: ["sekmadienis", "pirmadienis", "antradienis", "trečiadienis", "ketvirtadienis", "penktadienis", "šeštadienis"], en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] };
   var WDA = ["sekmadienį", "pirmadienį", "antradienį", "trečiadienį", "ketvirtadienį", "penktadienį", "šeštadienį"];
@@ -307,25 +307,15 @@
   function mins(x) { var p = String(x || "").split(":"); return (+p[0] || 0) * 60 + (+p[1] || 0); }
   function secPlan(D) {
     var M = S.M, Pl = S.plan;
-    var h = '<section id="s-plan"><h2>' + T("Planas", "Plan") + ' <em>' + T(esc(dName(D.day, "lt")), esc(dName(D.day, "en"))) + '</em><span class="n">' + T("planuojama " + Math.round(Pl.factor * 100) + " % pamainos", Math.round(Pl.factor * 100) + " % of the shift planned") + '</span></h2>' +
-      '<p class="sub">' + T("Laikai apytiksliai. „Tęsiama“ – pradėta anksčiau; „dalis“ – nebaigs per dieną; „padeda“ – laisvas laikas kitame etape.", "Times are approximate. “Continuing” – started before; “part” – won't finish in a day; “helping” – free time on another step.") + '</p>';
+    var h = '<section id="s-plan"><h2>' + T("Kas ką daro", "Who does what") + ' <em>' + T(esc(dName(D.day, "lt")), esc(dName(D.day, "en"))) + '</em>' +
+      '<button type="button" class="btn sm edit-t" id="editT" aria-pressed="' + (S.edit ? "true" : "false") + '" style="margin-left:auto">' + (S.edit ? T("✓ Baigti keisti", "✓ Done") : T("✎ Keisti planą", "✎ Change the plan")) + '</button></h2>' +
+      '<p class="sub">' + T("Kiekvienam žmogui – darbai iš eilės. Laikai apytiksliai.", "Each person's jobs in order. Times are approximate.") + '</p>';
     var shopL = D.lanes.filter(function (ln) { return !ln.m.eng; }), engL = D.lanes.filter(function (ln) { return ln.m.eng; });
     [[shopL, T("Cechas", "Workshop")], [engL, T("Projektavimas", "Engineering")]].forEach(function (G) {
-    if (!G[0].length) return;
-    var gu = 0, gc = 0; G[0].forEach(function (ln) { gu += ln.t; gc += ln.cap; });
-    h += '<h3 class="lg">' + G[1] + ' <span class="mono">' + G[0].length + ' · ' + H(gu / 60) + ' / ' + H(gc / 60) + '</span></h3><div class="lanes">';
-    G[0].forEach(function (ln) {
-      var m = ln.m, col = COLORS[(+m.color || 0) % COLORS.length], off = ln.cap <= 0;
-      var w = ln.why, whyT = !w ? "" : w.k === "leave" ? T(({ atostogos: "atostogos", tevadienis: "tėvadienis", mamadienis: "mamadienis" })[w.type] || "atostogos", w.type === "tevadienis" ? "father's day off" : w.type === "mamadienis" ? "mother's day off" : "leave") + (w.ok ? "" : " " + T("(nepatvirtinta)", "(not approved)")) : w.k === "absent" ? T("nedirba (pastaba)", "off (comment)") : T("tik " + num(w.h, "lt") + " h", "only " + num(w.h, "en") + " h");
-      h += '<div class="lane' + (off ? " off" : "") + '"><div class="lh"><span class="av" style="background:' + col + '">' + esc(m.name.charAt(0)) + '</span><div class="nm"><b>' + esc(m.name) + '</b><small>' + esc(m.role === "engineer" ? "Projektavimas" : (M.stations[m.station] || {}).name || "Gamyba") + '</small></div>' + (whyT ? '<span class="tag ' + (off ? "red" : "amb") + '">' + whyT + '</span>' : '') + '</div>';
-      if (!off) {
-        var helpM = 0; ln.tasks.forEach(function (t) { if (t.help) helpM += t.end - t.start; });
-        h += '<div class="cap"><div class="bar"><span style="width:' + Math.min(100, (ln.t - helpM) / ln.cap * 100) + '%"></span><span class="h" style="width:' + Math.min(100, helpM / ln.cap * 100) + '%"></span></div><div class="capt"><span>' + H(ln.t / 60) + ' / ' + H(ln.cap / 60) + '</span><span>' + (ln.cap - ln.t >= 30 ? T("laisva " + num((ln.cap - ln.t) / 60, "lt") + " h", num((ln.cap - ln.t) / 60, "en") + " h free") : T("pilna", "full")) + '</span></div></div>';
-        h += ln.tasks.length ? '<div class="tasks">' + ln.tasks.map(function (t) { return task(t, ln); }).join("") + '</div>' : '<div class="empty">' + T("Nėra paruoštų darbų šiam žmogui.", "Nothing ready for this person.") + '</div>';
-      } else h += '<div class="offm">' + T("Šią dieną neplanuojama.", "Not planned this day.") + '</div>';
-      h += '<div class="lb">' + (off ? '<button type="button" class="btn sm" data-on="' + esc(m.id) + '">' + T("Dirbs", "Will work") + '</button>' : '<button type="button" class="btn sm" data-off="' + esc(m.id) + '">' + T("Nedirba", "Off") + '</button><button type="button" class="btn sm" data-hrs="' + esc(m.id) + '">' + T("Valandos…", "Hours…") + '</button>') + '</div></div>';
-    });
-    h += '</div>';
+      if (!G[0].length) return;
+      h += '<h3 class="lg">' + G[1] + '</h3><div class="lanes">';
+      G[0].forEach(function (ln) { h += lane(ln); });
+      h += '</div>';
     });
     /* what did not make it */
     var sk = (D.skipped || []).filter(function (s) { return s.reason !== "install" && s.reason !== "office" && s.reason !== "nobody"; });
@@ -347,25 +337,45 @@
     }
     return h + '</section>';
   }
-  function task(t, ln) {
-    var o = t.o, M = S.M, f = S.plan.forecast[o.id], tg = [], late = o.due ? P.workdaysBetween(o.due, S.day0, M.shift) : 0;
-    if (t.inst) tg.push('<span class="tag grn">' + T("montavimas", "installation") + '</span>');
-    if (t.cont) tg.push('<span class="tag blu">' + T("tęsiama", "continuing") + '</span>');
-    if (t.partial) tg.push('<span class="tag">' + T("dalis – liks " + num(t.left, "lt") + " h", "part – " + num(t.left, "en") + " h left") + '</span>');
-    if (t.help) tg.push('<span class="tag amb">' + T("padeda", "helping") + '</span>');
-    if (t.fixed) tg.push('<span class="tag">' + T("priskirta", "assigned") + '</span>');
-    if (o.priority === "rush") tg.push('<span class="tag red">' + T("skubus", "rush") + '</span>'); else if (o.priority === "high") tg.push('<span class="tag amb">' + T("svarbus", "high") + '</span>');
-    if (o.due && late > 0) tg.push('<span class="tag red">' + T("vėluoja " + late + " d.d.", late + " work days late") + '</span>');
-    else if (o.due) tg.push('<span class="tag">' + T("terminas " + md(o.due), "due " + md(o.due)) + '</span>');
-    if (t.src === "norm") tg.push('<span class="tag" title="Pagal Našumo normas / From the Našumas norms">' + T("pagal normas", "by norms") + '</span>');
-    else if (t.src === "hist") tg.push('<span class="tag" title="Tipinė trukmė iš cecho plano / Typical time from the floor plan">' + T("pagal patirtį", "by experience") + '</span>');
-    else if (t.src === "manual") tg.push('<span class="tag">' + T("jūsų trukmė", "your estimate") + '</span>');
-    var others = S.M.lanes.filter(function (m) { return m.id !== ln.m.id; });
-    var ta = t.inst ? '' : '<div class="ta"><button type="button" data-top="' + esc(o.id) + '" title="Pirmiausia / First">⬆ ' + T("Pirmiausia", "First") + '</button><button type="button" data-skip="' + esc(o.id) + '">' + T("Ne šią dieną", "Not this day") + '</button>' +
-      '<select data-to="' + esc(o.id) + '" data-key="' + esc(t.key) + '" aria-label="Kitam žmogui / To someone else"><option value="">' + (LANG === "en" ? "To someone else…" : "Kitam žmogui…") + '</option>' + others.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'; }).join("") + '</select>' +
-      '<button type="button" data-dur="' + esc(o.id) + '" data-key="' + esc(t.key) + '">' + T("Trukmė…", "Duration…") + '</button></div>';
-    return '<div class="task"><div class="tm"><b>' + clock(t.start) + '</b>' + clock(t.end) + '</div><div>' + pj(o) + '<div class="st">' + kn(t.key) + ' · ' + H(t.h) + '</div><div class="tg">' + tg.join("") + '</div></div>' + ta + '</div>';
+  function lane(ln) {
+    var M = S.M, m = ln.m, col = COLORS[(+m.color || 0) % COLORS.length], off = ln.cap <= 0, free = (ln.cap - ln.t) / 60, w = ln.why, st, cls;
+    if (off) {
+      cls = "red";
+      st = w && w.k === "leave" ? (w.type === "tevadienis" ? T("Tėvadienis", "Father's day off") : w.type === "mamadienis" ? T("Mamadienis", "Mother's day off") : T("Atostogos", "On leave")) : T("Nedirba", "Off");
+    } else if (free >= 0.5) { cls = "amb"; st = T("Laisva " + num(free, "lt") + " h", num(free, "en") + " h free"); }
+    else { cls = "grn"; st = T("Užimtas visą dieną", "Busy all day"); }
+    if (!off && w && w.k === "avail") st = T("Dirba " + num(w.h, "lt") + " h", "Works " + num(w.h, "en") + " h") + " · " + st;
+    var h = '<div class="lane' + (off ? " off" : "") + '"><div class="lh"><span class="av" style="background:' + col + '">' + esc(m.name.charAt(0)) + '</span><div class="nm"><b>' + esc(m.name) + '</b></div>' +
+      '<span class="lst ' + cls + '">' + st + '</span></div>';
+    if (!off) {
+      h += '<div class="bar thin"><span style="width:' + Math.min(100, ln.t / ln.cap * 100) + '%"></span></div>';
+      h += ln.tasks.length ? '<ol class="tasks">' + ln.tasks.map(function (t) { return task(t, ln); }).join("") + '</ol>' : '<div class="empty">' + T("Nėra paruoštų darbų – skirkite ką nors per „Keisti planą“.", "Nothing ready – give them something via “Change the plan”.") + '</div>';
+    }
+    if (S.edit) h += '<div class="lb">' + (off ? '<button type="button" class="btn sm" data-on="' + esc(m.id) + '">' + T("Dirbs", "Will work") + '</button>' : '<button type="button" class="btn sm" data-off="' + esc(m.id) + '">' + T("Nedirba", "Off") + '</button><button type="button" class="btn sm" data-hrs="' + esc(m.id) + '">' + T("Dirbs tik… val.", "Works only… h") + '</button>') + '</div>';
+    return h + '</div>';
   }
+  function task(t, ln) {
+    var o = t.o, M = S.M, late = o.due ? P.workdaysBetween(o.due, S.day0, M.shift) : 0, bits = [];
+    /* one short line in plain words, most important first */
+    if (o.due && late > 0) bits.push('<b class="red">' + T("vėluoja " + late + " d.", late + " d late") + '</b>');
+    else if (o.priority === "rush") bits.push('<b class="red">' + T("skubus", "rush") + '</b>');
+    if (t.inst) bits.push(T("montavimas pas klientą", "installation at the client"));
+    if (t.help) bits.push(T("padeda kitam etapui", "helping another step"));
+    if (t.cont && !t.help) bits.push(T("tęsia pradėtą", "carries on"));
+    if (t.partial) bits.push(T("baigs ne šiandien (liks ~" + num(t.left, "lt") + " h)", "won't finish today (~" + num(t.left, "en") + " h left)"));
+    else if (!t.inst) bits.push(T("turėtų baigti", "should finish"));
+    if (o.due && late <= 0) bits.push(T("terminas " + md(o.due), "due " + md(o.due)));
+    var src = t.src === "norm" ? "Trukmė pagal Našumo normas / Duration from the Našumas norms" : t.src === "hist" ? "Trukmė pagal ankstesnius projektus / Duration from past projects" : t.src === "manual" ? "Jūsų nurodyta trukmė / Your duration" : "Trukmė iš ShopFlow / Duration from ShopFlow";
+    var others = S.M.lanes.filter(function (m) { return m.id !== ln.m.id; });
+    var ta = !S.edit || t.inst ? '' : '<div class="ta"><button type="button" data-top="' + esc(o.id) + '">⬆ ' + T("Daryti pirmiausia", "Do first") + '</button><button type="button" data-skip="' + esc(o.id) + '">' + T("Ne šią dieną", "Not this day") + '</button>' +
+      '<select data-to="' + esc(o.id) + '" data-key="' + esc(t.key) + '" aria-label="Kitam žmogui / To someone else"><option value="">' + (LANG === "en" ? "Give to…" : "Atiduoti kitam…") + '</option>' + others.map(function (m) { return '<option value="' + esc(m.id) + '">' + esc(m.name) + '</option>'; }).join("") + '</select>' +
+      '<button type="button" data-dur="' + esc(o.id) + '" data-key="' + esc(t.key) + '">' + T("Kiek valandų liko?", "Hours left?") + '</button></div>';
+    return '<li class="task"><div class="tm">' + clock(t.start) + '–' + clock(t.end) + '</div><div class="tb">' +
+      '<div class="pj"><b>' + esc(ttl(o)) + '</b>' + (o.client && P.norm(o.client) !== P.norm(o.product) ? ' <small>' + esc(o.client) + '</small>' : '') + '</div>' +
+      '<div class="st"><span class="what">' + kn(t.key) + '</span> <span class="hrs" title="' + esc(src) + '">' + hh(t.h) + '</span></div>' +
+      '<div class="why">' + bits.join(" · ") + '</div>' + ta + '</div></li>';
+  }
+  function hh(h) { return (LANG === "en" ? num(h, "en") : num(h, "lt")) + " h"; }
 
   /* --- 5. what was done --- */
   function secReview(R) {
@@ -416,6 +426,7 @@
 
   /* ---------------- interaction ---------------- */
   function wire() {
+    var et = document.getElementById("editT"); if (et) et.onclick = function () { S.edit = !S.edit; render(); var p = document.getElementById("s-plan"); if (p) p.scrollIntoView(); };
     var f = document.getElementById("tform"), tin = document.getElementById("tin");
     if (f) f.onsubmit = function (e) { e.preventDefault(); submit(tin.value); };
     if (tin) tin.onkeydown = function (e) { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); submit(tin.value); } };
@@ -630,7 +641,7 @@
 
   /* ---------------- boot ---------------- */
   function setLang(l) { LANG = l; document.body.classList.remove("both", "lang-lt", "lang-en"); document.body.classList.add(l === "both" ? "both" : "lang-" + l);
-    document.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === l)); }); try { localStorage.setItem("planas.lang", l); } catch (e) {} }
+    document.querySelectorAll("[data-lang]").forEach(function (b) { b.setAttribute("aria-pressed", String(b.dataset.lang === l)); }); try { localStorage.setItem("planas.lang2", l); } catch (e) {} }
   setLang(LANG);
   document.querySelector(".seg").addEventListener("click", function (e) { var b = e.target.closest("[data-lang]"); if (b) { setLang(b.dataset.lang); if (S.M) render(); } });
   document.getElementById("dPrev").onclick = function () { if (!S.M) return; var d = P.prevWorkday(S.day0, S.M.shift); if (d < S.M.today) return toast("Planuoti galima nuo šiandien / Plans start today"); S.day0 = d; S.pinned = true; S.reply = null; compute(); };

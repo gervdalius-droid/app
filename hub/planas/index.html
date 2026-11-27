@@ -169,6 +169,27 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 .checks label{flex-direction:row;align-items:center;gap:6px;color:var(--ink);margin:0}
 .spin{display:inline-block;width:14px;height:14px;border:2px solid var(--line);border-top-color:var(--ink);border-radius:50%;animation:sp .8s linear infinite;vertical-align:-2px}
 @keyframes sp{to{transform:rotate(360deg)}}
+/* plan, made simple */
+#s-plan h2 .edit-t{font-size:13px;letter-spacing:0}
+#s-plan .edit-t[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.lg{margin:6px 0 -2px;font-size:17px}
+.lane .lh{padding:12px 14px}
+.lane .nm b{font-size:18px}
+.lst{font-weight:700;font-size:13.5px;padding:5px 10px;border-radius:999px;white-space:nowrap}
+.lst.grn{background:var(--done-bg);color:var(--done)}.lst.amb{background:var(--paused-bg);color:var(--paused)}.lst.red{background:var(--blocked-bg);color:var(--blocked)}
+.bar.thin{height:4px;border-radius:0;margin:0}
+ol.tasks{list-style:none;margin:0;padding:0;border-top:0}
+.task{display:block;padding:12px 14px}
+.task .tm{font:600 13px/1.2 var(--mono);color:var(--muted);padding:0 0 3px}
+.task .pj{font-weight:700;font-size:16px;line-height:1.3}
+.task .pj small{display:inline;font-weight:500;font-size:13.5px;color:var(--faint)}
+.task .st{font-size:15.5px;margin-top:2px}
+.task .st .what{font-weight:600}
+.task .st .hrs{color:var(--muted);cursor:help}
+.task .why{font-size:13.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+.task .why b.red{color:var(--blocked)}
+.task .ta{margin-top:8px}
+body.both .task .st .en,body.both .task .why .en{display:none}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{
   @page{size:A4;margin:11mm}
@@ -181,7 +202,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
 }
 </style>
 </head>
-<body class="both">
+<body class="lang-lt">
 <div class="wrap">
   <nav class="nav" aria-label="Navigacija"><a href="/hub/shopfloor/">← Hub</a><a href="/shopflow-app/">ShopFlow</a><a href="/hub/apzvalga/">Projektų apžvalga</a><span class="who" id="who"></span></nav>
   <header class="head">
@@ -192,7 +213,7 @@ dialog .row{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
     <div class="ctl">
       <div class="dayp" role="group" aria-label="Plano diena / Plan day"><button type="button" id="dPrev" aria-label="Ankstesnė diena / Previous day">‹</button><span id="dLbl">—</span><button type="button" id="dNext" aria-label="Kita diena / Next day">›</button></div>
       <div class="seg" role="group" aria-label="Kalba / Language">
-        <button type="button" data-lang="both" aria-pressed="true">LT + EN</button><button type="button" data-lang="lt" aria-pressed="false">LT</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+        <button type="button" data-lang="lt" aria-pressed="true">LT</button><button type="button" data-lang="both" aria-pressed="false">LT + EN</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
       </div>
       <button type="button" class="btn" id="copy">Kopijuoti / Copy</button>
       <button type="button" class="btn" id="print">PDF</button>
