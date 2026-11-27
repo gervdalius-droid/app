@@ -124,7 +124,11 @@
     var stations = {}; arr(input.stations).forEach(function (s) { if (s && s.id) stations[s.id] = s; });
     var members = arr(input.members).filter(function (m) { return m && m.id && m.name; });
     var mById = {}; members.forEach(function (m) { mById[m.id] = m; });
-    var lanes = members.filter(function (m) { return m.role === "worker" || m.role === "engineer"; });
+    /* the "DB" account is only for test tasks: never planned, never an office job (override with cfg.ignore) */
+    var cfg0 = (input.saved && input.saved.cfg) || {};
+    var ignore = Array.isArray(cfg0.ignore) ? cfg0.ignore : members.filter(function (m) { return norm(m.name) === "db"; }).map(function (m) { return m.id; });
+    var lanes = members.filter(function (m) { return (m.role === "worker" || m.role === "engineer") && ignore.indexOf(m.id) < 0; });
+    lanes.forEach(function (m) { m.eng = m.role === "engineer"; });
     var N = root.Nasumas, ncfg = N && N.cfgOf ? N.cfgOf(input.nasCfg || null) : null;
     var open = arr(input.orders).filter(function (o) { return o && !o.archived && !o.shipped && arr(o.ops).length; });
     var byId = {}; arr(input.orders).forEach(function (o) { if (o && o.id) byId[o.id] = o; });
@@ -209,7 +213,7 @@
 
     return {
       now: now, today: today, shift: shift, shiftMin: shiftMinutes(shift), stations: stations, members: members, mById: mById, lanes: lanes,
-      orders: orders, sessions: sessions, leave: leave, histH: histH, saved: input.saved || {}, activity: arr(input.activity)
+      orders: orders, sessions: sessions, ignore: ignore, leave: leave, histH: histH, saved: input.saved || {}, activity: arr(input.activity)
     };
   }
 
@@ -328,8 +332,11 @@
       var s = M.stations[op.stationId] || {};
       (arr(s.defaultAssigneeIds).length ? s.defaultAssigneeIds : [s.defaultAssigneeId]).forEach(add);
       M.lanes.forEach(function (m) { if (m.station === op.stationId) add(m.id); });
-      var office = op.assignees.length && op.assignees.every(function (id) { return lanes.indexOf(id) < 0 && M.mById[id]; });
-      return { ids: out, office: office && !out.length };
+      var real = op.assignees.filter(function (id) { return M.ignore.indexOf(id) < 0; });
+      var office = real.length && real.every(function (id) { return lanes.indexOf(id) < 0 && M.mById[id]; });
+      /* a step that only the test account has: nobody's real work, leave it out quietly */
+      var test = op.assignees.length && !real.length && !out.length;
+      return { ids: out, office: office && !out.length, test: test };
     }
     function score(o, d) {
       var rem = orderRemainH2(o), daysNeed = rem / (dayCap / 60), slack = o.due ? workdaysBetween(d, o.due, M.shift) - daysNeed : 30;
@@ -377,7 +384,7 @@
               var r = ready(o, op, d);
               if (r !== true) { if (detail && r && r.reason !== "wait") note(o, op, r.reason, r); return; }
               var c = candidates(o, op);
-              if (!c.ids.length) { if (detail) note(o, op, c.office ? "office" : "nobody"); return; }
+              if (!c.ids.length) { if (detail && !c.test) note(o, op, c.office ? "office" : "nobody"); return; }
               var earliest = predFinish(o, op);
               var best = null;
               c.ids.forEach(function (id) { var ln = L[id]; if (!ln || ln.cap - Math.max(ln.t, earliest) < 20) return; var t0 = Math.max(ln.t, earliest); if (!best || t0 < best.t0) best = { ln: ln, t0: t0 }; });
@@ -514,7 +521,7 @@
     if (keys.length) ins.push({ k: "bottleneck", key: keys[0], h: load[keys[0]], days: load[keys[0]] / (P.dayCap / 60), planned: plannedBy[keys[0]] || 0 });
 
     /* idle capacity tomorrow */
-    d0.lanes.forEach(function (ln) { if (ln.cap > 0 && ln.cap - ln.t >= 90) ins.push({ k: "idle", m: ln.m, h: (ln.cap - ln.t) / 60 }); });
+    d0.lanes.forEach(function (ln) { if (!ln.m.eng && ln.cap > 0 && ln.cap - ln.t >= 90) ins.push({ k: "idle", m: ln.m, h: (ln.cap - ln.t) / 60 }); });
     /* lateness */
     var late = M.orders.filter(function (o) { var f = P.forecast[o.id]; return o.due && ((f.late != null && f.late > 0) || (!f.finish && o.due < day0)); });
     if (late.length) ins.push({ k: "late", n: late.length, list: late });

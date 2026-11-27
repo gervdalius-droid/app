@@ -191,14 +191,15 @@
   /* --- 1. what the agent says --- */
   function secSummary(M, Pl, D, A) {
     var cap = 0, used = 0, people = 0, tasks = 0;
-    D.lanes.forEach(function (ln) { if (ln.cap > 0) { people++; cap += ln.cap; used += ln.t; tasks += ln.tasks.length; } });
+    var shop = D.lanes.filter(function (ln) { return !ln.m.eng; }), eng = D.lanes.filter(function (ln) { return ln.m.eng; });
+    shop.forEach(function (ln) { if (ln.cap > 0) { people++; cap += ln.cap; used += ln.t; tasks += ln.tasks.length; } });
     var util = cap ? Math.round(used / cap * 100) : 0, lines = [];
     var miss = A.actions.filter(function (a) { return a.kind === "missing" && a.g.blocking; }), missSoon = miss.filter(function (a) { return a.urgent; });
     var blocked = A.actions.filter(function (a) { return a.kind === "blocked"; });
     var I = {}; A.insights.forEach(function (i) { I[i.k] = I[i.k] || i; });
-    var off = D.lanes.filter(function (ln) { return ln.cap <= 0; });
-    lines.push(["blu", B(dName(S.day0, "lt").replace(/^./, function (c) { return c.toUpperCase(); }) + ": suplanuota " + num(used / 60, "lt") + " h darbo " + people + " " + pl(people, "žmogui", "žmonėms", "žmonių") + " (" + tasks + " " + pl(tasks, "darbas", "darbai", "darbų") + ", užimtumas " + util + " %)." + (off.length ? " Nedirba: " + off.map(function (l) { return esc(l.m.name); }).join(", ") + "." : ""),
-      dName(S.day0, "en") + ": " + num(used / 60, "en") + " h of work planned for " + people + " " + (people === 1 ? "person" : "people") + " (" + tasks + " jobs, " + util + " % loaded)." + (off.length ? " Off: " + off.map(function (l) { return esc(l.m.name); }).join(", ") + "." : ""))]);
+    var off = shop.filter(function (ln) { return ln.cap <= 0; });
+    lines.push(["blu", B(dName(S.day0, "lt").replace(/^./, function (c) { return c.toUpperCase(); }) + ": cechui suplanuota " + num(used / 60, "lt") + " h darbo " + people + " iš " + shop.length + " " + pl(shop.length, "darbuotojo", "darbuotojų", "darbuotojų") + " (" + tasks + " " + pl(tasks, "darbas", "darbai", "darbų") + ", užimtumas " + util + " %)." + (off.length ? " Nedirba: " + off.map(function (l) { return esc(l.m.name); }).join(", ") + "." : ""),
+      dName(S.day0, "en") + ": " + num(used / 60, "en") + " h of workshop work planned for " + people + " of " + shop.length + " people (" + tasks + " jobs, " + util + " % loaded)." + (off.length ? " Off: " + off.map(function (l) { return esc(l.m.name); }).join(", ") + "." : ""))]);
     if (missSoon.length) {
       var lt = missSoon.slice(0, 3).map(function (a) { return "„" + esc(thing(a.g, "lt")) + "“ (" + esc(ttl(a.o)) + ", reikia " + dWhen(a.needBy, "lt") + ")"; }).join("; ");
       var en = missSoon.slice(0, 3).map(function (a) { return "“" + esc(thing(a.g, "en")) + "” (" + esc(ttl(a.o)) + ", needed " + dWhen(a.needBy, "en") + ")"; }).join("; ");
@@ -307,8 +308,13 @@
   function secPlan(D) {
     var M = S.M, Pl = S.plan;
     var h = '<section id="s-plan"><h2>' + T("Planas", "Plan") + ' <em>' + T(esc(dName(D.day, "lt")), esc(dName(D.day, "en"))) + '</em><span class="n">' + T("planuojama " + Math.round(Pl.factor * 100) + " % pamainos", Math.round(Pl.factor * 100) + " % of the shift planned") + '</span></h2>' +
-      '<p class="sub">' + T("Laikai apytiksliai. „Tęsiama“ – pradėta anksčiau; „dalis“ – nebaigs per dieną; „padeda“ – laisvas laikas kitame etape.", "Times are approximate. “Continuing” – started before; “part” – won't finish in a day; “helping” – free time on another step.") + '</p><div class="lanes">';
-    D.lanes.forEach(function (ln) {
+      '<p class="sub">' + T("Laikai apytiksliai. „Tęsiama“ – pradėta anksčiau; „dalis“ – nebaigs per dieną; „padeda“ – laisvas laikas kitame etape.", "Times are approximate. “Continuing” – started before; “part” – won't finish in a day; “helping” – free time on another step.") + '</p>';
+    var shopL = D.lanes.filter(function (ln) { return !ln.m.eng; }), engL = D.lanes.filter(function (ln) { return ln.m.eng; });
+    [[shopL, T("Cechas", "Workshop")], [engL, T("Projektavimas", "Engineering")]].forEach(function (G) {
+    if (!G[0].length) return;
+    var gu = 0, gc = 0; G[0].forEach(function (ln) { gu += ln.t; gc += ln.cap; });
+    h += '<h3 class="lg">' + G[1] + ' <span class="mono">' + G[0].length + ' · ' + H(gu / 60) + ' / ' + H(gc / 60) + '</span></h3><div class="lanes">';
+    G[0].forEach(function (ln) {
       var m = ln.m, col = COLORS[(+m.color || 0) % COLORS.length], off = ln.cap <= 0;
       var w = ln.why, whyT = !w ? "" : w.k === "leave" ? T(({ atostogos: "atostogos", tevadienis: "tėvadienis", mamadienis: "mamadienis" })[w.type] || "atostogos", w.type === "tevadienis" ? "father's day off" : w.type === "mamadienis" ? "mother's day off" : "leave") + (w.ok ? "" : " " + T("(nepatvirtinta)", "(not approved)")) : w.k === "absent" ? T("nedirba (pastaba)", "off (comment)") : T("tik " + num(w.h, "lt") + " h", "only " + num(w.h, "en") + " h");
       h += '<div class="lane' + (off ? " off" : "") + '"><div class="lh"><span class="av" style="background:' + col + '">' + esc(m.name.charAt(0)) + '</span><div class="nm"><b>' + esc(m.name) + '</b><small>' + esc(m.role === "engineer" ? "Projektavimas" : (M.stations[m.station] || {}).name || "Gamyba") + '</small></div>' + (whyT ? '<span class="tag ' + (off ? "red" : "amb") + '">' + whyT + '</span>' : '') + '</div>';
@@ -320,6 +326,7 @@
       h += '<div class="lb">' + (off ? '<button type="button" class="btn sm" data-on="' + esc(m.id) + '">' + T("Dirbs", "Will work") + '</button>' : '<button type="button" class="btn sm" data-off="' + esc(m.id) + '">' + T("Nedirba", "Off") + '</button><button type="button" class="btn sm" data-hrs="' + esc(m.id) + '">' + T("Valandos…", "Hours…") + '</button>') + '</div></div>';
     });
     h += '</div>';
+    });
     /* what did not make it */
     var sk = (D.skipped || []).filter(function (s) { return s.reason !== "install" && s.reason !== "office" && s.reason !== "nobody"; });
     var grp = { full: [], away: [], missing: [], blocked: [], hold: [] };
