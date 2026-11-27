@@ -14,6 +14,7 @@ All workshop and office apps on one address, one sign-in.
 | `/offer/` | Pasiūlymai (office) |
 | `/hub/crm/` | CRM (office) |
 | `/invoices/` | Sąskaitos faktūros (office) |
+| `/hub/planas/` | Dienos planas — daily planning agent (office) |
 | `/hub/prasymai/` | Prašymai |
 | `/hub/workers/` | Darbuotojai (admins) |
 
