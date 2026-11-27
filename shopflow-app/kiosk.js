@@ -43,8 +43,11 @@ var Kiosk = {
       </header>
       <main class="ksk-main">
         ${st ? "" : `<div class="ksk-msg err">${icon("alert", 18)} ${L("There is no assembly station set up — ask the office to add one.", "Nesukurta surinkimo stotis — paprašykite biuro ją sukurti.")}</div>`}
-        <div class="ksk-scan">
-          <video id="scan-video" class="hide" playsinline muted></video>
+        <div class="ksk-scan ${ScanStation.camera ? "cam-on" : ""}">
+          <div class="ksk-video">
+            <video id="scan-video" class="${ScanStation.camera ? "" : "hide"}" playsinline muted></video>
+            <button class="ksk-off" id="ksk-cam-off">${icon("x", 22)} ${L("Stop scanning", "Baigti skenuoti")}</button>
+          </div>
           <button class="ksk-cam ${ScanStation.camera ? "active" : ""}" id="scan-cam-btn" ${hasCam ? "" : "disabled"}>
             ${icon("camera", 40, "", 1.6)}
             <b>${ScanStation.camera ? L("Stop the camera", "Išjungti kamerą") : L("Scan a panel", "Skenuoti detalę")}</b>
@@ -84,7 +87,8 @@ var Kiosk = {
   bind(root) {
     var self = this;
     $("#ksk-out", root).onclick = () => { ScanStation.stopCamera(); Assembly.close(); App.logout(); };
-    $("#scan-cam-btn", root).onclick = () => { self.msg = null; ScanStation.camera ? ScanStation.stopCamera() : ScanStation.startCamera(); setTimeout(() => self.paint(), 400); };
+    $("#scan-cam-btn", root).onclick = () => { self.msg = null; ScanStation.camera ? ScanStation.stopCamera() : ScanStation.startCamera(); };
+    $("#ksk-cam-off", root).onclick = () => { self._camWant = false; Assembly._camWas = false; ScanStation.stopCamera(); };
     var cap = $("#scan-capture", root);
     cap.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); var v = cap.value; cap.value = ""; if (v.trim()) self.scan(v.trim()); } };
     var focus = () => { if (!ScanStation.camera && !Assembly.isOpen() && document.activeElement !== cap) cap.focus(); };
@@ -103,6 +107,7 @@ var Kiosk = {
   paint() {
     var m = document.getElementById("ksk-msg"); if (m) m.innerHTML = this.msgHtml();
     var r = document.getElementById("ksk-recent"); if (r) { r.innerHTML = this.recentHtml(); this.bind(document.getElementById("app")); }
+    var sc = document.querySelector(".ksk-scan"); if (sc) sc.classList.toggle("cam-on", !!ScanStation.camera);
     var b = document.getElementById("scan-cam-btn");
     if (b) { b.classList.toggle("active", !!ScanStation.camera); var t = b.querySelector("b"); if (t) t.textContent = ScanStation.camera ? this.L("Stop the camera", "Išjungti kamerą") : this.L("Scan a panel", "Skenuoti detalę"); }
   },
@@ -175,6 +180,13 @@ var Kiosk = {
     ScanStation.isActive = () => !!App.me;
     ScanStation.onScan = function (payload) { self.scan(String(payload).trim()); };
     ScanStation.render = function () {};
+    /* the screen follows the camera, whenever it starts or stops (the permission prompt, the drawing closing…) */
+    var start = ScanStation.startCamera, stop = ScanStation.stopCamera;
+    ScanStation.startCamera = function () { self._camAt = Date.now(); var r = start.apply(ScanStation, arguments); Promise.resolve(r).then(() => self.paint(), () => self.paint()); return r; };
+    ScanStation.stopCamera = function () { var r = stop.apply(ScanStation, arguments); self.paint(); return r; };
+    setInterval(() => {   // nobody scanning for 3 minutes: the camera goes off (battery, and the bench is quiet)
+      if (ScanStation.camera && !Assembly.isOpen() && Date.now() - Math.max(self._camAt || 0, ScanStation._last.ts || 0) > 3 * 60000) ScanStation.stopCamera();
+    }, 15000);
     var close = Assembly.close;
     Assembly.close = function () { close.call(Assembly); self.paint(); };
     ["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, () => { self._idleAt = Date.now(); }, true));
@@ -194,7 +206,11 @@ var Kiosk = {
 .ksk-top .btn{min-height:44px}
 .ksk-main{flex:1;display:flex;gap:18px;padding:18px;max-width:1100px;width:100%;margin:0 auto;box-sizing:border-box}
 .ksk-scan{flex:1;min-width:0;display:flex;flex-direction:column;gap:14px}
-.ksk-scan video{width:100%;max-height:46vh;object-fit:cover;border-radius:var(--r-lg);background:#000}
+.ksk-video{position:relative;display:none;flex:none;height:56vh;max-height:620px;min-height:260px;border-radius:var(--r-lg);overflow:hidden;background:#000}.ksk-scan.cam-on .ksk-video{display:block}
+.ksk-video #scan-video{opacity:1}
+.ksk-off{z-index:2}
+.ksk-off{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;min-height:56px;padding:0 22px;border-radius:999px;border:0;background:rgba(20,20,20,.78);color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.ksk-scan.cam-on .ksk-cam{display:none}
 .ksk-cam{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:230px;padding:26px;border-radius:var(--r-lg);border:0;background:var(--accent);color:#fff;font:inherit;cursor:pointer;box-shadow:var(--shadow-2);text-align:center}
 .ksk-cam b{font-size:26px}.ksk-cam span{font-size:15px;opacity:.9;max-width:440px}
 .ksk-cam.active{background:var(--surface);color:var(--text);border:2px solid var(--border-strong);min-height:90px;padding:14px;box-shadow:none}.ksk-cam.active span{display:none}.ksk-cam.active b{font-size:19px}
