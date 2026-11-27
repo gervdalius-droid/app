@@ -80,11 +80,11 @@ var Assembly = {
     return `${c.picked ? L("Selected", "Pasirinkta") : L("Scanned", "Nuskenuota")}: <b>${esc(what)}</b>${p && p.l && p.w ? ` · <span class="t-num">${p.l}×${p.w}</span>` : ""}`;
   },
   /* a panel picked in the list, the drawing or the 3-D view (its builder name) */
-  pick(name, code) {
+  pick(name, code, from3d) {
     var c = this.cur, o = c && D.order(c.orderId); if (!o) return;
     var part = code ? D.orderPart(o, code) : (o.parts || []).find(p => p.solid && this._up(p.solid) === this._up(name)) || null;
     if (part && part.solid) name = part.solid;
-    if (c.sel && name && this._up(c.sel) === this._up(name) && c.picked) { c.sel = ""; c.partCode = ""; c.picked = true; this.updateSel(); return; }   // tapped again: off
+    if (!from3d && c.sel && name && this._up(c.sel) === this._up(name) && c.picked) { c.sel = ""; c.partCode = ""; c.picked = true; this.updateSel(); return; }   // tapped again: off
     var key = part ? this.keyOf(o, part) : c.key;
     if (part && key && key !== c.key) { this.open(o.id, { key: key, partCode: part.code, sel: name, picked: true, start: c.start, stationId: c.stationId }); return; }
     c.sel = name || ""; c.partCode = part ? part.code : ""; c.picked = true;
@@ -95,7 +95,7 @@ var Assembly = {
     $$("[data-part]", host).forEach(b => { var p = D.orderPart(o, b.dataset.part), on = this.isSel(p); b.classList.toggle("hit", on); b.setAttribute("aria-pressed", on); if (on && b.scrollIntoView) try { b.scrollIntoView({ block: "nearest" }); } catch (e) {} });
     var cap = document.getElementById("asm-selcap"); if (cap) cap.innerHTML = this.selCap(o);
     this.hiSvg(true);
-    if (typeof Asm3D !== "undefined") Asm3D.select(c.sel);
+    this.post3d({ type: "select", name: c.sel || null });
   },
   /* the cabinet builder's sheet of this cabinet (its parts are the cabinet's parts) */
   sheetFor(o, key) {
@@ -271,7 +271,7 @@ var Assembly = {
     this.showFile(true);
   },
   close() {
-    if (typeof Asm3D !== "undefined") Asm3D.unmount();
+    this._ifr = null;
     var el = document.getElementById("asm-sheet");
     if (el) el.parentNode.removeChild(el);
     this.cur = null;
@@ -304,9 +304,9 @@ var Assembly = {
     var host = document.getElementById("asm-sheet");
     if (!host) { host = document.createElement("div"); host.id = "asm-sheet"; host.className = "asm-sheet"; host.setAttribute("role", "dialog"); host.setAttribute("aria-modal", "true"); document.body.appendChild(host); this._css(); }
     var mDone = m && (m.done || 0) >= (m.qty || 1);
-    var mf = typeof Asm3D !== "undefined" && c.key ? (Asm3D.modelFile(o) || draws.find(d => d.drw)) : null;   // builder drawings without the model: the tab says to send again
+    var mf = c.key ? (this.projFile(o) || draws.find(d => d.drw)) : null;   // builder drawings without the project: the tab says to send again
     if (!mf && c.view === "3d") c.view = "drw";
-    var is3d = c.view === "3d", A3 = typeof Asm3D !== "undefined" ? Asm3D : {};
+    var is3d = c.view === "3d";
     host.innerHTML = `
       <div class="asm-top">
         <button class="icon-btn" id="asm-close" aria-label="${L("Close", "Uždaryti")}">${icon("x", 20)}</button>
@@ -330,23 +330,6 @@ var Assembly = {
             <button class="icon-btn" id="asm-zout" aria-label="${L("Zoom out", "Mažinti")}">−</button>
             <button class="btn ghost" id="asm-zfit">${L("Fit", "Visas")}</button>
             <button class="icon-btn" id="asm-zin" aria-label="${L("Zoom in", "Didinti")}">+</button>
-          </div>
-          <div class="asm-tools a3t" id="asm-t3" hidden>
-            <div class="asm-seg" role="group" aria-label="${L("Fronts", "Fasadai")}">
-              <button class="asm-sb ${A3.mode !== "interior" ? "on" : ""}" data-a3="m:assembly">${L("Assembled", "Surinkta")}</button>
-              <button class="asm-sb ${A3.mode === "interior" ? "on" : ""}" data-a3="m:interior">${L("No fronts", "Be fasadų")}</button>
-            </div>
-            <button class="asm-sb tg ${A3.exp ? "on" : ""}" data-a3="exp" aria-pressed="${!!(A3.exp)}">${icon("layers", 15)} ${L("Exploded", "Išskleista")}</button>
-            <button class="asm-sb tg ${A3.dim ? "on" : ""}" data-a3="dim" aria-pressed="${!!(A3.dim)}">${icon("eye", 15)} ${L("Others see-through", "Kitos permatomos")}</button>
-            <span class="grow"></span>
-            <div class="asm-seg" role="group" aria-label="${L("View", "Vaizdas")}">
-              <button class="asm-sb" data-a3="v:front">${L("Front", "Priekis")}</button>
-              <button class="asm-sb" data-a3="v:iso">3D</button>
-              <button class="asm-sb" data-a3="v:left">${L("Side", "Šonas")}</button>
-              <button class="asm-sb" data-a3="v:back">${L("Back", "Galas")}</button>
-            </div>
-            <button class="icon-btn" data-a3="z:1.25" aria-label="${L("Zoom out", "Mažinti")}">−</button>
-            <button class="icon-btn" data-a3="z:0.8" aria-label="${L("Zoom in", "Didinti")}">+</button>
           </div>
         </div>
         <aside class="asm-side">
@@ -384,15 +367,6 @@ var Assembly = {
     var b3 = $("#asm-3d", host);
     if (b3) b3.onclick = () => { c.view = "3d"; self.remember(); self.render(); self.showFile(false); };
     $$("[data-part]", host).forEach(b => b.onclick = () => self.pick("", b.dataset.part));
-    $$("[data-a3]", host).forEach(b => b.onclick = () => {
-      var a = b.dataset.a3;
-      if (a.indexOf("m:") === 0) { Asm3D.setMode(a.slice(2)); $$("[data-a3^='m:']", host).forEach(x => x.classList.toggle("on", x === b)); }
-      else if (a === "exp") { Asm3D.setExp(!Asm3D.exp); Asm3D.fit(true); b.classList.toggle("on", Asm3D.exp); b.setAttribute("aria-pressed", Asm3D.exp); }
-      else if (a === "dim") { Asm3D.setDim(!Asm3D.dim); b.classList.toggle("on", Asm3D.dim); b.setAttribute("aria-pressed", Asm3D.dim); }
-      else if (a.indexOf("v:") === 0) Asm3D.view(a.slice(2));
-      else if (a.indexOf("z:") === 0) Asm3D.zoom(+a.slice(2));
-      try { localStorage.setItem("asm.3d", JSON.stringify({ mode: Asm3D.mode, exp: Asm3D.exp, dim: Asm3D.dim })); } catch (e) {}
-    });
     var cvs = $("#asm-canvas", host);
     if (cvs) cvs.addEventListener("click", e => {   // a panel tapped in the builder's drawing
       if (c.view === "3d") return;
@@ -425,21 +399,47 @@ var Assembly = {
     $("#asm-zfit", host).onclick = () => { c.zoom = 1; self.draw(); };
   },
   remember() { try { localStorage.setItem("asm.view", this.cur.view); } catch (e) {} this.view = this.cur.view; },
-  /* the 3-D cabinet */
+  /* the 3-D cabinet: the cabinet builder's own 3-D view (builder/viewer.html), with the project it handed over */
+  projFile(o) {
+    var ids = this.related(o).filter(r => r.src !== "client").map(r => r.o.id);
+    var list = D.files().filter(f => ids.indexOf(f.orderId) >= 0 && f.drw && f.drw.project);
+    list.sort((a, b) => (ids.indexOf(a.orderId) - ids.indexOf(b.orderId)) || ((b.at || 0) - (a.at || 0)));
+    return list[0] || null;
+  },
+  _projs: {},
+  projJson(f) {
+    if (this._projs[f.id]) return this._projs[f.id];
+    var p = Files.url(f.id).then(u => { if (!u) throw new Error(this.L("The project has not reached the cloud yet", "Projektas dar neįkeltas į debesį")); return fetch(u).then(r => r.json()); });
+    p.catch(() => { delete this._projs[f.id]; });
+    return (this._projs[f.id] = p);
+  },
+  /* which of the builder's cabinets: the one its sheet was drawn for */
+  cabIndex(o, key) { var sh = this.sheetFor(o, key); return sh && sh.drw && sh.drw.cab != null ? +sh.drw.cab : null; },
+  post3d(m) { try { if (this._ifr && this._ifr.contentWindow) this._ifr.contentWindow.postMessage(m, location.origin); } catch (e) {} },
   show3d() {
     var self = this, c = this.cur, o = D.order(c.orderId), box = document.getElementById("asm-canvas"), L = this.L.bind(this);
-    var t1 = document.getElementById("asm-tools"), t3 = document.getElementById("asm-t3");
-    if (t1) t1.hidden = true; if (t3) t3.hidden = false;
-    var mf = Asm3D.modelFile(o);
-    var fail = msg => { if (box && self.cur === c && c.view === "3d") box.innerHTML = `<div class="asm-empty">${icon("cube", 38, "", 1.4)}<b>${L("3-D cabinet", "3D spintelė")}</b><span>${esc(msg)}</span></div>`; };
-    if (!mf) return fail(L("Send the project from the cabinet builder again — the 3-D model comes with it.", "Persiųskite projektą iš Spintelių kūrėjo dar kartą — 3D modelis ateis kartu."));
-    var names = this.partsOf(o, c.key).map(p => p.solid).filter(Boolean);
-    Asm3D.model(mf).then(model => {
-      if (self.cur !== c || c.view !== "3d") return;
-      var cab = Asm3D.cabOf(model, names);
-      if (!cab) return fail(L("This cabinet is not in the 3-D model.", "Šios spintelės 3D modelyje nėra."));
-      return Asm3D.mount(box, cab, { sel: c.sel, onPick: n => self.pick(n) });
-    }).catch(e => fail(e && e.message || String(e)));
+    var t1 = document.getElementById("asm-tools"); if (t1) t1.hidden = true;
+    var fail = msg => { self._ifr = null; if (box && self.cur === c && c.view === "3d") box.innerHTML = `<div class="asm-empty">${icon("cube", 38, "", 1.4)}<b>${L("3-D cabinet", "3D spintelė")}</b><span>${esc(msg)}</span></div>`; };
+    var pf = this.projFile(o);
+    if (!pf) return fail(L("Send the project from the cabinet builder again — the 3-D cabinet comes with it.", "Persiųskite projektą iš Spintelių kūrėjo dar kartą — 3D spintelė ateis kartu."));
+    var cab = this.cabIndex(o, c.key);
+    if (cab == null) return fail(L("This cabinet is not in the cabinet builder's project.", "Šios spintelės Spintelių kūrėjo projekte nėra."));
+    var data = this.projJson(pf);
+    data.catch(e => fail(e && e.message || String(e)));
+    box.innerHTML = `<iframe class="asm-ifr" id="asm-ifr" title="${L("3-D cabinet", "3D spintelė")}" src="../builder/viewer.html?v=${encodeURIComponent((document.querySelector('meta[name="shopflow-build"]') || {}).content || "")}"></iframe>`;
+    var ifr = this._ifr = box.querySelector("iframe");
+    this._3d = { ifr: ifr, c: c, data: data, cab: cab };
+    if (!this._msgOn) {
+      this._msgOn = true;
+      window.addEventListener("message", e => {
+        var s = self._3d;
+        if (e.origin !== location.origin || !s || !s.ifr || e.source !== s.ifr.contentWindow || !e.data) return;
+        var d = e.data;
+        if (d.type === "ready") s.data.then(j => { if (self._3d === s) self.post3d({ type: "load", project: j.proj, settings: j.settings, cab: s.cab, sel: (self.cur && self.cur.sel) || null }); });
+        else if (d.type === "pick" && d.name && self.cur) self.pick(d.name, null, true);
+        else if (d.type === "loaded" && !d.ok) { console.warn("[assembly] 3-D", d.error); }
+      });
+    }
   },
   /* the cabinet builder's sheet, as drawing (not a picture): its panels can be lit and tapped */
   svgText(f) {
@@ -480,9 +480,8 @@ var Assembly = {
   showFile(seek) {
     var self = this, c = this.cur;
     if (!c) return;
-    if (c.view === "3d" && typeof Asm3D !== "undefined") return this.show3d();
-    if (typeof Asm3D !== "undefined") Asm3D.unmount();
-    var t3 = document.getElementById("asm-t3"); if (t3) t3.hidden = true;
+    if (c.view === "3d") return this.show3d();
+    this._ifr = null;
     if (!c.fileId) return;
     var f = D.file(c.fileId); if (!f) return;
     var box = document.getElementById("asm-canvas");
@@ -600,13 +599,7 @@ var Assembly = {
 .asm-part{width:100%;border:0;color:var(--text);font:inherit;font-size:14px;text-align:left;cursor:pointer;min-height:40px;align-items:center}
 .asm-part:active{filter:brightness(.95)}
 .asm-file.a3{font-weight:600}
-.a3t{flex-wrap:wrap;row-gap:6px}
-.asm-seg{display:inline-flex;border:1px solid var(--border-strong);border-radius:var(--r-sm);overflow:hidden}
-.asm-sb{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 12px;border:0;background:var(--surface);color:var(--text);font:inherit;font-size:14px;cursor:pointer;white-space:nowrap}
-.asm-seg .asm-sb+.asm-sb{border-left:1px solid var(--border)}
-.asm-sb.tg{border:1px solid var(--border-strong);border-radius:var(--r-sm)}
-.asm-sb.on{background:var(--text);color:var(--surface)}
-.asm-canvas .a3-cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab}
+.asm-canvas .asm-ifr{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#f6f5f1}
 .asm-svg [data-p],.asm-svg [data-ps]{cursor:pointer}
 .asm-svg [data-p].asm-hi polygon{fill:#ffad42!important;stroke:#b84300!important;stroke-width:.6px!important;fill-opacity:1!important;stroke-dasharray:none!important}
 .asm-svg .asm-ghost{pointer-events:none}.asm-svg .asm-ghost polygon{fill:none!important;stroke:#e06a00!important;stroke-width:.5px!important;stroke-dasharray:1.6 1!important}

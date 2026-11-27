@@ -3029,6 +3029,22 @@ details.nvk-ok[open]>summary::after{transform:rotate(90deg)}
 .nvp-ask-b{display:inline-flex;gap:6px;flex-wrap:wrap}
 
 </style>
+<style>
+/* src/ui/95-viewer.css */
+/* 95-viewer.css — builder/viewer.html (html.nvv): the 3-D view alone, filling the page, for a finger */
+html.nvv,html.nvv body{overflow:hidden;height:100%}
+html.nvv .nv3{position:fixed!important;inset:0!important;z-index:9000!important;border:0!important;border-radius:0!important;box-shadow:none!important;background:var(--panel)}
+html.nvv .nv3-stage{min-height:0!important}
+html.nvv .nv3 [data-v="edges"],html.nvv .nv3 [data-act="skopen"],html.nvv .nv3 [data-nv="nv3old"],html.nvv .nv3 [data-v="full"],html.nvv .nv3-hint,html.nvv .nv3-bar:not(.nv3-jbar){display:none!important}
+html.nvv .nv3-jbar button,html.nvv .nv3-jbar select,html.nvv .nv3-jbar input{pointer-events:none;opacity:.5}
+html.nvv .nv3-b{min-height:44px;padding:6px 14px;font-size:15px}
+html.nvv .nv3-cam button{width:46px;height:46px;font-size:20px}
+html.nvv .nv3-foot{padding:8px 14px;font-size:15px}
+html.nvv .nv3-range input{min-height:34px}
+html.nvv:not(.nvv-on) body::after{content:"Kraunama…";position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#f6f5f1;color:#55605a;font:600 16px system-ui,sans-serif}
+html.nvv #toast{display:none!important}
+
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -13037,7 +13053,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="d55cb2c1aa"</script>
+<script>window.NV_BUILD="b39e859c7e"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -21457,25 +21473,9 @@ function nvmDrwHandoff(pj) {
       parts: x.cab == null ? [] : pj.parts.filter(function (p) { return p.cab === x.cab + 1; }).map(function (p) { return p.name; }), svg: x.svg };
   });
 }
-/* the cabinets as boxes for the assembly station's 3-D view (ShopFlow): every board's extent in its cabinet (x right,
-   y from the front, z up), its look colour and how far it moves in the exploded view — the same as the drawing sheets' */
-function nvmModel3d() {
-  var out = [];
-  if (!DR || !DR.cabBoxes || !DR.explode) return out;
-  (S.proj.cabinets || []).forEach(function (c, i) {
-    var inf = S._info && S._info[i], r = inf && inf.r; if (!r || !r.panels) return;
-    try {
-      var boxes = DR.cabBoxes(r, { plinth:true, fit:true, c:c }); DR.explode(r, boxes); boxes = boxes.filter(function (b) { return !b.polys && b.e; });   // fittings drawn as faces (hinges) stay out: boxes only
-      var r1 = function (v) { return Math.round(v * 10) / 10; };
-      out.push({ cab:i, nr:i + 1, name:c.name || '', parts:boxes.map(function (b) {
-        return { n:b.p ? b.p.name : '', s:b.p ? (b.p.short || b.p.role || '') : '', role:b.p ? b.p.role || '' : (b.leg ? 'KOJA' : b.plinth ? 'COKOLIS' : b.fit ? 'FIT' : ''), fit:b.fit && !b.p ? String(b.fit) : undefined, att:b.att || undefined,
-          front:!!b.front, e:b.e.map(function (q, k) { var dk = (b.disp || [0, 0, 0])[k]; return [r1(q[0] - dk), r1(q[1] - dk)]; }), d:(b.disp || [0, 0, 0]).map(r1), f:b.fill || '#ffffff',
-          dr:b.p && b.p.drawerOf ? b.p.drawerOf : undefined, door:!!b.door || undefined, hl:b.door ? !!b.hingeLeft : undefined };
-      }) });
-    } catch (e) { if (window.console) console.warn('3-D model for ShopFlow', i, e); }
-  });
-  return out;
-}
+/* the project itself for the assembly station's 3-D view (builder/viewer.html in ShopFlow): the cabinets and the settings
+   they are built with, so the picture there is this one — joints, hardware, looks. Prices stay here. */
+function nvmProjHandoff() { var p = clone(S.proj); delete p.pricing; return { proj: p, settings: clone(S.settings) }; }
 function nvmIdbPut(key, val) {
   return new Promise(function (res, rej) {
     if (!window.indexedDB) return rej(new Error('no IndexedDB'));
@@ -21502,8 +21502,8 @@ NVA.mshop = function () {
   var drw = 0;
   Promise.all([xlsmBytes(pj), nvmWait3d(5000).then(function () {
     var sheets = nvmDrwHandoff(pj); if (!sheets.length) return 0;
-    var model = []; try { model = nvmModel3d(); } catch (e) { model = []; }
-    return nvmIdbPut('drawings', { project: S.proj.id, at: Date.now(), sheets: sheets, model: model }).then(function () { return sheets.length; }, function () { return 0; });
+    var whole = null; try { whole = nvmProjHandoff(); } catch (e) { whole = null; }
+    return nvmIdbPut('drawings', { project: S.proj.id, at: Date.now(), sheets: sheets, whole: whole }).then(function () { return sheets.length; }, function () { return 0; });
   })]).then(function (r) {
     var bytes = r[0]; drw = r[1];
     S.busy = false;
@@ -22024,6 +22024,73 @@ function nvoPublish() {
 }
 
 
+/* ======== src/ui/95-viewer.js ======== */
+/* 95-viewer.js — the builder's own 3-D cabinet view, alone on a page, for ShopFlow's assembly station.
+   builder/viewer.html is this same build with window.NV_VIEWER set and none of the sign-in / cloud / lock scripts
+   (build.py --viewer). Nothing it does is kept: the page cannot write localStorage, so the project it is shown is
+   never saved here, and edits made by tapping around (a joint point dragged) are gone with the page.
+   The parent page (same site only) talks to it with postMessage:
+     → { type:'load', project, settings, cab, sel }   the project as the builder handed it over, the cabinet (index), a panel
+     → { type:'select', name }                         the panel to mark (its builder name = ShopFlow's part.solid)
+     → { type:'cab', cab, sel }                        another cabinet of the same project
+     ← { type:'ready' } once, { type:'loaded', ok, error }, { type:'pick', name } when a board is tapped
+   The picture, its buttons (Surinkta, Be fasadų, Jungtys, views, opening, hardware, dimensions) are the builder's own;
+   the ones that edit (Kraštai, part operations, boards) are hidden, and a tapped board is marked instead of opened. */
+if (window.NV_VIEWER) (function () {
+  var up = function (s) { return String(s || '').toUpperCase(); };
+  var post = function (m) { try { if (window.parent && window.parent !== window) window.parent.postMessage(m, location.origin); } catch (e) {} };
+  var panelBy = function (test) { var inf = S._info && S._info[S.sel], ps = (inf && inf.r && inf.r.panels) || []; for (var i = 0; i < ps.length; i++) if (test(ps[i])) return ps[i]; return null; };
+  var want = null;   // the panel to mark, by name
+  function mark() {
+    var p = want ? panelBy(function (q) { return up(q.name) === up(want); }) : null;
+    if (!p) { if (typeof nv3Mark === 'function') nv3Mark(null); return; }
+    NV3.markKey = p.key; NV3.markPart = null;
+    if (NV3.pick && NV3.pick.length) nv3Remark();
+  }
+  function show(cab, sel) {
+    S.picking = false; S.home = false; S.tab = 'cab';
+    S.sel = Math.max(0, Math.min((S.proj.cabinets || []).length - 1, +cab || 0));
+    NV.view = '3d'; NV.r3off = null; NV3.edges = false; NV3.focus = null; NV.kOn = false;
+    if (NV.topic !== 'joints') NV.topic = NV.topic || 'body';
+    want = sel || null; NV3.markKey = null; NV3.markPart = null;
+    render(); mark();
+    setTimeout(mark, 60);   // the model is built after the page: mark it once it is there
+  }
+  function load(d) {
+    try {
+      if (!d.project || !Array.isArray(d.project.cabinets)) throw new Error('no project');
+      if (d.settings && typeof d.settings === 'object') { S.settings = Object.assign(defSettings(), d.settings); applyRules(); }
+      var p = clone(d.project); delete p.pricing;
+      openProject(p);
+      show(d.cab, d.sel);
+      document.documentElement.classList.add('nvv-on');
+      post({ type: 'loaded', ok: true, cabs: S.proj.cabinets.length });
+    } catch (e) { post({ type: 'loaded', ok: false, error: String(e && e.message || e) }); }
+  }
+  window.addEventListener('message', function (e) {
+    if (e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
+    var d = e.data;
+    if (d.type === 'load') load(d);
+    else if (d.type === 'select' && S.proj) { want = d.name || null; mark(); }
+    else if (d.type === 'cab' && S.proj) show(d.cab, d.sel);
+  });
+  /* a tapped board is marked and told to the page around, never opened for editing */
+  nv3Click = function (e) {
+    var h = nv3Hit(e); if (!h) return;
+    var k = h.object.userData.key, p = k ? panelBy(function (q) { return q.key === k; }) : null;
+    if (!p) return;
+    want = p.name; nv3Mark(h.object);
+    post({ type: 'pick', name: p.name });
+  };
+  nv3JHit = function () { return null; };                 // Jungtys: shown, not edited (no point to drag, no joint to add)
+  nv3JClick = function (e) { nv3Click(e); };
+  nv3JDrop = function () { nv3Build(); };
+  if (typeof nvpOpen === 'function') nvpOpen = function () {};
+  NVAFTER.push(function () { if (want && !NV3.markKey) mark(); });
+  post({ type: 'ready' });
+})();
+
+
 /* ======== src/ui/99-export.js ======== */
 /* 99-export.js — what the tests and the browser console may reach of the new interface (window.__nv).
    The live app's own window.__dbk is set right after this, at the end of the closure. */
@@ -22034,7 +22101,7 @@ window.__nv = {
   go: nvGo, undo: nvUndo, redo: nvRedo, render: function () { render(); },
   S: S, cur: cur, info: function () { return S._info; },
   build: function () { return buildProjectAll(); },
-  drwHandoff: function () { return nvmDrwHandoff(buildProjectAll()); }, model3d: function () { return nvmModel3d(); },   // the drawing sheets that go to ShopFlow with the project (60-make.js)
+  drwHandoff: function () { return nvmDrwHandoff(buildProjectAll()); }, projHandoff: function () { return nvmProjHandoff(); },   // the drawing sheets that go to ShopFlow with the project (60-make.js)
   topics: function () { return typeof NVTOPICS !== 'undefined' ? NVTOPICS : []; },
   /* the drawing on a part: a program point → where it is on the screen (tests click there) */
   skScreen: function (x, y) { var X = skCtx(), sv = document.querySelector('.sk-svg'); if (!X || !sv) return null; var d = X.F.to(x, y), pt = sv.createSVGPoint(); pt.x = d[0]; pt.y = -d[1]; var q = pt.matrixTransform(sv.getScreenCTM()); return [q.x, q.y]; },
