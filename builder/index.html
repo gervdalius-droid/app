@@ -2768,6 +2768,29 @@ button.nve-more:hover{color:var(--ink);text-decoration:underline}
 
 </style>
 <style>
+/* src/ui/49-ktopic.css */
+/* the topic "Kraštai" — the one place for edge banding */
+.nvk-leg{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:0 0 14px}
+.nvk-leg span{display:inline-flex;align-items:center;gap:6px}
+.nvk-leg i{display:inline-block;width:16px;height:4px;border-radius:2px}
+.nvk-leg i.raw{height:0;border-top:1.6px dashed #b9b4a8}
+.nvk-warn{color:var(--bad)}
+.nvk-list{display:flex;flex-direction:column;gap:6px}
+.nvk-li{display:flex;align-items:center;gap:8px;border:1px solid var(--line2);background:var(--panel);border-radius:10px;padding:4px 8px 4px 4px;min-height:44px}
+.nvk-li.on{border-color:#1c4fd8;box-shadow:0 0 0 2px rgba(28,79,216,.16)}
+.nvk-li.custom{background:#fffaf2}
+.nvk-mini{flex:none;display:block}
+.nvk-e{cursor:pointer}
+.nvk-e:hover line+line{stroke:#e8b90c}
+.nvk-nm{flex:1;min-width:0;border:0;background:none;text-align:left;padding:4px 2px;cursor:pointer;color:var(--ink);font:inherit}
+.nvk-nm b{display:block;font-size:13.5px;font-weight:600;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.nvk-nm small{display:block;font-size:12px;color:var(--muted);font-family:var(--f-mono, monospace)}
+.nvk-nm:hover b{text-decoration:underline}
+.nvk-act{display:flex;gap:4px;flex:none}
+.nvk-act .nv-btn{min-width:34px;padding-left:8px;padding-right:8px}
+
+</style>
+<style>
 /* src/ui/50-check.css */
 /* 50-check.css — stage "Patikra": one readable column; state colours only on what carries state */
 .nvk{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
@@ -13008,7 +13031,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="ef7f1b40c6"</script>
+<script>window.NV_BUILD="39528f327d"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -16856,7 +16879,9 @@ function render() {
   }
   if (!(S.sel >= 0 && S.sel < S.proj.cabinets.length)) S.sel = Math.max(0, S.proj.cabinets.length - 1);
   if (!NVSTAGE[S.tab]) S.tab = 'cab';
-  if (S.jcheck) { S.jcheck = false; if (typeof nvjHas === 'function' && nvjHas(cur())) { S.tab = 'cab'; S.picking = false; NV.topic = 'joints'; NV.secSel = null; } }   // joints have one place: the topic "Jungtys" (49-joints.js)
+  if (S.jcheck) { S.jcheck = false; if (typeof nvjHas === 'function' && nvjHas(cur())) { S.tab = 'cab'; S.picking = false; NV.topic = 'joints'; NV.secSel = null; } }
+  if (S.echeck && typeof nvkHas === 'function') { S.echeck = false; if (nvkHas(cur())) { S.tab = 'cab'; S.picking = false; NV.ecFocus = null; if (NV.topic !== 'edges') NV.ePrev = NV.topic; NV.topic = 'edges'; NV.secSel = null; } }   // edges too: the topic "Kraštai" (49-ktopic.js)
+  // joints have one place: the topic "Jungtys" (49-joints.js)
   nvHistBase();
   if (window.DBLook) window.DBLook.set(S.proj.look);
   S.proj.cabinets.forEach(function (c) {   // cutouts drawn in an earlier builder2 (c.nvCuts) → the live app's part operations (c.sketch)
@@ -20177,7 +20202,7 @@ function nvpDo(k) {
   if (k.indexOf('go:') === 0) { var a = k.split(':'); nvGo({ topic: a[1], sec: a[2] != null ? +a[2] : null }); return; }
   if (k === 'edges') {   // this board alone, pulled out of the cabinet, its edges clickable (45-edges.js)
     var inf = S._info && S._info[S.sel], pp = inf && inf.r ? inf.r.panels.filter(function (q) { return q.name === part.name; })[0] : null; if (!pp) return;
-    if (typeof nv3On === 'function' && nv3On()) { NV3.edges = true; NV3.focus = pp.key; render(); return; }   // in the same picture: the board comes out, its edges are clickable
+    if (typeof nv3On === 'function' && nv3On()) { if (typeof nvkOpen === 'function') nvkOpen(pp.key); else { NV3.edges = true; NV3.focus = pp.key; } render(); return; }   // in the same picture: the board comes out, its edges are clickable
     NV.ecFocus = { key: pp.key, cab: c.id, name: nvpName(part, pp), x: nvpS.at ? nvpS.at[0] : window.innerWidth / 2, y: nvpS.at ? nvpS.at[1] : 200 };
     S.ecView = Object.assign(S.ecView || { zoom: 1, exp: false, fronts: false }, { th: 0.62, ph: 0.42, zoom: 1 });
     render(); return; }
@@ -20322,7 +20347,7 @@ function nv3Html() {
       '<span class="nv3-grow"></span>' + (NV3.joints ? '' : b('full', NV3.full ? L('Uždaryti ✕', 'Close ✕') : L('Išplėsti ⤢', 'Expand ⤢'), NV3.full)) + '</div>' +
     (NV3.edges ? '<div class="nv3-bar">' + (fp ? '<b>' + L('Kraštai', 'Edges') + ' — ' + esc(typeof nvpName === 'function' ? nvpName({ kind: 'panel', role: fp.role }, fp) : fp.short) + '</b> <span class="nv-muted">' + fmt(fp.L) + ' × ' + fmt(fp.W) + '</span>' : '<b>' + L('Kraštų laminavimas', 'Edge banding') + '</b>') +
       ' <span class="nv3-leg"><i style="background:#1f5fbf"></i>' + esc(c.edge.carc || L('karkaso kraštas', 'carcass edge')) + ' <i style="background:#d9730d"></i>' + L('pagal fasadą', 'as the fronts') + ' <i style="background:#b9b4a8"></i>' + L('nelaminuojama', 'not banded') + '</span>' +
-      '<span class="nv3-grow"></span>' + (fp ? '<button type="button" class="nv-btn sm" data-act="ebk" data-v="' + esc(fp.key) + '" data-i="all">' + L('Visi 4 / nė vieno', 'All 4 / none') + '</button><button type="button" class="nv-btn sm ghost" data-nv="nv3" data-v="unfocus">' + L('Visa spintelė', 'Whole cabinet') + '</button>' : '<button type="button" class="nv-btn sm ghost" data-nv="nv3" data-v="ecall">' + L('Sąrašas ir patvirtinimas →', 'List and confirmation →') + '</button>') +
+      '<span class="nv3-grow"></span>' + (fp ? '<button type="button" class="nv-btn sm" data-act="ebk" data-v="' + esc(fp.key) + '" data-i="all">' + L('Visi 4 / nė vieno', 'All 4 / none') + '</button><button type="button" class="nv-btn sm ghost" data-nv="nv3" data-v="unfocus">' + L('Visa spintelė', 'Whole cabinet') + '</button>' : '<button type="button" class="nv-btn sm' + (NV3.eExp !== false ? ' on' : '') + '" data-nv="nv3" data-v="e:exp" aria-pressed="' + (NV3.eExp !== false) + '">⤢ ' + L('Išskleista', 'Pulled apart') + '</button>') +
       '<button type="button" class="nv-btn sm pri" data-nv="nv3" data-v="edges">' + L('Gerai', 'Done') + '</button></div>' : '') +
     '<div class="nv3-stage" id="nv3-stage"><div class="nv3-cam"><button type="button" data-nv="nv3" data-v="z:0.8" aria-label="+">+</button><button type="button" data-nv="nv3" data-v="z:1.25" aria-label="−">−</button><button type="button" data-nv="nv3" data-v="v:iso" aria-label="reset">↺</button></div>' +
       '<div class="nv3-hint">' + (NV3.joints ? L('Spustelėkite jungties liniją ar tašką · tempkite tašką išilgai · spustelėjus liniją pridedama jungtis · pažymėjus ekscentriką — „Pakeisti puses“', 'Click a joint line or a point · drag a point along it · a click on the line adds a connector · with a cam picked — “Swap sides”') : NV3.edges ? L('Spustelėkite kraštą: nelaminuojama → karkaso kraštas → pagal fasadą', 'Click an edge: not banded → carcass edge → as the fronts') : L('Tempkite — sukite · ratukas — mastelis · dešinys klavišas — perstumti · spustelėkite detalę — keisti', 'Drag to turn · wheel to zoom · right button to pan · click a board to change it')) + '</div></div>' +
@@ -20333,9 +20358,10 @@ function nv3Html() {
 NVLIVE.nv3 = function () { nv3Build(); return ''; };
 NVA.nv3 = function (el, v) {
   if (v.indexOf('m:') === 0) { NV3.mode = v.slice(2); if (NV.topic === 'joints') NV.topic = NV.jPrev || 'body'; return; }
-  if (v === 'edges') { NV3.edges = !NV3.edges; NV3.focus = null; if (NV.topic === 'joints') NV.topic = NV.jPrev || 'body'; return; }
+  if (v === 'edges') { if (typeof nvkToggle === 'function') return nvkToggle(); NV3.edges = !NV3.edges; NV3.focus = null; if (NV.topic === 'joints') NV.topic = NV.jPrev || 'body'; return; }   // the topic "Kraštai" is the place; the picture follows it (49-ktopic.js)
   if (v === 'unfocus') { NV3.focus = null; return; }
   if (v === 'ecall') { S.echeck = true; S.jcheck = false; return; }
+  if (v === 'e:exp') { NV3.eExp = NV3.eExp === false; return; }
   if (v === 'joints') { if (NV.topic === 'joints') NV.topic = NV.jPrev || 'body'; else { NV.jPrev = NV.topic; NV.topic = 'joints'; NV.secSel = null; } return; }   // the topic "Jungtys" is the place; the picture follows it (49-joints.js)
   if (v.indexOf('j:') === 0) return nv3JAct(v.slice(2), el);
   if (v === 'full') { NV3.full = !NV3.full; return; }
@@ -20567,8 +20593,8 @@ function nv3Build() {
   var jKeep = null;
   if (jm && NV3.jSel) { var jj = (r.joints || []).filter(function (x) { return x.key === NV3.jSel.key; })[0]; jKeep = [];
     (r.seams || []).forEach(function (s0) { if (s0.key === NV3.jSel.key && (!jj || jj.single || NV3.jBoth || !s0.side || s0.side === NV3.jSel.side)) jKeep = jKeep.concat(nv3JKeys(r, s0)); }); }
-  var jx = jm && NV3.jExp !== false, expOff = function (cen) { return [0, 1, 2].map(function (i) { return Math.max(-1, Math.min(1, (cen[i] - mid[i]) / Math.max(1, ext[i] / 2))) * Math.max(130, Math.max(W, H, D) * 0.09); }); };   // the same gap whatever the cabinet's size   // joints: the boards pulled apart so every joint shows what goes into what
-  (r.panels || []).forEach(function (p) { if (!p.place || p.drawerOf || isFront(p)) return;
+  var ex = NV3.edges && !focus && NV3.eExp !== false, jx = (jm && NV3.jExp !== false) || ex, expOff = function (cen) { return [0, 1, 2].map(function (i) { return Math.max(-1, Math.min(1, (cen[i] - mid[i]) / Math.max(1, ext[i] / 2))) * Math.max(130, Math.max(W, H, D) * 0.09); }); };   // the same gap whatever the cabinet's size   // joints: the boards pulled apart so every joint shows what goes into what
+  (r.panels || []).forEach(function (p) { if (!p.place || isFront(p) || (p.drawerOf && !(focus && p.key === focus))) return;   // a drawer's own board comes out of its drawer when its edges are set
     var bm = nv3Board(p, MC(p.mat, '#e9e6de'), { dim: (jm && !jx) || (focus && p.key !== focus) || !!(jx && jKeep && jKeep.indexOf(p.key) < 0) });
     if (jx) { var eo = expOff(bm.userData.cen), eg = new T.Group(); eg.position.set(eo[0], eo[1], eo[2]); eg.add(bm); root.add(eg); } else root.add(place(bm, p)); });
   if (jm) nv3Seams(r, root, jx ? expOff : null);
@@ -20578,7 +20604,7 @@ function nv3Build() {
     var a = new T.Mesh(g1, nv3Mat('#2b3230', Object.assign({ roughness: 0.5 }, faint || {}))); a.position.set(l.x, l.y, -l.h / 2); root.add(a);
     if (!l.feet) { var g2 = new T.CylinderGeometry(rad * 1.4, rad * 1.5, 10, 28); g2.rotateX(Math.PI / 2); var b2 = new T.Mesh(g2, nv3Mat('#222826', Object.assign({ roughness: 0.5 }, faint || {}))); b2.position.set(l.x, l.y, -l.h + 5); root.add(b2); }
   });
-  var asm = NV3.mode === 'assembly' && !focus && !jm, vis = r.visual || {};
+  var asm = NV3.mode === 'assembly' && !focus && !jm && !NV3.edges, vis = r.visual || {};
   if (asm || (focus && false)) {
     if (vis.plinth) { var pl = vis.plinth; root.add(nv3Box([pl.x0, pl.y0, pl.z0], [pl.x1 - pl.x0, pl.t, pl.z1 - pl.z0], MC(pl.mat, '#d5cbbd'), null, { kind: 'plinth' })); }
     if (r.worktop) { var wt = r.worktop; root.add(nv3Box([wt.x0, wt.y0, wt.z0], [wt.L, wt.y1 - wt.y0, wt.T], MC(wt.mat, '#b98d5e'), { roughness: 0.45 }, { kind: 'worktop' })); }
@@ -20587,7 +20613,8 @@ function nv3Build() {
   if (jx) nv3Screws(jKeep ? Object.assign({}, r, { panels: (r.panels || []).filter(function (p) { return jKeep.indexOf(p.key) >= 0 || !p.place; }) }) : r, root, expOff); else if (NV3.hw && !focus) nv3Screws(r, root);
   if (!jx && !focus) ((r.visual && r.visual.rails) || []).forEach(function (q) { root.add(nv3Rod([q.x0, q.y, q.z], [q.x1, q.y, q.z], 12.5, '#b4bcc1')); });   // hanging rails of a wardrobe (35-robe.js)
   /* fronts: doors on a pivot at their hinge side, drawers on a slide */
-  var fronts = jm ? [] : (r.panels || []).filter(isFront), di = 0, fi = 0, showF = NV3.mode === 'assembly';
+  var fronts = jm || ex ? [] : (r.panels || []).filter(isFront),   // pulled apart for the edges: the carcass only — a front or a drawer board is brought out from the list
+    di = 0, fi = 0, showF = NV3.mode === 'assembly';
   fronts.forEach(function (p) {
     var door = p.role === 'DURYS', m = door ? (vis.doors || [])[di++] : (vis.drawers || [])[fi++];
     if (focus) { if (p.key === focus) root.add(place(nv3Board(p, MC(p.mat, '#d5cbbd')), p)); return; }
@@ -20661,7 +20688,7 @@ function nv3Pose() {   // doors and drawers at the opening of the slider
 }
 function nv3View(kind, fly) {
   var T = NV3.T, c = cur(); if (!c || !NV3.cam) return;
-  var W = num(c.dishwasher ? c.dishWidth : c.W) || 600, H = num(c.H) || 720, D = num(c.D) || 560, pad = NV3.joints && NV3.jExp !== false && c.kind !== 'panel' ? Math.max(260, Math.max(W, H, D) * 0.18) : 0,   // pulled apart: 130 mm further out on every side, plus the screws
+  var W = num(c.dishwasher ? c.dishWidth : c.W) || 600, H = num(c.H) || 720, D = num(c.D) || 560, pad = ((NV3.joints && NV3.jExp !== false) || (NV3.edges && !NV3.focus && NV3.eExp !== false)) && c.kind !== 'panel' ? Math.max(260, Math.max(W, H, D) * 0.18) : 0,   // pulled apart: 130 mm further out on every side, plus the screws
     size = Math.hypot(W + pad, H + pad, D + pad), tg = new T.Vector3(W / 2, H / 2 - (pad ? 0 : 30), -D / 2 + (pad ? 0 : 60));
   var dirV = kind ? new T.Vector3().fromArray(kind === 'front' ? [0, 0.05, 1] : kind === 'under' ? [-0.5, -0.75, 1] : kind === 'back' ? [0.6, 0.45, -1] : [-0.62, 0.48, 1]) : NV3.cam.position.clone().sub(NV3.ctl.target);   // no kind: the same cabinet, another size or mode — keep the angle
   if (dirV.length() < 1e-6) dirV.set(-0.62, 0.48, 1);
@@ -21046,6 +21073,88 @@ nvComputeIssues = function (proj, info) {
   });
   return list;
 };
+
+
+/* ======== src/ui/49-ktopic.js ======== */
+/* 49-ktopic.js — ONE place for edge banding: the topic "Kraštai" of a cabinet, made like "Jungtys" (49-joints.js).
+   While it is open the picture beside it is the 3-D model in edge mode (48-view3.js): the boards pulled apart so every
+   edge can be seen and clicked (switch "Išskleista" off for the cabinet assembled), a click on an edge cycles it
+   not banded → carcass edge → as the fronts, a click on a board's face brings that board out on its own.
+   The inspector lists every board with a small drawing of its four edges (clickable the same way), "Visi 4 / nė vieno",
+   "↺ Standartas", the back-edges switch and the confirmation.
+   Every "review the edges" button anywhere (checks, Patikra, the live commands ecopen / ecroom, the 3-D toolbar's
+   "Kraštai", a board's card → "Kraštų laminavimas") lands here — see the redirect in render() (00-core.js).
+   The live ebk / ecok commands do the changing, so the rules (what "standard" is, the cycle, the signature the
+   confirmation keeps) stay the live app's. */
+function nvkHas(c) { return !!c && c.kind !== 'panel'; }
+nvTopic({ key: 'edges', order: 36, icon: nvtIcon('<rect x="4" y="6" width="16" height="12" rx="1"/><path d="M4 6h16" stroke-width="3.2"/><path d="M20 6v12" stroke-width="3.2"/>'),
+  label: function () { return L('Kraštai', 'Edges'); }, applies: nvkHas, body: function (c, inf) { return nvkBody(c, inf); } });
+
+/* the picture follows the topic: edge mode is on while — and only while — "Kraštai" is open */
+var nvkCab = NVSTAGE.cab;
+NVSTAGE.cab = function (info) {
+  var c = cur(), on = !S.picking && nvkHas(c) && NV.topic === 'edges';
+  if (on) { NV.view = '3d'; if (NV.r3off) NV.r3off = null; }
+  if (!!NV.kOn !== on) { NV.kOn = on; NV3.edges = on; NV3.focus = null; if (on) { NV3.joints = false; NV3.full = false; } }
+  return nvkCab(info);
+};
+function nvkToggle() {   // the 3-D toolbar's "Kraštai" / the bar's "Gerai"
+  if (NV.topic === 'edges') { NV.topic = NV.ePrev && NV.ePrev !== 'edges' ? NV.ePrev : 'body'; return; }
+  NV.ePrev = NV.topic === 'joints' ? (NV.jPrev || 'body') : NV.topic; NV.topic = 'edges'; NV.secSel = null;
+}
+function nvkOpen(key) {   // one board's edges, from its card in the model
+  if (NV.topic !== 'edges') { NV.ePrev = NV.topic; NV.topic = 'edges'; NV.secSel = null; }
+  NV.kOn = true; NV3.edges = true; NV3.joints = false; NV3.focus = key || null;
+}
+
+var NVK_COL = ['#b9b4a8', '#1f5fbf', '#d9730d'];
+function nvkMini(p, fe) {   // the board seen flat: its four edges, each a click target
+  var Wd = 92, hh = Math.max(16, Math.min(46, p.W / Math.max(p.L, 1) * Wd)), pd = 7, x0 = pd, x1 = pd + Wd, y0 = pd, y1 = pd + hh;
+  var seg = function (e, xa, ya, xb, yb, len) { var st = ecState(p, e, fe);
+    return '<g class="nvk-e" data-act="ebk" data-v="' + esc(p.key) + '" data-i="' + e + '" role="button" aria-pressed="' + (st > 0) + '"><title>' + esc((st ? p.eb[e] : L('nelaminuojama', 'not banded')) + ' · ' + fmt(Math.round(len)) + ' mm') + '</title>' +
+      '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="transparent" stroke-width="12"/>' +
+      '<line x1="' + xa + '" y1="' + ya + '" x2="' + xb + '" y2="' + yb + '" stroke="' + NVK_COL[st] + '" stroke-width="' + (st ? 4.5 : 1.6) + '"' + (st ? ' stroke-linecap="round"' : ' stroke-dasharray="4 3"') + '/></g>'; };
+  return '<svg class="nvk-mini" viewBox="0 0 ' + (Wd + 2 * pd) + ' ' + (hh + 2 * pd) + '" width="' + (Wd + 2 * pd) + '" height="' + (hh + 2 * pd) + '" aria-hidden="false">' +
+    '<rect x="' + x0 + '" y="' + y0 + '" width="' + Wd + '" height="' + hh + '" fill="var(--sunk)"/>' +
+    seg('y1', x0, y0, x1, y0, p.L) + seg('y0', x0, y1, x1, y1, p.L) + seg('x0', x0, y0, x0, y1, p.W) + seg('x1', x1, y0, x1, y1, p.W) + '</svg>';
+}
+function nvkBody(c, inf) {
+  var r = inf && inf.r, ps = (r && r.panels) || [], fe = c.edge.facade || 'PAGAL FASADA', fk = NV3.focus;
+  var h = '<div class="nvt nvk"><p class="nv-hint nvt-lead">' + L('Visi šios spintelės kraštai keičiami čia. Spustelėkite kraštą modelyje arba detalės brėžinėlyje: nelaminuojama → karkaso kraštas → pagal fasadą.', 'All edges of this cabinet are changed here. Click an edge on the model or on a part\'s small drawing: not banded → carcass edge → as the fronts.') + '</p>';
+  if (!ps.length) return h + '<p class="nvt-nothing">' + L('Šioje spintelėje detalių nėra.', 'This cabinet has no parts.') + '</p></div>';
+  h += '<div class="nvk-leg"><span><i style="background:' + NVK_COL[1] + '"></i>' + esc(c.edge.carc || L('karkaso kraštas', 'carcass edge')) + '</span><span><i style="background:' + NVK_COL[2] + '"></i>' + L('pagal fasadą', 'as the fronts') + (c.edge.facade ? ' (' + esc(c.edge.facade) + ')' : '') + '</span><span><i class="raw"></i>' + L('nelaminuojama', 'not banded') + '</span></div>';
+  if (!c.edge.carc && !c.edge.facade) h += '<p class="nv-hint nvk-warn">' + L('Kraštų medžiaga nenurodyta — ją rasite skiltyje Medžiagos.', 'No edge material is set — see Materials.') + '</p>';
+  var isFront = function (p) { return p.role === 'FASADAS' || p.role === 'DURYS'; };
+  var row = function (p) {
+    var n = ['y0', 'y1', 'x0', 'x1'].filter(function (e) { return p.eb && p.eb[e]; }).length, on = fk === p.key;
+    var nm = typeof nvpName === 'function' ? nvpName({ kind: 'panel', role: p.role, name: p.name }, p) : (p.short || p.role);
+    return '<div class="nvk-li' + (on ? ' on' : '') + (p.ebManual ? ' custom' : '') + '">' + nvkMini(p, fe) +
+      '<button type="button" class="nvk-nm" data-nv="nvk" data-v="f:' + esc(p.key) + '" aria-pressed="' + on + '" title="' + esc(L('Parodyti modelyje atskirai', 'Show it on its own in the model')) + '"><b>' + esc(nm) + '</b><small>' + fmt(p.L) + ' × ' + fmt(p.W) + ' · ' + n + '/4' + (p.ebManual ? ' · ' + L('pakeista', 'changed') : '') + '</small></button>' +
+      '<span class="nvk-act"><button type="button" class="nv-btn sm ghost" data-act="ebk" data-v="' + esc(p.key) + '" data-i="all" title="' + esc(n === 4 ? L('Nė vieno', 'None') : L('Visi 4', 'All 4')) + '">' + (n === 4 ? L('Nė vieno', 'None') : L('Visi 4', 'All 4')) + '</button>' +
+      (p.ebManual ? '<button type="button" class="nv-btn sm ghost" data-act="ebk" data-v="' + esc(p.key) + '" data-i="reset" title="' + esc(L('Standartas', 'Standard')) + '">↺</button>' : '') + '</span></div>';
+  };
+  var grp = function (title, list) { return list.length ? nvtGrp(title, list.length, '<div class="nvk-list">' + list.map(row).join('') + '</div>') : ''; };
+  h += grp(L('Korpusas', 'Carcass'), ps.filter(function (p) { return !isFront(p) && !p.drawerOf; }));
+  h += grp(L('Stalčiai', 'Drawers'), ps.filter(function (p) { return !isFront(p) && p.drawerOf; }));
+  h += grp(L('Fasadai', 'Fronts'), ps.filter(isFront));
+  h += nvtGrp(L('Visai spintelei', 'For the whole cabinet'), '',
+    '<label class="chk"><input type="checkbox" data-bind="c.cnc.ebBack"' + (c.cnc.ebBack ? ' checked' : '') + '> ' + L('Laminuoti ir galinius (nematomus) šonų, dugno ir viršaus kraštus', 'Band the back (unseen) edges of the sides, bottom and top too') + '</label>' +
+    '<p class="nv-hint">' + L('Standartas: laminuojami visi šonų, dugno ir viršaus kraštai, kurių neuždengia kita detalė, lentynų ir juostų — priekis.', 'Standard: every edge of the sides, bottom and top that no other part covers; shelves and rails — the front.') + '</p>');
+  h += nvtGrp(L('Modelis', 'The model'), '', '<button type="button" class="nv-btn sm' + (NV3.eExp !== false ? ' on' : '') + '" data-nv="nv3" data-v="e:exp" aria-pressed="' + (NV3.eExp !== false) + '">⤢ ' + L('Detalės išskleistos', 'Boards pulled apart') + '</button>' +
+    '<p class="nv-hint">' + L('Išskleidus matyti ir paspaudžiami visi kraštai, net vidiniai ir galiniai. Išjungus — spintelė surinkta.', 'Pulled apart every edge shows and can be clicked, the inner and back ones too. Off: the cabinet assembled.') + '</p>');
+  var need = ecNeeded(c, r);
+  h += '<section class="nvj-ok ' + (need ? 'todo' : 'ok') + '"><div><b>' + (need ? (c.edgesOk ? L('Kraštai pasikeitė — patvirtinkite iš naujo', 'The edges changed — confirm them again') : L('Kraštai dar nepatvirtinti', 'The edges are not confirmed yet')) : L('Kraštai patvirtinti ✓', 'The edges are confirmed ✓')) + '</b>' +
+    '<small>' + (need ? L('Peržiūrėkite modelyje, kurie kraštai laminuojami. Be patvirtinimo gamybos failai neišduodami.', 'Look in the model which edges are banded. Without the confirmation no production files are given.') : L('Ką nors pakeitus, reikės patvirtinti dar kartą.', 'After any change they have to be confirmed again.')) + '</small></div>' +
+    (need ? '<button type="button" class="nv-btn pri" data-act="ecok">✓ ' + L('Patvirtinu', 'I confirm') + '</button>' : '') + '</section>';
+  return h + '</div>';
+}
+NVA.nvk = function (el, v) {
+  if (v.indexOf('f:') === 0) { var k = v.slice(2); NV3.focus = NV3.focus === k ? null : k; return; }
+};
+NVAFTER.push(function () {   // a board brought out in the model: its row is brought into view
+  var k = NV.topic === 'edges' ? NV3.focus : null; if (k === NV.kShown) return; NV.kShown = k;
+  var e = k && document.querySelector('.nvk-li.on'); if (e && e.scrollIntoView) e.scrollIntoView({ block: 'nearest' });
+});
 
 
 /* ======== src/ui/49-partops.js ======== */
