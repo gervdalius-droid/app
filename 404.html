@@ -14,5 +14,23 @@ a{display:inline-block;background:#131715;color:#f8f9f6;text-decoration:none;fon
 @media (prefers-color-scheme:dark){body{background:#0f1211;color:#e9ede8}p{color:#8e9890}a{background:#e9ede8;color:#0f1211}}
 </style>
 </head>
+<script>
+/* An address typed by hand on a tablet often comes out a little different: a capital letter, a long dash
+   from the keyboard (shopflow–app), a space, a missing part (…/shopflow). If what was typed is close to one of
+   the apps, go there, keeping ?scan=… and the rest. */
+(function () {
+  var APPS = ["shopflow-app", "builder", "nesting", "offer", "cad", "invoices", "xxl-fix", "tv", "surinkimas", "hub"];
+  var key = function (s) { return String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, ""); };
+  var parts = decodeURIComponent(location.pathname).split("/").filter(Boolean);
+  if (!parts.length) return;
+  var first = key(parts[0]), hit = null;
+  APPS.forEach(function (a) { var k = key(a); if (!hit && (first === k || (k.length > 4 && (first.indexOf(k) === 0 || k.indexOf(first) === 0) && first.length >= 4))) hit = a; });
+  if (!hit && /^shop/.test(first)) hit = "shopflow-app";
+  if (!hit) return;
+  var rest = parts.slice(1).join("/"), to = "/" + hit + "/" + rest;
+  if (to.replace(/\/$/, "") === location.pathname.replace(/\/$/, "")) return;   // it was right, the page really is missing
+  location.replace(to + location.search + location.hash);
+})();
+</script>
 <body><div><div class="lg" role="img" aria-label="Dėdės Baldai"></div><h1>Puslapis nerastas</h1><p>Šio adreso nėra. Visos programos — vienoje vietoje.</p><a href="/hub/shopfloor/">Į programų sąrašą</a></div></body>
 </html>

@@ -337,6 +337,11 @@ var App = {
     // shared-tablet hygiene: don't inherit the previous worker's tab/station
     this.workerTab = "my";
     if (typeof Wkr !== "undefined") Wkr.station = null;
+    // a scan-station tablet (?scan=<station> in its address, e.g. app.dedesbaldai.lt/surinkimas): back to the station after signing in
+    try {
+      var scanId = new URLSearchParams(location.search).get("scan"), stn = scanId && D.station(scanId);
+      if (stn && typeof ScanStation !== "undefined") { this.view = "scan"; ScanStation.stationId = stn.id; }
+    } catch (e) {}
     this.render();
     Router.replace();
   },
