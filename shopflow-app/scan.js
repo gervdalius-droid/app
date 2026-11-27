@@ -79,6 +79,7 @@ var ScanStation = {
       <div class="scan-body">
         <div class="scan-main">
           <video id="scan-video" class="hide" playsinline muted></video>
+          <button class="scan-cam-x" id="scan-cam-x" aria-label="Close the camera">${icon("x", 28, "", 2.4)}</button>
           <div class="scan-status idle" id="scan-status">
             <div class="scan-status-ico">${icon("qr", 54, "", 1.4)}</div>
             <div class="scan-status-title">Ready to scan</div>
@@ -159,6 +160,7 @@ var ScanStation = {
       if (this.isActive() && !this.camera && !$(".modal-scrim")) focus();
     }, 60);
     $("#scan-cam-btn", root).onclick = () => this.camera ? this.stopCamera() : this.startCamera();
+    var cx = $("#scan-cam-x", root); if (cx) cx.onclick = () => { if (typeof Assembly !== "undefined") Assembly._camWas = false; this.stopCamera(); };
     /* a touch tablet: the field listens for the scanner without the on-screen keyboard; this button brings it up */
     var kb = $("#scan-kbd", root);
     if (kb) kb.onclick = () => { cap.setAttribute("inputmode", "text"); cap.blur(); setTimeout(() => cap.focus(), 30); cap.addEventListener("blur", () => cap.setAttribute("inputmode", "none"), { once: true }); };

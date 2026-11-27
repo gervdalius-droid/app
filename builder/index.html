@@ -13053,7 +13053,7 @@ if (typeof module !== 'undefined' && module.exports) module.exports = api; else 
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
-<script>window.NV_BUILD="b39e859c7e"</script>
+<script>window.NV_BUILD="7767bd8d4c"</script>
 <script>
 /* =====================================================================
    app.js — Dėdės Baldai spintelių kūrėjas (cabinet creator).
@@ -22041,11 +22041,14 @@ if (window.NV_VIEWER) (function () {
   var post = function (m) { try { if (window.parent && window.parent !== window) window.parent.postMessage(m, location.origin); } catch (e) {} };
   var panelBy = function (test) { var inf = S._info && S._info[S.sel], ps = (inf && inf.r && inf.r.panels) || []; for (var i = 0; i < ps.length; i++) if (test(ps[i])) return ps[i]; return null; };
   var want = null;   // the panel to mark, by name
+  /* one board marked, never more: nv3Mark takes the previous mark off (nv3Remark would not — it is for a model
+     that was just rebuilt, whose old mark went with it) */
   function mark() {
     var p = want ? panelBy(function (q) { return up(q.name) === up(want); }) : null;
-    if (!p) { if (typeof nv3Mark === 'function') nv3Mark(null); return; }
-    NV3.markKey = p.key; NV3.markPart = null;
-    if (NV3.pick && NV3.pick.length) nv3Remark();
+    if (!p) { nv3Mark(null); return; }
+    var m = (NV3.pick || []).filter(function (o) { return o.userData.key === p.key; })[0];
+    if (m) { if (NV3.markKey !== p.key || !NV3.mark || !NV3.mark.parent || NV3.mark.parent !== m) nv3Mark(m); }
+    else { nv3Mark(null); NV3.markKey = p.key; NV3.markPart = null; }   // not in the picture now (a front with the fronts off): marked when it is back
   }
   function show(cab, sel) {
     S.picking = false; S.home = false; S.tab = 'cab';
@@ -22079,7 +22082,7 @@ if (window.NV_VIEWER) (function () {
     var h = nv3Hit(e); if (!h) return;
     var k = h.object.userData.key, p = k ? panelBy(function (q) { return q.key === k; }) : null;
     if (!p) return;
-    want = p.name; nv3Mark(h.object);
+    want = p.name; nv3Mark(h.object);   // (the page around answers with 'select' for the same board: mark() leaves it)
     post({ type: 'pick', name: p.name });
   };
   nv3JHit = function () { return null; };                 // Jungtys: shown, not edited (no point to drag, no joint to add)

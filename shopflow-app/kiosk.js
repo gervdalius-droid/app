@@ -46,6 +46,7 @@ var Kiosk = {
         <div class="ksk-scan ${ScanStation.camera ? "cam-on" : ""}">
           <div class="ksk-video">
             <video id="scan-video" class="${ScanStation.camera ? "" : "hide"}" playsinline muted></video>
+            <button class="ksk-x" id="ksk-cam-x" aria-label="${L("Close the camera", "Uždaryti kamerą")}">${icon("x", 30, "", 2.4)}</button>
             <button class="ksk-off" id="ksk-cam-off">${icon("x", 22)} ${L("Stop scanning", "Baigti skenuoti")}</button>
           </div>
           <button class="ksk-cam ${ScanStation.camera ? "active" : ""}" id="scan-cam-btn" ${hasCam ? "" : "disabled"}>
@@ -88,7 +89,7 @@ var Kiosk = {
     var self = this;
     $("#ksk-out", root).onclick = () => { ScanStation.stopCamera(); Assembly.close(); App.logout(); };
     $("#scan-cam-btn", root).onclick = () => { self.msg = null; ScanStation.camera ? ScanStation.stopCamera() : ScanStation.startCamera(); };
-    $("#ksk-cam-off", root).onclick = () => { self._camWant = false; Assembly._camWas = false; ScanStation.stopCamera(); };
+    $$("#ksk-cam-off,#ksk-cam-x", root).forEach(b => b.onclick = () => { Assembly._camWas = false; ScanStation.stopCamera(); });
     var cap = $("#scan-capture", root);
     cap.onkeydown = e => { if (e.key === "Enter") { e.preventDefault(); var v = cap.value; cap.value = ""; if (v.trim()) self.scan(v.trim()); } };
     var focus = () => { if (!ScanStation.camera && !Assembly.isOpen() && document.activeElement !== cap) cap.focus(); };
@@ -209,6 +210,7 @@ var Kiosk = {
 .ksk-video{position:relative;display:none;flex:none;height:56vh;max-height:620px;min-height:260px;border-radius:var(--r-lg);overflow:hidden;background:#000}.ksk-scan.cam-on .ksk-video{display:block}
 .ksk-video #scan-video{opacity:1}
 .ksk-off{z-index:2}
+.ksk-x{position:absolute;top:12px;right:12px;z-index:2;width:64px;height:64px;border-radius:50%;border:0;background:rgba(20,20,20,.78);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .ksk-off{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:inline-flex;align-items:center;gap:8px;min-height:56px;padding:0 22px;border-radius:999px;border:0;background:rgba(20,20,20,.78);color:#fff;font:inherit;font-size:17px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)}
 .ksk-scan.cam-on .ksk-cam{display:none}
 .ksk-cam{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;min-height:230px;padding:26px;border-radius:var(--r-lg);border:0;background:var(--accent);color:#fff;font:inherit;cursor:pointer;box-shadow:var(--shadow-2);text-align:center}

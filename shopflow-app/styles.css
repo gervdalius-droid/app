@@ -3356,3 +3356,6 @@ button.qty-edit:hover { border-style: solid; background: var(--surface-3); color
 .shell.side-shut .nav-item .count-badge { position: absolute; top: 2px; right: 2px; margin: 0; min-width: 16px; height: 16px; padding: 0 4px; font-size: 9.5px; line-height: 16px; }
 .shell.side-shut .user-chip { justify-content: center; padding-left: 0; padding-right: 0; }
 @media (max-width: 760px) { .side-toggle { display: none; } }
+/* the scan station's camera picture: an ✕ to close it, over the picture */
+.scan-cam-x{display:none;position:absolute;top:12px;right:12px;z-index:3;width:60px;height:60px;border-radius:50%;border:0;background:rgba(20,20,20,.78);color:#fff;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 16px rgba(0,0,0,.3)}
+.scan-main:has(#scan-video:not(.hide)) .scan-cam-x{display:flex}
